@@ -69,6 +69,18 @@ export function apiPatch<T>(
   );
 }
 
+export function apiPut<T>(
+  path: string,
+  body: unknown,
+  schema: ZodLike<T>,
+): Promise<T> {
+  return request(
+    path,
+    { method: "PUT", body: JSON.stringify(body) },
+    schema,
+  );
+}
+
 export function apiDelete(path: string): Promise<void>;
 export function apiDelete<T>(path: string, schema: ZodLike<T>): Promise<T>;
 export function apiDelete<T>(

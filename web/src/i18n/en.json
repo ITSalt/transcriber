@@ -99,6 +99,19 @@
     "languageEN": "English",
     "languageAUTO": "Auto"
   },
+  "protocol": {
+    "header": "Protocol editor",
+    "backToMeeting": "Back to meeting",
+    "version": "Version",
+    "edit_count": "Edits",
+    "last_edited_at": "Last edited",
+    "generated_at": "Generated",
+    "contentLabel": "Protocol (Markdown)",
+    "editButton": "Edit",
+    "exportPdf": "Export PDF",
+    "saveSuccess": "Saved successfully",
+    "unsavedChangesWarning": "You have unsaved changes. Are you sure you want to leave?"
+  },
   "upload": {
     "title": "Upload Recording",
     "dragDrop": "Drag & drop a video or audio file here",

@@ -99,6 +99,19 @@
     "languageEN": "Английский",
     "languageAUTO": "Авто"
   },
+  "protocol": {
+    "header": "Редактор протокола",
+    "backToMeeting": "Назад к встрече",
+    "version": "Версия",
+    "edit_count": "Правки",
+    "last_edited_at": "Последнее редактирование",
+    "generated_at": "Сгенерировано",
+    "contentLabel": "Протокол (Markdown)",
+    "editButton": "Редактировать",
+    "exportPdf": "Экспорт PDF",
+    "saveSuccess": "Сохранено успешно",
+    "unsavedChangesWarning": "Есть несохранённые изменения. Вы уверены, что хотите покинуть страницу?"
+  },
   "upload": {
     "title": "Загрузить запись",
     "dragDrop": "Перетащите видео или аудио файл сюда",
