@@ -56,6 +56,18 @@
     "dragDrop": "Drag & drop a video or audio file here",
     "or": "or",
     "browse": "Browse files",
-    "supported": "Supported: MP4, MKV, MOV, MP3, WAV, M4A (up to 10 GB)"
+    "supported": "Supported: MP4, MKV, MOV, MP3, WAV, M4A (up to 10 GB)",
+    "heading": "Upload meeting video",
+    "fieldFile": "Video file (MP4 / MKV / MOV, max 500 MB)",
+    "fieldTitle": "Meeting title (defaults to filename)",
+    "fieldTitlePlaceholder": "Enter meeting title",
+    "fieldLanguage": "Language (leave blank for auto-detect)",
+    "fieldLanguagePlaceholder": "Auto-detect",
+    "languageAuto": "Auto-detect",
+    "languageRu": "Russian (RU)",
+    "languageEn": "English (EN)",
+    "finalizing": "Finalizing upload…",
+    "errorFileTooLarge": "File exceeds 500 MB limit. Please choose a smaller file.",
+    "errorUnsupportedMime": "Unsupported file type. Please upload an MP4, MKV, or MOV file."
   }
 }

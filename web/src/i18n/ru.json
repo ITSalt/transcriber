@@ -56,6 +56,18 @@
     "dragDrop": "Перетащите видео или аудио файл сюда",
     "or": "или",
     "browse": "Выбрать файл",
-    "supported": "Поддерживаются: MP4, MKV, MOV, MP3, WAV, M4A (до 10 ГБ)"
+    "supported": "Поддерживаются: MP4, MKV, MOV, MP3, WAV, M4A (до 10 ГБ)",
+    "heading": "Загрузить видео встречи",
+    "fieldFile": "Видеофайл (MP4 / MKV / MOV, макс. 500 МБ)",
+    "fieldTitle": "Название встречи (по умолчанию — имя файла)",
+    "fieldTitlePlaceholder": "Введите название встречи",
+    "fieldLanguage": "Язык (оставьте пустым для автоопределения)",
+    "fieldLanguagePlaceholder": "Автоопределение",
+    "languageAuto": "Автоопределение",
+    "languageRu": "Русский (RU)",
+    "languageEn": "Английский (EN)",
+    "finalizing": "Завершение загрузки…",
+    "errorFileTooLarge": "Файл превышает 500 МБ. Выберите файл меньшего размера.",
+    "errorUnsupportedMime": "Неподдерживаемый формат. Загрузите файл MP4, MKV или MOV."
   }
 }
