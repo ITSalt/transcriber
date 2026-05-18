@@ -17,12 +17,12 @@
     { "id": "TECH-006", "status": "done" },
     { "id": "TECH-007", "status": "done" },
     { "id": "TECH-008", "status": "done" },
-    { "id": "TECH-009", "status": "pending" },
-    { "id": "TECH-010", "status": "pending" },
+    { "id": "TECH-009", "status": "done" },
+    { "id": "TECH-010", "status": "done" },
     { "id": "TECH-011", "status": "pending" },
-    { "id": "TECH-012", "status": "pending" },
+    { "id": "TECH-012", "status": "done" },
     { "id": "TECH-013", "status": "done" },
-    { "id": "TECH-014", "status": "pending" },
+    { "id": "TECH-014", "status": "done" },
     { "id": "TECH-015", "status": "verified-pending", "reason": "actionlint unavailable; YAML structurally valid; .github/workflows/ci.yml left uncommitted per protocol" }
   ],
   "ucTasks": [
