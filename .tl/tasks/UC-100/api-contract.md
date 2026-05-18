@@ -22,8 +22,10 @@ import { z } from 'zod';
 import { MeetingStatus, MeetingLanguage, JobStatus, VideoMimeType } from '../enums';
 
 // TUS metadata header (Base64 KV pairs):
-//   filename, mime_type, size_bytes, title?, language?
-// Server validates per RQ-008/009/010 at pre-create.
+//   filename   — original filename
+//   filetype   — actual MIME type string (video/mp4, video/x-matroska, video/quicktime)
+//   size_bytes, title?, language?
+// Server reads "filetype" to validate MIME per RQ-008/009/010 at pre-create.
 export const UploadFinalizeResponse = z.object({
   meeting_id: z.string().uuid(),
   status: z.literal('TRANSCRIBING'),
