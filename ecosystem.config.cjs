@@ -6,7 +6,7 @@ module.exports = {
     {
       name: 'transcrib-api',
       cwd: '/opt/transcrib/api',
-      script: './dist/server.js',
+      script: './dist/index.js',
       interpreter: '/home/deploy/.nvm/versions/node/v20.20.2/bin/node',
       instances: 1,
       exec_mode: 'fork',
