@@ -38,6 +38,13 @@ vi.mock('./config.js', () => ({
   },
 }))
 
+// Stub S3 env vars so the TUS plugin does not throw during bootstrap
+vi.mock('./plugins/tus.js', () => ({
+  tusPlugin: async () => {
+    // no-op stub — TECH-005 tests do not exercise TUS routes
+  },
+}))
+
 // ─── Test suite ───────────────────────────────────────────────────────────────
 
 describe('TECH-005 — Fastify scaffold', () => {

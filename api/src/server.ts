@@ -10,6 +10,7 @@ import {
 } from '@fastify/type-provider-zod'
 import { buildLoggerOptions } from './plugins/logger.js'
 import { errorHandlerPlugin } from './plugins/errors.js'
+import { tusPlugin } from './plugins/tus.js'
 import { healthRoutes } from './routes/health.js'
 
 export interface BuildAppOptions {
@@ -33,6 +34,7 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<FastifyIn
 
   // Plugins
   await app.register(errorHandlerPlugin)
+  await app.register(tusPlugin)
 
   // Routes
   await app.register(healthRoutes)
