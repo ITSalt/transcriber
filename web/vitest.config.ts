@@ -6,6 +6,7 @@ export default defineConfig({
   plugins: [react()],
   resolve: {
     alias: {
+      "@": fileURLToPath(new URL("./src", import.meta.url)),
       "@transcrib/shared": fileURLToPath(
         new URL("../shared/src/index.ts", import.meta.url),
       ),
@@ -14,6 +15,8 @@ export default defineConfig({
   test: {
     name: "web",
     environment: "jsdom",
+    globals: true,
+    setupFiles: ["./src/test-setup.ts"],
     include: ["src/**/*.{test,spec}.{ts,tsx}"],
   },
 });

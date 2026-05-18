@@ -1,0 +1,42 @@
+{
+  "common": {
+    "loading": "Loading…",
+    "error": "Something went wrong",
+    "retry": "Retry",
+    "cancel": "Cancel",
+    "save": "Save",
+    "delete": "Delete",
+    "upload": "Upload",
+    "back": "Back"
+  },
+  "nav": {
+    "catalog": "Meetings",
+    "upload": "Upload"
+  },
+  "catalog": {
+    "title": "Meetings",
+    "empty": "No meetings yet. Upload a recording to get started.",
+    "search": "Search meetings…"
+  },
+  "meeting": {
+    "transcript": "Transcript",
+    "protocol": "Protocol",
+    "status": {
+      "pending": "Pending",
+      "uploading": "Uploading",
+      "uploaded": "Uploaded",
+      "transcribing": "Transcribing",
+      "transcribed": "Transcribed",
+      "generating": "Generating protocol",
+      "done": "Done",
+      "error": "Error"
+    }
+  },
+  "upload": {
+    "title": "Upload Recording",
+    "dragDrop": "Drag & drop a video or audio file here",
+    "or": "or",
+    "browse": "Browse files",
+    "supported": "Supported: MP4, MKV, MOV, MP3, WAV, M4A (up to 10 GB)"
+  }
+}
