@@ -16,65 +16,10 @@ env:
   NODE_VERSION: "20"
 
 jobs:
-  # ── Lint (root eslint.config.js covers all packages) ──────────────────────
-  lint:
-    name: Lint
+  ci:
+    name: Lint + Typecheck + Test
     runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
 
-      - uses: pnpm/action-setup@v4
-        with:
-          version: ${{ env.PNPM_VERSION }}
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: pnpm
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-
-      - name: Lint
-        run: pnpm run lint
-
-  # ── Type-check (each package runs tsc --noEmit) ───────────────────────────
-  typecheck:
-    name: Typecheck — ${{ matrix.package }}
-    runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        package: [shared, api, worker, web]
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: pnpm/action-setup@v4
-        with:
-          version: ${{ env.PNPM_VERSION }}
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: pnpm
-
-      - name: Install dependencies
-        run: pnpm install
-
-      - name: Typecheck (${{ matrix.package }})
-        run: pnpm --filter ${{ matrix.package }} run typecheck
-
-  # ── Unit / integration tests per package ─────────────────────────────────
-  test:
-    name: Test — ${{ matrix.package }}
-    runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        package: [shared, api, worker, web]
-
-    # Postgres + Redis are available to all packages; packages that do not
-    # use them simply ignore the environment variables.
     services:
       postgres:
         image: postgres:16-alpine
@@ -117,7 +62,23 @@ jobs:
           cache: pnpm
 
       - name: Install dependencies
-        run: pnpm install
+        run: pnpm install --frozen-lockfile
 
-      - name: Test (${{ matrix.package }})
-        run: pnpm --filter ${{ matrix.package }} run test
+      # Prisma client must be generated before any package that imports
+      # @prisma/client can typecheck or run tests (api + worker both need it).
+      - name: Generate Prisma client
+        run: pnpm --filter @transcrib/api run db:generate
+
+      # shared/ is referenced as a TS project by api/worker/web — its
+      # .d.ts output must exist before downstream typecheck.
+      - name: Build shared (TS project references)
+        run: pnpm --filter @transcrib/shared run build
+
+      - name: Lint
+        run: pnpm run lint
+
+      - name: Typecheck (workspace, topological)
+        run: pnpm -r run typecheck
+
+      - name: Test (workspace, topological)
+        run: pnpm -r run test
