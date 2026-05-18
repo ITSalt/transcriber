@@ -1,5 +1,14 @@
 # Changelog — .tl/
 
+### [2026-05-18] nacl-tl-fix: Upload button missing from catalog page
+- **Level:** L1
+- **Status:** PASS
+- **Root cause:** `CatalogPage` не содержал `<Link to="/upload">`. Роут `/upload` существовал, но был недоступен из UI. i18n-ключ `nav.upload` уже был в переводах.
+- **Affected UC:** UC-100 (Upload meeting video — FE)
+- **Docs updated:** none (L1)
+- **Code changed:** `web/src/routes/catalog/index.tsx` (добавлена кнопка Upload в шапку), `web/src/App.test.tsx` (обновлён тест для поддержки Router-контекста)
+- **Tests:** `web/src/routes/catalog/index.test.tsx` — 2 новых regression-теста (Path A, RED→GREEN)
+
 ## [2026-05-18] DELIVER — Production deployment LIVE on transcriber.itsalt.ru
 
 - **Status:** PROD live at `https://transcriber.itsalt.ru` (HTTPS, Let's Encrypt). `/api/health` → 200. SPA real (not placeholder). learn + Mattermost neighbours unaffected.

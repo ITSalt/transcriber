@@ -1,7 +1,9 @@
 import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
+import { Link } from "react-router";
 import { apiGet } from "@/lib/api";
 import { MeetingListResponse } from "@transcrib/shared";
+import { Button } from "@/components/ui/button";
 import {
   Table,
   TableHeader,
@@ -35,7 +37,14 @@ export default function CatalogPage() {
 
   return (
     <div data-testid="catalog-page" className="container mx-auto py-8 px-4">
-      <h1 className="text-2xl font-bold mb-6">{t("catalog.title")}</h1>
+      <div className="flex items-center justify-between mb-6">
+        <h1 className="text-2xl font-bold">{t("catalog.title")}</h1>
+        <Button asChild>
+          <Link to="/upload" data-testid="upload-button">
+            {t("nav.upload")}
+          </Link>
+        </Button>
+      </div>
 
       {isLoading && (
         <p data-testid="catalog-loading">{t("common.loading")}</p>
