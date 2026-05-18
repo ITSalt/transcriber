@@ -26,15 +26,15 @@
     { "id": "TECH-015", "status": "verified-pending", "reason": "actionlint unavailable; YAML structurally valid; .github/workflows/ci.yml left uncommitted per protocol" }
   ],
   "ucTasks": [
-    { "id": "UC-001", "wave": 1, "status": "be-done" },
-    { "id": "UC-100", "wave": 1, "status": "be-done" },
-    { "id": "UC-002", "wave": 2, "status": "pending" },
-    { "id": "UC-200", "wave": 2, "status": "pending" },
-    { "id": "UC-003", "wave": 3, "status": "pending" },
-    { "id": "UC-201", "wave": 3, "status": "pending" },
-    { "id": "UC-300", "wave": 3, "status": "pending" },
-    { "id": "UC-301", "wave": 4, "status": "pending" },
-    { "id": "UC-302", "wave": 5, "status": "pending" }
+    { "id": "UC-001", "wave": 1, "status": "be+fe-done", "follow_ups": [], "follow_ups_resolved": ["shared/IStorage TS4113 (L1, pre-applied commit 77f4c73, storageCause rename)", "Zod v3/v4 split (L1, shared/ correct at zod@4.4.3; web/ unused zod@3.25.76 needs web-agent fix in web/package.json)"] },
+    { "id": "UC-100", "wave": 1, "status": "be+fe-done" },
+    { "id": "UC-002", "wave": 2, "status": "be+fe-done" },
+    { "id": "UC-200", "wave": 2, "status": "be-done" },
+    { "id": "UC-003", "wave": 3, "status": "be+fe-done" },
+    { "id": "UC-201", "wave": 3, "status": "be+fe-done" },
+    { "id": "UC-300", "wave": 3, "status": "be-done" },
+    { "id": "UC-301", "wave": 4, "status": "be+fe-done" },
+    { "id": "UC-302", "wave": 5, "status": "be-done" }
   ],
   "bugFixes": [],
   "delivery": { "status": "skipped" }

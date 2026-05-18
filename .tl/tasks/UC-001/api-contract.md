@@ -17,7 +17,7 @@
 // All types live in shared/src/api/uc001.ts
 // BE imports as runtime Zod; FE imports inferred TS types.
 import { z } from 'zod';
-import { MeetingStatus, MeetingLanguage, JobStatus, VideoMimeType } from '../enums';
+import { MeetingStatus, MeetingLanguage } from '../enums';
 
 export const MeetingListItem = z.object({
   id: z.string().uuid(),
