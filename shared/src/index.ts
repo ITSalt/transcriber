@@ -4,3 +4,4 @@
 export * from './enums.js';
 export * from './dto/index.js';
 export * from './api/index.js';
+export * from './storage/IStorage.js';
