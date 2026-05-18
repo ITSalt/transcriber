@@ -1,9 +1,9 @@
 /**
- * TECH-006 — Job processor stubs
+ * TECH-006 — Job processor
  *
- * These handlers are intentional stubs. Real logic is implemented in:
- *   - UC-200: processTranscriptionJob
- *   - UC-300: processProtocolJob
+ * Wires real pipeline handlers:
+ *   - UC-200: processTranscriptionJob (worker/src/jobs/transcription.ts)
+ *   - UC-300: processProtocolJob (stub, implemented in UC-300)
  *
  * Concurrency = 1 per NFR-009 (one video at a time per worker instance).
  */
@@ -11,18 +11,19 @@ import { Worker, type Job, type ConnectionOptions } from 'bullmq'
 import type { Logger } from 'pino'
 import { QueueName } from './queues.js'
 import type { TranscriptionJobPayload, ProtocolGenerationJobPayload } from '@transcrib/shared'
+import { processTranscriptionJob as runTranscriptionPipeline } from './jobs/transcription.js'
 
 export const CONCURRENCY = 1
 
 /**
- * Stub handler for transcription jobs (UC-200).
- * Logs receipt and returns — real pipeline added in UC-200.
+ * UC-200: Transcription pipeline handler.
+ * Delegates to the real pipeline in jobs/transcription.ts.
  */
 export async function processTranscriptionJob(
   job: Job<TranscriptionJobPayload>,
   log: Logger,
 ): Promise<void> {
-  log.info({ jobId: job.id, payload: job.data }, 'transcriptionJob received (stub)')
+  await runTranscriptionPipeline(job, log)
 }
 
 /**
