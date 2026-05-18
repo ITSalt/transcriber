@@ -78,11 +78,11 @@ export class StorageNotFoundError extends Error {
 }
 
 export class StorageError extends Error {
-  public override readonly cause: unknown
+  public readonly storageCause: unknown
 
   constructor(message: string, cause?: unknown) {
     super(message)
     this.name = 'StorageError'
-    this.cause = cause
+    this.storageCause = cause
   }
 }
