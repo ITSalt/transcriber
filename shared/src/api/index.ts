@@ -7,3 +7,4 @@ export * from './uc201.js';
 export * from './uc300.js';
 export * from './uc301.js';
 export * from './uc302.js';
+export * from './sse-events.js';

@@ -12,6 +12,7 @@ import { buildLoggerOptions } from './plugins/logger.js'
 import { errorHandlerPlugin } from './plugins/errors.js'
 import { tusPlugin } from './plugins/tus.js'
 import { healthRoutes } from './routes/health.js'
+import { ssePlugin } from './plugins/sse.js'
 
 export interface BuildAppOptions {
   logLevel?: string
@@ -35,6 +36,7 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<FastifyIn
   // Plugins
   await app.register(errorHandlerPlugin)
   await app.register(tusPlugin)
+  await app.register(ssePlugin)
 
   // Routes
   await app.register(healthRoutes)
