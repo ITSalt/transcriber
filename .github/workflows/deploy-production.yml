@@ -60,9 +60,14 @@ jobs:
             # Sync static frontend to Caddy's serving directory
             rsync -a --delete web/dist/ /var/www/transcrib/frontend/dist/
 
-            # pm2 reload (zero-downtime). Start if first deploy.
+            # pm2: delete + start re-reads ecosystem.config.cjs from disk every
+            # time, including structural fields (script, cwd, interpreter).
+            # `pm2 reload` only updates env vars and code — it keeps the stale
+            # script path if ecosystem.config.cjs changed structurally.
+            # The ~1-2s downtime per process is acceptable for our scale.
             cd /opt/transcrib
-            pm2 reload ecosystem.config.cjs --update-env || pm2 start ecosystem.config.cjs
+            pm2 delete transcrib-api transcrib-worker 2>/dev/null || true
+            pm2 start ecosystem.config.cjs
             pm2 save
           DEPLOY
 
