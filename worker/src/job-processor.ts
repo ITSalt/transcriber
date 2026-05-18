@@ -12,6 +12,7 @@ import type { Logger } from 'pino'
 import { QueueName } from './queues.js'
 import type { TranscriptionJobPayload, ProtocolGenerationJobPayload } from '@transcrib/shared'
 import { processTranscriptionJob as runTranscriptionPipeline } from './jobs/transcription.js'
+import { processProtocolGenerationJob as runProtocolPipeline } from './jobs/protocol-generation.js'
 
 export const CONCURRENCY = 1
 
@@ -27,14 +28,14 @@ export async function processTranscriptionJob(
 }
 
 /**
- * Stub handler for protocol generation jobs (UC-300).
- * Logs receipt and returns — real pipeline added in UC-300.
+ * UC-300: Protocol generation pipeline handler.
+ * Delegates to the real pipeline in jobs/protocol-generation.ts.
  */
 export async function processProtocolJob(
   job: Job<ProtocolGenerationJobPayload>,
   log: Logger,
 ): Promise<void> {
-  log.info({ jobId: job.id, payload: job.data }, 'protocolGenerationJob received (stub)')
+  await runProtocolPipeline(job, log)
 }
 
 /**

@@ -37,8 +37,31 @@ vi.mock('./lib/prisma.js', () => ({
       }),
       updateMany: vi.fn(),
     },
+    protocolGenerationJob: {
+      findUnique: vi.fn().mockResolvedValue({
+        id: '00000000-0000-0000-0000-000000000003',
+        meetingId: '11111111-1111-1111-1111-111111111111',
+        status: 'DONE', // terminal — skips immediately (idempotency guard)
+        startedAt: null,
+        finishedAt: null,
+        errorMsg: null,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        meeting: {
+          id: '11111111-1111-1111-1111-111111111111',
+          title: 'Test',
+          status: 'PROTOCOL_READY',
+          language: 'EN',
+          createdAt: new Date(),
+          updatedAt: new Date(),
+          transcript: null,
+        },
+      }),
+      create: vi.fn(),
+      updateMany: vi.fn(),
+      update: vi.fn(),
+    },
     $transaction: vi.fn(),
-    protocolGenerationJob: { create: vi.fn() },
     recording: { update: vi.fn() },
     meeting: { update: vi.fn(), updateMany: vi.fn() },
     transcript: { create: vi.fn() },
@@ -47,6 +70,7 @@ vi.mock('./lib/prisma.js', () => ({
 vi.mock('./lib/storage.js', () => ({ createStorage: vi.fn() }))
 vi.mock('./lib/ffmpeg.js', () => ({ extractAudio: vi.fn() }))
 vi.mock('./asr/deepgram-adapter.js', () => ({ DeepgramAsrProvider: vi.fn() }))
+vi.mock('./llm/kieai.js', () => ({ KieAiLlmProvider: vi.fn() }))
 vi.mock('./lib/publisher.js', () => ({ publishMeetingEvent: vi.fn().mockResolvedValue(undefined) }))
 
 import { processTranscriptionJob, processProtocolJob, CONCURRENCY } from './job-processor.js'
@@ -88,25 +112,25 @@ describe('processTranscriptionJob', () => {
 })
 
 describe('processProtocolJob', () => {
-  it('resolves without throwing (echo handler)', async () => {
-    const log = { info: vi.fn(), error: vi.fn() } as any
+  it('resolves without throwing (delegates to pipeline; job is already DONE)', async () => {
+    const log = { info: vi.fn(), error: vi.fn(), warn: vi.fn(), debug: vi.fn() } as any
     const job = makeJob<ProtocolGenerationJobPayload>('job-3', {
       protocol_generation_job_id: '00000000-0000-0000-0000-000000000003',
     })
     await expect(processProtocolJob(job, log)).resolves.toBeUndefined()
   })
 
-  it('logs receipt with job id and payload', async () => {
+  it('calls log.info with job start details', async () => {
     const infoSpy = vi.fn()
-    const log = { info: infoSpy, error: vi.fn() } as any
+    const log = { info: infoSpy, error: vi.fn(), warn: vi.fn(), debug: vi.fn() } as any
     const payload: ProtocolGenerationJobPayload = {
-      protocol_generation_job_id: '00000000-0000-0000-0000-000000000004',
+      protocol_generation_job_id: '00000000-0000-0000-0000-000000000003',
     }
     const job = makeJob<ProtocolGenerationJobPayload>('job-4', payload)
     await processProtocolJob(job, log)
-    expect(infoSpy).toHaveBeenCalledOnce()
-    const [meta, msg] = infoSpy.mock.calls[0] as [Record<string, unknown>, string]
-    expect(meta.jobId).toBe('job-4')
-    expect(msg).toContain('protocolGenerationJob received')
+    expect(infoSpy).toHaveBeenCalled()
+    // First log.info call includes the jobId
+    const firstCall = infoSpy.mock.calls[0] as [Record<string, unknown>, string]
+    expect(firstCall[0]).toHaveProperty('jobId', 'job-4')
   })
 })
