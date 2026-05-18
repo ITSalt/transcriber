@@ -21,7 +21,18 @@ function renderWithProviders(ui: React.ReactNode) {
 
 describe("App", () => {
   it("renders CatalogPage without crashing", () => {
-    renderWithProviders(<CatalogPage />);
+    const client = new QueryClient({
+      defaultOptions: { queries: { retry: false } },
+    });
+    const router = createMemoryRouter(
+      [{ path: "/", element: <CatalogPage /> }, { path: "/upload", element: <div /> }],
+      { initialEntries: ["/"] },
+    );
+    render(
+      <QueryClientProvider client={client}>
+        <RouterProvider router={router} />
+      </QueryClientProvider>,
+    );
     expect(screen.getByTestId("catalog-page")).toBeInTheDocument();
   });
 

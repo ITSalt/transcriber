@@ -247,4 +247,56 @@ describe("CatalogPage", () => {
       expect(screen.getByTestId("meeting-detail")).toBeInTheDocument();
     });
   });
+
+  it("upload button is visible in catalog header", async () => {
+    mockFetch(MOCK_MEETINGS);
+    const client = new QueryClient({
+      defaultOptions: { queries: { retry: false } },
+    });
+    const router = createMemoryRouter(
+      [
+        { path: "/", element: <CatalogPage /> },
+        { path: "/meetings/:id", element: <div data-testid="meeting-detail" /> },
+        { path: "/upload", element: <div data-testid="upload-page" /> },
+      ],
+      { initialEntries: ["/"] },
+    );
+    render(
+      <QueryClientProvider client={client}>
+        <RouterProvider router={router} />
+      </QueryClientProvider>,
+    );
+    await waitFor(() => {
+      expect(screen.getByText("Weekly Sync")).toBeInTheDocument();
+    });
+    const link = screen.getByTestId("upload-button");
+    expect(link).toBeInTheDocument();
+    expect(link.closest("a")).toHaveAttribute("href", "/upload");
+  });
+
+  it("upload button is visible in empty state", async () => {
+    mockFetch({ items: [] });
+    const client = new QueryClient({
+      defaultOptions: { queries: { retry: false } },
+    });
+    const router = createMemoryRouter(
+      [
+        { path: "/", element: <CatalogPage /> },
+        { path: "/meetings/:id", element: <div data-testid="meeting-detail" /> },
+        { path: "/upload", element: <div data-testid="upload-page" /> },
+      ],
+      { initialEntries: ["/"] },
+    );
+    render(
+      <QueryClientProvider client={client}>
+        <RouterProvider router={router} />
+      </QueryClientProvider>,
+    );
+    await waitFor(() => {
+      expect(screen.getByTestId("catalog-empty")).toBeInTheDocument();
+    });
+    const link = screen.getByTestId("upload-button");
+    expect(link).toBeInTheDocument();
+    expect(link.closest("a")).toHaveAttribute("href", "/upload");
+  });
 });
