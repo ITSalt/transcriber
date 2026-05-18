@@ -12,6 +12,7 @@
     "test:watch": "vitest"
   },
   "dependencies": {
+    "@deepgram/sdk": "^5.2.0",
     "@transcrib/shared": "workspace:*",
     "bullmq": "^5.76.10",
     "dotenv": "^17.4.2",
