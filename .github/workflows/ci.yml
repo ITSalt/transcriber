@@ -69,6 +69,11 @@ jobs:
       - name: Generate Prisma client
         run: pnpm --filter @transcrib/api run db:generate
 
+      # Migrate the postgres service so prisma.smoke.test.ts (which only
+      # gates on DATABASE_URL presence) has the schema it expects.
+      - name: Apply Prisma migrations
+        run: pnpm --filter @transcrib/api run db:migrate:deploy
+
       # shared/ is referenced as a TS project by api/worker/web — its
       # .d.ts output must exist before downstream typecheck.
       - name: Build shared (TS project references)
