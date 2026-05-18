@@ -123,3 +123,23 @@ jobs:
 3. Settings → Environments → New environment:
    - Name: `production`.
    - (Optional) Required reviewers: yourself.
+
+## Operational note — secrets MUST be at environment level, not repo level
+
+Learn's pattern (and what we adopted): all `PRODUCTION_*` secrets live under the `production` **environment**, not under repo-level Actions secrets. The workflow's `deploy` job has `environment: production`, which exposes environment-scoped secrets to that job. Repo-level secrets ARE available too, but environment secrets give you the audit/approval guardrail (`Required reviewers`) and the ability to scope rotation per environment.
+
+## Lesson from first deploy attempt (rotation)
+
+The first deploy attempt failed with `Permission denied (publickey)` because the SSH key value pasted into `PRODUCTION_SSH_KEY` did not match any public key under `deploy@server`'s `~/.ssh/authorized_keys`. Recovery procedure used:
+
+1. Generate fresh ed25519 keypair on operator workstation:
+   ```bash
+   ssh-keygen -t ed25519 -C "github-actions-transcrib-deploy" -f /tmp/transcrib_deploy_key -N ""
+   ```
+2. Append the new public key to deploy's authorized_keys (via `sudo -u deploy tee -a`).
+3. Live-test: `ssh -i /tmp/transcrib_deploy_key deploy@server 'whoami'` returns `deploy`.
+4. Pipe the private key to `gh secret set ... < /tmp/transcrib_deploy_key` (the value never appears in the shell, chat, or any log).
+5. Delete the local keypair: `rm /tmp/transcrib_deploy_key*`.
+6. Re-run the failed workflow: `gh run rerun <id> --failed`.
+
+This is the canonical recovery sequence if `PRODUCTION_SSH_KEY` ever drifts or is rotated.
