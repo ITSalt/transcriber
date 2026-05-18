@@ -13,6 +13,7 @@ import { errorHandlerPlugin } from './plugins/errors.js'
 import { tusPlugin } from './plugins/tus.js'
 import { healthRoutes } from './routes/health.js'
 import { ssePlugin } from './plugins/sse.js'
+import { meetingListRoutes } from './routes/uc-001.js'
 
 export interface BuildAppOptions {
   logLevel?: string
@@ -40,6 +41,8 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<FastifyIn
 
   // Routes
   await app.register(healthRoutes)
+  // UC-001: meeting catalog
+  await app.register(meetingListRoutes)
 
   return app
 }
