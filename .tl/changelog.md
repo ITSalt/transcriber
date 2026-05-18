@@ -1,5 +1,18 @@
 # Changelog — .tl/
 
+## [2026-05-18] DELIVER — Production deployment LIVE on transcriber.itsalt.ru
+
+- **Status:** PROD live at `https://transcriber.itsalt.ru` (HTTPS, Let's Encrypt). `/api/health` → 200. SPA real (not placeholder). learn + Mattermost neighbours unaffected.
+- **Deploy SHA:** `27da444` (workflow hardening) on top of `aeeae53` (first green deploy).
+- **GitHub Actions:** push-to-main pipeline green (CI ~1 min + deploy ~3 min). Workflow `.github/workflows/deploy-production.yml` runs SSH-based deploy as `deploy@82.202.156.157`.
+- **pm2 apps:** `transcrib-api` (Fastify, 127.0.0.1:3010) + `transcrib-worker` (BullMQ consumer). Coexist with `learn-api`, `learn-worker`.
+- **TECH-016..023:** approved. **TECH-024:** approved for deploy infrastructure; UC golden-path upload smoke-test (Deepgram + kie.ai pipeline + PDF export) deferred to next session — see `.tl/tasks/TECH-024/result.md` recommendations.
+- **Lessons captured in TECH-024 result.md:**
+  1. SSH key rotation procedure (re-create keypair + scoped append to authorized_keys + gh secret set via stdin pipe).
+  2. Prisma client must be `db:generate`d explicitly in the deploy step (not auto-run by pnpm install).
+  3. ecosystem.config.cjs structural fields (script/cwd/interpreter) require `pm2 delete + start`, not `pm2 reload`.
+  4. .env on server uses `PORT` (not `API_PORT`) and `HOST=127.0.0.1` (Caddy reverse-proxy expects loopback).
+
 ## [2026-05-18] PLAN — Production deployment (TECH-016 .. TECH-024)
 - Added deployment plan for PROD on `82.202.156.157` / `transcriber.itsalt.ru`. Architecture document: `.tl/deploy-plan.md`.
 - **9 new TECH tasks** in waves 7–10 (additive to existing waves 0–5):
