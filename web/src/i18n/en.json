@@ -67,6 +67,15 @@
       "exportPdf": "Export PDF",
       "deleteConfirmTitle": "Delete meeting?",
       "deleteConfirmBody": "This action cannot be undone. The recording, transcript and protocol will be permanently deleted."
+    },
+    "delete": {
+      "confirmTitle": "Delete this meeting?",
+      "confirmBody": "This action cannot be undone. The recording, transcript and protocol will be permanently deleted.",
+      "inFlightWarning": "A job is currently in progress and will be marked as failed.",
+      "successTitle": "Meeting deleted",
+      "successBody": "The meeting and all its data have been removed.",
+      "errorTitle": "Delete failed",
+      "errorBody": "Could not delete the meeting. Please try again."
     }
   },
   "upload": {

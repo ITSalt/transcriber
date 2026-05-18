@@ -1,6 +1,8 @@
 import { QueryClientProvider } from "@tanstack/react-query";
 import { createBrowserRouter, RouterProvider } from "react-router";
 import { queryClient } from "@/lib/queryClient";
+import { ToastContextProvider } from "@/lib/use-toast";
+import { Toaster } from "@/components/ui/toaster";
 import CatalogPage from "@/routes/catalog";
 import MeetingDetailPage from "@/routes/meeting";
 import UploadPage from "@/routes/upload";
@@ -37,7 +39,10 @@ const router = createBrowserRouter([
 export default function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <RouterProvider router={router} />
+      <ToastContextProvider>
+        <RouterProvider router={router} />
+        <Toaster />
+      </ToastContextProvider>
     </QueryClientProvider>
   );
 }

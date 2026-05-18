@@ -69,7 +69,15 @@ export function apiPatch<T>(
   );
 }
 
-export function apiDelete(path: string): Promise<void> {
+export function apiDelete(path: string): Promise<void>;
+export function apiDelete<T>(path: string, schema: ZodLike<T>): Promise<T>;
+export function apiDelete<T>(
+  path: string,
+  schema?: ZodLike<T>,
+): Promise<T | void> {
+  if (schema) {
+    return request(path, { method: "DELETE" }, schema);
+  }
   return fetch(path, { method: "DELETE" }).then((res) => {
     if (!res.ok) throw new ApiError(res.status, res.statusText);
   });

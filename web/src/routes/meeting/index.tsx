@@ -1,12 +1,13 @@
 import { useEffect } from "react";
-import { useParams, useNavigate } from "react-router";
+import { useParams } from "react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
-import { apiGet, apiDelete } from "@/lib/api";
+import { apiGet } from "@/lib/api";
 import { MeetingDetailResponse } from "@transcrib/shared";
 import { MetadataCard } from "./components/MetadataCard";
 import { StatusSection } from "./components/StatusSection";
 import { JobErrorBanner } from "./components/JobErrorBanner";
+import { useDeleteMeeting } from "./hooks/useDeleteMeeting";
 
 function useMeetingDetail(id: string) {
   return useQuery({
@@ -19,11 +20,11 @@ function useMeetingDetail(id: string) {
 export default function MeetingDetailPage() {
   const { id } = useParams<{ id: string }>();
   const { t } = useTranslation();
-  const navigate = useNavigate();
   const queryClient = useQueryClient();
 
   const meetingId = id ?? "";
   const { data, isLoading, isError, refetch } = useMeetingDetail(meetingId);
+  const deleteMutation = useDeleteMeeting(meetingId);
 
   // RQ-002 — SSE subscribe for real-time status updates
   useEffect(() => {
@@ -42,15 +43,10 @@ export default function MeetingDetailPage() {
     };
   }, [meetingId, queryClient]);
 
-  async function handleDelete() {
-    try {
-      await apiDelete(`/api/meetings/${meetingId}`);
-      void queryClient.invalidateQueries({ queryKey: ["meetings"] });
-      void navigate("/");
-    } catch {
-      // ignore — user can retry
-    }
-  }
+  // Determine if any job is in progress (RQ-007)
+  const jobInProgress =
+    data?.latest_transcription_job?.status === "PROCESSING" ||
+    data?.latest_protocol_job?.status === "PROCESSING";
 
   return (
     <div data-testid="meeting-detail-page" className="container mx-auto py-8 px-4 max-w-3xl">
@@ -85,7 +81,10 @@ export default function MeetingDetailPage() {
             status={data.meeting.status}
             transcriptExists={data.transcript_exists}
             protocolExists={data.protocol_exists}
-            onDelete={() => void handleDelete()}
+            meetingTitle={data.meeting.title ?? undefined}
+            jobInProgress={jobInProgress}
+            isDeleting={deleteMutation.isPending}
+            onDelete={() => deleteMutation.mutate()}
           />
         </div>
       )}

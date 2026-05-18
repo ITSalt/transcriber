@@ -16,6 +16,9 @@ interface StatusSectionProps {
   status: MeetingStatus;
   transcriptExists: boolean;
   protocolExists: boolean;
+  meetingTitle?: string;
+  jobInProgress?: boolean;
+  isDeleting?: boolean;
   onDelete: () => void;
 }
 
@@ -40,6 +43,9 @@ export function StatusSection({
   status,
   transcriptExists,
   protocolExists,
+  meetingTitle,
+  jobInProgress = false,
+  isDeleting = false,
   onDelete,
 }: StatusSectionProps) {
   const { t } = useTranslation();
@@ -51,6 +57,11 @@ export function StatusSection({
   const canViewProtocol =
     protocolExists && PROTOCOL_STATUSES.includes(status);
   const canExportPdf = PROTOCOL_STATUSES.includes(status);
+
+  function handleConfirmDelete() {
+    setShowDeleteDialog(false);
+    onDelete();
+  }
 
   return (
     <div className="flex flex-wrap gap-3">
@@ -87,6 +98,7 @@ export function StatusSection({
       <Button
         variant="destructive"
         data-testid="btn-delete"
+        disabled={isDeleting}
         onClick={() => setShowDeleteDialog(true)}
       >
         {t("common.delete")}
@@ -95,9 +107,27 @@ export function StatusSection({
       <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
         <DialogContent data-testid="delete-confirm-dialog">
           <DialogHeader>
-            <DialogTitle>{t("meeting.detail.deleteConfirmTitle")}</DialogTitle>
+            <DialogTitle>{t("meeting.delete.confirmTitle")}</DialogTitle>
           </DialogHeader>
-          <p>{t("meeting.detail.deleteConfirmBody")}</p>
+          {meetingTitle && (
+            <p
+              className="font-medium text-sm"
+              data-testid="delete-dialog-meeting-title"
+            >
+              {meetingTitle}
+            </p>
+          )}
+          <p className="text-sm text-muted-foreground">
+            {t("meeting.delete.confirmBody")}
+          </p>
+          {jobInProgress && (
+            <p
+              className="text-sm text-amber-600"
+              data-testid="delete-dialog-inflight-warning"
+            >
+              {t("meeting.delete.inFlightWarning")}
+            </p>
+          )}
           <DialogFooter>
             <Button
               variant="outline"
@@ -108,10 +138,7 @@ export function StatusSection({
             </Button>
             <Button
               variant="destructive"
-              onClick={() => {
-                setShowDeleteDialog(false);
-                onDelete();
-              }}
+              onClick={handleConfirmDelete}
               data-testid="btn-delete-confirm"
             >
               {t("common.delete")}

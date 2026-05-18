@@ -4,6 +4,7 @@ import userEvent from "@testing-library/user-event";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { createMemoryRouter, RouterProvider } from "react-router";
 import i18n from "@/i18n/config";
+import { ToastContextProvider } from "@/lib/use-toast";
 import MeetingDetailPage from "./index";
 
 // i18n must be initialised before rendering; lock to English for predictable assertions
@@ -38,6 +39,7 @@ function renderMeetingDetail(id = MEETING_ID) {
     [
       { path: "/meetings/:id", element: <MeetingDetailPage /> },
       { path: "/", element: <div data-testid="catalog-page" /> },
+      { path: "/catalog", element: <div data-testid="catalog-page" /> },
       {
         path: "/meetings/:id/transcript",
         element: <div data-testid="transcript-page" />,
@@ -51,7 +53,9 @@ function renderMeetingDetail(id = MEETING_ID) {
   );
   return render(
     <QueryClientProvider client={client}>
-      <RouterProvider router={router} />
+      <ToastContextProvider>
+        <RouterProvider router={router} />
+      </ToastContextProvider>
     </QueryClientProvider>,
   );
 }
@@ -412,5 +416,113 @@ describe("MeetingDetailPage", () => {
     await act(async () => {
       await i18n.changeLanguage("en");
     });
+  });
+
+  // UC-003-FE: Delete mutation tests
+
+  // CT01 — meeting title shown in delete dialog
+  it("UC-003 CT01: shows meeting title in delete dialog", async () => {
+    mockFetch(MOCK_DETAIL_BASE);
+    renderMeetingDetail();
+    await waitFor(() =>
+      expect(screen.getByTestId("btn-delete")).toBeInTheDocument(),
+    );
+    await userEvent.click(screen.getByTestId("btn-delete"));
+    await waitFor(() => {
+      expect(
+        screen.getByTestId("delete-dialog-meeting-title"),
+      ).toBeInTheDocument();
+      expect(
+        screen.getByTestId("delete-dialog-meeting-title").textContent,
+      ).toBe("Weekly Sync");
+    });
+  });
+
+  // In-flight warning when a job is PROCESSING
+  it("UC-003: shows in-flight warning when job is PROCESSING", async () => {
+    const processingDetail = {
+      ...MOCK_DETAIL_BASE,
+      meeting: { ...MOCK_DETAIL_BASE.meeting, status: "TRANSCRIBING" as const },
+      latest_transcription_job: {
+        status: "PROCESSING" as const,
+        started_at: "2026-05-18T10:01:00.000Z",
+        completed_at: null,
+        error_reason: null,
+      },
+    };
+    mockFetch(processingDetail);
+    renderMeetingDetail();
+    await waitFor(() =>
+      expect(screen.getByTestId("btn-delete")).toBeInTheDocument(),
+    );
+    await userEvent.click(screen.getByTestId("btn-delete"));
+    await waitFor(() => {
+      expect(
+        screen.getByTestId("delete-dialog-inflight-warning"),
+      ).toBeInTheDocument();
+    });
+  });
+
+  // No in-flight warning when no job is running
+  it("UC-003: no in-flight warning when jobs are DONE", async () => {
+    mockFetch(MOCK_DETAIL_BASE);
+    renderMeetingDetail();
+    await waitFor(() =>
+      expect(screen.getByTestId("btn-delete")).toBeInTheDocument(),
+    );
+    await userEvent.click(screen.getByTestId("btn-delete"));
+    await waitFor(() =>
+      expect(screen.getByTestId("delete-confirm-dialog")).toBeInTheDocument(),
+    );
+    expect(
+      screen.queryByTestId("delete-dialog-inflight-warning"),
+    ).not.toBeInTheDocument();
+  });
+
+  // Successful delete navigates to /catalog
+  it("UC-003: navigates to /catalog after successful delete", async () => {
+    vi.spyOn(globalThis, "fetch").mockImplementation((input, init) => {
+      const method = (init?.method ?? "GET").toUpperCase();
+      if (method === "DELETE") {
+        return Promise.resolve(
+          makeJsonResponse({ deleted: true, in_flight_failed: false }),
+        );
+      }
+      return Promise.resolve(makeJsonResponse(MOCK_DETAIL_BASE));
+    });
+
+    renderMeetingDetail();
+    await waitFor(() =>
+      expect(screen.getByTestId("btn-delete")).toBeInTheDocument(),
+    );
+    await userEvent.click(screen.getByTestId("btn-delete"));
+    await waitFor(() =>
+      expect(screen.getByTestId("delete-confirm-dialog")).toBeInTheDocument(),
+    );
+    await userEvent.click(screen.getByTestId("btn-delete-confirm"));
+    await waitFor(() => {
+      expect(screen.getByTestId("catalog-page")).toBeInTheDocument();
+    });
+  });
+
+  // Cancel delete closes dialog without navigating
+  it("UC-003: cancel delete closes dialog without navigating", async () => {
+    mockFetch(MOCK_DETAIL_BASE);
+    renderMeetingDetail();
+    await waitFor(() =>
+      expect(screen.getByTestId("btn-delete")).toBeInTheDocument(),
+    );
+    await userEvent.click(screen.getByTestId("btn-delete"));
+    await waitFor(() =>
+      expect(screen.getByTestId("delete-confirm-dialog")).toBeInTheDocument(),
+    );
+    await userEvent.click(screen.getByTestId("btn-delete-cancel"));
+    await waitFor(() => {
+      expect(
+        screen.queryByTestId("delete-confirm-dialog"),
+      ).not.toBeInTheDocument();
+    });
+    // Still on the detail page
+    expect(screen.getByTestId("meeting-detail-page")).toBeInTheDocument();
   });
 });
