@@ -10,15 +10,6 @@ beforeAll(async () => {
   await import("./i18n/config");
 });
 
-function renderWithProviders(ui: React.ReactNode) {
-  const client = new QueryClient({
-    defaultOptions: { queries: { retry: false } },
-  });
-  return render(
-    <QueryClientProvider client={client}>{ui}</QueryClientProvider>,
-  );
-}
-
 describe("App", () => {
   it("renders CatalogPage without crashing", () => {
     const client = new QueryClient({
