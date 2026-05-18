@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{{TITLE}}</title>
+  <style>
+    /* ── Base ── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Segoe UI', Arial, sans-serif;
+      font-size: 11pt;
+      line-height: 1.6;
+      color: #1a1a1a;
+      background: #fff;
+      padding: 32px 40px;
+    }
+
+    /* ── Header ── */
+    .pdf-header {
+      border-bottom: 2px solid #2563eb;
+      padding-bottom: 12px;
+      margin-bottom: 28px;
+    }
+
+    .pdf-header h1 {
+      font-size: 20pt;
+      font-weight: 700;
+      color: #1e3a8a;
+    }
+
+    .pdf-header .meta {
+      font-size: 9pt;
+      color: #64748b;
+      margin-top: 4px;
+    }
+
+    /* ── Section headers ── */
+    h2 {
+      font-size: 14pt;
+      font-weight: 700;
+      color: #1e40af;
+      border-left: 4px solid #2563eb;
+      padding-left: 10px;
+      margin-top: 24px;
+      margin-bottom: 10px;
+    }
+
+    h3 {
+      font-size: 11pt;
+      font-weight: 600;
+      color: #374151;
+      margin-top: 16px;
+      margin-bottom: 6px;
+    }
+
+    /* ── Section containers (BRQ-011) ── */
+    .section-participants,
+    .section-discussion,
+    .section-decisions,
+    .section-action-items {
+      margin-bottom: 24px;
+      padding: 14px 18px;
+      border-radius: 6px;
+      border: 1px solid #e2e8f0;
+    }
+
+    .section-participants  { background: #f0f9ff; }
+    .section-discussion    { background: #fafafa; }
+    .section-decisions     { background: #f0fdf4; }
+    .section-action-items  { background: #fff7ed; }
+
+    /* ── Lists ── */
+    ul, ol {
+      padding-left: 20px;
+      margin: 6px 0;
+    }
+
+    li { margin: 4px 0; }
+
+    /* ── Paragraphs ── */
+    p { margin: 6px 0; }
+
+    /* ── Inline code ── */
+    code {
+      font-family: 'Courier New', monospace;
+      font-size: 9pt;
+      background: #f1f5f9;
+      padding: 1px 4px;
+      border-radius: 3px;
+    }
+
+    /* ── Footer ── */
+    .pdf-footer {
+      border-top: 1px solid #e2e8f0;
+      margin-top: 32px;
+      padding-top: 8px;
+      font-size: 8pt;
+      color: #94a3b8;
+      text-align: right;
+    }
+  </style>
+</head>
+<body>
+  <header class="pdf-header">
+    <h1>{{TITLE}}</h1>
+    <div class="meta">Version {{VERSION}} &nbsp;|&nbsp; Generated {{DATE}}</div>
+  </header>
+
+  <main>
+    {{BODY}}
+  </main>
+
+  <footer class="pdf-footer">
+    Transcrib &mdash; Meeting Protocol
+  </footer>
+</body>
+</html>
