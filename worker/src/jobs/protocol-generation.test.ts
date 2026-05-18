@@ -429,7 +429,7 @@ describe('T03 (RQ-023) — Protocol must contain four required sections', () => 
 // ─── T05 (RQ-025) — Initial Protocol version=1, Meeting → PROTOCOL_READY ─────
 
 describe('T05 (RQ-025) — Protocol version=1 and Meeting.status PROTOCOL_READY on success', () => {
-  it('creates Protocol with version=1 and contentMd from LLM', async () => {
+  it('creates Protocol with version=1 and markdownContent from LLM', async () => {
     mockPrisma.protocolGenerationJob.findUnique.mockResolvedValue(BASE_PG_JOB as any)
     mockPrisma.protocolGenerationJob.updateMany.mockResolvedValue({ count: 1 })
 
@@ -460,7 +460,7 @@ describe('T05 (RQ-025) — Protocol version=1 and Meeting.status PROTOCOL_READY 
 
     expect(capturedProtocolData).toBeDefined()
     expect(capturedProtocolData?.version).toBe(1)
-    expect(capturedProtocolData?.contentMd).toBe(VALID_EN_MARKDOWN)
+    expect(capturedProtocolData?.markdownContent).toBe(VALID_EN_MARKDOWN)
     expect(capturedProtocolData?.meetingId).toBe(MEETING_ID)
   })
 
@@ -668,7 +668,7 @@ describe('T09 (NFR-004) — RU + EN language support', () => {
 // ─── T10 (NFR-006) — Markdown stored; PDF transient ─────────────────────────
 
 describe('T10 (NFR-006) — Markdown canonical', () => {
-  it('stores raw markdown string in Protocol.contentMd', async () => {
+  it('stores raw markdown string in Protocol.markdownContent', async () => {
     mockPrisma.protocolGenerationJob.findUnique.mockResolvedValue(BASE_PG_JOB as any)
     mockPrisma.protocolGenerationJob.updateMany.mockResolvedValue({ count: 1 })
 
@@ -679,7 +679,7 @@ describe('T10 (NFR-006) — Markdown canonical', () => {
       const txMock = {
         protocol: {
           create: vi.fn().mockImplementation((args: any) => {
-            storedMd = args.data.contentMd
+            storedMd = args.data.markdownContent
             return { id: PROTOCOL_ID }
           }),
         },

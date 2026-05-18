@@ -167,7 +167,7 @@ export async function processProtocolGenerationJob(
       await tx.protocol.create({
         data: {
           meetingId: meeting.id,
-          contentMd: llmResult.text,
+          markdownContent: llmResult.text,
           version: 1,
         },
       })
