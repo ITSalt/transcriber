@@ -1,11 +1,16 @@
 /**
  * TECH-006 — Worker process entry point
  * Loads config, creates logger, starts BullMQ workers for all queues.
+ *
+ * TECH-022 — Graceful SIGTERM / SIGINT shutdown:
+ *   Closes BullMQ workers, terminates in-flight ffmpeg processes,
+ *   disconnects Prisma, exits 0 within 25s.
  */
 import { config } from './config.js'
 import { buildLogger } from './logger.js'
 import { parseRedisUrl } from './queues.js'
 import { createWorkers } from './job-processor.js'
+import { createShutdownHandler } from './shutdown.js'
 
 const log = buildLogger(config.LOG_LEVEL, config.NODE_ENV === 'development')
 
@@ -16,13 +21,7 @@ const workers = createWorkers(connection, log)
 
 log.info({ workerCount: workers.length }, 'Workers started')
 
-// Graceful shutdown
-async function shutdown(signal: string): Promise<void> {
-  log.info({ signal }, 'Shutdown signal received — closing workers')
-  await Promise.all(workers.map((w) => w.close()))
-  log.info('Workers closed — exiting')
-  process.exit(0)
-}
+const shutdown = createShutdownHandler(workers, log)
 
 process.on('SIGTERM', () => void shutdown('SIGTERM'))
 process.on('SIGINT', () => void shutdown('SIGINT'))

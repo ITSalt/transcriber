@@ -12,6 +12,13 @@ import { buildLoggerOptions } from './plugins/logger.js'
 import { errorHandlerPlugin } from './plugins/errors.js'
 import { tusPlugin } from './plugins/tus.js'
 import { healthRoutes } from './routes/health.js'
+
+// Extend FastifyInstance with the shuttingDown flag (TECH-022)
+declare module 'fastify' {
+  interface FastifyInstance {
+    shuttingDown: boolean
+  }
+}
 import { ssePlugin } from './plugins/sse.js'
 import { meetingListRoutes } from './routes/uc-001.js'
 import { meetingDetailRoutes } from './routes/uc-002.js'
@@ -35,6 +42,9 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<FastifyIn
     requestIdHeader: 'x-request-id',
     requestIdLogLabel: 'reqId',
   })
+
+  // TECH-022: shuttingDown flag — set by SIGTERM handler; health route reads it
+  app.decorate('shuttingDown', false)
 
   // Zod type provider — validates request bodies/params/query against Zod schemas
   app.setValidatorCompiler(validatorCompiler)
