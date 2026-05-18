@@ -1,5 +1,17 @@
 # Changelog — .tl/
 
+## [2026-05-18] Post-intake cleanup — DELIVERED (Phase 6)
+- **Final state:** all 30 plan tasks at terminal status. 28 `done`, 2 `verified-pending` (UC-200-BE / UC-300-BE — provider E2E gated on API keys).
+- **Remote:** `git@github.com:ITSalt/transcriber.git`; default branch `main` at `5258a11`.
+- **CI green:** [run 26045597888](https://github.com/ITSalt/transcriber/actions/runs/26045597888) — Lint + Typecheck + Test PASS (after 3 CI workflow fix iterations).
+- **TECH-015:** `verified-pending` → `done`.
+- **Phase 6 deliver:** no separate staging deployment for this MVP (single-VM per CLAUDE.md); push-to-main + CI-green is the delivery gate.
+
+## [2026-05-18] Post-intake cleanup — Phase 4/5 outcomes
+- **Phase 4 (TECH-015):** git remote `git@github.com:ITSalt/transcriber.git` added; 3 logical commits pushed (a11y+RQ-031, .tl state+UC-001 docs sync+retroactive artifacts, prior-session housekeeping). Default branch flipped to `main` and `feature/intake-2026-05-18` HEAD pushed to remote `main` to fire CI.
+  - First CI run (26045113249) failed all 9 jobs at `setup-node cache: pnpm` step — `pnpm-lock.yaml` was gitignored. Fixed by removing the gitignore entry, committing the lockfile, and switching workflow to `pnpm install --frozen-lockfile`. Re-pushed (461dc2a).
+- **Phase 5 (UC-200/UC-300 pipeline E2E):** SKIPPED by user direction. Worker code is reviewed + unit-tested; provider E2E (Deepgram, kie.ai) deferred until `DEEPGRAM_API_KEY` / `KIE_API_KEY` are supplied. Graph state: UC-200-BE and UC-300-BE remain `verified-pending` with `phase_qa = skip`; new flags `phase_5_outcome=SKIP`, `phase_5_reason` set.
+
 ## [2026-05-18] DOCS-SYNC UC-001 (Phase 1.5)
 - F3: result-fe.md MeetingCard.tsx → MeetingRow.tsx (path corrected to components/MeetingRow.tsx); narrative "cards" → "rows"
 - M1: result-be.md sort field corrected createdAt → updatedAt to match RQ-001; Prisma schema createdAt/updatedAt field names already correct in task-be.md domain table (snake_case is domain attribute convention, not drift)
