@@ -15,7 +15,9 @@ import { healthRoutes } from './routes/health.js'
 import { ssePlugin } from './plugins/sse.js'
 import { meetingListRoutes } from './routes/uc-001.js'
 import { meetingDetailRoutes } from './routes/uc-002.js'
+import { meetingDeleteRoutes } from './routes/uc-003.js'
 import { uploadFinalizeRoutes } from './routes/uc-100.js'
+import { transcriptRoutes } from './routes/uc-201.js'
 
 export interface BuildAppOptions {
   logLevel?: string
@@ -49,6 +51,10 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<FastifyIn
   await app.register(meetingListRoutes)
   // UC-002: meeting detail
   await app.register(meetingDetailRoutes)
+  // UC-003: delete meeting
+  await app.register(meetingDeleteRoutes)
+  // UC-201: view and download transcript
+  await app.register(transcriptRoutes)
 
   // TUS plugin: mounts /api/uploads and /api/uploads/* catch-all last
   await app.register(tusPlugin)

@@ -18,9 +18,18 @@ export const PingEvent = z.object({
 });
 export type PingEvent = z.infer<typeof PingEvent>;
 
+// ─── meeting.deleted ──────────────────────────────────────────────────────────
+
+/** Emitted when a meeting is deleted (UC-003); open detail views should close. */
+export const MeetingDeletedEvent = z.object({
+  type: z.literal('meeting.deleted'),
+  meeting_id: z.string().uuid(),
+});
+export type MeetingDeletedEvent = z.infer<typeof MeetingDeletedEvent>;
+
 // ─── Union ────────────────────────────────────────────────────────────────────
 
-export const SseEvent = z.discriminatedUnion('type', [MeetingStatusEvent, PingEvent]);
+export const SseEvent = z.discriminatedUnion('type', [MeetingStatusEvent, PingEvent, MeetingDeletedEvent]);
 export type SseEvent = z.infer<typeof SseEvent>;
 
 // ─── Redis channel helper ─────────────────────────────────────────────────────
