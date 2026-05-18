@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeAll, afterEach } from "vitest";
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor, act } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { createMemoryRouter, RouterProvider } from "react-router";
@@ -16,13 +16,17 @@ afterEach(() => {
 });
 
 // Mock ProtocolEditor (Milkdown requires real DOM — not available in jsdom)
+// The mock exposes a data-testid="protocol-editor-trigger-change" button to
+// simulate an onChange event fired by Milkdown (RQ-031 testing).
 vi.mock("./components/ProtocolEditor", () => ({
   ProtocolEditor: ({
     initialValue,
     editorHandleRef,
+    onChange,
   }: {
     initialValue: string;
     editorHandleRef: React.MutableRefObject<{ getMarkdown: () => string } | null>;
+    onChange?: () => void;
   }) => {
     // Immediately register a handle that returns the initial value (simulates the editor)
     if (editorHandleRef) {
@@ -34,6 +38,14 @@ vi.mock("./components/ProtocolEditor", () => ({
           data-testid="protocol-editor-textarea"
           defaultValue={initialValue}
         />
+        {/* Button that lets tests simulate a Milkdown onChange event */}
+        <button
+          type="button"
+          data-testid="protocol-editor-trigger-change"
+          onClick={() => onChange?.()}
+        >
+          Trigger change
+        </button>
       </div>
     );
   },
@@ -388,5 +400,173 @@ describe("ProtocolPage", () => {
       expect(screen.getByTestId("protocol-last_edited_at")).toBeInTheDocument();
       expect(screen.getByTestId("protocol-generated_at")).toBeInTheDocument();
     });
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// RQ-031: Unsaved-changes guard
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Renders the protocol page inside a memory router that also has a destination
+ * route so we can test navigation attempts.
+ */
+function renderProtocolPageWithNav(id = MEETING_ID) {
+  const client = new QueryClient({
+    defaultOptions: { queries: { retry: false } },
+  });
+  const router = createMemoryRouter(
+    [
+      {
+        path: "/meetings/:id/protocol",
+        element: <ProtocolPage />,
+      },
+      {
+        path: "/meetings/:id",
+        element: <div data-testid="meeting-detail-page" />,
+      },
+    ],
+    { initialEntries: [`/meetings/${id}/protocol`] },
+  );
+  return { router, ...render(
+    <QueryClientProvider client={client}>
+      <RouterProvider router={router} />
+    </QueryClientProvider>,
+  )};
+}
+
+describe("RQ-031: unsaved-changes guard", () => {
+  it("isDirty is false on initial render — no confirmation dialog shown", async () => {
+    mockFetch(MOCK_PROTOCOL);
+    renderProtocolPageWithNav();
+    await waitFor(() => {
+      expect(screen.getByTestId("protocol-page")).toBeInTheDocument();
+    });
+    expect(screen.queryByTestId("unsaved-changes-dialog")).not.toBeInTheDocument();
+  });
+
+  it("isDirty becomes true when Milkdown onChange fires", async () => {
+    mockFetch(MOCK_PROTOCOL);
+    renderProtocolPageWithNav();
+
+    // Enter edit mode
+    await waitFor(() => screen.getByTestId("btn-edit"));
+    await userEvent.click(screen.getByTestId("btn-edit"));
+    await waitFor(() => screen.getByTestId("protocol-editor-trigger-change"));
+
+    // Trigger the change event
+    await userEvent.click(screen.getByTestId("protocol-editor-trigger-change"));
+
+    // No modal yet (navigation has not been attempted) but isDirty=true is tracked
+    // The beforeunload listener is registered — verified by the fact that clicking
+    // navigate will now trigger the blocker (tested below).
+    // Here we just verify the editor is still visible (user has not been booted).
+    expect(screen.getByTestId("protocol-editor")).toBeInTheDocument();
+  });
+
+  it("shows confirmation dialog when in-app navigation is attempted with unsaved changes", async () => {
+    mockFetch(MOCK_PROTOCOL);
+    const { router } = renderProtocolPageWithNav();
+
+    // Enter edit mode and mark dirty
+    await waitFor(() => screen.getByTestId("btn-edit"));
+    await userEvent.click(screen.getByTestId("btn-edit"));
+    await waitFor(() => screen.getByTestId("protocol-editor-trigger-change"));
+    await userEvent.click(screen.getByTestId("protocol-editor-trigger-change"));
+
+    // Attempt in-app navigation
+    await act(async () => {
+      await router.navigate(`/meetings/${MEETING_ID}`);
+    });
+
+    // Confirmation dialog must appear
+    await waitFor(() => {
+      expect(screen.getByTestId("unsaved-changes-dialog")).toBeInTheDocument();
+      expect(screen.getByTestId("unsaved-changes-title")).toBeInTheDocument();
+      expect(screen.getByTestId("unsaved-changes-body")).toBeInTheDocument();
+    });
+  });
+
+  it("clicking Confirm in dialog proceeds with navigation (blocker.proceed)", async () => {
+    mockFetch(MOCK_PROTOCOL);
+    const { router } = renderProtocolPageWithNav();
+
+    // Enter edit mode and mark dirty
+    await waitFor(() => screen.getByTestId("btn-edit"));
+    await userEvent.click(screen.getByTestId("btn-edit"));
+    await waitFor(() => screen.getByTestId("protocol-editor-trigger-change"));
+    await userEvent.click(screen.getByTestId("protocol-editor-trigger-change"));
+
+    // Attempt navigation
+    await act(async () => {
+      await router.navigate(`/meetings/${MEETING_ID}`);
+    });
+
+    // Wait for dialog
+    await waitFor(() => screen.getByTestId("unsaved-changes-confirm"));
+
+    // Click Confirm
+    await userEvent.click(screen.getByTestId("unsaved-changes-confirm"));
+
+    // Navigation should have proceeded
+    await waitFor(() => {
+      expect(screen.getByTestId("meeting-detail-page")).toBeInTheDocument();
+    });
+  });
+
+  it("clicking Cancel in dialog keeps user on the protocol page (blocker.reset)", async () => {
+    mockFetch(MOCK_PROTOCOL);
+    const { router } = renderProtocolPageWithNav();
+
+    // Enter edit mode and mark dirty
+    await waitFor(() => screen.getByTestId("btn-edit"));
+    await userEvent.click(screen.getByTestId("btn-edit"));
+    await waitFor(() => screen.getByTestId("protocol-editor-trigger-change"));
+    await userEvent.click(screen.getByTestId("protocol-editor-trigger-change"));
+
+    // Attempt navigation
+    await act(async () => {
+      await router.navigate(`/meetings/${MEETING_ID}`);
+    });
+
+    // Wait for dialog
+    await waitFor(() => screen.getByTestId("unsaved-changes-cancel"));
+
+    // Click Cancel
+    await userEvent.click(screen.getByTestId("unsaved-changes-cancel"));
+
+    // Protocol page must still be shown
+    await waitFor(() => {
+      expect(screen.getByTestId("protocol-page")).toBeInTheDocument();
+    });
+    expect(screen.queryByTestId("meeting-detail-page")).not.toBeInTheDocument();
+  });
+
+  it("after a successful save isDirty is false — navigation proceeds without confirmation", async () => {
+    mockFetchSequence([
+      { body: MOCK_PROTOCOL },
+      { body: MOCK_SAVE_RESPONSE },
+    ]);
+    const { router } = renderProtocolPageWithNav();
+
+    // Enter edit mode and mark dirty
+    await waitFor(() => screen.getByTestId("btn-edit"));
+    await userEvent.click(screen.getByTestId("btn-edit"));
+    await waitFor(() => screen.getByTestId("protocol-editor-trigger-change"));
+    await userEvent.click(screen.getByTestId("protocol-editor-trigger-change"));
+
+    // Save
+    await userEvent.click(screen.getByTestId("btn-save"));
+    await waitFor(() => screen.getByTestId("protocol-save-success"));
+
+    // Navigate — should NOT trigger blocker
+    await act(async () => {
+      await router.navigate(`/meetings/${MEETING_ID}`);
+    });
+
+    await waitFor(() => {
+      expect(screen.getByTestId("meeting-detail-page")).toBeInTheDocument();
+    });
+    expect(screen.queryByTestId("unsaved-changes-dialog")).not.toBeInTheDocument();
   });
 });

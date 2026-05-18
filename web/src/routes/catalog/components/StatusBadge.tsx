@@ -27,12 +27,14 @@ export function StatusBadge({ status }: StatusBadgeProps) {
   const isTransient = TRANSIENT_STATUSES.includes(status);
 
   return (
-    <Badge
-      variant={getVariant(status)}
-      className={isTransient ? "animate-pulse" : undefined}
-      data-testid={`status-badge-${status}`}
-    >
-      {label}
-    </Badge>
+    <span aria-live="polite">
+      <Badge
+        variant={getVariant(status)}
+        className={isTransient ? "animate-pulse" : undefined}
+        data-testid={`status-badge-${status}`}
+      >
+        {label}
+      </Badge>
+    </span>
   );
 }

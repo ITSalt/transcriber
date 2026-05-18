@@ -209,6 +209,25 @@ describe("CatalogPage", () => {
     });
   });
 
+  it("a11y — table has aria-label 'Meeting catalog'", async () => {
+    mockFetch(MOCK_MEETINGS);
+    renderCatalog();
+    await waitFor(() => {
+      expect(
+        screen.getByRole("table", { name: /meeting catalog/i }),
+      ).toBeInTheDocument();
+    });
+  });
+
+  it("a11y — status badge container has aria-live='polite'", async () => {
+    mockFetch(MOCK_MEETINGS);
+    renderCatalog();
+    await waitFor(() => {
+      const liveRegions = document.querySelectorAll("[aria-live='polite']");
+      expect(liveRegions.length).toBeGreaterThanOrEqual(1);
+    });
+  });
+
   it("navigates to /meetings/:id when Open is clicked", async () => {
     mockFetch(MOCK_MEETINGS);
     renderCatalog();

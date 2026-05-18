@@ -2,6 +2,14 @@
 .tl/reports/
 .tl/qa-screenshots/
 
+# E2E artifacts (transient — do not commit)
+test-results/
+qa-*.png
+rq031-*.png
+
+# Local docker overrides (per-developer ports etc.)
+docker-compose.override.yml
+
 # Environment files
 .env
 .env.local

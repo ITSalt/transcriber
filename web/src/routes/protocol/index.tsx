@@ -1,13 +1,10 @@
 import { useRef, useState, useEffect, useCallback } from "react";
-import { useParams, useNavigate } from "react-router";
+import { useParams, useNavigate, useBlocker } from "react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { apiGet, apiPut } from "@/lib/api";
-import {
-  ProtocolResponse,
-  ProtocolSaveRequest,
-  ProtocolSaveResponse,
-} from "@transcrib/shared";
+import { ProtocolResponse, ProtocolSaveResponse } from "@transcrib/shared";
+import type { ProtocolSaveRequest } from "@transcrib/shared";
 import {
   Card,
   CardHeader,
@@ -15,6 +12,14 @@ import {
   CardContent,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import { ProtocolViewer } from "./components/ProtocolViewer";
 import { ProtocolEditor, type ProtocolEditorHandle } from "./components/ProtocolEditor";
 
@@ -53,7 +58,7 @@ export default function ProtocolPage() {
     setSaveSuccess(false);
   };
 
-  // Warn before navigating away with unsaved changes (RQ-031)
+  // Warn before tab close / page reload with unsaved changes (RQ-031)
   useEffect(() => {
     const handleBeforeUnload = (e: BeforeUnloadEvent) => {
       if (isDirty) {
@@ -64,6 +69,9 @@ export default function ProtocolPage() {
     window.addEventListener("beforeunload", handleBeforeUnload);
     return () => window.removeEventListener("beforeunload", handleBeforeUnload);
   }, [isDirty]);
+
+  // React Router in-app navigation guard (RQ-031)
+  const blocker = useBlocker(isDirty);
 
   const saveMutation = useMutation({
     mutationFn: (body: ProtocolSaveRequest) =>
@@ -109,10 +117,14 @@ export default function ProtocolPage() {
   };
 
   const handleBack = () => {
-    if (isDirty) {
-      if (!window.confirm(t("protocol.unsavedChangesWarning"))) return;
+    if (!isDirty) {
+      void navigate(`/meetings/${meetingId}`);
     }
-    void navigate(`/meetings/${meetingId}`);
+    // When isDirty, the useBlocker will intercept the navigation attempt.
+    // For explicit back button with dirty state, trigger navigate and let blocker catch it.
+    else {
+      void navigate(`/meetings/${meetingId}`);
+    }
   };
 
   return (
@@ -120,6 +132,43 @@ export default function ProtocolPage() {
       data-testid="protocol-page"
       className="container mx-auto py-8 px-4 max-w-5xl"
     >
+      {/* Unsaved changes confirmation dialog (RQ-031) */}
+      <Dialog
+        open={blocker.state === "blocked"}
+        onOpenChange={(open) => {
+          if (!open && blocker.state === "blocked") {
+            blocker.reset?.();
+          }
+        }}
+      >
+        <DialogContent data-testid="unsaved-changes-dialog">
+          <DialogHeader>
+            <DialogTitle data-testid="unsaved-changes-title">
+              {t("protocol.unsavedChanges.title")}
+            </DialogTitle>
+            <DialogDescription data-testid="unsaved-changes-body">
+              {t("protocol.unsavedChanges.body")}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              data-testid="unsaved-changes-cancel"
+              onClick={() => blocker.reset?.()}
+            >
+              {t("protocol.unsavedChanges.cancel")}
+            </Button>
+            <Button
+              variant="destructive"
+              data-testid="unsaved-changes-confirm"
+              onClick={() => blocker.proceed?.()}
+            >
+              {t("protocol.unsavedChanges.confirm")}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       {/* Back button */}
       <div className="mb-4">
         <Button
@@ -256,6 +305,7 @@ export default function ProtocolPage() {
                 <ProtocolEditor
                   initialValue={data.markdown_content}
                   editorHandleRef={editorHandleRef}
+                  onChange={() => setIsDirty(true)}
                 />
               ) : (
                 <ProtocolViewer markdown={data.markdown_content} />

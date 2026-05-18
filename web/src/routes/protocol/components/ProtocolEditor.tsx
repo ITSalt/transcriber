@@ -1,6 +1,7 @@
 import { useEffect, useRef } from "react";
 import { Editor, defaultValueCtx, rootCtx, serializerCtx, editorStateCtx } from "@milkdown/core";
 import { commonmark } from "@milkdown/preset-commonmark";
+import { listenerCtx, listener, type ListenerManager } from "@milkdown/plugin-listener";
 import { MilkdownProvider, Milkdown, useEditor, useInstance } from "@milkdown/react";
 
 export interface ProtocolEditorHandle {
@@ -10,10 +11,13 @@ export interface ProtocolEditorHandle {
 interface ProtocolEditorInnerProps {
   initialValue: string;
   onEditorReady: (getMarkdown: () => string) => void;
+  onChange?: () => void;
 }
 
-function ProtocolEditorInner({ initialValue, onEditorReady }: ProtocolEditorInnerProps) {
+function ProtocolEditorInner({ initialValue, onEditorReady, onChange }: ProtocolEditorInnerProps) {
   const [loading, getInstance] = useInstance();
+  const onChangeRef = useRef(onChange);
+  onChangeRef.current = onChange;
 
   useEditor(
     (root) =>
@@ -21,8 +25,14 @@ function ProtocolEditorInner({ initialValue, onEditorReady }: ProtocolEditorInne
         .config((ctx) => {
           ctx.set(rootCtx, root);
           ctx.set(defaultValueCtx, initialValue);
+          if (onChangeRef.current) {
+            (ctx.get(listenerCtx) as ListenerManager).markdownUpdated(() => {
+              onChangeRef.current?.();
+            });
+          }
         })
-        .use(commonmark),
+        .use(commonmark)
+        .use(listener),
     [initialValue],
   );
 
@@ -54,9 +64,10 @@ function ProtocolEditorInner({ initialValue, onEditorReady }: ProtocolEditorInne
 interface ProtocolEditorProps {
   initialValue: string;
   editorHandleRef: React.MutableRefObject<ProtocolEditorHandle | null>;
+  onChange?: () => void;
 }
 
-export function ProtocolEditor({ initialValue, editorHandleRef }: ProtocolEditorProps) {
+export function ProtocolEditor({ initialValue, editorHandleRef, onChange }: ProtocolEditorProps) {
   const getMarkdownRef = useRef<() => string>(() => initialValue);
 
   const handleEditorReady = (getMarkdown: () => string) => {
@@ -72,6 +83,7 @@ export function ProtocolEditor({ initialValue, editorHandleRef }: ProtocolEditor
         <ProtocolEditorInner
           initialValue={initialValue}
           onEditorReady={handleEditorReady}
+          onChange={onChange}
         />
       </MilkdownProvider>
     </div>

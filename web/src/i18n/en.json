@@ -15,6 +15,7 @@
   },
   "catalog": {
     "title": "Meetings",
+    "tableLabel": "Meeting catalog",
     "empty": "No meetings yet. Upload a recording to get started.",
     "search": "Search meetings…",
     "open": "Open",
@@ -110,7 +111,13 @@
     "editButton": "Edit",
     "exportPdf": "Export PDF",
     "saveSuccess": "Saved successfully",
-    "unsavedChangesWarning": "You have unsaved changes. Are you sure you want to leave?"
+    "unsavedChangesWarning": "You have unsaved changes. Are you sure you want to leave?",
+    "unsavedChanges": {
+      "title": "Unsaved changes",
+      "body": "You have unsaved changes. If you leave now, your changes will be lost.",
+      "confirm": "Leave anyway",
+      "cancel": "Stay on page"
+    }
   },
   "upload": {
     "title": "Upload Recording",
