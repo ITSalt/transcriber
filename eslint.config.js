@@ -38,5 +38,20 @@ export default tseslint.config(
       ],
       "@typescript-eslint/no-explicit-any": "warn",
     },
+  },
+
+  // CommonJS files (pm2 ecosystem, etc.) — provide Node globals
+  {
+    files: ["**/*.cjs"],
+    languageOptions: {
+      sourceType: "commonjs",
+      globals: {
+        module: "readonly",
+        require: "readonly",
+        __dirname: "readonly",
+        __filename: "readonly",
+        process: "readonly",
+      },
+    },
   }
 );

@@ -31,8 +31,6 @@ import { prisma } from './lib/prisma.js'
 
 describe('TECH-022 — Worker shutdown handler', () => {
   let exitSpy: ReturnType<typeof vi.spyOn>
-  let setTimeoutSpy: ReturnType<typeof vi.spyOn>
-  let clearTimeoutSpy: ReturnType<typeof vi.spyOn>
 
   beforeEach(() => {
     vi.clearAllMocks()
