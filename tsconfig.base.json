@@ -1,0 +1,23 @@
+{
+  "$schema": "https://json.schemastore.org/tsconfig",
+  "compilerOptions": {
+    "strict": true,
+    "target": "ES2022",
+    "module": "Node16",
+    "moduleResolution": "Node16",
+    "lib": ["ES2022"],
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "resolveJsonModule": true,
+    "noUncheckedIndexedAccess": true,
+    "noImplicitOverride": true,
+    "paths": {
+      "@transcrib/shared": ["./shared/src/index.ts"],
+      "@transcrib/shared/*": ["./shared/src/*"]
+    }
+  }
+}

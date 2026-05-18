@@ -1,0 +1,41 @@
+{
+  "branch": "feature/intake-2026-05-18",
+  "baseBranch": "main",
+  "items": [
+    { "id": "ALL", "type": "batch", "scope": "all 30 pending tasks from master-plan.md" }
+  ],
+  "started": "2026-05-18T12:00:00Z",
+  "phase": "development",
+  "skip_deliver": true,
+  "skip_deliver_reason": "no remote configured on freshly-initialized repo",
+  "techTasks": [
+    { "id": "TECH-001", "status": "pending" },
+    { "id": "TECH-002", "status": "pending" },
+    { "id": "TECH-003", "status": "pending" },
+    { "id": "TECH-004", "status": "pending" },
+    { "id": "TECH-005", "status": "pending" },
+    { "id": "TECH-006", "status": "pending" },
+    { "id": "TECH-007", "status": "pending" },
+    { "id": "TECH-008", "status": "pending" },
+    { "id": "TECH-009", "status": "pending" },
+    { "id": "TECH-010", "status": "pending" },
+    { "id": "TECH-011", "status": "pending" },
+    { "id": "TECH-012", "status": "pending" },
+    { "id": "TECH-013", "status": "pending" },
+    { "id": "TECH-014", "status": "pending" },
+    { "id": "TECH-015", "status": "pending" }
+  ],
+  "ucTasks": [
+    { "id": "UC-001", "wave": 1, "status": "pending" },
+    { "id": "UC-100", "wave": 1, "status": "pending" },
+    { "id": "UC-002", "wave": 2, "status": "pending" },
+    { "id": "UC-200", "wave": 2, "status": "pending" },
+    { "id": "UC-003", "wave": 3, "status": "pending" },
+    { "id": "UC-201", "wave": 3, "status": "pending" },
+    { "id": "UC-300", "wave": 3, "status": "pending" },
+    { "id": "UC-301", "wave": 4, "status": "pending" },
+    { "id": "UC-302", "wave": 5, "status": "pending" }
+  ],
+  "bugFixes": [],
+  "delivery": { "status": "skipped" }
+}

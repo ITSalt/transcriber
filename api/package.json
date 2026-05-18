@@ -1,0 +1,22 @@
+{
+  "name": "@transcrib/api",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "tsc --build",
+    "dev": "tsc --build --watch",
+    "typecheck": "tsc --noEmit",
+    "clean": "rimraf dist tsconfig.tsbuildinfo",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "@transcrib/shared": "workspace:*"
+  },
+  "devDependencies": {
+    "rimraf": "^6.0.1",
+    "typescript": "^5.8.3",
+    "vitest": "^3.1.4"
+  }
+}

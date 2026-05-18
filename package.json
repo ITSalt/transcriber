@@ -1,0 +1,38 @@
+{
+  "name": "transcrib",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Transcription of large video files with speaker diarization and automated meeting report generation",
+  "engines": {
+    "node": ">=20.0.0",
+    "pnpm": ">=9.0.0"
+  },
+  "packageManager": "pnpm@10.33.0",
+  "scripts": {
+    "dev": "pnpm -r --parallel run dev",
+    "build": "pnpm -r run build",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "typecheck": "pnpm -r run typecheck",
+    "clean": "pnpm -r run clean"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": ["esbuild"]
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.27.0",
+    "@typescript-eslint/eslint-plugin": "^8.32.1",
+    "@typescript-eslint/parser": "^8.32.1",
+    "eslint": "^9.27.0",
+    "eslint-config-prettier": "^10.1.5",
+    "prettier": "^3.5.3",
+    "typescript": "^5.8.3",
+    "typescript-eslint": "^8.32.1",
+    "vitest": "^3.1.4"
+  }
+}

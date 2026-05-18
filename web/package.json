@@ -1,0 +1,26 @@
+{
+  "name": "@transcrib/web",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "tsc --noEmit && vite build",
+    "dev": "vite",
+    "typecheck": "tsc --noEmit && tsc --noEmit -p tsconfig.node.json",
+    "clean": "rimraf dist",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@transcrib/shared": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "^20.19.0",
+    "@vitejs/plugin-react": "^4.5.1",
+    "rimraf": "^6.0.1",
+    "typescript": "^5.8.3",
+    "vite": "^5.4.19",
+    "vitest": "^3.1.4"
+  }
+}

@@ -1,0 +1,18 @@
+{
+  "$schema": "https://json.schemastore.org/tsconfig",
+  "extends": "../tsconfig.base.json",
+  "compilerOptions": {
+    "rootDir": "src",
+    "outDir": "dist",
+    "composite": true,
+    "paths": {
+      "@transcrib/shared": ["../shared/src/index.ts"],
+      "@transcrib/shared/*": ["../shared/src/*"]
+    }
+  },
+  "references": [
+    { "path": "../shared" }
+  ],
+  "include": ["src/**/*"],
+  "exclude": ["node_modules", "dist", "**/*.test.ts", "**/*.spec.ts"]
+}
