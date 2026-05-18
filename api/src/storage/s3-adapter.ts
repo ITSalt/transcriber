@@ -39,12 +39,16 @@ export function s3ConfigFromEnv(): S3Config {
   if (!accessKeyId) throw new Error('S3_KEY env var is required')
   if (!secretAccessKey) throw new Error('S3_SECRET env var is required')
 
+  const rawForcePathStyle = process.env['S3_FORCE_PATH_STYLE']
+
   return {
     endpoint: process.env['S3_ENDPOINT'],
     bucket,
     region: process.env['S3_REGION'] ?? 'us-east-1',
     accessKeyId,
     secretAccessKey,
+    forcePathStyle:
+      rawForcePathStyle !== undefined ? rawForcePathStyle === 'true' : undefined,
   }
 }
 
