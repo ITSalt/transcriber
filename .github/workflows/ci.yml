@@ -1,0 +1,126 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  # Matches packageManager field in root package.json
+  PNPM_VERSION: "10.33.0"
+  NODE_VERSION: "20"
+
+jobs:
+  # ── Lint (root eslint.config.js covers all packages) ──────────────────────
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+
+      - name: Install dependencies
+        # pnpm-lock.yaml is gitignored, so --frozen-lockfile is intentionally
+        # omitted. Once the lockfile is committed, change this to:
+        #   pnpm install --frozen-lockfile
+        run: pnpm install
+
+      - name: Lint
+        run: pnpm run lint
+
+  # ── Type-check (each package runs tsc --noEmit) ───────────────────────────
+  typecheck:
+    name: Typecheck — ${{ matrix.package }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        package: [shared, api, worker, web]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Typecheck (${{ matrix.package }})
+        run: pnpm --filter ${{ matrix.package }} run typecheck
+
+  # ── Unit / integration tests per package ─────────────────────────────────
+  test:
+    name: Test — ${{ matrix.package }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        package: [shared, api, worker, web]
+
+    # Postgres + Redis are available to all packages; packages that do not
+    # use them simply ignore the environment variables.
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: transcrib
+          POSTGRES_PASSWORD: transcrib
+          POSTGRES_DB: transcrib_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U transcrib"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      DATABASE_URL: postgresql://transcrib:transcrib@localhost:5432/transcrib_test
+      REDIS_URL: redis://localhost:6379
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Test (${{ matrix.package }})
+        run: pnpm --filter ${{ matrix.package }} run test
