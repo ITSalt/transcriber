@@ -1,0 +1,15 @@
+{
+  "mcpServers": {
+    "neo4j": {
+      "type": "stdio",
+      "command": "cmd",
+      "args": ["/c", "neo4j-mcp"],
+      "env": {
+        "NEO4J_URI": "bolt://localhost:3587",
+        "NEO4J_USERNAME": "neo4j",
+        "NEO4J_PASSWORD": "neo4j_graph_dev",
+        "NEO4J_DATABASE": "neo4j"
+      }
+    }
+  }
+}

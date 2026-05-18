@@ -1,0 +1,30 @@
+services:
+  neo4j:
+    image: neo4j:5.15-community
+    container_name: ${CONTAINER_PREFIX}-neo4j
+    environment:
+      NEO4J_AUTH: neo4j/${NEO4J_PASSWORD}
+      NEO4J_PLUGINS: '["apoc"]'
+      NEO4J_apoc_export_file_enabled: "true"
+      NEO4J_apoc_import_file_enabled: "true"
+      NEO4J_apoc_import_file_use__neo4j__config: "true"
+      NEO4J_server_memory_heap_initial__size: "512m"
+      NEO4J_server_memory_heap_max__size: "1g"
+    ports:
+      - "${NEO4J_HTTP_PORT}:7474"
+      - "${NEO4J_BOLT_PORT}:7687"
+    volumes:
+      - neo4j_data:/data
+      - neo4j_logs:/logs
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:7474"]
+      interval: 10s
+      timeout: 5s
+      start_period: 40s
+      retries: 6
+
+volumes:
+  neo4j_data:
+    name: ${COMPOSE_PROJECT_NAME}-neo4j-data
+  neo4j_logs:
+    name: ${COMPOSE_PROJECT_NAME}-neo4j-logs

@@ -1,0 +1,61 @@
+project:
+  id: "transcrib"
+  name: "Transcrib"
+  description: "Transcription of large video files with speaker diarization and automated meeting report generation"
+  stack: ""  # TBD — to be decided at nacl-tl-plan (OQ-4: ASR vendor, LLM provider, storage, PDF renderer)
+
+modules:
+  mod-common:
+    name: "Common"
+    description: "Cross-cutting concerns: Meeting entity lifecycle, status tracking, meeting status display (UC-009), speaker name resolution UI (UC-003)"
+    uc_range: "001-099"
+    status: "finalized"
+  mod-ingest:
+    name: "Ingestion"
+    description: "File upload, client-side validation, chunked transfer, object storage write, job queue dispatch (UC-001), failure handling (UC-005)"
+    uc_range: "100-199"
+    status: "finalized"
+  mod-transcription:
+    name: "Transcription"
+    description: "ASR worker pipeline: audio extraction, diarization, speaker attribution, transcript persistence (UC-002), status updates"
+    uc_range: "200-299"
+    status: "finalized"
+  mod-protocol:
+    name: "Protocol"
+    description: "LLM protocol generation (UC-004), Markdown editor and versioning (UC-007), PDF export (UC-008), transcript view/download (UC-006)"
+    uc_range: "300-399"
+    status: "finalized"
+
+git:
+  strategy: "feature-branch"  # "direct" | "feature-branch"
+  main_branch: "main"
+  branch_prefix: "feature/"
+
+vps: {}  # TBD — fill after deployment decisions
+
+ci_platform: ""  # TBD — "github-actions" | "gitlab-ci" | etc.
+
+deploy:
+  method: ""  # TBD
+  urls: {}
+  health_endpoint: ""
+
+graph:
+  neo4j_bolt_port: 3587
+  neo4j_http_port: 3574
+  neo4j_password: "neo4j_graph_dev"
+  container_prefix: "transcrib"
+  boards_dir: "graph-infra/boards"
+
+docmost:
+  api_url: ""
+  spaces: {}
+
+yougile: {}  # not configured
+
+credentials: {}  # do not store secrets here — use .env files
+
+reports:
+  sa_finalization: "FR-SA-001"
+  sa_validation: "VR-SA-003"
+  ba_validation: "VAL-BA-001"

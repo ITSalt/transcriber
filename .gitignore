@@ -1,0 +1,28 @@
+# Generated TL artifacts
+.tl/reports/
+.tl/qa-screenshots/
+
+# Environment files
+.env
+.env.local
+
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+build/
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
