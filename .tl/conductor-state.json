@@ -27,7 +27,7 @@
   ],
   "ucTasks": [
     { "id": "UC-001", "wave": 1, "status": "be-done" },
-    { "id": "UC-100", "wave": 1, "status": "pending" },
+    { "id": "UC-100", "wave": 1, "status": "be-done" },
     { "id": "UC-002", "wave": 2, "status": "pending" },
     { "id": "UC-200", "wave": 2, "status": "pending" },
     { "id": "UC-003", "wave": 3, "status": "pending" },

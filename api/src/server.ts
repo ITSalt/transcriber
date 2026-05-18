@@ -14,6 +14,7 @@ import { tusPlugin } from './plugins/tus.js'
 import { healthRoutes } from './routes/health.js'
 import { ssePlugin } from './plugins/sse.js'
 import { meetingListRoutes } from './routes/uc-001.js'
+import { meetingDetailRoutes } from './routes/uc-002.js'
 import { uploadFinalizeRoutes } from './routes/uc-100.js'
 
 export interface BuildAppOptions {
@@ -46,6 +47,8 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<FastifyIn
   await app.register(uploadFinalizeRoutes)
   // UC-001: meeting catalog
   await app.register(meetingListRoutes)
+  // UC-002: meeting detail
+  await app.register(meetingDetailRoutes)
 
   // TUS plugin: mounts /api/uploads and /api/uploads/* catch-all last
   await app.register(tusPlugin)
