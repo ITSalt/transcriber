@@ -26,7 +26,7 @@
     { "id": "TECH-015", "status": "verified-pending", "reason": "actionlint unavailable; YAML structurally valid; .github/workflows/ci.yml left uncommitted per protocol" }
   ],
   "ucTasks": [
-    { "id": "UC-001", "wave": 1, "status": "pending" },
+    { "id": "UC-001", "wave": 1, "status": "be-done" },
     { "id": "UC-100", "wave": 1, "status": "pending" },
     { "id": "UC-002", "wave": 2, "status": "pending" },
     { "id": "UC-200", "wave": 2, "status": "pending" },
