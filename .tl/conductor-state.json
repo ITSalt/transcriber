@@ -12,7 +12,7 @@
     { "id": "TECH-001", "status": "done", "commit": "see git log" },
     { "id": "TECH-002", "status": "done" },
     { "id": "TECH-003", "status": "done" },
-    { "id": "TECH-004", "status": "pending" },
+    { "id": "TECH-004", "status": "done" },
     { "id": "TECH-005", "status": "pending" },
     { "id": "TECH-006", "status": "pending" },
     { "id": "TECH-007", "status": "pending" },
@@ -23,7 +23,7 @@
     { "id": "TECH-012", "status": "pending" },
     { "id": "TECH-013", "status": "pending" },
     { "id": "TECH-014", "status": "pending" },
-    { "id": "TECH-015", "status": "pending" }
+    { "id": "TECH-015", "status": "verified-pending", "reason": "actionlint unavailable; YAML structurally valid; .github/workflows/ci.yml left uncommitted per protocol" }
   ],
   "ucTasks": [
     { "id": "UC-001", "wave": 1, "status": "pending" },

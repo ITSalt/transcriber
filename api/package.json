@@ -19,13 +19,20 @@
     "db:migrate:status": "prisma migrate status"
   },
   "dependencies": {
+    "@fastify/type-provider-zod": "^1.0.0",
     "@prisma/adapter-pg": "^7.8.0",
     "@prisma/client": "^7.8.0",
     "@transcrib/shared": "workspace:*",
+    "dotenv": "^17.4.2",
+    "fastify": "^5.8.5",
+    "fastify-plugin": "^5.1.0",
+    "ioredis": "^5.10.1",
     "pg": "^8.20.0",
-    "prisma": "^7.8.0"
+    "prisma": "^7.8.0",
+    "zod": "^4.4.3"
   },
   "devDependencies": {
+    "@types/pg": "^8.20.0",
     "rimraf": "^6.0.1",
     "typescript": "^5.8.3",
     "vitest": "^3.1.4"
