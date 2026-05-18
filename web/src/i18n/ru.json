@@ -78,6 +78,27 @@
       "errorBody": "Не удалось удалить встречу. Пожалуйста, попробуйте снова."
     }
   },
+  "transcript": {
+    "title": "Транскрипт",
+    "backToMeeting": "Назад к встрече",
+    "language": "Язык",
+    "segments": "Сегменты",
+    "speakers": "Спикеры",
+    "created": "Создан",
+    "transcriptContent": "Содержимое транскрипта",
+    "speakerMap": "Карта имён спикеров",
+    "download": "Скачать",
+    "downloadTxt": "Скачать как TXT",
+    "downloadJson": "Скачать как JSON",
+    "downloadMd": "Скачать как Markdown",
+    "speakerLabel": "Спикер {{n}}",
+    "loading": "Загрузка транскрипта…",
+    "error": "Не удалось загрузить транскрипт",
+    "notFound": "Транскрипт не найден",
+    "languageRU": "Русский",
+    "languageEN": "Английский",
+    "languageAUTO": "Авто"
+  },
   "upload": {
     "title": "Загрузить запись",
     "dragDrop": "Перетащите видео или аудио файл сюда",

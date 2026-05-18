@@ -78,6 +78,27 @@
       "errorBody": "Could not delete the meeting. Please try again."
     }
   },
+  "transcript": {
+    "title": "Transcript",
+    "backToMeeting": "Back to meeting",
+    "language": "Language",
+    "segments": "Segments",
+    "speakers": "Speakers",
+    "created": "Created",
+    "transcriptContent": "Transcript content",
+    "speakerMap": "Speaker name map",
+    "download": "Download",
+    "downloadTxt": "Download as TXT",
+    "downloadJson": "Download as JSON",
+    "downloadMd": "Download as Markdown",
+    "speakerLabel": "Speaker {{n}}",
+    "loading": "Loading transcript…",
+    "error": "Failed to load transcript",
+    "notFound": "Transcript not found",
+    "languageRU": "Russian",
+    "languageEN": "English",
+    "languageAUTO": "Auto"
+  },
   "upload": {
     "title": "Upload Recording",
     "dragDrop": "Drag & drop a video or audio file here",
