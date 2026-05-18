@@ -19,6 +19,7 @@ enum MeetingStatus {
   TRANSCRIBED
   GENERATING_PROTOCOL
   PROTOCOL_READY
+  EDITED
   ERROR
 }
 
@@ -131,12 +132,15 @@ model ProtocolGenerationJob {
 
 /// mod-protocol — generated meeting protocol document
 model Protocol {
-  id          String   @id @default(uuid()) @db.Uuid
-  meetingId   String   @unique @map("meeting_id") @db.Uuid
-  contentMd   String   @map("content_md")
-  version     Int      @default(1)
-  createdAt   DateTime @default(now()) @map("created_at")
-  updatedAt   DateTime @updatedAt @map("updated_at")
+  id            String    @id @default(uuid()) @db.Uuid
+  meetingId     String    @unique @map("meeting_id") @db.Uuid
+  markdownContent String  @map("markdown_content")
+  version       Int       @default(1)
+  editCount     Int       @default(0) @map("edit_count")
+  generatedAt   DateTime  @default(now()) @map("generated_at")
+  lastEditedAt  DateTime? @map("last_edited_at")
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
 
   meeting Meeting @relation(fields: [meetingId], references: [id], onDelete: Cascade)
 

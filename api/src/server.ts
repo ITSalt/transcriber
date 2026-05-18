@@ -18,6 +18,7 @@ import { meetingDetailRoutes } from './routes/uc-002.js'
 import { meetingDeleteRoutes } from './routes/uc-003.js'
 import { uploadFinalizeRoutes } from './routes/uc-100.js'
 import { transcriptRoutes } from './routes/uc-201.js'
+import { protocolRoutes } from './routes/uc-301.js'
 
 export interface BuildAppOptions {
   logLevel?: string
@@ -55,6 +56,8 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<FastifyIn
   await app.register(meetingDeleteRoutes)
   // UC-201: view and download transcript
   await app.register(transcriptRoutes)
+  // UC-301: review and edit protocol
+  await app.register(protocolRoutes)
 
   // TUS plugin: mounts /api/uploads and /api/uploads/* catch-all last
   await app.register(tusPlugin)

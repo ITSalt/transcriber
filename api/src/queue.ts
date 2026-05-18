@@ -9,11 +9,14 @@
  * with status=QUEUED so the worker picks it up.
  */
 import { Queue } from 'bullmq'
-import type { TranscriptionJobPayload } from '@transcrib/shared'
+import type { TranscriptionJobPayload, ProtocolGenerationJobPayload } from '@transcrib/shared'
 import { config } from './config.js'
 
 /** Canonical BullMQ queue name for transcription jobs (mirrors worker/src/queues.ts) */
 const TRANSCRIPTION_QUEUE_NAME = 'transcriptionJob'
+
+/** Canonical BullMQ queue name for protocol generation jobs (mirrors worker/src/queues.ts) */
+const PROTOCOL_GENERATION_QUEUE_NAME = 'protocolGenerationJob'
 
 function parseRedisUrl(redisUrl: string): { host: string; port: number; password?: string } {
   const url = new URL(redisUrl)
@@ -40,6 +43,24 @@ export async function addTranscriptionJob(
   const queue = new Queue(TRANSCRIPTION_QUEUE_NAME, { connection })
   try {
     await queue.add('transcribe', payload)
+  } finally {
+    await queue.close()
+  }
+}
+
+/**
+ * Enqueue a ProtocolGenerationJob onto the BullMQ protocol generation queue.
+ * Called after ProtocolGenerationJob row is persisted in the DB.
+ *
+ * UC-301-BE: Producer side — the worker (UC-300-BE) consumes and runs LLM generation.
+ */
+export async function enqueueProtocolGenerationJob(
+  payload: ProtocolGenerationJobPayload,
+): Promise<void> {
+  const connection = parseRedisUrl(config.REDIS_URL)
+  const queue = new Queue(PROTOCOL_GENERATION_QUEUE_NAME, { connection })
+  try {
+    await queue.add('generateProtocol', payload)
   } finally {
     await queue.close()
   }
