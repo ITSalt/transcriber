@@ -49,6 +49,24 @@
       "generating": "Generating protocol",
       "done": "Done",
       "error": "Error"
+    },
+    "detail": {
+      "metadataTitle": "Meeting details",
+      "title": "Title",
+      "language": "Language",
+      "status": "Status",
+      "uploaded_at": "Uploaded at",
+      "updated_at": "Last update",
+      "filename": "File name",
+      "size_bytes": "Size",
+      "mime_type": "Format",
+      "duration_sec": "Duration",
+      "error_reason": "Error",
+      "viewTranscript": "View transcript",
+      "viewProtocol": "Review / Edit protocol",
+      "exportPdf": "Export PDF",
+      "deleteConfirmTitle": "Delete meeting?",
+      "deleteConfirmBody": "This action cannot be undone. The recording, transcript and protocol will be permanently deleted."
     }
   },
   "upload": {

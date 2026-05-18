@@ -49,6 +49,24 @@
       "generating": "Генерация протокола",
       "done": "Готово",
       "error": "Ошибка"
+    },
+    "detail": {
+      "metadataTitle": "Детали встречи",
+      "title": "Название",
+      "language": "Язык",
+      "status": "Статус",
+      "uploaded_at": "Загружено",
+      "updated_at": "Последнее обновление",
+      "filename": "Имя файла",
+      "size_bytes": "Размер",
+      "mime_type": "Формат",
+      "duration_sec": "Длительность",
+      "error_reason": "Ошибка",
+      "viewTranscript": "Просмотр транскрипта",
+      "viewProtocol": "Просмотр / Редактирование протокола",
+      "exportPdf": "Экспорт PDF",
+      "deleteConfirmTitle": "Удалить встречу?",
+      "deleteConfirmBody": "Это действие нельзя отменить. Запись, транскрипт и протокол будут удалены без возможности восстановления."
     }
   },
   "upload": {

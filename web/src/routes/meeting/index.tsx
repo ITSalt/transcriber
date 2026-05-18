@@ -1,4 +1,94 @@
-// UC-100 — Meeting detail (implemented in UC-100 FE task)
+import { useEffect } from "react";
+import { useParams, useNavigate } from "react-router";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useTranslation } from "react-i18next";
+import { apiGet, apiDelete } from "@/lib/api";
+import { MeetingDetailResponse } from "@transcrib/shared";
+import { MetadataCard } from "./components/MetadataCard";
+import { StatusSection } from "./components/StatusSection";
+import { JobErrorBanner } from "./components/JobErrorBanner";
+
+function useMeetingDetail(id: string) {
+  return useQuery({
+    queryKey: ["meetings", id],
+    queryFn: () => apiGet(`/api/meetings/${id}`, MeetingDetailResponse),
+    enabled: Boolean(id),
+  });
+}
+
 export default function MeetingDetailPage() {
-  return <div data-testid="meeting-detail-page" />;
+  const { id } = useParams<{ id: string }>();
+  const { t } = useTranslation();
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
+
+  const meetingId = id ?? "";
+  const { data, isLoading, isError, refetch } = useMeetingDetail(meetingId);
+
+  // RQ-002 — SSE subscribe for real-time status updates
+  useEffect(() => {
+    if (!meetingId || typeof EventSource === "undefined") return;
+
+    const source = new EventSource(`/api/meetings/${meetingId}/events`);
+
+    source.addEventListener("meeting.status", () => {
+      void queryClient.invalidateQueries({
+        queryKey: ["meetings", meetingId],
+      });
+    });
+
+    return () => {
+      source.close();
+    };
+  }, [meetingId, queryClient]);
+
+  async function handleDelete() {
+    try {
+      await apiDelete(`/api/meetings/${meetingId}`);
+      void queryClient.invalidateQueries({ queryKey: ["meetings"] });
+      void navigate("/");
+    } catch {
+      // ignore — user can retry
+    }
+  }
+
+  return (
+    <div data-testid="meeting-detail-page" className="container mx-auto py-8 px-4 max-w-3xl">
+      {isLoading && (
+        <p data-testid="meeting-detail-loading">{t("common.loading")}</p>
+      )}
+
+      {isError && (
+        <div data-testid="meeting-detail-error">
+          <p>{t("common.error")}</p>
+          <button onClick={() => refetch()}>{t("common.retry")}</button>
+        </div>
+      )}
+
+      {data && (
+        <div className="space-y-6">
+          {/* Error banner — RQ-004 */}
+          {data.meeting.status === "ERROR" && (
+            <JobErrorBanner
+              transcriptionJob={data.latest_transcription_job}
+              protocolJob={data.latest_protocol_job}
+            />
+          )}
+
+          <MetadataCard
+            meeting={data.meeting}
+            recording={data.recording}
+          />
+
+          <StatusSection
+            meetingId={meetingId}
+            status={data.meeting.status}
+            transcriptExists={data.transcript_exists}
+            protocolExists={data.protocol_exists}
+            onDelete={() => void handleDelete()}
+          />
+        </div>
+      )}
+    </div>
+  );
 }
