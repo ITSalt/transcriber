@@ -46,8 +46,9 @@ jobs:
             git checkout main
             git reset --hard origin/main
 
-            # Install + build (workspace-wide)
+            # Install + generate Prisma client + build (workspace-wide)
             pnpm install --frozen-lockfile
+            pnpm --filter @transcrib/api run db:generate
             pnpm --filter @transcrib/shared run build
             pnpm --filter @transcrib/api run build
             pnpm --filter @transcrib/worker run build
