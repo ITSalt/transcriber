@@ -3,16 +3,27 @@
   "version": "0.0.0",
   "private": true,
   "type": "module",
+  "prisma": {
+    "schema": "prisma/schema.prisma"
+  },
   "scripts": {
     "build": "tsc --build",
     "dev": "tsc --build --watch",
     "typecheck": "tsc --noEmit",
     "clean": "rimraf dist tsconfig.tsbuildinfo",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "db:generate": "prisma generate",
+    "db:migrate:dev": "prisma migrate dev",
+    "db:migrate:deploy": "prisma migrate deploy",
+    "db:migrate:status": "prisma migrate status"
   },
   "dependencies": {
-    "@transcrib/shared": "workspace:*"
+    "@prisma/adapter-pg": "^7.8.0",
+    "@prisma/client": "^7.8.0",
+    "@transcrib/shared": "workspace:*",
+    "pg": "^8.20.0",
+    "prisma": "^7.8.0"
   },
   "devDependencies": {
     "rimraf": "^6.0.1",

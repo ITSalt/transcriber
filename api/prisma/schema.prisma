@@ -1,0 +1,144 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ─── Enums ────────────────────────────────────────────────────────────────────
+
+enum MeetingStatus {
+  CREATED
+  UPLOADING
+  UPLOADED
+  TRANSCRIBING
+  TRANSCRIBED
+  GENERATING_PROTOCOL
+  PROTOCOL_READY
+  ERROR
+}
+
+enum MeetingLanguage {
+  RU
+  EN
+  AUTO
+}
+
+enum JobStatus {
+  PENDING
+  PROCESSING
+  DONE
+  FAILED
+}
+
+enum VideoMimeType {
+  VIDEO_MP4
+  VIDEO_WEBM
+  VIDEO_MOV
+  VIDEO_AVI
+  VIDEO_MKV
+}
+
+// ─── Models ───────────────────────────────────────────────────────────────────
+
+/// Root aggregate — mod-common
+model Meeting {
+  id        String          @id @default(uuid()) @db.Uuid
+  title     String
+  status    MeetingStatus   @default(CREATED)
+  language  MeetingLanguage @default(AUTO)
+  createdAt DateTime        @default(now()) @map("created_at")
+  updatedAt DateTime        @updatedAt @map("updated_at")
+
+  recording          Recording?
+  transcriptionJob   TranscriptionJob?
+  transcript         Transcript?
+  protocolGenJob     ProtocolGenerationJob?
+  protocol           Protocol?
+
+  @@map("meetings")
+}
+
+/// mod-ingest — one recording per meeting
+model Recording {
+  id           String        @id @default(uuid()) @db.Uuid
+  meetingId    String        @unique @map("meeting_id") @db.Uuid
+  storageUri   String        @map("storage_uri")   // s3://bucket/key
+  mimeType     VideoMimeType @map("mime_type")
+  sizeBytes    BigInt        @map("size_bytes")
+  durationSec  Float?        @map("duration_sec")
+  uploadedAt   DateTime      @default(now()) @map("uploaded_at")
+
+  meeting Meeting @relation(fields: [meetingId], references: [id], onDelete: Cascade)
+
+  @@map("recordings")
+}
+
+/// mod-transcription — ASR job tracker
+model TranscriptionJob {
+  id          String    @id @default(uuid()) @db.Uuid
+  meetingId   String    @unique @map("meeting_id") @db.Uuid
+  status      JobStatus @default(PENDING)
+  startedAt   DateTime? @map("started_at")
+  finishedAt  DateTime? @map("finished_at")
+  errorMsg    String?   @map("error_msg")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+
+  meeting Meeting @relation(fields: [meetingId], references: [id], onDelete: Cascade)
+
+  @@index([meetingId, status], name: "idx_transcription_jobs_meeting_status")
+  @@map("transcription_jobs")
+}
+
+/// mod-transcription — ASR output
+model Transcript {
+  id          String   @id @default(uuid()) @db.Uuid
+  meetingId   String   @unique @map("meeting_id") @db.Uuid
+  /// JSONB: { [speakerId: string]: string } — speaker label overrides
+  speakerMap  Json     @default("{}") @map("speaker_map") @db.JsonB
+  /// JSONB array of Deepgram word/utterance segments
+  segmentsBlob Json    @default("[]") @map("segments_blob") @db.JsonB
+  rawText     String?  @map("raw_text")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  meeting Meeting @relation(fields: [meetingId], references: [id], onDelete: Cascade)
+
+  @@map("transcripts")
+}
+
+/// mod-protocol — LLM generation job tracker
+model ProtocolGenerationJob {
+  id          String    @id @default(uuid()) @db.Uuid
+  meetingId   String    @unique @map("meeting_id") @db.Uuid
+  status      JobStatus @default(PENDING)
+  startedAt   DateTime? @map("started_at")
+  finishedAt  DateTime? @map("finished_at")
+  errorMsg    String?   @map("error_msg")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+
+  meeting Meeting @relation(fields: [meetingId], references: [id], onDelete: Cascade)
+
+  @@index([meetingId, status], name: "idx_protocol_gen_jobs_meeting_status")
+  @@map("protocol_generation_jobs")
+}
+
+/// mod-protocol — generated meeting protocol document
+model Protocol {
+  id          String   @id @default(uuid()) @db.Uuid
+  meetingId   String   @unique @map("meeting_id") @db.Uuid
+  contentMd   String   @map("content_md")
+  version     Int      @default(1)
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  meeting Meeting @relation(fields: [meetingId], references: [id], onDelete: Cascade)
+
+  @@map("protocols")
+}
