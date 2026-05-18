@@ -16,7 +16,26 @@
   "catalog": {
     "title": "Meetings",
     "empty": "No meetings yet. Upload a recording to get started.",
-    "search": "Search meetings…"
+    "search": "Search meetings…",
+    "open": "Open",
+    "columns": {
+      "title": "Title",
+      "status": "Status",
+      "language": "Language",
+      "uploaded_at": "Uploaded",
+      "duration": "Duration"
+    },
+    "status": {
+      "CREATED": "Created",
+      "UPLOADING": "Uploading",
+      "UPLOADED": "Uploaded",
+      "TRANSCRIBING": "Transcribing",
+      "TRANSCRIBED": "Transcribed",
+      "GENERATING_PROTOCOL": "Generating Protocol",
+      "PROTOCOL_READY": "Protocol Ready",
+      "EDITED": "Edited",
+      "ERROR": "Error"
+    }
   },
   "meeting": {
     "transcript": "Transcript",

@@ -1,4 +1,7 @@
-import type { ZodSchema } from "zod";
+/** Minimal structural type compatible with both Zod v3 and v4 schemas. */
+interface ZodLike<T> {
+  parse(data: unknown): T;
+}
 
 export class ApiError extends Error {
   constructor(
@@ -13,7 +16,7 @@ export class ApiError extends Error {
 async function request<T>(
   path: string,
   init: RequestInit,
-  schema: ZodSchema<T>,
+  schema: ZodLike<T>,
 ): Promise<T> {
   const res = await fetch(path, {
     ...init,
@@ -38,14 +41,14 @@ async function request<T>(
   return schema.parse(json);
 }
 
-export function apiGet<T>(path: string, schema: ZodSchema<T>): Promise<T> {
+export function apiGet<T>(path: string, schema: ZodLike<T>): Promise<T> {
   return request(path, { method: "GET" }, schema);
 }
 
 export function apiPost<T>(
   path: string,
   body: unknown,
-  schema: ZodSchema<T>,
+  schema: ZodLike<T>,
 ): Promise<T> {
   return request(
     path,
@@ -57,7 +60,7 @@ export function apiPost<T>(
 export function apiPatch<T>(
   path: string,
   body: unknown,
-  schema: ZodSchema<T>,
+  schema: ZodLike<T>,
 ): Promise<T> {
   return request(
     path,
