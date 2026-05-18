@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
   DialogFooter,
@@ -117,9 +118,9 @@ export function StatusSection({
               {meetingTitle}
             </p>
           )}
-          <p className="text-sm text-muted-foreground">
+          <DialogDescription>
             {t("meeting.delete.confirmBody")}
-          </p>
+          </DialogDescription>
           {jobInProgress && (
             <p
               className="text-sm text-amber-600"

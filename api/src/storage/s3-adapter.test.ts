@@ -17,6 +17,7 @@ import { StorageNotFoundError, StorageError } from '@transcrib/shared'
 const mockSend = vi.fn()
 
 vi.mock('@aws-sdk/client-s3', async (importOriginal) => {
+  // eslint-disable-next-line @typescript-eslint/consistent-type-imports
   const original = await importOriginal<typeof import('@aws-sdk/client-s3')>()
   return {
     ...original,

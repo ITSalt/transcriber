@@ -56,6 +56,11 @@ vi.mock('../lib/publisher.js', () => ({
   publishMeetingEvent: vi.fn(),
 }))
 
+vi.mock('../queues.js', () => ({
+  QueueName: { Transcription: 'transcriptionJob', Protocol: 'protocolGenerationJob' },
+  createQueues: vi.fn(),
+}))
+
 // ── Subject under test ────────────────────────────────────────────────────────
 
 import { processTranscriptionJob, resolveSpeakers, buildFullText } from './transcription.js'
@@ -64,6 +69,7 @@ import { createStorage } from '../lib/storage.js'
 import { extractAudio } from '../lib/ffmpeg.js'
 import { DeepgramAsrProvider } from '../asr/deepgram-adapter.js'
 import { publishMeetingEvent } from '../lib/publisher.js'
+import { createQueues } from '../queues.js'
 
 // ── Type helpers ──────────────────────────────────────────────────────────────
 
@@ -140,6 +146,8 @@ const BASE_ASR_RESULT = {
   durationSec: 10,
 }
 
+const PROTO_JOB_ID = 'proto-job-id'
+
 function setupSuccessfulMocks() {
   // Prisma: findUnique returns the base job
   mockPrisma.transcriptionJob.findUnique.mockResolvedValue(BASE_TX_JOB as any)
@@ -184,12 +192,19 @@ function setupSuccessfulMocks() {
   })
 
   // ProtocolGenerationJob create
-  mockPrisma.protocolGenerationJob.create.mockResolvedValue({ id: 'proto-job-id' } as any)
+  mockPrisma.protocolGenerationJob.create.mockResolvedValue({ id: PROTO_JOB_ID } as any)
+
+  // BullMQ queue mock
+  const mockProtocolQueue = { add: vi.fn().mockResolvedValue(undefined), close: vi.fn().mockResolvedValue(undefined) }
+  ;(createQueues as MockedFunction<typeof createQueues>).mockReturnValue({
+    transcriptionJob: { add: vi.fn(), close: vi.fn() } as any,
+    protocolGenerationJob: mockProtocolQueue as any,
+  } as any)
 
   // Publisher
   ;(publishMeetingEvent as MockedFunction<typeof publishMeetingEvent>).mockResolvedValue(undefined)
 
-  return { mockStorage, mockAsr }
+  return { mockStorage, mockAsr, mockProtocolQueue }
 }
 
 // ─── Tests ────────────────────────────────────────────────────────────────────
@@ -357,6 +372,20 @@ describe('T03 (RQ-016) — ProtocolGenerationJob auto-created on DONE', () => {
           status: 'PENDING',
         }),
       }),
+    )
+  })
+
+  it('enqueues ProtocolGenerationJob to BullMQ queue after DB create (RQ-016)', async () => {
+    const { mockProtocolQueue } = setupSuccessfulMocks()
+    const log = makeLogger()
+
+    await processTranscriptionJob(makeJob('bullmq-7b', JOB_ID) as any, log)
+
+    // BullMQ queue.add must be called with the correct job ID from the DB row
+    expect(mockProtocolQueue.add).toHaveBeenCalledOnce()
+    expect(mockProtocolQueue.add).toHaveBeenCalledWith(
+      'generateProtocol',
+      expect.objectContaining({ protocol_generation_job_id: PROTO_JOB_ID }),
     )
   })
 })

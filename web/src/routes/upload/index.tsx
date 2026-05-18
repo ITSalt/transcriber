@@ -18,13 +18,11 @@ import {
 const MAX_SIZE_BYTES = 524_288_000; // 500 MB (RQ-008)
 
 // Map browser MIME types to VideoMimeType enum values used in TUS metadata
+// RQ-009: only these three MIME types are accepted
 const MIME_TO_ENUM: Record<string, string> = {
   "video/mp4": "VIDEO_MP4",
   "video/x-matroska": "VIDEO_MKV",
   "video/quicktime": "VIDEO_MOV",
-  "video/webm": "VIDEO_WEBM",
-  "video/avi": "VIDEO_AVI",
-  "video/x-msvideo": "VIDEO_AVI",
 };
 
 const ACCEPTED_MIME_TYPES = Object.keys(MIME_TO_ENUM);
@@ -117,7 +115,6 @@ export default function UploadPage() {
     const upload = new tus.Upload(file, {
       endpoint: "/api/uploads",
       retryDelays: [0, 1000, 3000, 5000],
-      metadata: { filename: file.name, filetype: file.type },
       headers: {
         "Upload-Metadata": metadataHeader,
       },
@@ -153,7 +150,13 @@ export default function UploadPage() {
         setUploadState("finalizing");
         apiPost(
           `/api/uploads/${uploadId}/finalize`,
-          {},
+          {
+            filename: file.name,
+            size_bytes: file.size,
+            mime_type: file.type,
+            title: effectiveTitle,
+            ...(language && { language }),
+          },
           UploadFinalizeResponse,
         )
           .then((res) => {
@@ -228,7 +231,7 @@ export default function UploadPage() {
           </label>
           <Select
             value={language}
-            onValueChange={(v) => setLanguage(v as "RU" | "EN" | "")}
+            onValueChange={(v) => setLanguage(v === "auto" ? "" : (v as "RU" | "EN" | ""))}
             disabled={isUploading}
           >
             <SelectTrigger

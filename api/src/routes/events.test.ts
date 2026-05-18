@@ -55,7 +55,7 @@ vi.mock('../plugins/tus.js', () => ({
 // ─── pubsub stub (captured per-test) ─────────────────────────────────────────
 
 type OnEventFn = (event: unknown) => void
-let capturedOnEvent: OnEventFn | null = null
+let _capturedOnEvent: OnEventFn | null = null
 let capturedUnsub: Mock | null = null
 
 vi.mock('../sse/pubsub.js', () => ({
@@ -65,7 +65,7 @@ vi.mock('../sse/pubsub.js', () => ({
       _meetingId: string,
       onEvent: OnEventFn,
     ): (() => void) => {
-      capturedOnEvent = onEvent
+      _capturedOnEvent = onEvent
       capturedUnsub = vi.fn()
       return capturedUnsub
     },
@@ -154,7 +154,7 @@ describe('TECH-012 — eventsRoutes handler behavior', () => {
   // ── Handler writes SSE headers ─────────────────────────────────────────────
 
   it('writeHead is called with 200 and SSE headers', async () => {
-    capturedOnEvent = null
+    _capturedOnEvent = null
     const mockRaw = makeMockRaw()
     const req = makeMockRequest(mockRaw as unknown as ReturnType<typeof makeMockRaw>)
     const reply = makeMockReply(mockRaw)
@@ -188,7 +188,7 @@ describe('TECH-012 — eventsRoutes handler behavior', () => {
   // ── Handler writes initial ping ────────────────────────────────────────────
 
   it('emits an initial ping frame when handler starts', async () => {
-    capturedOnEvent = null
+    _capturedOnEvent = null
     capturedUnsub = null
 
     const mockRaw = makeMockRaw()
@@ -212,7 +212,7 @@ describe('TECH-012 — eventsRoutes handler behavior', () => {
   // ── onEvent callback forwards meeting.status ───────────────────────────────
 
   it('forwards a meeting.status event as an SSE frame', async () => {
-    capturedOnEvent = null
+    _capturedOnEvent = null
     capturedUnsub = null
 
     const mockRaw = makeMockRaw()

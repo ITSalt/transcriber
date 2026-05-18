@@ -18,10 +18,11 @@ async function request<T>(
   init: RequestInit,
   schema: ZodLike<T>,
 ): Promise<T> {
+  const hasBody = init.body != null;
   const res = await fetch(path, {
     ...init,
     headers: {
-      "Content-Type": "application/json",
+      ...(hasBody ? { "Content-Type": "application/json" } : {}),
       ...init.headers,
     },
   });

@@ -6,15 +6,14 @@ interface DownloadMenuProps {
 }
 
 /**
- * Download buttons for txt/json/md formats.
- * Calls GET /api/meetings/:id/transcript/download with format query param.
- * RQ-020: filename '<meeting-title>-transcript.txt'
+ * Download button for transcript plain-text.
+ * Calls GET /api/meetings/:id/transcript/download — BE returns text/plain only (RQ-020).
  */
 export function DownloadMenu({ meetingId }: DownloadMenuProps) {
   const { t } = useTranslation();
 
-  function handleDownload(format: "txt" | "json" | "md") {
-    window.location.href = `/api/meetings/${meetingId}/transcript/download?format=${format}`;
+  function handleDownload() {
+    window.location.href = `/api/meetings/${meetingId}/transcript/download`;
   }
 
   return (
@@ -22,23 +21,9 @@ export function DownloadMenu({ meetingId }: DownloadMenuProps) {
       <Button
         variant="outline"
         data-testid="btn-download-txt"
-        onClick={() => handleDownload("txt")}
+        onClick={handleDownload}
       >
         {t("transcript.downloadTxt")}
-      </Button>
-      <Button
-        variant="outline"
-        data-testid="btn-download-json"
-        onClick={() => handleDownload("json")}
-      >
-        {t("transcript.downloadJson")}
-      </Button>
-      <Button
-        variant="outline"
-        data-testid="btn-download-md"
-        onClick={() => handleDownload("md")}
-      >
-        {t("transcript.downloadMd")}
       </Button>
     </div>
   );

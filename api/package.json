@@ -7,7 +7,7 @@
     "schema": "prisma/schema.prisma"
   },
   "scripts": {
-    "build": "tsc --build",
+    "build": "tsc --build && node -e \"const fs=require('fs');const p='dist/lib/pdf';fs.mkdirSync(p,{recursive:true});fs.copyFileSync('src/lib/pdf/template.html',p+'/template.html')\"",
     "dev": "tsc --build --watch",
     "typecheck": "tsc --noEmit",
     "clean": "rimraf dist tsconfig.tsbuildinfo",

@@ -111,11 +111,11 @@ describe.skipIf(!hasDb)('Prisma smoke — round-trip per entity', () => {
     const created = await prisma.protocol.create({
       data: {
         meetingId: meeting.id,
-        contentMd: '# Meeting Notes\n\n- Item 1',
+        markdownContent: '# Meeting Notes\n\n- Item 1',
       },
     })
     const found = await prisma.protocol.findFirst({ where: { id: created.id } })
-    expect(found?.contentMd).toContain('# Meeting Notes')
+    expect(found?.markdownContent).toContain('# Meeting Notes')
     expect(found?.version).toBe(1)
   })
 
@@ -132,7 +132,7 @@ describe.skipIf(!hasDb)('Prisma smoke — round-trip per entity', () => {
       },
     })
     await prisma.protocol.create({
-      data: { meetingId: meeting.id, contentMd: '# Cascade test' },
+      data: { meetingId: meeting.id, markdownContent: '# Cascade test' },
     })
 
     await prisma.meeting.delete({ where: { id: meeting.id } })

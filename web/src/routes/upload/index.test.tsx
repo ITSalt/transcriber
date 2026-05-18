@@ -16,7 +16,12 @@ afterEach(() => {
 });
 
 // ─── tus-js-client mock ───────────────────────────────────────────────────────
+
+// Stores options passed to the most recently constructed MockUpload instance
+let lastUploadOptions: Record<string, unknown> = {};
+
 vi.mock("tus-js-client", async () => {
+  // eslint-disable-next-line @typescript-eslint/consistent-type-imports
   const actual = await vi.importActual<typeof import("tus-js-client")>(
     "tus-js-client",
   );
@@ -41,6 +46,7 @@ vi.mock("tus-js-client", async () => {
     ) {
       this.file = file;
       this.options = options;
+      lastUploadOptions = options as Record<string, unknown>;
     }
 
     start() {
@@ -225,6 +231,30 @@ describe("UploadPage", () => {
     });
   });
 
+  it("SYNC-UC100-1: finalize POST sends filename, size_bytes, mime_type, and title", async () => {
+    const fetchSpy = vi.spyOn(globalThis, "fetch").mockImplementation(() =>
+      Promise.resolve(
+        makeJsonResponse(
+          { meeting_id: "a1b2c3d4-1234-4abc-8def-a1b2c3d4e5f6", status: "TRANSCRIBING" },
+          200,
+        ),
+      ),
+    );
+    renderUpload();
+    const file = makeVideoFile("my-meeting.mp4", "video/mp4", 2048);
+    await userEvent.upload(screen.getByTestId("upload-input-file"), file);
+    await userEvent.click(screen.getByTestId("upload-submit"));
+    await waitFor(() => {
+      expect(screen.getByTestId("meeting-detail")).toBeInTheDocument();
+    });
+    const [, fetchInit] = fetchSpy.mock.calls[0] ?? [];
+    const body = JSON.parse((fetchInit as RequestInit).body as string) as Record<string, unknown>;
+    expect(body["filename"]).toBe("my-meeting.mp4");
+    expect(body["size_bytes"]).toBe(2048);
+    expect(body["mime_type"]).toBe("video/mp4");
+    expect(body["title"]).toBe("my-meeting");
+  });
+
   it("shows error when finalize API call fails", async () => {
     mockFetch({ message: "Internal error" }, 500);
     renderUpload();
@@ -255,5 +285,76 @@ describe("UploadPage", () => {
     await act(async () => {
       await i18n.changeLanguage("en");
     });
+  });
+
+  // CRIT-FE-2 regression: language "auto" must not appear in Upload-Metadata
+  it("CRIT-FE-2: auto-detect language does not send language=auto in Upload-Metadata", async () => {
+    mockFetch(
+      {
+        meeting_id: "a1b2c3d4-1234-4abc-8def-a1b2c3d4e5f6",
+        status: "TRANSCRIBING",
+      },
+      200,
+    );
+    renderUpload();
+    const file = makeVideoFile("meeting.mp4", "video/mp4", 1024);
+    await userEvent.upload(screen.getByTestId("upload-input-file"), file);
+    // Do not select any language (leave as auto-detect / blank)
+    await userEvent.click(screen.getByTestId("upload-submit"));
+    await waitFor(() => {
+      expect(screen.getByTestId("meeting-detail")).toBeInTheDocument();
+    });
+    const headers = lastUploadOptions["headers"] as Record<string, string> | undefined;
+    const metadataHeader = headers?.["Upload-Metadata"] ?? "";
+    // "language=auto" must NOT appear — language key should be absent when blank
+    expect(metadataHeader).not.toContain("language=");
+    const parts = metadataHeader.split(",").map((p) => p.trim());
+    const languagePart = parts.find((p) => p.startsWith("language "));
+    expect(languagePart).toBeUndefined();
+  });
+
+  // CRIT-FE-1 regression: video/webm must be rejected
+  it("CRIT-FE-1: rejects video/webm file with MIME error", async () => {
+    renderUpload();
+    const webmFile = new File([new ArrayBuffer(1024)], "video.webm", {
+      type: "video/webm",
+    });
+    const input = screen.getByTestId("upload-input-file");
+    fireEvent.change(input, { target: { files: [webmFile] } });
+    await waitFor(() => {
+      expect(screen.getByTestId("upload-submit")).not.toBeDisabled();
+    });
+    await userEvent.click(screen.getByTestId("upload-submit"));
+    await waitFor(() => {
+      expect(screen.getByTestId("upload-error")).toBeInTheDocument();
+      expect(screen.getByTestId("upload-error").textContent).toContain("MP4");
+    });
+  });
+
+  // CRIT-FE-3 regression: Upload-Metadata header must contain all required fields
+  it("CRIT-FE-3: Upload-Metadata header contains filename, mime_type, size_bytes, and title", async () => {
+    mockFetch(
+      {
+        meeting_id: "a1b2c3d4-1234-4abc-8def-a1b2c3d4e5f6",
+        status: "TRANSCRIBING",
+      },
+      200,
+    );
+    renderUpload();
+    const file = makeVideoFile("my-meeting.mp4", "video/mp4", 2048);
+    await userEvent.upload(screen.getByTestId("upload-input-file"), file);
+    await userEvent.click(screen.getByTestId("upload-submit"));
+    await waitFor(() => {
+      expect(screen.getByTestId("meeting-detail")).toBeInTheDocument();
+    });
+    const headers = lastUploadOptions["headers"] as Record<string, string> | undefined;
+    const metadataHeader = headers?.["Upload-Metadata"] ?? "";
+    const keys = metadataHeader
+      .split(",")
+      .map((p) => p.trim().split(" ")[0]);
+    expect(keys).toContain("filename");
+    expect(keys).toContain("mime_type");
+    expect(keys).toContain("size_bytes");
+    expect(keys).toContain("title");
   });
 });

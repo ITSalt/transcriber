@@ -62,8 +62,8 @@ export async function uploadFinalizeRoutes(app: FastifyInstance): Promise<void> 
         throw new AppError('FILE_TOO_LARGE', 413, 'File exceeds maximum allowed size of 500 MB')
       }
 
-      // RQ-009: reject unsupported MIME types
-      const ALLOWED_MIME = new Set(['video/mp4', 'video/x-matroska', 'video/quicktime', 'video/webm', 'video/x-msvideo'])
+      // RQ-009: only these three MIME types are accepted (webm/avi removed)
+      const ALLOWED_MIME = new Set(['video/mp4', 'video/x-matroska', 'video/quicktime'])
       if (!ALLOWED_MIME.has(mime_type)) {
         throw new AppError('UNSUPPORTED_MIME', 415, `Unsupported media type: ${mime_type}`)
       }

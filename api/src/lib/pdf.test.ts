@@ -141,7 +141,7 @@ describe('renderPdf', () => {
   })
 
   it('closes the browser even if page.pdf() throws', async () => {
-    const fakePdfBytes = Buffer.concat([Buffer.from('%PDF-error\n')])
+    const _fakePdfBytes = Buffer.concat([Buffer.from('%PDF-error\n')])
     const page: PdfPage = {
       setContent: vi.fn().mockResolvedValue(undefined),
       pdf: vi.fn().mockRejectedValue(new Error('PDF generation failed')),

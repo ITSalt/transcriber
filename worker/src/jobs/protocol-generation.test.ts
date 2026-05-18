@@ -47,7 +47,6 @@ import {
   PROTOCOL_PROMPT_TEMPLATE_VERSION,
 } from './protocol-generation.js'
 import { prisma } from '../lib/prisma.js'
-import { KieAiLlmProvider } from '../llm/kieai.js'
 import { publishMeetingEvent } from '../lib/publisher.js'
 
 // ── Type helpers ──────────────────────────────────────────────────────────────

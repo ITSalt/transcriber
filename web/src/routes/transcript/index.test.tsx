@@ -311,22 +311,6 @@ describe("TranscriptPage", () => {
     });
   });
 
-  it("renders download JSON button", async () => {
-    mockFetch(MOCK_TRANSCRIPT);
-    renderTranscriptPage();
-    await waitFor(() => {
-      expect(screen.getByTestId("btn-download-json")).toBeInTheDocument();
-    });
-  });
-
-  it("renders download Markdown button", async () => {
-    mockFetch(MOCK_TRANSCRIPT);
-    renderTranscriptPage();
-    await waitFor(() => {
-      expect(screen.getByTestId("btn-download-md")).toBeInTheDocument();
-    });
-  });
-
   it("download TXT button triggers navigation to download endpoint", async () => {
     mockFetch(MOCK_TRANSCRIPT);
     renderTranscriptPage();

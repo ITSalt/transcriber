@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { MeetingListItem, MeetingListResponse } from './uc001.js';
 import { MeetingDetailResponse, MeetingStatusEvent } from './uc002.js';
+import { MeetingDeletedEvent, PingEvent, SseEvent, meetingChannel } from './sse-events.js';
 import { MeetingDeleteResponse } from './uc003.js';
 import { UploadCreateRequest, UploadFinalizeResponse } from './uc100.js';
 import { TranscriptionJobPayload, TranscriptionResult } from './uc200.js';
@@ -309,5 +310,74 @@ describe('PdfExportError', () => {
     expect(() =>
       PdfExportError.parse({ code: 'INTERNAL_ERROR', message: 'oops' }),
     ).toThrow();
+  });
+});
+
+// ─── SSE events ───────────────────────────────────────────────────────────────
+
+describe('MeetingDeletedEvent', () => {
+  const uuid = '00000000-0000-4000-8000-000000000001';
+
+  it('round-trips', () => {
+    const e = { type: 'meeting.deleted' as const, meeting_id: uuid };
+    expect(MeetingDeletedEvent.parse(e)).toEqual(e);
+  });
+
+  it('rejects non-uuid meeting_id', () => {
+    expect(() =>
+      MeetingDeletedEvent.parse({ type: 'meeting.deleted', meeting_id: 'not-a-uuid' }),
+    ).toThrow();
+  });
+
+  it('rejects wrong type literal', () => {
+    expect(() =>
+      MeetingDeletedEvent.parse({ type: 'meeting.status', meeting_id: uuid }),
+    ).toThrow();
+  });
+});
+
+describe('PingEvent', () => {
+  it('round-trips', () => {
+    expect(PingEvent.parse({ type: 'ping' })).toEqual({ type: 'ping' });
+  });
+
+  it('rejects non-ping type', () => {
+    expect(() => PingEvent.parse({ type: 'pong' })).toThrow();
+  });
+});
+
+describe('SseEvent discriminated union', () => {
+  const uuid = '00000000-0000-4000-8000-000000000001';
+
+  it('discriminates meeting.status', () => {
+    const raw = { type: 'meeting.status', meeting_id: uuid, status: 'TRANSCRIBING', error_reason: null };
+    const parsed = SseEvent.parse(raw);
+    expect(parsed.type).toBe('meeting.status');
+  });
+
+  it('discriminates ping', () => {
+    const parsed = SseEvent.parse({ type: 'ping' });
+    expect(parsed.type).toBe('ping');
+  });
+
+  it('discriminates meeting.deleted', () => {
+    const raw = { type: 'meeting.deleted', meeting_id: uuid };
+    const parsed = SseEvent.parse(raw);
+    expect(parsed.type).toBe('meeting.deleted');
+  });
+
+  it('rejects unknown type', () => {
+    expect(() => SseEvent.parse({ type: 'unknown.event' })).toThrow();
+  });
+});
+
+describe('meetingChannel', () => {
+  it('returns meeting:<id> format', () => {
+    expect(meetingChannel('abc-123')).toBe('meeting:abc-123');
+  });
+
+  it('returns meeting:<uuid> format for uuid', () => {
+    const id = '00000000-0000-4000-8000-000000000001';
+    expect(meetingChannel(id)).toBe(`meeting:${id}`);
   });
 });

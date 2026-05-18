@@ -20,16 +20,18 @@
 import type { Job } from 'bullmq'
 import type { Logger } from 'pino'
 import { Readable } from 'node:stream'
-import { pipeline as streamPipeline } from 'node:stream/promises'
 
-import type { TranscriptionJobPayload } from '@transcrib/shared'
+
+import type { TranscriptionJobPayload, ProtocolGenerationJobPayload } from '@transcrib/shared'
 import type { AsrResult, AsrSegment } from '@transcrib/shared'
+import type { IAsrProvider } from '@transcrib/shared'
 
 import { extractAudio } from '../lib/ffmpeg.js'
 import { DeepgramAsrProvider } from '../asr/deepgram-adapter.js'
 import { publishMeetingEvent } from '../lib/publisher.js'
 import { prisma } from '../lib/prisma.js'
 import { createStorage } from '../lib/storage.js'
+import { createQueues, QueueName } from '../queues.js'
 
 // ─── Speaker name resolution (RQ-017) ────────────────────────────────────────
 
@@ -146,15 +148,10 @@ async function extractedAudioToBuffer(audioReadable: Readable): Promise<Buffer> 
   return Buffer.concat(chunks)
 }
 
-// ─── CURRENT_PROMPT_TEMPLATE_VERSION ─────────────────────────────────────────
-
-/** RQ-016: version tag written to ProtocolGenerationJob for audit trail. */
-const CURRENT_PROMPT_TEMPLATE_VERSION = '1.0.0'
-
 // ─── Main pipeline ────────────────────────────────────────────────────────────
 
 export interface TranscriptionDeps {
-  asr?: InstanceType<typeof DeepgramAsrProvider>
+  asr?: IAsrProvider
   redisUrl?: string
 }
 
@@ -298,14 +295,25 @@ export async function processTranscriptionJob(
 
     // ── Step 10: Auto-create ProtocolGenerationJob (RQ-016) ───────────────
     // BRQ-007: exactly one ProtocolGenerationJob per completed TranscriptionJob
-    await prisma.protocolGenerationJob.create({
+    const protoJob = await prisma.protocolGenerationJob.create({
       data: {
         meetingId: meeting.id,
         status: 'PENDING',
       },
     })
 
-    log.info({ meetingId: meeting.id }, 'ProtocolGenerationJob created (RQ-016)')
+    log.info({ meetingId: meeting.id, protoJobId: protoJob.id }, 'ProtocolGenerationJob created (RQ-016)')
+
+    // Enqueue to BullMQ so UC-300 worker picks it up (after-commit side effect)
+    const queues = createQueues(redisUrl)
+    const payload: ProtocolGenerationJobPayload = { protocol_generation_job_id: protoJob.id }
+    try {
+      await queues[QueueName.Protocol].add('generateProtocol', payload)
+    } finally {
+      await queues[QueueName.Protocol].close()
+    }
+
+    log.info({ protoJobId: protoJob.id }, 'ProtocolGenerationJob enqueued to BullMQ (RQ-016)')
 
     // ── Step 11: Publish SSE 'meeting.status' event (TECH-012) ────────────
     await publishMeetingEvent(

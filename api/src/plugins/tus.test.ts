@@ -16,7 +16,7 @@ import type { FastifyInstance } from 'fastify'
 // vi.hoisted runs synchronously before all other imports and vi.mock factories.
 
 const { MockS3Store } = vi.hoisted(() => {
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  // eslint-disable-next-line @typescript-eslint/no-require-imports, @typescript-eslint/consistent-type-imports
   const { DataStore } = require('@tus/utils') as typeof import('@tus/utils')
 
   type UploadRecord = {
@@ -47,7 +47,7 @@ const { MockS3Store } = vi.hoisted(() => {
     async getUpload(id: string) {
       const upload = this.uploads.get(id)
       if (!upload) throw new Error(`Upload ${id} not found`)
-      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      // eslint-disable-next-line @typescript-eslint/no-require-imports, @typescript-eslint/consistent-type-imports
       const { Upload } = require('@tus/utils') as typeof import('@tus/utils')
       return new Upload({ id, ...upload })
     }
