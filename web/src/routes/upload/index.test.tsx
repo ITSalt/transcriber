@@ -331,8 +331,9 @@ describe("UploadPage", () => {
     });
   });
 
-  // CRIT-FE-3 regression: Upload-Metadata header must contain all required fields
-  it("CRIT-FE-3: Upload-Metadata header contains filename, mime_type, size_bytes, and title", async () => {
+  // CRIT-FE-3 regression: Upload-Metadata header must use "filetype" key (not "mime_type")
+  // with the actual MIME string so the TUS pre-create hook on the server can validate it.
+  it("CRIT-FE-3: Upload-Metadata header contains filename, filetype (actual MIME string), size_bytes, and title", async () => {
     mockFetch(
       {
         meeting_id: "a1b2c3d4-1234-4abc-8def-a1b2c3d4e5f6",
@@ -349,12 +350,16 @@ describe("UploadPage", () => {
     });
     const headers = lastUploadOptions["headers"] as Record<string, string> | undefined;
     const metadataHeader = headers?.["Upload-Metadata"] ?? "";
-    const keys = metadataHeader
-      .split(",")
-      .map((p) => p.trim().split(" ")[0]);
+    const parts = metadataHeader.split(",").map((p) => p.trim());
+    const keys = parts.map((p) => p.split(" ")[0]);
     expect(keys).toContain("filename");
-    expect(keys).toContain("mime_type");
+    expect(keys).toContain("filetype");
+    expect(keys).not.toContain("mime_type");
     expect(keys).toContain("size_bytes");
     expect(keys).toContain("title");
+    // Value must be the actual MIME string, not an enum value
+    const filetypePart = parts.find((p) => p.startsWith("filetype "));
+    const filetypeValue = atob(filetypePart?.split(" ")[1] ?? "");
+    expect(filetypeValue).toBe("video/mp4");
   });
 });

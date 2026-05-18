@@ -91,7 +91,6 @@ export default function UploadPage() {
     setProgress(0);
 
     const effectiveTitle = title.trim() || fileBasename(file.name);
-    const mimeEnum = MIME_TO_ENUM[file.type] ?? "VIDEO_MP4";
 
     // Encode metadata as base64 key-value pairs for TUS Upload-Metadata header
     function encodeMetadataValue(value: string): string {
@@ -100,7 +99,7 @@ export default function UploadPage() {
 
     const metadataParts: Record<string, string> = {
       filename: encodeMetadataValue(file.name),
-      mime_type: encodeMetadataValue(mimeEnum),
+      filetype: encodeMetadataValue(file.type),
       size_bytes: encodeMetadataValue(String(file.size)),
       title: encodeMetadataValue(effectiveTitle),
     };

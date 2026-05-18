@@ -1,5 +1,14 @@
 # Changelog — .tl/
 
+### [2026-05-18] nacl-tl-fix: POST /api/uploads 415 — wrong TUS metadata key for MIME type
+- **Level:** L2
+- **Status:** PASS
+- **Root cause:** `api-contract.md` documented TUS metadata key as `mime_type`; backend actually reads `filetype`. Frontend implemented per wrong docs, sending `mime_type=VIDEO_MP4` (enum value) instead of `filetype=video/mp4` (actual MIME string). Server found `metadata['filetype'] === undefined`, rejected with 415.
+- **Affected UC:** UC-100
+- **Docs updated:** `.tl/tasks/UC-100/api-contract.md` — corrected TUS metadata key from `mime_type` to `filetype`
+- **Code changed:** `web/src/routes/upload/index.tsx` — TUS metadata now sends `filetype: file.type`
+- **Tests:** existing test transitioned: `src/routes/upload/index.test.tsx` (CRIT-FE-3)
+
 ### [2026-05-18] nacl-tl-fix: Upload button missing from catalog page
 - **Level:** L1
 - **Status:** PASS
