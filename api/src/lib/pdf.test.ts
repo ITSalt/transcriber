@@ -12,8 +12,8 @@
  *      Decisions, Action Items
  */
 
-import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { renderPdf, _setBrowserLauncher, type PdfBrowser, type PdfPage } from './pdf.js'
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
+import { renderPdf, _setBrowserLauncher, _getDefaultLaunchOptions, type PdfBrowser, type PdfPage } from './pdf.js'
 
 // ─── Sample protocol markdown ─────────────────────────────────────────────────
 
@@ -184,5 +184,56 @@ describe('Acceptance: all four BRQ-011 section headers present in rendered HTML'
     expect(html).toContain('Discussion Topics')
     expect(html).toContain('Decisions')
     expect(html).toContain('Action Items')
+  })
+})
+
+// ─── TECH-021: puppeteer-core env-driven launch options ──────────────────────
+
+describe('TECH-021: _getDefaultLaunchOptions', () => {
+  const savedEnv: Record<string, string | undefined> = {}
+
+  beforeEach(() => {
+    savedEnv['PUPPETEER_EXECUTABLE_PATH'] = process.env['PUPPETEER_EXECUTABLE_PATH']
+  })
+
+  afterEach(() => {
+    const v = savedEnv['PUPPETEER_EXECUTABLE_PATH']
+    if (v === undefined) {
+      delete process.env['PUPPETEER_EXECUTABLE_PATH']
+    } else {
+      process.env['PUPPETEER_EXECUTABLE_PATH'] = v
+    }
+    vi.restoreAllMocks()
+  })
+
+  it('always includes required Chrome flags', () => {
+    process.env['PUPPETEER_EXECUTABLE_PATH'] = '/usr/bin/google-chrome'
+    const opts = _getDefaultLaunchOptions()
+    expect(opts.args).toContain('--no-sandbox')
+    expect(opts.args).toContain('--disable-dev-shm-usage')
+    expect(opts.args).toContain('--disable-gpu')
+  })
+
+  it('uses PUPPETEER_EXECUTABLE_PATH when env var is set', () => {
+    process.env['PUPPETEER_EXECUTABLE_PATH'] = '/usr/bin/google-chrome'
+    const opts = _getDefaultLaunchOptions()
+    expect(opts.executablePath).toBe('/usr/bin/google-chrome')
+  })
+
+  it('falls back to puppeteer.executablePath() when env var is not set', () => {
+    delete process.env['PUPPETEER_EXECUTABLE_PATH']
+
+    // Mock puppeteer (devDep) module
+    vi.mock('puppeteer', () => ({
+      default: {
+        executablePath: vi.fn().mockReturnValue('/tmp/chromium/chrome'),
+      },
+      executablePath: vi.fn().mockReturnValue('/tmp/chromium/chrome'),
+    }))
+
+    // _getDefaultLaunchOptions resolves dev chrome lazily — we just verify
+    // it does NOT use the env var path
+    const opts = _getDefaultLaunchOptions()
+    expect(opts.executablePath).not.toBe('/usr/bin/google-chrome')
   })
 })

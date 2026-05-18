@@ -19,6 +19,7 @@ import { fileURLToPath } from 'node:url'
 import path from 'node:path'
 import { remark } from 'remark'
 import remarkHtml from 'remark-html'
+import puppeteerCore from 'puppeteer-core'
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
 
@@ -37,15 +38,48 @@ export interface PdfPage {
 /** Factory type for launching a browser instance. */
 export type BrowserLauncher = () => Promise<PdfBrowser>
 
-// ─── Default launcher (real Puppeteer) ────────────────────────────────────────
+// ─── Default launch options (TECH-021) ────────────────────────────────────────
+
+/** Required Chrome flags for headless server operation. */
+const CHROME_ARGS = ['--no-sandbox', '--disable-dev-shm-usage', '--disable-gpu']
 
 /**
- * Launches a real headless Chromium via Puppeteer.
+ * Returns launch options for puppeteer-core.
+ *
+ * - If `PUPPETEER_EXECUTABLE_PATH` is set (prod), uses that Chrome binary.
+ * - Otherwise (dev), falls back to the bundled Chrome via `require('puppeteer')`.
+ *
+ * Exported for unit testing — avoids actually launching Chrome.
+ */
+export function _getDefaultLaunchOptions(): { executablePath: string; args: string[]; headless: boolean } {
+  const envPath = process.env['PUPPETEER_EXECUTABLE_PATH']
+  const executablePath = envPath ?? resolveDevChrome()
+  return {
+    executablePath,
+    args: CHROME_ARGS,
+    headless: true,
+  }
+}
+
+/**
+ * Resolves the bundled Chrome path via the `puppeteer` devDependency.
+ * Only called in dev — in prod `PUPPETEER_EXECUTABLE_PATH` is always set.
+ * Fails loudly if `puppeteer` is not installed (misconfigured prod).
+ */
+function resolveDevChrome(): string {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const { executablePath } = require('puppeteer') as { executablePath: () => string }
+  return executablePath()
+}
+
+// ─── Default launcher (puppeteer-core) ────────────────────────────────────────
+
+/**
+ * Launches a real headless Chrome via puppeteer-core.
  * Exported so tests can replace it with a mock.
  */
 export let _launchBrowser: BrowserLauncher = async (): Promise<PdfBrowser> => {
-  const puppeteer = await import('puppeteer')
-  return puppeteer.default.launch({ headless: true }) as Promise<PdfBrowser>
+  return puppeteerCore.launch(_getDefaultLaunchOptions()) as Promise<PdfBrowser>
 }
 
 /**

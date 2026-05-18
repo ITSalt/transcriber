@@ -7,9 +7,9 @@
  *   2. deleteObject removes the key; subsequent get throws StorageNotFoundError
  */
 
-import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { Readable } from 'node:stream'
-import { S3StorageProvider } from './s3-adapter.js'
+import { S3StorageProvider, s3ConfigFromEnv } from './s3-adapter.js'
 import { StorageNotFoundError, StorageError } from '@transcrib/shared'
 
 // ─── Mock @aws-sdk/client-s3 ─────────────────────────────────────────────────
@@ -346,5 +346,85 @@ describe('getPresignedDownloadUrl', () => {
     const url = await provider.getPresignedDownloadUrl('uploads/video.mp4', 3600)
     expect(typeof url).toBe('string')
     expect(url.length).toBeGreaterThan(0)
+  })
+})
+
+// ─── TECH-021: s3ConfigFromEnv — env-driven region and forcePathStyle ─────────
+
+describe('TECH-021: s3ConfigFromEnv', () => {
+  const savedEnv: Record<string, string | undefined> = {}
+
+  beforeEach(() => {
+    // Save and set required vars
+    savedEnv['S3_BUCKET'] = process.env['S3_BUCKET']
+    savedEnv['S3_KEY'] = process.env['S3_KEY']
+    savedEnv['S3_SECRET'] = process.env['S3_SECRET']
+    savedEnv['S3_ENDPOINT'] = process.env['S3_ENDPOINT']
+    savedEnv['S3_REGION'] = process.env['S3_REGION']
+    savedEnv['S3_FORCE_PATH_STYLE'] = process.env['S3_FORCE_PATH_STYLE']
+
+    process.env['S3_BUCKET'] = 'test-bucket'
+    process.env['S3_KEY'] = 'key'
+    process.env['S3_SECRET'] = 'secret'
+  })
+
+  afterEach(() => {
+    for (const [k, v] of Object.entries(savedEnv)) {
+      if (v === undefined) {
+        delete process.env[k]
+      } else {
+        process.env[k] = v
+      }
+    }
+  })
+
+  it('MinIO dev profile: defaults to us-east-1 region and forcePathStyle not set', () => {
+    process.env['S3_ENDPOINT'] = 'http://localhost:9000'
+    delete process.env['S3_REGION']
+    delete process.env['S3_FORCE_PATH_STYLE']
+
+    const cfg = s3ConfigFromEnv()
+
+    expect(cfg.region).toBe('us-east-1')
+    expect(cfg.endpoint).toBe('http://localhost:9000')
+    // forcePathStyle is not set in env — constructor applies default
+    expect(cfg.forcePathStyle).toBeUndefined()
+  })
+
+  it('Cloud.ru prod profile: honors S3_REGION and S3_FORCE_PATH_STYLE=true', () => {
+    process.env['S3_ENDPOINT'] = 'https://s3.cloud.ru'
+    process.env['S3_REGION'] = 'ru-central-1'
+    process.env['S3_FORCE_PATH_STYLE'] = 'true'
+
+    const cfg = s3ConfigFromEnv()
+
+    expect(cfg.region).toBe('ru-central-1')
+    expect(cfg.endpoint).toBe('https://s3.cloud.ru')
+    expect(cfg.forcePathStyle).toBe(true)
+  })
+
+  it('S3_FORCE_PATH_STYLE=false is honored', () => {
+    process.env['S3_ENDPOINT'] = 'https://s3.amazonaws.com'
+    process.env['S3_REGION'] = 'us-east-1'
+    process.env['S3_FORCE_PATH_STYLE'] = 'false'
+
+    const cfg = s3ConfigFromEnv()
+
+    expect(cfg.forcePathStyle).toBe(false)
+  })
+
+  it('throws if S3_BUCKET is missing', () => {
+    delete process.env['S3_BUCKET']
+    expect(() => s3ConfigFromEnv()).toThrow('S3_BUCKET')
+  })
+
+  it('throws if S3_KEY is missing', () => {
+    delete process.env['S3_KEY']
+    expect(() => s3ConfigFromEnv()).toThrow('S3_KEY')
+  })
+
+  it('throws if S3_SECRET is missing', () => {
+    delete process.env['S3_SECRET']
+    expect(() => s3ConfigFromEnv()).toThrow('S3_SECRET')
   })
 })

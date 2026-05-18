@@ -5,20 +5,20 @@
   "source": "nacl-tl-plan",
   "summary": {
     "total_uc": 9,
-    "total_tech": 15,
-    "total_tasks": 30,
-    "pending": 0,
+    "total_tech": 24,
+    "total_tasks": 39,
+    "pending": 5,
     "in_progress": 0,
-    "ready_for_review": 0,
+    "ready_for_review": 3,
     "verified_pending": 0,
-    "approved": 24,
+    "approved": 25,
     "qa_pass": 7,
     "qa_skip": 2,
     "done": 0,
     "blocked": 0
   },
   "waves": {
-    "total": 6,
+    "total": 10,
     "current": 6
   },
   "partial_inputs": [],
@@ -621,6 +621,108 @@
       "reviewed_be": "2026-05-18T16:35:00Z",
       "review_be_result": "approved",
       "review_be_headline": "REVIEW APPLIED -- UNVERIFIED (100% test author overlap, operator override applied)"
+    },
+    {
+      "id": "TECH-016",
+      "title": "Cloud.ru S3 bucket + service account",
+      "type": "tech",
+      "status": "pending",
+      "wave": 7,
+      "priority": "high",
+      "owner": "user",
+      "blockers": [],
+      "blocks": ["TECH-018"]
+    },
+    {
+      "id": "TECH-017",
+      "title": "Server bootstrap (swap, Node 20, pnpm, ffmpeg, chromium)",
+      "type": "tech",
+      "status": "pending",
+      "wave": 7,
+      "priority": "high",
+      "owner": "ops",
+      "blockers": [],
+      "blocks": ["TECH-018", "TECH-019"]
+    },
+    {
+      "id": "TECH-018",
+      "title": "Postgres role + Redis DB index + filesystem layout + .env",
+      "type": "tech",
+      "status": "pending",
+      "wave": 8,
+      "priority": "high",
+      "owner": "ops",
+      "blockers": ["TECH-016", "TECH-017"],
+      "blocks": ["TECH-020", "TECH-023"]
+    },
+    {
+      "id": "TECH-019",
+      "title": "pm2 ecosystem.config.cjs (api + worker)",
+      "type": "tech",
+      "status": "approved",
+      "wave": 7,
+      "priority": "high",
+      "owner": "dev",
+      "blockers": ["TECH-001"],
+      "blocks": ["TECH-023"]
+    },
+    {
+      "id": "TECH-020",
+      "title": "Caddy server-block for transcriber.itsalt.ru",
+      "type": "tech",
+      "status": "pending",
+      "wave": 8,
+      "priority": "high",
+      "owner": "ops",
+      "blockers": ["TECH-018"],
+      "blocks": ["TECH-024"]
+    },
+    {
+      "id": "TECH-021",
+      "title": "S3 Cloud.ru profile + puppeteer-core wiring",
+      "type": "tech",
+      "status": "ready_for_review",
+      "wave": 7,
+      "priority": "high",
+      "owner": "dev",
+      "blockers": ["TECH-007", "TECH-014"],
+      "blocks": ["TECH-024"]
+    },
+    {
+      "id": "TECH-022",
+      "title": "/api/health + graceful shutdown (SIGTERM)",
+      "type": "tech",
+      "status": "ready_for_review",
+      "wave": 7,
+      "priority": "high",
+      "owner": "dev",
+      "blockers": ["TECH-005"],
+      "blocks": ["TECH-023"]
+    },
+    {
+      "id": "TECH-023",
+      "title": "GitHub Actions deploy-production.yml + repo secrets",
+      "type": "tech",
+      "status": "ready_for_review",
+      "wave": 9,
+      "priority": "high",
+      "owner": "dev",
+      "blockers": ["TECH-018", "TECH-019", "TECH-022"],
+      "blocks": ["TECH-024"]
+    },
+    {
+      "id": "TECH-024",
+      "title": "DNS + first cutover + smoke test runbook",
+      "type": "tech",
+      "status": "pending",
+      "wave": 10,
+      "priority": "high",
+      "owner": "user+ops",
+      "blockers": [
+        "TECH-016", "TECH-017", "TECH-018", "TECH-019",
+        "TECH-020", "TECH-021", "TECH-022", "TECH-023"
+      ],
+      "blocks": []
     }
   ]
 }

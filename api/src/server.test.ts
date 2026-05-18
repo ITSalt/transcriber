@@ -88,20 +88,19 @@ describe('TECH-005 — Fastify scaffold', () => {
     await app.close()
   })
 
-  // ── Health endpoint ─────────────────────────────────────────────────────────
+  // ── Health endpoint (liveness) ──────────────────────────────────────────────
+  // Full health tests live in src/routes/health.test.ts (TECH-022).
 
-  describe('GET /health', () => {
-    it('returns 200 with all probes green when DB and Redis respond', async () => {
+  describe('GET /api/health', () => {
+    it('returns 200 with status ok', async () => {
       const response = await app.inject({
         method: 'GET',
-        url: '/health',
+        url: '/api/health',
       })
 
       expect(response.statusCode).toBe(200)
-      const body = response.json<{ status: string; db: string; redis: string }>()
+      const body = response.json<{ status: string }>()
       expect(body.status).toBe('ok')
-      expect(body.db).toBe('ok')
-      expect(body.redis).toBe('ok')
     })
   })
 
