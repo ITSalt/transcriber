@@ -1,0 +1,16 @@
+import { z } from 'zod';
+import { JobStatus } from '../enums.js';
+
+// ─── TranscriptionJobDto ──────────────────────────────────────────────────────
+
+export const TranscriptionJobDto = z.object({
+  id: z.string().uuid(),
+  meetingId: z.string().uuid(),
+  status: JobStatus,
+  startedAt: z.string().datetime().nullable(),
+  finishedAt: z.string().datetime().nullable(),
+  errorMsg: z.string().nullable(),
+  createdAt: z.string().datetime(),
+  updatedAt: z.string().datetime(),
+});
+export type TranscriptionJobDto = z.infer<typeof TranscriptionJobDto>;

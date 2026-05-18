@@ -11,7 +11,7 @@
   "techTasks": [
     { "id": "TECH-001", "status": "done", "commit": "see git log" },
     { "id": "TECH-002", "status": "done" },
-    { "id": "TECH-003", "status": "pending" },
+    { "id": "TECH-003", "status": "done" },
     { "id": "TECH-004", "status": "pending" },
     { "id": "TECH-005", "status": "pending" },
     { "id": "TECH-006", "status": "pending" },

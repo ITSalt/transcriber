@@ -1,3 +1,6 @@
 // @transcrib/shared — public exports
-// DTOs, Zod schemas, and shared types will be added in TECH-004
-export {};
+// Zod schemas, inferred TS types, and shared DTOs for api/, worker/, and web/.
+
+export * from './enums.js';
+export * from './dto/index.js';
+export * from './api/index.js';
