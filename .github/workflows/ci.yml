@@ -33,10 +33,7 @@ jobs:
           cache: pnpm
 
       - name: Install dependencies
-        # pnpm-lock.yaml is gitignored, so --frozen-lockfile is intentionally
-        # omitted. Once the lockfile is committed, change this to:
-        #   pnpm install --frozen-lockfile
-        run: pnpm install
+        run: pnpm install --frozen-lockfile
 
       - name: Lint
         run: pnpm run lint

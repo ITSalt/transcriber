@@ -30,8 +30,6 @@ venv/
 # TypeScript build info
 *.tsbuildinfo
 
-# pnpm
-pnpm-lock.yaml
 
 # OS
 .DS_Store
