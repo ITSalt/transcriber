@@ -1,5 +1,16 @@
 # Changelog — .tl/
 
+## [2026-05-18] PLAN — Production deployment (TECH-016 .. TECH-024)
+- Added deployment plan for PROD on `82.202.156.157` / `transcriber.itsalt.ru`. Architecture document: `.tl/deploy-plan.md`.
+- **9 new TECH tasks** in waves 7–10 (additive to existing waves 0–5):
+  - Wave 7 (parallel prep): TECH-016 (Cloud.ru bucket, user manual), TECH-017 (server bootstrap), TECH-019 (pm2 ecosystem), TECH-021 (S3 + puppeteer-core), TECH-022 (/api/health + graceful shutdown).
+  - Wave 8 (server wiring): TECH-018 (Postgres role + Redis DB index + filesystem + .env), TECH-020 (Caddy server-block).
+  - Wave 9 (CI/CD): TECH-023 (GitHub Actions deploy-production.yml + repo secrets).
+  - Wave 10 (cutover): TECH-024 (DNS + first deploy + smoke test runbook).
+- **Coexistence guaranteed:** plan is strictly additive — separate Postgres role `transcrib` (inside existing `learn-postgres` container), Redis DB `/1` (with BullMQ prefix `transcrib:`), Cloud.ru bucket `transcrib-itsalt-prod` (with scoped service account), pm2 apps `transcrib-api` / `transcrib-worker`, new Caddy server-block. learn + Mattermost services untouched.
+- **Source of plan:** server inspection (read-only SSH as `magz`) + learn project conventions; no Neo4j SA changes (deployment is infra concern, not modeled in graph).
+- **Status:** `PLAN APPLIED — PARTIAL`. Three open questions in `master-plan.md § Production deployment` need answers before TECH-018 can start; TECH-016 (Cloud.ru bucket creation by user) is unblocked and can begin in parallel.
+
 ## [2026-05-18] Post-intake cleanup — DELIVERED (Phase 6)
 - **Final state:** all 30 plan tasks at terminal status. 28 `done`, 2 `verified-pending` (UC-200-BE / UC-300-BE — provider E2E gated on API keys).
 - **Remote:** `git@github.com:ITSalt/transcriber.git`; default branch `main` at `5258a11`.

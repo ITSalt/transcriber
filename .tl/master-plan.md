@@ -118,3 +118,42 @@ Definition of done for the wave: every UC in waves 1+ has its TECH dependencies 
 Start Wave 0 with `/nacl-tl-dev TECH-001`.
 
 After Wave 0 is green, run `/nacl-tl-next` to pick the next task.
+
+---
+
+## Production deployment (added 2026-05-18)
+
+Full architecture document: **`.tl/deploy-plan.md`**.
+
+Target host: `82.202.156.157` (Ubuntu 24.04), domain `transcriber.itsalt.ru`. Server already runs `learn.itsalt.ru` + Mattermost — plan is strictly additive (separate Postgres role + DB, separate Redis logical DB `/1`, separate Cloud.ru S3 bucket + service account, separate pm2 apps, new Caddy server-block).
+
+### Deploy TECH tasks
+
+| Task | Title | Owner | Wave | Depends on |
+|------|-------|-------|------|------------|
+| TECH-016 | Cloud.ru S3 bucket + service account | user (manual) | 7 | — |
+| TECH-017 | Server bootstrap (swap, Node 20, pnpm, ffmpeg, chromium) | ops | 7 | — |
+| TECH-018 | Postgres role + Redis DB index + filesystem layout + `.env` | ops | 8 | TECH-016, TECH-017 |
+| TECH-019 | `ecosystem.config.cjs` (pm2 api + worker) | dev | 7 | TECH-001 |
+| TECH-020 | Caddy server-block for transcriber.itsalt.ru | ops | 8 | TECH-018 |
+| TECH-021 | S3 Cloud.ru profile + puppeteer-core wiring | dev | 7 | TECH-007, TECH-014 |
+| TECH-022 | `/api/health` + graceful shutdown (SIGTERM) | dev | 7 | TECH-005 |
+| TECH-023 | GitHub Actions `deploy-production.yml` + repo secrets | dev | 9 | TECH-018, TECH-019, TECH-022 |
+| TECH-024 | DNS + first cutover + smoke test runbook | user + ops | 10 | all above |
+
+### Deploy waves
+
+- **Wave 7 — Prepare in parallel** (user, server, code): TECH-016, TECH-017, TECH-019, TECH-021, TECH-022.
+- **Wave 8 — Wire it up on the server**: TECH-018, TECH-020.
+- **Wave 9 — Automate the pipeline**: TECH-023.
+- **Wave 10 — Production cutover**: TECH-024.
+
+UC feature waves 0–5 must be green before TECH-024 fires the first real cutover.
+
+### Open follow-up questions (to confirm before TECH-018 starts)
+
+1. Соглашается ли владелец на root-команды через автоматизированный SSH, или предпочитает сам выполнять `sudo`-шаги по чек-листам?
+2. GitHub-секреты: разделять `TRANSCRIB_PROD_*` от `PRODUCTION_*` (learn) или переиспользовать один SSH-ключ под разными именами?
+3. Имя github-org для clone в TECH-018 (предположительно `itsalt`).
+
+Эти вопросы не блокируют TECH-016 (создание bucket) — можно начинать его параллельно.
