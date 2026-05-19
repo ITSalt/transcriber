@@ -84,6 +84,15 @@ async function tusPluginImpl(app: FastifyInstance): Promise<void> {
 
   })
 
+  // ── Allow TUS PATCH bodies through Fastify's content-type gate ──────────────
+  // Fastify 5 returns 415 for any Content-Type it has no parser for.
+  // TUS PATCH sends Content-Type: application/offset+octet-stream.
+  // We register a no-op parser so Fastify accepts the request and leaves
+  // the raw stream unread — tusServer.handle() reads it directly via req.raw.
+  app.addContentTypeParser('application/offset+octet-stream', (_req, _payload, done) => {
+    done(null)
+  })
+
   // ── Mount: forward all /api/uploads/** requests to the TUS handler ─────────
   // Fastify uses Node.js http.IncomingMessage / http.ServerResponse under the
   // hood, so we can call tusServer.handle(req.raw, reply.raw) directly.

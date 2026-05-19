@@ -1,5 +1,15 @@
 # Changelog — .tl/
 
+### [2026-05-19] nacl-tl-fix: TUS PATCH 415 — missing content-type parser for application/offset+octet-stream
+- **Level:** L1 (Code-only)
+- **Status:** PASS
+- **Root cause:** Fastify 5 returns 415 for any Content-Type without a registered parser. PATCH /api/uploads/:id sends Content-Type: application/offset+octet-stream; no parser was registered → Fastify blocked the request before tusServer.handle().
+- **Affected UC:** UC-100 / TECH-008
+- **Docs updated:** none (L1)
+- **Code changed:** api/src/plugins/tus.ts — added addContentTypeParser('application/offset+octet-stream')
+- **Tests:** api/src/plugins/tus.test.ts — new test "registers content-type parser for application/offset+octet-stream (prevents 415 on TUS PATCH)"
+- **Pre-existing failures (baseline-confirmed unrelated):** none
+
 ### [2026-05-18] nacl-tl-fix: POST /api/uploads 500 — invalid S3 credentials + Node.js upgrade to v22
 - **Level:** L0 (Environment) × 2
 - **Status:** NO_INFRA (ecosystem config), Node upgrade PASS (verified via pm2 show)

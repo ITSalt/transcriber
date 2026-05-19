@@ -213,4 +213,18 @@ describe('TECH-008 — TUS upload plugin', () => {
 
     expect(response.statusCode).toBe(415)
   })
+
+  // ── Test 4: Fastify accepts application/offset+octet-stream (TUS PATCH) ──────
+  // Root cause of the bug: Fastify 5 returns 415 for any Content-Type that has
+  // no registered parser. TUS PATCH requests use application/offset+octet-stream.
+  // The fix registers a no-op parser so Fastify passes these requests through to
+  // tusServer.handle() without rejecting them.
+  //
+  // Note: app.inject() with a body cannot be used here because MockS3Store.write()
+  // intentionally ignores the source stream — inject would hang waiting for the
+  // body stream to be consumed. hasContentTypeParser() directly verifies the fix.
+
+  it('registers content-type parser for application/offset+octet-stream (prevents 415 on TUS PATCH)', () => {
+    expect(app.hasContentTypeParser('application/offset+octet-stream')).toBe(true)
+  })
 })
