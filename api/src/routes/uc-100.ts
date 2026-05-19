@@ -78,7 +78,7 @@ export async function uploadFinalizeRoutes(app: FastifyInstance): Promise<void> 
 
       // RQ-011: finalize — probe, persist, enqueue
       const result = await finalizeUpload({
-        uploadId,
+        s3Key: uploadId,
         filename,
         sizeBytes: size_bytes,
         mimeType: mime_type,

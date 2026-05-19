@@ -22,15 +22,15 @@ import { AppError } from '../plugins/errors.js'
 import { addTranscriptionJob } from '../queue.js'
 import type { UploadFinalizeResponse } from '@transcrib/shared'
 
-/** Input gathered from TUS upload metadata after bytes are fully written */
+/** Input gathered after S3 multipart upload is complete */
 export interface FinalizeUploadInput {
-  /** TUS upload ID — also the S3 key of the uploaded file */
-  uploadId: string
-  /** Original filename from TUS metadata */
+  /** S3 object key of the uploaded file (e.g. 'pending/uuid.mp4') */
+  s3Key: string
+  /** Original filename (for default title fallback) */
   filename: string
-  /** MIME type from TUS metadata (one of the allowed video types) */
+  /** MIME type of the uploaded file */
   mimeType: string
-  /** Size in bytes from TUS upload */
+  /** Size in bytes */
   sizeBytes: number
   /** S3 bucket name (used to construct storage_uri) */
   bucket: string
@@ -96,7 +96,7 @@ export async function finalizeUpload(
   input: FinalizeUploadInput,
 ): Promise<UploadFinalizeResponse> {
   const {
-    uploadId,
+    s3Key,
     filename,
     mimeType,
     sizeBytes,
@@ -106,7 +106,7 @@ export async function finalizeUpload(
     skipProbe = false,
   } = input
 
-  const storageUri = `s3://${bucket}/${uploadId}`
+  const storageUri = `s3://${bucket}/${s3Key}`
 
   // RQ-010: probe container integrity (unless explicitly skipped in tests)
   if (!skipProbe) {

@@ -1,9 +1,8 @@
 import { useState, useRef } from "react";
 import { useNavigate } from "react-router";
 import { useTranslation } from "react-i18next";
-import * as tus from "tus-js-client";
 import { apiPost } from "@/lib/api";
-import { UploadFinalizeResponse } from "@transcrib/shared";
+import { UploadFinalizeResponse, UploadInitResponse } from "@transcrib/shared";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
@@ -17,17 +16,16 @@ import {
 
 const MAX_SIZE_BYTES = 524_288_000; // 500 MB (RQ-008)
 
-// Map browser MIME types to VideoMimeType enum values used in TUS metadata
-// RQ-009: only these three MIME types are accepted
-const MIME_TO_ENUM: Record<string, string> = {
-  "video/mp4": "VIDEO_MP4",
-  "video/x-matroska": "VIDEO_MKV",
-  "video/quicktime": "VIDEO_MOV",
-};
+const ACCEPTED_MIME_TYPES = ["video/mp4", "video/x-matroska", "video/quicktime"];
 
-const ACCEPTED_MIME_TYPES = Object.keys(MIME_TO_ENUM);
+const CONCURRENCY = 4; // parallel S3 part uploads
 
 type UploadState = "idle" | "uploading" | "finalizing" | "done" | "error";
+
+interface MultipartState {
+  s3_key: string;
+  s3_upload_id: string;
+}
 
 export default function UploadPage() {
   const { t } = useTranslation();
@@ -39,7 +37,8 @@ export default function UploadPage() {
   const [progress, setProgress] = useState(0);
   const [uploadState, setUploadState] = useState<UploadState>("idle");
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
-  const uploadRef = useRef<tus.Upload | null>(null);
+  const abortControllerRef = useRef<AbortController | null>(null);
+  const multipartStateRef = useRef<MultipartState | null>(null);
 
   function fileBasename(filename: string): string {
     return filename.replace(/\.[^.]+$/, "");
@@ -66,11 +65,20 @@ export default function UploadPage() {
     }
   }
 
-  function handleCancel() {
-    if (uploadRef.current) {
-      uploadRef.current.abort();
-      uploadRef.current = null;
+  async function handleCancel() {
+    abortControllerRef.current?.abort();
+    abortControllerRef.current = null;
+
+    const state = multipartStateRef.current;
+    if (state) {
+      multipartStateRef.current = null;
+      apiPost(
+        "/api/uploads/abort",
+        { s3_key: state.s3_key, s3_upload_id: state.s3_upload_id },
+        UploadFinalizeResponse,
+      ).catch(() => {});
     }
+
     setUploadState("idle");
     setProgress(0);
     setErrorMsg(null);
@@ -91,88 +99,85 @@ export default function UploadPage() {
     setProgress(0);
 
     const effectiveTitle = title.trim() || fileBasename(file.name);
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
 
-    // Encode metadata as base64 key-value pairs for TUS Upload-Metadata header
-    function encodeMetadataValue(value: string): string {
-      return btoa(unescape(encodeURIComponent(value)));
+    try {
+      // 1. Init multipart upload
+      const init = await apiPost(
+        "/api/uploads/init",
+        {
+          filename: file.name,
+          size_bytes: file.size,
+          filetype: file.type,
+          title: effectiveTitle,
+          language: language || null,
+        },
+        UploadInitResponse,
+      );
+
+      multipartStateRef.current = { s3_key: init.s3_key, s3_upload_id: init.s3_upload_id };
+
+      // 2. Upload parts in parallel batches
+      const completedParts: Array<{ part_number: number; etag: string }> = [];
+
+      for (let i = 0; i < init.parts.length; i += CONCURRENCY) {
+        if (controller.signal.aborted) throw new Error("cancelled");
+
+        const batch = init.parts.slice(i, i + CONCURRENCY);
+        const batchResults = await Promise.all(
+          batch.map(async ({ part_number, url }) => {
+            const start = (part_number - 1) * init.part_size;
+            const slice = file.slice(start, start + init.part_size);
+
+            const res = await fetch(url, {
+              method: "PUT",
+              body: slice,
+              signal: controller.signal,
+            });
+
+            if (!res.ok) {
+              throw new Error(`Part ${part_number} upload failed: ${res.status}`);
+            }
+
+            // ETag comes back with double-quotes from S3; strip them
+            const etag = (res.headers.get("ETag") ?? "").replace(/"/g, "");
+            if (!etag) throw new Error(`Part ${part_number} returned empty ETag`);
+
+            return { part_number, etag };
+          }),
+        );
+
+        completedParts.push(...batchResults);
+        setProgress(Math.round((completedParts.length / init.parts.length) * 100));
+      }
+
+      // 3. Complete multipart and finalize meeting
+      setUploadState("finalizing");
+      const result = await apiPost(
+        "/api/uploads/complete",
+        {
+          s3_key: init.s3_key,
+          s3_upload_id: init.s3_upload_id,
+          filename: file.name,
+          size_bytes: file.size,
+          filetype: file.type,
+          title: effectiveTitle,
+          language: language || null,
+          parts: completedParts,
+        },
+        UploadFinalizeResponse,
+      );
+
+      multipartStateRef.current = null;
+      setUploadState("done");
+      void navigate(`/meetings/${result.meeting_id}`);
+    } catch (err: unknown) {
+      if (controller.signal.aborted) return; // user cancelled — don't show error
+      const msg = err instanceof Error ? err.message : t("common.error");
+      setErrorMsg(msg);
+      setUploadState("error");
     }
-
-    const metadataParts: Record<string, string> = {
-      filename: encodeMetadataValue(file.name),
-      filetype: encodeMetadataValue(file.type),
-      size_bytes: encodeMetadataValue(String(file.size)),
-      title: encodeMetadataValue(effectiveTitle),
-    };
-    if (language) {
-      metadataParts["language"] = encodeMetadataValue(language);
-    }
-
-    const metadataHeader = Object.entries(metadataParts)
-      .map(([k, v]) => `${k} ${v}`)
-      .join(",");
-
-    const upload = new tus.Upload(file, {
-      endpoint: "/api/uploads",
-      retryDelays: [0, 1000, 3000, 5000],
-      headers: {
-        "Upload-Metadata": metadataHeader,
-      },
-      onProgress(bytesUploaded, bytesTotal) {
-        const pct = bytesTotal > 0 ? Math.round((bytesUploaded / bytesTotal) * 100) : 0;
-        setProgress(pct);
-      },
-      onError(error) {
-        const msg =
-          error instanceof tus.DetailedError && error.originalResponse
-            ? (() => {
-                try {
-                  const body = JSON.parse(
-                    error.originalResponse.getBody(),
-                  ) as { message?: string };
-                  return body.message ?? t("common.error");
-                } catch {
-                  return t("common.error");
-                }
-              })()
-            : t("common.error");
-        setErrorMsg(msg);
-        setUploadState("error");
-      },
-      onSuccess() {
-        const uploadUrl = upload.url;
-        if (!uploadUrl) {
-          setErrorMsg(t("common.error"));
-          setUploadState("error");
-          return;
-        }
-        const uploadId = uploadUrl.split("/").pop() ?? "";
-        setUploadState("finalizing");
-        apiPost(
-          `/api/uploads/${uploadId}/finalize`,
-          {
-            filename: file.name,
-            size_bytes: file.size,
-            mime_type: file.type,
-            title: effectiveTitle,
-            ...(language && { language }),
-          },
-          UploadFinalizeResponse,
-        )
-          .then((res) => {
-            setUploadState("done");
-            void navigate(`/meetings/${res.meeting_id}`);
-          })
-          .catch((err: unknown) => {
-            const msg =
-              err instanceof Error ? err.message : t("common.error");
-            setErrorMsg(msg);
-            setUploadState("error");
-          });
-      },
-    });
-
-    uploadRef.current = upload;
-    upload.start();
   }
 
   const isUploading =
@@ -282,7 +287,7 @@ export default function UploadPage() {
           <Button
             type="button"
             variant="outline"
-            onClick={handleCancel}
+            onClick={() => void handleCancel()}
             disabled={!isUploading}
             data-testid="upload-cancel"
           >

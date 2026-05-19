@@ -10,7 +10,6 @@ import {
 } from '@fastify/type-provider-zod'
 import { buildLoggerOptions } from './plugins/logger.js'
 import { errorHandlerPlugin } from './plugins/errors.js'
-import { tusPlugin } from './plugins/tus.js'
 import { healthRoutes } from './routes/health.js'
 
 // Extend FastifyInstance with the shuttingDown flag (TECH-022)
@@ -20,10 +19,11 @@ declare module 'fastify' {
   }
 }
 import { ssePlugin } from './plugins/sse.js'
+import { uploadInitRoutes } from './routes/upload-init.js'
+import { uploadCompleteRoutes } from './routes/upload-complete.js'
 import { meetingListRoutes } from './routes/uc-001.js'
 import { meetingDetailRoutes } from './routes/uc-002.js'
 import { meetingDeleteRoutes } from './routes/uc-003.js'
-import { uploadFinalizeRoutes } from './routes/uc-100.js'
 import { transcriptRoutes } from './routes/uc-201.js'
 import { protocolRoutes } from './routes/uc-301.js'
 import { protocolPdfRoutes } from './routes/uc-302.js'
@@ -54,11 +54,11 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<FastifyIn
   await app.register(errorHandlerPlugin)
   await app.register(ssePlugin)
 
-  // Routes — register UC-100 finalize BEFORE the TUS wildcard so Fastify
-  // routes take priority over app.all('/api/uploads/*') in tusPlugin.
+  // Routes
   await app.register(healthRoutes)
-  // UC-100: upload finalize (must come before tusPlugin wildcard)
-  await app.register(uploadFinalizeRoutes)
+  // Upload: init multipart, complete, abort
+  await app.register(uploadInitRoutes)
+  await app.register(uploadCompleteRoutes)
   // UC-001: meeting catalog
   await app.register(meetingListRoutes)
   // UC-002: meeting detail
@@ -71,9 +71,6 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<FastifyIn
   await app.register(protocolRoutes)
   // UC-302: export protocol to PDF
   await app.register(protocolPdfRoutes)
-
-  // TUS plugin: mounts /api/uploads and /api/uploads/* catch-all last
-  await app.register(tusPlugin)
 
   return app
 }

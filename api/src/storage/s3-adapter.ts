@@ -13,6 +13,10 @@ import {
   HeadObjectCommand,
   NoSuchKey,
   NotFound,
+  CreateMultipartUploadCommand,
+  UploadPartCommand,
+  CompleteMultipartUploadCommand,
+  AbortMultipartUploadCommand,
 } from '@aws-sdk/client-s3'
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner'
 import type { IStorage, ObjectMeta, StorageStream } from '@transcrib/shared'
@@ -22,6 +26,8 @@ import { StorageNotFoundError, StorageError } from '@transcrib/shared'
 
 export interface S3Config {
   endpoint?: string
+  /** Browser-reachable endpoint for presigned upload URLs; defaults to endpoint */
+  publicEndpoint?: string
   bucket: string
   region: string
   accessKeyId: string
@@ -43,6 +49,7 @@ export function s3ConfigFromEnv(): S3Config {
 
   return {
     endpoint: process.env['S3_ENDPOINT'],
+    publicEndpoint: process.env['S3_PUBLIC_ENDPOINT'] ?? process.env['S3_ENDPOINT'],
     bucket,
     region: process.env['S3_REGION'] ?? 'us-east-1',
     accessKeyId,
@@ -58,24 +65,30 @@ const DEFAULT_PRESIGN_EXPIRES = 3600 // 1 hour
 
 export class S3StorageProvider implements IStorage {
   private readonly client: S3Client
+  private readonly presignClient: S3Client
   private readonly bucket: string
 
   constructor(cfg: S3Config) {
     this.bucket = cfg.bucket
 
-    this.client = new S3Client({
+    const clientOptions = (endpoint: string | undefined) => ({
       region: cfg.region,
       credentials: {
         accessKeyId: cfg.accessKeyId,
         secretAccessKey: cfg.secretAccessKey,
       },
-      ...(cfg.endpoint
-        ? {
-            endpoint: cfg.endpoint,
-            forcePathStyle: cfg.forcePathStyle ?? true,
-          }
+      ...(endpoint
+        ? { endpoint, forcePathStyle: cfg.forcePathStyle ?? true }
         : {}),
     })
+
+    this.client = new S3Client(clientOptions(cfg.endpoint))
+
+    // Presign client uses the public endpoint so browser-facing URLs are reachable
+    const pubEndpoint = cfg.publicEndpoint ?? cfg.endpoint
+    this.presignClient = pubEndpoint !== cfg.endpoint
+      ? new S3Client(clientOptions(pubEndpoint))
+      : this.client
   }
 
   // ── URI helpers ─────────────────────────────────────────────────────────────
@@ -193,6 +206,50 @@ export class S3StorageProvider implements IStorage {
       this.client,
       new GetObjectCommand({ Bucket: this.bucket, Key: key }),
       { expiresIn: expiresSec },
+    )
+  }
+
+  // ── Multipart upload ────────────────────────────────────────────────────────
+
+  async createMultipartUpload(key: string, contentType: string): Promise<string> {
+    const res = await this.client.send(
+      new CreateMultipartUploadCommand({ Bucket: this.bucket, Key: key, ContentType: contentType }),
+    )
+    if (!res.UploadId) throw new StorageError(`No UploadId returned for key "${key}"`)
+    return res.UploadId
+  }
+
+  async presignUploadPart(
+    key: string,
+    uploadId: string,
+    partNumber: number,
+    expiresSec: number = DEFAULT_PRESIGN_EXPIRES,
+  ): Promise<string> {
+    return getSignedUrl(
+      this.presignClient,
+      new UploadPartCommand({ Bucket: this.bucket, Key: key, UploadId: uploadId, PartNumber: partNumber }),
+      { expiresIn: expiresSec },
+    )
+  }
+
+  async completeMultipartUpload(
+    key: string,
+    uploadId: string,
+    parts: Array<{ PartNumber: number; ETag: string }>,
+  ): Promise<void> {
+    await this.client.send(
+      new CompleteMultipartUploadCommand({
+        Bucket: this.bucket,
+        Key: key,
+        UploadId: uploadId,
+        MultipartUpload: { Parts: parts },
+      }),
+    )
+  }
+
+  async abortMultipartUpload(key: string, uploadId: string): Promise<void> {
+    await this.client.send(
+      new AbortMultipartUploadCommand({ Bucket: this.bucket, Key: key, UploadId: uploadId }),
     )
   }
 }

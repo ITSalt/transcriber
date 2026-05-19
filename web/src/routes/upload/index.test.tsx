@@ -15,64 +15,8 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 
-// ─── tus-js-client mock ───────────────────────────────────────────────────────
-
-// Stores options passed to the most recently constructed MockUpload instance
-let lastUploadOptions: Record<string, unknown> = {};
-
-vi.mock("tus-js-client", async () => {
-  // eslint-disable-next-line @typescript-eslint/consistent-type-imports
-  const actual = await vi.importActual<typeof import("tus-js-client")>(
-    "tus-js-client",
-  );
-
-  class MockUpload {
-    private options: {
-      onProgress?: (uploaded: number, total: number) => void;
-      onError?: (err: Error) => void;
-      onSuccess?: () => void;
-    };
-    url: string | null = null;
-    file: File;
-
-    constructor(
-      file: File,
-      options: {
-        onProgress?: (uploaded: number, total: number) => void;
-        onError?: (err: Error) => void;
-        onSuccess?: () => void;
-        [key: string]: unknown;
-      },
-    ) {
-      this.file = file;
-      this.options = options;
-      lastUploadOptions = options as Record<string, unknown>;
-    }
-
-    start() {
-      // Simulate successful upload by default
-      const impl = (MockUpload as unknown as { __impl?: string }).__impl;
-      if (impl === "error") {
-        this.options.onError?.(new Error("Upload failed"));
-      } else {
-        this.url = "http://localhost/api/uploads/test-upload-id";
-        // Simulate progress
-        this.options.onProgress?.(50, 100);
-        this.options.onProgress?.(100, 100);
-        this.options.onSuccess?.();
-      }
-    }
-
-    abort() {}
-  }
-
-  return {
-    ...actual,
-    Upload: MockUpload,
-  };
-});
-
 // ─── Helpers ──────────────────────────────────────────────────────────────────
+
 function makeJsonResponse(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), {
     status,
@@ -80,10 +24,45 @@ function makeJsonResponse(body: unknown, status = 200) {
   });
 }
 
-function mockFetch(body: unknown, status = 200) {
-  vi.spyOn(globalThis, "fetch").mockImplementation(() =>
-    Promise.resolve(makeJsonResponse(body, status)),
-  );
+const FAKE_INIT_RESPONSE = {
+  s3_key: "pending/test-uuid.mp4",
+  s3_upload_id: "test-multipart-upload-id",
+  part_size: 10 * 1024 * 1024,
+  parts: [{ part_number: 1, url: "http://localhost:9000/presigned-part-1" }],
+};
+
+const FAKE_COMPLETE_RESPONSE = {
+  meeting_id: "a1b2c3d4-1234-4abc-8def-a1b2c3d4e5f6",
+  status: "TRANSCRIBING",
+};
+
+function mockSuccessfulUpload() {
+  vi.spyOn(globalThis, "fetch").mockImplementation(async (url, init) => {
+    const urlStr = String(url);
+    if (urlStr.includes("/api/uploads/init")) {
+      return makeJsonResponse(FAKE_INIT_RESPONSE);
+    }
+    if ((init as RequestInit | undefined)?.method === "PUT") {
+      return new Response("", { status: 200, headers: { ETag: '"test-etag-1"' } });
+    }
+    if (urlStr.includes("/api/uploads/complete")) {
+      return makeJsonResponse(FAKE_COMPLETE_RESPONSE);
+    }
+    if (urlStr.includes("/api/uploads/abort")) {
+      return new Response("", { status: 204 });
+    }
+    return new Response("Not found", { status: 404 });
+  });
+}
+
+function mockFetchError(status = 500, message = "Internal error") {
+  vi.spyOn(globalThis, "fetch").mockImplementation(async (url) => {
+    const urlStr = String(url);
+    if (urlStr.includes("/api/uploads/init")) {
+      return makeJsonResponse({ message }, status);
+    }
+    return makeJsonResponse({ message }, status);
+  });
 }
 
 function renderUpload() {
@@ -168,31 +147,24 @@ describe("UploadPage", () => {
     await userEvent.click(screen.getByTestId("upload-submit"));
     await waitFor(() => {
       expect(screen.getByTestId("upload-error")).toBeInTheDocument();
-      expect(screen.getByTestId("upload-error").textContent).toContain(
-        "500 MB",
-      );
+      expect(screen.getByTestId("upload-error").textContent).toContain("500 MB");
     });
   });
 
   it("RQ-009: shows error for unsupported MIME type", async () => {
     renderUpload();
-    // Create a file with a clearly unsupported MIME type
     const badFile = new File([new ArrayBuffer(1024)], "video.xyz", {
       type: "application/octet-stream",
     });
     const input = screen.getByTestId("upload-input-file");
-    // Use fireEvent to bypass userEvent's accept-attribute filtering in jsdom
     fireEvent.change(input, { target: { files: [badFile] } });
-    // Submit button should now be enabled
     await waitFor(() => {
       expect(screen.getByTestId("upload-submit")).not.toBeDisabled();
     });
     await userEvent.click(screen.getByTestId("upload-submit"));
     await waitFor(() => {
       expect(screen.getByTestId("upload-error")).toBeInTheDocument();
-      expect(screen.getByTestId("upload-error").textContent).toContain(
-        "MP4",
-      );
+      expect(screen.getByTestId("upload-error").textContent).toContain("MP4");
     });
   });
 
@@ -215,13 +187,7 @@ describe("UploadPage", () => {
   });
 
   it("navigates to /meetings/:id on successful upload", async () => {
-    mockFetch(
-      {
-        meeting_id: "a1b2c3d4-1234-4abc-8def-a1b2c3d4e5f6",
-        status: "TRANSCRIBING",
-      },
-      200,
-    );
+    mockSuccessfulUpload();
     renderUpload();
     const file = makeVideoFile("meeting.mp4", "video/mp4", 1024);
     await userEvent.upload(screen.getByTestId("upload-input-file"), file);
@@ -231,15 +197,23 @@ describe("UploadPage", () => {
     });
   });
 
-  it("SYNC-UC100-1: finalize POST sends filename, size_bytes, mime_type, and title", async () => {
-    const fetchSpy = vi.spyOn(globalThis, "fetch").mockImplementation(() =>
-      Promise.resolve(
-        makeJsonResponse(
-          { meeting_id: "a1b2c3d4-1234-4abc-8def-a1b2c3d4e5f6", status: "TRANSCRIBING" },
-          200,
-        ),
-      ),
+  it("SYNC-UC100-1: init POST sends filename, size_bytes, filetype, and title", async () => {
+    const fetchSpy = vi.spyOn(globalThis, "fetch").mockImplementation(
+      async (url, init) => {
+        const urlStr = String(url);
+        if (urlStr.includes("/api/uploads/init")) {
+          return makeJsonResponse(FAKE_INIT_RESPONSE);
+        }
+        if ((init as RequestInit | undefined)?.method === "PUT") {
+          return new Response("", { status: 200, headers: { ETag: '"etag"' } });
+        }
+        if (urlStr.includes("/api/uploads/complete")) {
+          return makeJsonResponse(FAKE_COMPLETE_RESPONSE);
+        }
+        return new Response("", { status: 204 });
+      },
     );
+
     renderUpload();
     const file = makeVideoFile("my-meeting.mp4", "video/mp4", 2048);
     await userEvent.upload(screen.getByTestId("upload-input-file"), file);
@@ -247,16 +221,21 @@ describe("UploadPage", () => {
     await waitFor(() => {
       expect(screen.getByTestId("meeting-detail")).toBeInTheDocument();
     });
-    const [, fetchInit] = fetchSpy.mock.calls[0] ?? [];
-    const body = JSON.parse((fetchInit as RequestInit).body as string) as Record<string, unknown>;
+
+    const initCall = fetchSpy.mock.calls.find(([url]) =>
+      String(url).includes("/api/uploads/init"),
+    );
+    const body = JSON.parse(
+      ((initCall?.[1] as RequestInit) ?? {}).body as string,
+    ) as Record<string, unknown>;
     expect(body["filename"]).toBe("my-meeting.mp4");
     expect(body["size_bytes"]).toBe(2048);
-    expect(body["mime_type"]).toBe("video/mp4");
+    expect(body["filetype"]).toBe("video/mp4");
     expect(body["title"]).toBe("my-meeting");
   });
 
-  it("shows error when finalize API call fails", async () => {
-    mockFetch({ message: "Internal error" }, 500);
+  it("shows error when upload API call fails", async () => {
+    mockFetchError(500, "Internal error");
     renderUpload();
     const file = makeVideoFile("meeting.mp4", "video/mp4", 1024);
     await userEvent.upload(screen.getByTestId("upload-input-file"), file);
@@ -281,21 +260,29 @@ describe("UploadPage", () => {
     expect(
       screen.getByText("Название встречи (по умолчанию — имя файла)"),
     ).toBeInTheDocument();
-    // reset to en for other tests
     await act(async () => {
       await i18n.changeLanguage("en");
     });
   });
 
-  // CRIT-FE-2 regression: language "auto" must not appear in Upload-Metadata
-  it("CRIT-FE-2: auto-detect language does not send language=auto in Upload-Metadata", async () => {
-    mockFetch(
-      {
-        meeting_id: "a1b2c3d4-1234-4abc-8def-a1b2c3d4e5f6",
-        status: "TRANSCRIBING",
+  // CRIT-FE-2 regression: auto-detect must send language=null (not "auto")
+  it("CRIT-FE-2: auto-detect language sends language=null in init request", async () => {
+    const fetchSpy = vi.spyOn(globalThis, "fetch").mockImplementation(
+      async (url, init) => {
+        const urlStr = String(url);
+        if (urlStr.includes("/api/uploads/init")) {
+          return makeJsonResponse(FAKE_INIT_RESPONSE);
+        }
+        if ((init as RequestInit | undefined)?.method === "PUT") {
+          return new Response("", { status: 200, headers: { ETag: '"etag"' } });
+        }
+        if (urlStr.includes("/api/uploads/complete")) {
+          return makeJsonResponse(FAKE_COMPLETE_RESPONSE);
+        }
+        return new Response("", { status: 204 });
       },
-      200,
     );
+
     renderUpload();
     const file = makeVideoFile("meeting.mp4", "video/mp4", 1024);
     await userEvent.upload(screen.getByTestId("upload-input-file"), file);
@@ -304,13 +291,14 @@ describe("UploadPage", () => {
     await waitFor(() => {
       expect(screen.getByTestId("meeting-detail")).toBeInTheDocument();
     });
-    const headers = lastUploadOptions["headers"] as Record<string, string> | undefined;
-    const metadataHeader = headers?.["Upload-Metadata"] ?? "";
-    // "language=auto" must NOT appear — language key should be absent when blank
-    expect(metadataHeader).not.toContain("language=");
-    const parts = metadataHeader.split(",").map((p) => p.trim());
-    const languagePart = parts.find((p) => p.startsWith("language "));
-    expect(languagePart).toBeUndefined();
+
+    const initCall = fetchSpy.mock.calls.find(([url]) =>
+      String(url).includes("/api/uploads/init"),
+    );
+    const body = JSON.parse(
+      ((initCall?.[1] as RequestInit) ?? {}).body as string,
+    ) as Record<string, unknown>;
+    expect(body["language"]).toBeNull();
   });
 
   // CRIT-FE-1 regression: video/webm must be rejected
@@ -331,16 +319,24 @@ describe("UploadPage", () => {
     });
   });
 
-  // CRIT-FE-3 regression: Upload-Metadata header must use "filetype" key (not "mime_type")
-  // with the actual MIME string so the TUS pre-create hook on the server can validate it.
-  it("CRIT-FE-3: Upload-Metadata header contains filename, filetype (actual MIME string), size_bytes, and title", async () => {
-    mockFetch(
-      {
-        meeting_id: "a1b2c3d4-1234-4abc-8def-a1b2c3d4e5f6",
-        status: "TRANSCRIBING",
+  // CRIT-FE-3: init request body must contain filename, filetype (MIME string), size_bytes, title
+  it("CRIT-FE-3: init request body contains filename, filetype (MIME string), size_bytes, and title", async () => {
+    const fetchSpy = vi.spyOn(globalThis, "fetch").mockImplementation(
+      async (url, init) => {
+        const urlStr = String(url);
+        if (urlStr.includes("/api/uploads/init")) {
+          return makeJsonResponse(FAKE_INIT_RESPONSE);
+        }
+        if ((init as RequestInit | undefined)?.method === "PUT") {
+          return new Response("", { status: 200, headers: { ETag: '"etag"' } });
+        }
+        if (urlStr.includes("/api/uploads/complete")) {
+          return makeJsonResponse(FAKE_COMPLETE_RESPONSE);
+        }
+        return new Response("", { status: 204 });
       },
-      200,
     );
+
     renderUpload();
     const file = makeVideoFile("my-meeting.mp4", "video/mp4", 2048);
     await userEvent.upload(screen.getByTestId("upload-input-file"), file);
@@ -348,18 +344,16 @@ describe("UploadPage", () => {
     await waitFor(() => {
       expect(screen.getByTestId("meeting-detail")).toBeInTheDocument();
     });
-    const headers = lastUploadOptions["headers"] as Record<string, string> | undefined;
-    const metadataHeader = headers?.["Upload-Metadata"] ?? "";
-    const parts = metadataHeader.split(",").map((p) => p.trim());
-    const keys = parts.map((p) => p.split(" ")[0]);
-    expect(keys).toContain("filename");
-    expect(keys).toContain("filetype");
-    expect(keys).not.toContain("mime_type");
-    expect(keys).toContain("size_bytes");
-    expect(keys).toContain("title");
-    // Value must be the actual MIME string, not an enum value
-    const filetypePart = parts.find((p) => p.startsWith("filetype "));
-    const filetypeValue = atob(filetypePart?.split(" ")[1] ?? "");
-    expect(filetypeValue).toBe("video/mp4");
+
+    const initCall = fetchSpy.mock.calls.find(([url]) =>
+      String(url).includes("/api/uploads/init"),
+    );
+    const body = JSON.parse(
+      ((initCall?.[1] as RequestInit) ?? {}).body as string,
+    ) as Record<string, unknown>;
+    expect(body["filename"]).toBe("my-meeting.mp4");
+    expect(body["filetype"]).toBe("video/mp4");
+    expect(body["size_bytes"]).toBe(2048);
+    expect(body["title"]).toBe("my-meeting");
   });
 });

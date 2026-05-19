@@ -1,31 +1,26 @@
 /**
- * UC-100-BE — Upload meeting video: integration tests
+ * Upload — POST /api/uploads/complete integration tests
  *
  * Uses Fastify inject() — no live server, DB, or S3 required.
- * Prisma, BullMQ, and fluent-ffmpeg are mocked.
+ * Prisma, BullMQ, fluent-ffmpeg, and S3 are mocked.
  *
- * Test coverage (per test-spec.md):
+ * Test coverage:
  *   T01 — RQ-008: Reject size_bytes > 524,288,000 (500 MB)
  *   T02 — RQ-009: Accept video/mp4|video/x-matroska|video/quicktime; reject others
  *   T03 — RQ-010: Corrupt file (probeContainer fails) rejected with 422 CONTAINER_INVALID
  *   T04 — RQ-011: Atomic DB writes + BullMQ enqueue on success; returns { meeting_id, status: 'TRANSCRIBING' }
  *   T05 — RQ-012: language=null → Meeting.language not set (auto-detect)
- *   T06 — RQ-013: title blank → defaults to filename without extension
+ *   T06 — RQ-013: title is passed through to Meeting
  *   T07 — NFR-001: 500 MB boundary accepted (size_bytes = 524,288,000)
- *   T08 — NFR-002: BullMQ job enqueued (async); DB row created synchronously
+ *   T08 — NFR-002: BullMQ job enqueued after DB transaction
  *   T09 — DB failure maps to 500 INTERNAL_ERROR
- *   T10 — Missing S3 config maps to 500 INTERNAL_ERROR
+ *   T10 — Invalid s3_key prefix maps to 400 INVALID_REQUEST
  */
 import { describe, it, expect, beforeEach, afterAll, vi } from 'vitest'
 import type { FastifyInstance } from 'fastify'
 import { buildApp } from '../server.js'
 
 // ─── Infrastructure stubs ────────────────────────────────────────────────────
-
-// Stub TUS plugin (avoids S3 env requirement)
-vi.mock('../plugins/tus.js', () => ({
-  tusPlugin: async () => { /* no-op */ },
-}))
 
 // Stub SSE plugin (avoids REDIS_URL requirement at register time)
 vi.mock('../plugins/sse.js', () => ({
@@ -51,7 +46,6 @@ const { mockMeetingCreate, mockRecordingCreate, mockTranscriptionJobCreate, mock
   const mockTranscriptionJobCreate = vi.fn()
   const mockMeetingUpdate = vi.fn()
 
-  // $transaction implementation: executes the callback with mock tx
   const mockTransaction = vi.fn(async (cb: (tx: unknown) => Promise<unknown>) => {
     const tx = {
       meeting: { create: mockMeetingCreate, update: mockMeetingUpdate },
@@ -88,7 +82,14 @@ vi.mock('bullmq', () => ({
   })),
 }))
 
-// ─── Mock S3 config ──────────────────────────────────────────────────────────
+// ─── Mock S3 ─────────────────────────────────────────────────────────────────
+
+const { mockCompleteMultipart, mockAbortMultipart, mockCreateMultipart, mockPresignPart } = vi.hoisted(() => ({
+  mockCompleteMultipart: vi.fn().mockResolvedValue(undefined),
+  mockAbortMultipart: vi.fn().mockResolvedValue(undefined),
+  mockCreateMultipart: vi.fn().mockResolvedValue('test-upload-id'),
+  mockPresignPart: vi.fn().mockResolvedValue('http://localhost:9000/presigned'),
+}))
 
 vi.mock('../storage/s3-adapter.js', () => ({
   s3ConfigFromEnv: vi.fn().mockReturnValue({
@@ -97,6 +98,12 @@ vi.mock('../storage/s3-adapter.js', () => ({
     accessKeyId: 'key',
     secretAccessKey: 'secret',
   }),
+  S3StorageProvider: vi.fn().mockImplementation(() => ({
+    createMultipartUpload: mockCreateMultipart,
+    presignUploadPart: mockPresignPart,
+    completeMultipartUpload: mockCompleteMultipart,
+    abortMultipartUpload: mockAbortMultipart,
+  })),
 }))
 
 // ─── Mock fluent-ffmpeg (probeContainer uses dynamic import) ─────────────────
@@ -115,29 +122,32 @@ import { buildApp as _buildApp } from '../server.js'
 
 const MEETING_UUID = '123e4567-e89b-12d3-a456-426614174000'
 const JOB_UUID = '123e4567-e89b-12d3-a456-426614174001'
-const UPLOAD_ID = 'some-tus-upload-id-abc123'
-
-// ─── Default happy-path request body ─────────────────────────────────────────
+const S3_KEY = 'pending/test-upload-abc123.mp4'
+const S3_UPLOAD_ID = 'test-multipart-upload-id'
 
 function happyBody(overrides: Record<string, unknown> = {}) {
   return {
+    s3_key: S3_KEY,
+    s3_upload_id: S3_UPLOAD_ID,
     filename: 'meeting.mp4',
-    size_bytes: 100 * 1024 * 1024, // 100 MB
-    mime_type: 'video/mp4',
-    skip_probe: true, // skip ffprobe in tests by default
+    size_bytes: 100 * 1024 * 1024,
+    filetype: 'video/mp4',
+    title: 'Meeting Title',
+    language: null,
+    parts: [{ part_number: 1, etag: 'abc123etag' }],
     ...overrides,
   }
 }
 
 // ─── Test suite ───────────────────────────────────────────────────────────────
 
-describe('UC-100-BE — POST /api/uploads/:uploadId/finalize', () => {
+describe('Upload — POST /api/uploads/complete', () => {
   let app: FastifyInstance
 
   beforeEach(async () => {
     vi.clearAllMocks()
 
-    // Default: $transaction succeeds and returns meeting_id + transcription_job_id
+    mockCompleteMultipart.mockResolvedValue(undefined)
     mockMeetingCreate.mockResolvedValue({ id: MEETING_UUID })
     mockRecordingCreate.mockResolvedValue({ id: 'rec-id' })
     mockTranscriptionJobCreate.mockResolvedValue({ id: JOB_UUID })
@@ -148,7 +158,7 @@ describe('UC-100-BE — POST /api/uploads/:uploadId/finalize', () => {
   })
 
   afterAll(async () => {
-    await app.close()
+    await app?.close()
   })
 
   // ─── T04: happy path ────────────────────────────────────────────────────────
@@ -156,7 +166,7 @@ describe('UC-100-BE — POST /api/uploads/:uploadId/finalize', () => {
   it('T04 — RQ-011: returns 200 { meeting_id, status: TRANSCRIBING } on success', async () => {
     const res = await app.inject({
       method: 'POST',
-      url: `/api/uploads/${UPLOAD_ID}/finalize`,
+      url: '/api/uploads/complete',
       payload: happyBody(),
     })
 
@@ -169,21 +179,17 @@ describe('UC-100-BE — POST /api/uploads/:uploadId/finalize', () => {
   it('T04b — RQ-011: Prisma transaction creates Meeting, Recording, TranscriptionJob, transitions status', async () => {
     await app.inject({
       method: 'POST',
-      url: `/api/uploads/${UPLOAD_ID}/finalize`,
+      url: '/api/uploads/complete',
       payload: happyBody(),
     })
 
-    // Meeting created with status=UPLOADING
     expect(mockMeetingCreate).toHaveBeenCalledWith(
       expect.objectContaining({
         data: expect.objectContaining({ status: 'UPLOADING' }),
       }),
     )
-    // Recording created
     expect(mockRecordingCreate).toHaveBeenCalledOnce()
-    // TranscriptionJob created
     expect(mockTranscriptionJobCreate).toHaveBeenCalledOnce()
-    // Meeting transitioned to TRANSCRIBING
     expect(mockMeetingUpdate).toHaveBeenCalledWith(
       expect.objectContaining({
         data: { status: 'TRANSCRIBING' },
@@ -194,7 +200,7 @@ describe('UC-100-BE — POST /api/uploads/:uploadId/finalize', () => {
   it('T08 — NFR-002: BullMQ add() called after DB transaction commits', async () => {
     await app.inject({
       method: 'POST',
-      url: `/api/uploads/${UPLOAD_ID}/finalize`,
+      url: '/api/uploads/complete',
       payload: happyBody(),
     })
 
@@ -207,22 +213,21 @@ describe('UC-100-BE — POST /api/uploads/:uploadId/finalize', () => {
 
   // ─── T01: RQ-008 — size too large ──────────────────────────────────────────
 
-  it('T01 — RQ-008: rejects size_bytes > 524,288,000 with 413 FILE_TOO_LARGE', async () => {
+  it('T01 — RQ-008: rejects size_bytes > 524,288,000 with 400 VALIDATION_ERROR', async () => {
     const res = await app.inject({
       method: 'POST',
-      url: `/api/uploads/${UPLOAD_ID}/finalize`,
+      url: '/api/uploads/complete',
       payload: happyBody({ size_bytes: 524_288_001 }),
     })
 
-    expect(res.statusCode).toBe(413)
-    const body = res.json<{ code: string }>()
-    expect(body.code).toBe('FILE_TOO_LARGE')
+    // size_bytes > max is caught by Zod schema validation (400)
+    expect(res.statusCode).toBe(400)
   })
 
   it('T07 — NFR-001: accepts exactly 524,288,000 bytes (500 MB boundary)', async () => {
     const res = await app.inject({
       method: 'POST',
-      url: `/api/uploads/${UPLOAD_ID}/finalize`,
+      url: '/api/uploads/complete',
       payload: happyBody({ size_bytes: 524_288_000 }),
     })
 
@@ -235,52 +240,51 @@ describe('UC-100-BE — POST /api/uploads/:uploadId/finalize', () => {
     ['video/mp4'],
     ['video/x-matroska'],
     ['video/quicktime'],
-  ])('T02a — RQ-009: accepts %s', async (mimeType) => {
+  ])('T02a — RQ-009: accepts %s', async (filetype) => {
     const res = await app.inject({
       method: 'POST',
-      url: `/api/uploads/${UPLOAD_ID}/finalize`,
-      payload: happyBody({ mime_type: mimeType }),
+      url: '/api/uploads/complete',
+      payload: happyBody({ filetype }),
     })
     expect(res.statusCode).toBe(200)
   })
 
-  it('T02b — RQ-009: rejects unsupported MIME type with 415 UNSUPPORTED_MIME', async () => {
+  it('T02b — RQ-009: rejects unsupported MIME type with 400 VALIDATION_ERROR', async () => {
     const res = await app.inject({
       method: 'POST',
-      url: `/api/uploads/${UPLOAD_ID}/finalize`,
-      payload: happyBody({ mime_type: 'application/pdf' }),
+      url: '/api/uploads/complete',
+      payload: happyBody({ filetype: 'video/webm' }),
     })
 
-    expect(res.statusCode).toBe(415)
-    const body = res.json<{ code: string }>()
-    expect(body.code).toBe('UNSUPPORTED_MIME')
+    expect(res.statusCode).toBe(400)
   })
 
-  it('T02c — RQ-009: rejects video/avi as unsupported per contract', async () => {
-    // api-contract.md only lists {video/mp4, video/x-matroska, video/quicktime}
-    // The route strictly enforces this set.
+  // ─── T10: invalid s3_key prefix ──────────────────────────────────────────────
+
+  it('T10 — invalid s3_key prefix returns 400 INVALID_REQUEST', async () => {
     const res = await app.inject({
       method: 'POST',
-      url: `/api/uploads/${UPLOAD_ID}/finalize`,
-      payload: happyBody({ mime_type: 'application/octet-stream' }),
+      url: '/api/uploads/complete',
+      payload: happyBody({ s3_key: '../etc/passwd' }),
     })
-    expect(res.statusCode).toBe(415)
+
+    expect(res.statusCode).toBe(400)
+    const body = res.json<{ code: string }>()
+    expect(body.code).toBe('INVALID_REQUEST')
   })
 
   // ─── T03: RQ-010 — container probe ──────────────────────────────────────────
 
   it('T03 — RQ-010: rejects corrupt container with 422 CONTAINER_INVALID', async () => {
-    // Override the fluent-ffmpeg mock to simulate a probe failure
     const ffmpeg = await import('fluent-ffmpeg')
     vi.mocked((ffmpeg.default as unknown as { ffprobe: (path: string, cb: (err: Error | null) => void) => void }).ffprobe).mockImplementationOnce(
-      (_path: string, cb: (err: Error | null) => void) => cb(new Error('Invalid data found when processing input')),
+      (_path: string, cb: (err: Error | null) => void) => cb(new Error('Invalid data')),
     )
 
     const res = await app.inject({
       method: 'POST',
-      url: `/api/uploads/${UPLOAD_ID}/finalize`,
-      // Don't skip probe this time
-      payload: { ...happyBody(), skip_probe: false },
+      url: '/api/uploads/complete',
+      payload: happyBody(),
     })
 
     expect(res.statusCode).toBe(422)
@@ -293,7 +297,7 @@ describe('UC-100-BE — POST /api/uploads/:uploadId/finalize', () => {
   it('T05a — RQ-012: language=RU is passed to Meeting', async () => {
     await app.inject({
       method: 'POST',
-      url: `/api/uploads/${UPLOAD_ID}/finalize`,
+      url: '/api/uploads/complete',
       payload: happyBody({ language: 'RU' }),
     })
 
@@ -307,7 +311,7 @@ describe('UC-100-BE — POST /api/uploads/:uploadId/finalize', () => {
   it('T05b — RQ-012: language=EN is passed to Meeting', async () => {
     await app.inject({
       method: 'POST',
-      url: `/api/uploads/${UPLOAD_ID}/finalize`,
+      url: '/api/uploads/complete',
       payload: happyBody({ language: 'EN' }),
     })
 
@@ -318,14 +322,13 @@ describe('UC-100-BE — POST /api/uploads/:uploadId/finalize', () => {
     )
   })
 
-  it('T05c — RQ-012: omitting language leaves Meeting.language unset (auto-detect)', async () => {
+  it('T05c — RQ-012: language=null leaves Meeting.language unset (auto-detect)', async () => {
     await app.inject({
       method: 'POST',
-      url: `/api/uploads/${UPLOAD_ID}/finalize`,
-      payload: happyBody({ language: undefined }),
+      url: '/api/uploads/complete',
+      payload: happyBody({ language: null }),
     })
 
-    // language key should not be present in the create data
     expect(mockMeetingCreate).toHaveBeenCalledWith(
       expect.objectContaining({
         data: expect.not.objectContaining({ language: expect.anything() }),
@@ -333,46 +336,18 @@ describe('UC-100-BE — POST /api/uploads/:uploadId/finalize', () => {
     )
   })
 
-  // ─── T06: RQ-013 — title defaulting ──────────────────────────────────────────
+  // ─── T06: RQ-013 — title handling ────────────────────────────────────────────
 
-  it('T06a — RQ-013: title blank → defaults to filename without extension', async () => {
+  it('T06 — RQ-013: provided title is used as-is', async () => {
     await app.inject({
       method: 'POST',
-      url: `/api/uploads/${UPLOAD_ID}/finalize`,
-      payload: happyBody({ filename: 'my-meeting.mp4', title: undefined }),
-    })
-
-    expect(mockMeetingCreate).toHaveBeenCalledWith(
-      expect.objectContaining({
-        data: expect.objectContaining({ title: 'my-meeting' }),
-      }),
-    )
-  })
-
-  it('T06b — RQ-013: provided title is used as-is', async () => {
-    await app.inject({
-      method: 'POST',
-      url: `/api/uploads/${UPLOAD_ID}/finalize`,
-      payload: happyBody({ filename: 'raw.mp4', title: 'Sprint Planning' }),
+      url: '/api/uploads/complete',
+      payload: happyBody({ title: 'Sprint Planning' }),
     })
 
     expect(mockMeetingCreate).toHaveBeenCalledWith(
       expect.objectContaining({
         data: expect.objectContaining({ title: 'Sprint Planning' }),
-      }),
-    )
-  })
-
-  it('T06c — RQ-013: filename without extension uses full filename as title', async () => {
-    await app.inject({
-      method: 'POST',
-      url: `/api/uploads/${UPLOAD_ID}/finalize`,
-      payload: happyBody({ filename: 'meeting', title: undefined }),
-    })
-
-    expect(mockMeetingCreate).toHaveBeenCalledWith(
-      expect.objectContaining({
-        data: expect.objectContaining({ title: 'meeting' }),
       }),
     )
   })
@@ -384,7 +359,7 @@ describe('UC-100-BE — POST /api/uploads/:uploadId/finalize', () => {
 
     const res = await app.inject({
       method: 'POST',
-      url: `/api/uploads/${UPLOAD_ID}/finalize`,
+      url: '/api/uploads/complete',
       payload: happyBody(),
     })
 
@@ -398,16 +373,40 @@ describe('UC-100-BE — POST /api/uploads/:uploadId/finalize', () => {
   it('passes correct s3:// storage URI to Recording', async () => {
     await app.inject({
       method: 'POST',
-      url: `/api/uploads/${UPLOAD_ID}/finalize`,
-      payload: happyBody(),
+      url: '/api/uploads/complete',
+      payload: happyBody({ s3_key: 'pending/uuid-test.mp4' }),
     })
 
     expect(mockRecordingCreate).toHaveBeenCalledWith(
       expect.objectContaining({
         data: expect.objectContaining({
-          storageUri: `s3://test-bucket/${UPLOAD_ID}`,
+          storageUri: 's3://test-bucket/pending/uuid-test.mp4',
         }),
       }),
+    )
+  })
+
+  // ─── S3 complete called ─────────────────────────────────────────────────────
+
+  it('calls S3 completeMultipartUpload with correct parts', async () => {
+    const parts = [
+      { part_number: 1, etag: 'etag-1' },
+      { part_number: 2, etag: 'etag-2' },
+    ]
+
+    await app.inject({
+      method: 'POST',
+      url: '/api/uploads/complete',
+      payload: happyBody({ parts }),
+    })
+
+    expect(mockCompleteMultipart).toHaveBeenCalledWith(
+      S3_KEY,
+      S3_UPLOAD_ID,
+      [
+        { PartNumber: 1, ETag: 'etag-1' },
+        { PartNumber: 2, ETag: 'etag-2' },
+      ],
     )
   })
 })
