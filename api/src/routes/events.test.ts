@@ -114,18 +114,24 @@ function makeMockReply(mockRaw: ReturnType<typeof makeMockRaw>) {
 // ─── Suite ───────────────────────────────────────────────────────────────────
 
 describe('TECH-012 — SSE formatting', () => {
-  it('formatSseFrame wraps JSON payload in SSE data frame', () => {
+  it('formatSseFrame emits event:<type> + data:<json> + blank line', () => {
     const frame = formatSseFrame({ type: 'ping' })
-    expect(frame).toBe('data: {"type":"ping"}\n\n')
+    expect(frame).toBe('event: ping\ndata: {"type":"ping"}\n\n')
   })
 
-  it('formatSseFrame handles complex payloads', () => {
+  it('formatSseFrame routes meeting.status to a named event so EventSource.addEventListener("meeting.status") fires', () => {
     const payload = { type: 'meeting.status', meeting_id: VALID_UUID, status: 'TRANSCRIBING' }
     const frame = formatSseFrame(payload)
-    expect(frame).toMatch(/^data: /)
+    expect(frame).toMatch(/^event: meeting\.status\n/)
+    expect(frame).toMatch(/\ndata: /)
     expect(frame).toMatch(/\n\n$/)
-    const json = frame.replace(/^data: /, '').replace(/\n\n$/, '')
+    const json = frame.replace(/^event: [^\n]+\ndata: /, '').replace(/\n\n$/, '')
     expect(JSON.parse(json)).toEqual(payload)
+  })
+
+  it('formatSseFrame falls back to "message" when payload has no string type', () => {
+    const frame = formatSseFrame({ foo: 'bar' })
+    expect(frame).toMatch(/^event: message\n/)
   })
 })
 
