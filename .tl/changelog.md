@@ -1,5 +1,17 @@
 # Changelog — .tl/
 
+### [2026-05-19] feat(UC-100): replace TUS with direct S3 presigned multipart upload
+- **Level:** Feature
+- **Status:** PASS (UC-100-BE: done, UC-100-FE: done)
+- **Root cause / motivation:** @tus/s3-store v2.0.4 does not support TUS concatenation extension — parallelism impossible. 66 MB files took 3-4 minutes (~275-440 KB/s). Files up to 500 MB expected.
+- **Affected UC:** UC-100
+- **New endpoints:** POST /api/uploads/init, POST /api/uploads/complete, POST /api/uploads/abort
+- **Removed:** @tus/server, @tus/s3-store (api), tus-js-client (web), api/src/plugins/tus.ts
+- **Config added:** S3_PUBLIC_ENDPOINT (browser-reachable MinIO URL), MINIO_API_CORS_ALLOW_ORIGIN (docker-compose)
+- **Upload flow:** Browser splits file into 10 MB parts, uploads 4 parts concurrently directly to MinIO using presigned PUT URLs, then POSTs part ETags to /complete
+- **Expected speedup:** 3-5× for large files
+- **Tests:** api/src/routes/uc-100.test.ts (18 tests PASS), web/src/routes/upload/index.test.tsx (17 tests PASS)
+
 ### [2026-05-19] nacl-tl-fix: TUS PATCH 415 — missing content-type parser for application/offset+octet-stream
 - **Level:** L1 (Code-only)
 - **Status:** PASS

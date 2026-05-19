@@ -1,0 +1,22 @@
+{
+  "started": "2026-05-19T08:13:00Z",
+  "prs": [
+    {
+      "number": 4,
+      "title": "fix: register content-type parser for TUS PATCH (prevented 415)",
+      "headRefName": "feature/fix-register-content-type-parser-for-tus-patch",
+      "uc": ["TECH-008", "UC-100"],
+      "uc_status": "done",
+      "ci": "passed",
+      "status": "merged"
+    }
+  ],
+  "merge": { "status": "done", "merged_count": 1, "total": 1 },
+  "ci": { "status": "done", "result": "passed", "run_id": "26086941380" },
+  "health": { "status": "done", "result": "200 OK", "url": "https://transcriber.itsalt.ru/api/health" },
+  "version": { "status": "done", "bump": "patch", "value": "v0.1.2" },
+  "tag": { "status": "done", "value": "v0.1.2" },
+  "graph": { "status": "done", "version": "v0.1.2", "updated": 0 },
+  "release": { "status": "done", "url": "https://github.com/ITSalt/transcriber/releases/tag/v0.1.2" },
+  "yougile": { "status": "skipped" }
+}
