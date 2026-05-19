@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "build": "tsc --build",
+    "build": "tsc --build && node -e \"require('fs').cpSync('src/llm/prompts', 'dist/llm/prompts', { recursive: true })\"",
     "dev": "tsc --build --watch",
     "typecheck": "tsc --noEmit",
     "clean": "rimraf dist tsconfig.tsbuildinfo",
