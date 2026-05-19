@@ -105,7 +105,7 @@ describe("UploadPage", () => {
   it("CT01: renders file field with correct label", () => {
     renderUpload();
     expect(
-      screen.getByText("Video file (MP4 / MKV / MOV, max 500 MB)"),
+      screen.getByText("Video file (MP4 / MKV / MOV / WEBM, max 1 GB)"),
     ).toBeInTheDocument();
     expect(screen.getByTestId("upload-input-file")).toBeInTheDocument();
   });
@@ -139,15 +139,15 @@ describe("UploadPage", () => {
     expect(screen.getByTestId("upload-submit")).toBeDisabled();
   });
 
-  it("RQ-008: shows error for file > 500MB before upload", async () => {
+  it("RQ-008: shows error for file > 1 GiB before upload", async () => {
     renderUpload();
-    const oversizeFile = makeVideoFile("big.mp4", "video/mp4", 524_288_001);
+    const oversizeFile = makeVideoFile("big.mp4", "video/mp4", 1_073_741_825);
     const input = screen.getByTestId("upload-input-file");
     await userEvent.upload(input, oversizeFile);
     await userEvent.click(screen.getByTestId("upload-submit"));
     await waitFor(() => {
       expect(screen.getByTestId("upload-error")).toBeInTheDocument();
-      expect(screen.getByTestId("upload-error").textContent).toContain("500 MB");
+      expect(screen.getByTestId("upload-error").textContent).toContain("1 GB");
     });
   });
 
@@ -252,7 +252,7 @@ describe("UploadPage", () => {
     });
     renderUpload();
     expect(
-      screen.getByText("Видеофайл (MP4 / MKV / MOV, макс. 500 МБ)"),
+      screen.getByText("Видеофайл (MP4 / MKV / MOV / WEBM, макс. 1 ГБ)"),
     ).toBeInTheDocument();
     expect(
       screen.getByText("Язык (оставьте пустым для автоопределения)"),
@@ -301,8 +301,10 @@ describe("UploadPage", () => {
     expect(body["language"]).toBeNull();
   });
 
-  // CRIT-FE-1 regression: video/webm must be rejected
-  it("CRIT-FE-1: rejects video/webm file with MIME error", async () => {
+  // CRIT-FE-1: video/webm is now an accepted format (browser meeting recordings
+  // arrive as WebM by default). The original RQ-009 whitelist did not include
+  // it; we extended the whitelist after seeing real .webm uploads bounce.
+  it("CRIT-FE-1: accepts video/webm file without MIME error", async () => {
     renderUpload();
     const webmFile = new File([new ArrayBuffer(1024)], "video.webm", {
       type: "video/webm",
@@ -312,11 +314,7 @@ describe("UploadPage", () => {
     await waitFor(() => {
       expect(screen.getByTestId("upload-submit")).not.toBeDisabled();
     });
-    await userEvent.click(screen.getByTestId("upload-submit"));
-    await waitFor(() => {
-      expect(screen.getByTestId("upload-error")).toBeInTheDocument();
-      expect(screen.getByTestId("upload-error").textContent).toContain("MP4");
-    });
+    expect(screen.queryByTestId("upload-error")).not.toBeInTheDocument();
   });
 
   // CRIT-FE-3: init request body must contain filename, filetype (MIME string), size_bytes, title

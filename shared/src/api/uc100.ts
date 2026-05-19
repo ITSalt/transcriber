@@ -3,6 +3,20 @@ import { MeetingLanguage, VideoMimeType } from '../enums.js';
 
 // UC-100 — Upload meeting video
 
+// ── Limits and accepted formats ────────────────────────────────────────────────
+// Centralised so api/, worker/, web/ all agree without copy-pasting magic
+// numbers. RQ-008 originally pinned this to 500 MB; bumped to 1 GiB after we
+// started receiving full-meeting WebM recordings.
+export const MAX_UPLOAD_BYTES = 1_073_741_824; // 1 GiB
+export const ACCEPTED_UPLOAD_MIME_TYPES = [
+  'video/mp4',
+  'video/x-matroska',
+  'video/quicktime',
+  'video/webm',
+] as const;
+export const AcceptedUploadMime = z.enum(ACCEPTED_UPLOAD_MIME_TYPES);
+export type AcceptedUploadMime = z.infer<typeof AcceptedUploadMime>;
+
 // TUS metadata header (Base64 KV pairs):
 //   filename, mime_type, size_bytes, title?, language?
 // Server validates per RQ-008/009/010 at pre-create.
@@ -16,7 +30,7 @@ export type UploadFinalizeResponse = z.infer<typeof UploadFinalizeResponse>;
 // Used as request shape for client-side validation BEFORE TUS create.
 export const UploadCreateRequest = z.object({
   filename: z.string().min(1),
-  size_bytes: z.number().int().positive().max(524_288_000), // RQ-008
+  size_bytes: z.number().int().positive().max(MAX_UPLOAD_BYTES), // RQ-008
   mime_type: VideoMimeType, // RQ-009
   title: z.string().optional(),
   language: MeetingLanguage.optional(), // omit/null -> auto-detect per RQ-012
@@ -27,8 +41,8 @@ export type UploadCreateRequest = z.infer<typeof UploadCreateRequest>;
 
 export const UploadInitRequest = z.object({
   filename: z.string().min(1),
-  size_bytes: z.number().int().positive().max(524_288_000), // RQ-008
-  filetype: z.enum(['video/mp4', 'video/x-matroska', 'video/quicktime']), // RQ-009
+  size_bytes: z.number().int().positive().max(MAX_UPLOAD_BYTES), // RQ-008
+  filetype: AcceptedUploadMime, // RQ-009
   title: z.string().min(1).max(255),
   language: z.enum(['RU', 'EN']).nullable(), // null = auto-detect (RQ-012)
 });
@@ -46,8 +60,8 @@ export const UploadCompleteRequest = z.object({
   s3_key: z.string().min(1),
   s3_upload_id: z.string().min(1),
   filename: z.string().min(1),
-  size_bytes: z.number().int().positive().max(524_288_000), // RQ-008
-  filetype: z.enum(['video/mp4', 'video/x-matroska', 'video/quicktime']),
+  size_bytes: z.number().int().positive().max(MAX_UPLOAD_BYTES), // RQ-008
+  filetype: AcceptedUploadMime,
   title: z.string().min(1).max(255),
   language: z.enum(['RU', 'EN']).nullable(),
   // Optional ASR hint: if provided, pins Deepgram diarization to exactly N

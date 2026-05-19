@@ -215,22 +215,22 @@ describe('Upload — POST /api/uploads/complete', () => {
 
   // ─── T01: RQ-008 — size too large ──────────────────────────────────────────
 
-  it('T01 — RQ-008: rejects size_bytes > 524,288,000 with 400 VALIDATION_ERROR', async () => {
+  it('T01 — RQ-008: rejects size_bytes > 1 GiB with 400 VALIDATION_ERROR', async () => {
     const res = await app.inject({
       method: 'POST',
       url: '/api/uploads/complete',
-      payload: happyBody({ size_bytes: 524_288_001 }),
+      payload: happyBody({ size_bytes: 1_073_741_825 }),
     })
 
     // size_bytes > max is caught by Zod schema validation (400)
     expect(res.statusCode).toBe(400)
   })
 
-  it('T07 — NFR-001: accepts exactly 524,288,000 bytes (500 MB boundary)', async () => {
+  it('T07 — NFR-001: accepts exactly 1,073,741,824 bytes (1 GiB boundary)', async () => {
     const res = await app.inject({
       method: 'POST',
       url: '/api/uploads/complete',
-      payload: happyBody({ size_bytes: 524_288_000 }),
+      payload: happyBody({ size_bytes: 1_073_741_824 }),
     })
 
     expect(res.statusCode).toBe(200)
@@ -242,6 +242,7 @@ describe('Upload — POST /api/uploads/complete', () => {
     ['video/mp4'],
     ['video/x-matroska'],
     ['video/quicktime'],
+    ['video/webm'],
   ])('T02a — RQ-009: accepts %s', async (filetype) => {
     const res = await app.inject({
       method: 'POST',
@@ -255,7 +256,7 @@ describe('Upload — POST /api/uploads/complete', () => {
     const res = await app.inject({
       method: 'POST',
       url: '/api/uploads/complete',
-      payload: happyBody({ filetype: 'video/webm' }),
+      payload: happyBody({ filetype: 'video/x-flv' }),
     })
 
     expect(res.statusCode).toBe(400)

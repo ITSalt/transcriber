@@ -14,9 +14,14 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
-const MAX_SIZE_BYTES = 524_288_000; // 500 MB (RQ-008)
+const MAX_SIZE_BYTES = 1_073_741_824; // 1 GiB (RQ-008)
 
-const ACCEPTED_MIME_TYPES = ["video/mp4", "video/x-matroska", "video/quicktime"];
+const ACCEPTED_MIME_TYPES = [
+  "video/mp4",
+  "video/x-matroska",
+  "video/quicktime",
+  "video/webm",
+];
 
 const CONCURRENCY = 4; // parallel S3 part uploads
 
@@ -217,7 +222,7 @@ export default function UploadPage() {
           <Input
             id="upload-file"
             type="file"
-            accept="video/mp4,video/x-matroska,video/quicktime,.mp4,.mkv,.mov"
+            accept="video/mp4,video/x-matroska,video/quicktime,video/webm,.mp4,.mkv,.mov,.webm"
             onChange={handleFileChange}
             disabled={isUploading}
             data-testid="upload-input-file"

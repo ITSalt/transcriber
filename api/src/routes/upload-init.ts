@@ -21,6 +21,7 @@ const EXT_MAP: Record<string, string> = {
   'video/mp4': 'mp4',
   'video/x-matroska': 'mkv',
   'video/quicktime': 'mov',
+  'video/webm': 'webm',
 }
 
 export async function uploadInitRoutes(app: FastifyInstance): Promise<void> {

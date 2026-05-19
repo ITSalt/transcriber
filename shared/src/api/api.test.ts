@@ -145,8 +145,8 @@ describe('UploadCreateRequest', () => {
     ).toMatchObject({ title: 'Meeting', language: 'RU' });
   });
 
-  it('rejects size_bytes > 524_288_000', () => {
-    expect(() => UploadCreateRequest.parse({ ...valid, size_bytes: 600_000_000 })).toThrow();
+  it('rejects size_bytes > 1 GiB', () => {
+    expect(() => UploadCreateRequest.parse({ ...valid, size_bytes: 1_073_741_825 })).toThrow();
   });
 
   it('rejects empty filename', () => {
