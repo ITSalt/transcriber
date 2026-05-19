@@ -14,7 +14,7 @@ concurrency:
 env:
   # Matches packageManager field in root package.json
   PNPM_VERSION: "10.33.0"
-  NODE_VERSION: "20"
+  NODE_VERSION: "22"
 
 jobs:
   ci:

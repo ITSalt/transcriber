@@ -58,6 +58,12 @@ async function tusPluginImpl(app: FastifyInstance): Promise<void> {
     path: '/api/uploads',
     datastore: store,
 
+    // ── Fix HTTPS Location header behind Caddy reverse proxy ──────────────────
+    // The API server receives plain HTTP (TLS is terminated at Caddy).
+    // respectForwardedHeaders tells @tus/server to read X-Forwarded-Proto
+    // (Web API Headers.get()) when building the Location URL.
+    respectForwardedHeaders: true,
+
     // ── Pre-create: validate size + MIME ─────────────────────────────────────
     onUploadCreate: async (_req, upload: Upload) => {
       // BRQ-001 — size check

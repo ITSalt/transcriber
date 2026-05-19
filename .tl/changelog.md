@@ -1,5 +1,17 @@
 # Changelog — .tl/
 
+### [2026-05-18] nacl-tl-fix: POST /api/uploads 500 — invalid S3 credentials + Node.js upgrade to v22
+- **Level:** L0 (Environment) × 2
+- **Status:** NO_INFRA (ecosystem config), Node upgrade PASS (verified via pm2 show)
+- **Root cause 1:** Cloud.ru S3 access key `InvalidAccessKeyId` — credentials in /opt/transcrib/.env are revoked/invalid
+- **Root cause 2:** Node 20 (EOL April 2026) in use; AWS SDK warns it will drop Node 20 support
+- **Affected UC:** infrastructure (upload pipeline)
+- **Docs updated:** none (L0)
+- **Code changed:** ecosystem.config.cjs (v20→v22 interpreter), .nvmrc (20→22), package.json engines (>=20→>=22), .github/workflows/ci.yml (NODE_VERSION 20→22)
+- **Tests:** none — NO_INFRA for config changes; Node version verified live via pm2 show
+- **Pre-existing failures:** none
+- **Pending (user action required):** Update S3_KEY and S3_SECRET in /opt/transcrib/.env with valid Cloud.ru credentials, then restart API
+
 ### [2026-05-18] nacl-tl-fix: POST /api/uploads 415 — wrong TUS metadata key for MIME type
 - **Level:** L2
 - **Status:** PASS

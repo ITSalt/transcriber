@@ -1,13 +1,13 @@
 // ecosystem.config.cjs
 // pm2 process definitions for Transcrib production (api + worker)
-// Node interpreter pinned to TECH-017 result: Node 20.20.2 under deploy's nvm
+// Node interpreter pinned to Node 22.22.2 (Active LTS) under deploy's nvm
 module.exports = {
   apps: [
     {
       name: 'transcrib-api',
       cwd: '/opt/transcrib/api',
       script: './dist/index.js',
-      interpreter: '/home/deploy/.nvm/versions/node/v20.20.2/bin/node',
+      interpreter: '/home/deploy/.nvm/versions/node/v22.22.2/bin/node',
       instances: 1,
       exec_mode: 'fork',
       env_file: '.env',
@@ -24,7 +24,7 @@ module.exports = {
       name: 'transcrib-worker',
       cwd: '/opt/transcrib/worker',
       script: './dist/index.js',
-      interpreter: '/home/deploy/.nvm/versions/node/v20.20.2/bin/node',
+      interpreter: '/home/deploy/.nvm/versions/node/v22.22.2/bin/node',
       instances: 1,
       exec_mode: 'fork',
       env_file: '.env',

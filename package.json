@@ -5,7 +5,7 @@
   "type": "module",
   "description": "Transcription of large video files with speaker diarization and automated meeting report generation",
   "engines": {
-    "node": ">=20.0.0",
+    "node": ">=22.0.0",
     "pnpm": ">=9.0.0"
   },
   "packageManager": "pnpm@10.33.0",
