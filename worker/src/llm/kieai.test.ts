@@ -36,20 +36,14 @@ function makeKieAiResponse(opts: {
 
   return {
     id: 'test-completion-id',
+    type: 'message',
+    role: 'assistant',
     model,
-    choices: [
-      {
-        message: {
-          role: 'assistant',
-          content,
-        },
-        finish_reason: 'stop',
-      },
-    ],
+    stop_reason: 'end_turn',
+    content: [{ type: 'text', text: content }],
     usage: {
-      prompt_tokens: promptTokens,
-      completion_tokens: completionTokens,
-      total_tokens: promptTokens + completionTokens,
+      input_tokens: promptTokens,
+      output_tokens: completionTokens,
     },
   };
 }
@@ -133,23 +127,20 @@ describe('KieAiLlmProvider', () => {
       expect(result.model).toBe('claude-sonnet-4-6');
     });
 
-    // ── Acceptance test 2: model='gpt-5-4' routes to GPT ─────────────────
+    // ── Acceptance test 2: gpt-5-4 is rejected with a typed error ─────────
+    // kie.ai exposes GPT-style models on a different endpoint family which
+    // we have not wired up. The provider must fail fast on model=gpt-5-4
+    // rather than send the request and get a 404 from kie.ai.
 
-    it('sends gpt-5.4 model alias when model=gpt-5-4 (acceptance test 2)', async () => {
+    it('throws KieAiLlmError when model=gpt-5-4 (not wired yet)', async () => {
       const provider = new KieAiLlmProvider({ apiKey: 'test-key' });
-      mockFetchOk(makeKieAiResponse({ model: 'gpt-5.4', content: 'GPT protocol' }));
 
-      const result = await provider.generate({
-        prompt: 'test transcript',
-        language: 'EN',
-        model: 'gpt-5-4',
-      });
+      await expect(
+        provider.generate({ prompt: 'test', language: 'EN', model: 'gpt-5-4' }),
+      ).rejects.toThrowError(/gpt-5-4|claude-sonnet-4-6/);
 
-      expect(mockFetch).toHaveBeenCalledTimes(1);
-      const [, fetchInit] = mockFetch.mock.calls[0] as [string, RequestInit];
-      const body = JSON.parse(fetchInit.body as string) as { model: string };
-      expect(body.model).toBe('gpt-5.4');
-      expect(result.model).toBe('gpt-5-4');
+      // Must not have attempted any network call
+      expect(mockFetch).not.toHaveBeenCalled();
     });
 
     it('defaults to claude-sonnet-4-6 when model is omitted', async () => {
@@ -185,7 +176,7 @@ describe('KieAiLlmProvider', () => {
       expect(headers['Authorization']).toBe('Bearer my-secret-key');
     });
 
-    it('includes system message and user prompt in request messages', async () => {
+    it('sends system at top level and only user message in messages array', async () => {
       const provider = new KieAiLlmProvider({ apiKey: 'test-key' });
       mockFetchOk(makeKieAiResponse({}));
 
@@ -193,15 +184,19 @@ describe('KieAiLlmProvider', () => {
 
       const [, fetchInit] = mockFetch.mock.calls[0] as [string, RequestInit];
       const body = JSON.parse(fetchInit.body as string) as {
+        system: string;
         messages: Array<{ role: string; content: string }>;
+        stream: boolean;
+        max_tokens: number;
       };
 
-      expect(body.messages).toHaveLength(2);
-      expect(body.messages[0]?.role).toBe('system');
-      expect(typeof body.messages[0]?.content).toBe('string');
-      expect(body.messages[0]?.content.length).toBeGreaterThan(0);
-      expect(body.messages[1]?.role).toBe('user');
-      expect(body.messages[1]?.content).toBe('transcript content');
+      expect(typeof body.system).toBe('string');
+      expect(body.system.length).toBeGreaterThan(0);
+      expect(body.messages).toHaveLength(1);
+      expect(body.messages[0]?.role).toBe('user');
+      expect(body.messages[0]?.content).toBe('transcript content');
+      expect(body.stream).toBe(false);
+      expect(body.max_tokens).toBeGreaterThan(0);
     });
 
     it('uses RU prompt template when language=RU', async () => {
@@ -211,12 +206,9 @@ describe('KieAiLlmProvider', () => {
       await provider.generate({ prompt: 'транскрипция', language: 'RU' });
 
       const [, fetchInit] = mockFetch.mock.calls[0] as [string, RequestInit];
-      const body = JSON.parse(fetchInit.body as string) as {
-        messages: Array<{ role: string; content: string }>;
-      };
+      const body = JSON.parse(fetchInit.body as string) as { system: string };
       // RU prompt template should mention Russian section names
-      const systemContent = body.messages[0]?.content ?? '';
-      expect(systemContent).toMatch(/Участники|совещани/i);
+      expect(body.system).toMatch(/Участники|совещани/i);
     });
 
     it('returns tokensIn and tokensOut from API usage', async () => {
@@ -277,9 +269,9 @@ describe('KieAiLlmProvider', () => {
       );
     });
 
-    it('throws KieAiLlmError when choices array is empty', async () => {
+    it('throws KieAiLlmError when content array is empty', async () => {
       const provider = new KieAiLlmProvider({ apiKey: 'test-key' });
-      mockFetchOk({ choices: [], usage: { prompt_tokens: 10, completion_tokens: 0 } });
+      mockFetchOk({ content: [], usage: { input_tokens: 10, output_tokens: 0 } });
 
       await expect(provider.generate({ prompt: 'test', language: 'EN' })).rejects.toThrowError(
         KieAiLlmError,

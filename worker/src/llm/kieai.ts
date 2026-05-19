@@ -1,18 +1,26 @@
 /**
  * TECH-011 — KieAiLlmProvider
  *
- * Implements ILlmProvider using the kie.ai HTTP API.
- * Supports Claude Sonnet 4.6 (default) and GPT-5.4 selectable per meeting.
+ * Implements ILlmProvider against the kie.ai Anthropic-compatible endpoint
+ * for Claude Sonnet 4.6. Reads KIE_API_KEY from process.env. Uses Node 20
+ * built-in fetch — no additional HTTP client dependency.
  *
- * Reads KIE_API_KEY from process.env.
- * Uses Node 20 built-in fetch — no additional HTTP client dependency.
+ * Request shape (per https://docs.kie.ai/market/claude/claude-sonnet-4-6.md):
+ *   POST {baseUrl}/messages
+ *   Authorization: Bearer {KIE_API_KEY}
+ *   { model, system, messages:[{role:'user'|'assistant', content}],
+ *     stream:false, max_tokens }
  *
- * Model routing:
- *   'claude-sonnet-4-6' → claude-sonnet-4-6 endpoint alias on kie.ai
- *   'gpt-5-4'           → gpt-5.4 endpoint alias on kie.ai
+ * Response shape:
+ *   { content:[{type:'text', text:'…'}],
+ *     usage:{ input_tokens, output_tokens }, stop_reason, model, id }
  *
- * Prompt templates:
- *   worker/src/llm/prompts/{en,ru}/protocol.md
+ * Prompt templates: worker/src/llm/prompts/{en,ru}/protocol.md
+ *
+ * GPT-5.4 is intentionally not wired here yet — kie.ai exposes a separate
+ * endpoint family for OpenAI-style models, and the spec was not provided.
+ * If model='gpt-5-4' is requested, we throw a typed error so the caller
+ * (and any future model-router) gets a clean signal instead of a 404.
  */
 
 import { readFileSync } from 'node:fs';
@@ -37,13 +45,19 @@ export class KieAiLlmError extends Error {
 
 // ─── kie.ai API constants ─────────────────────────────────────────────────────
 
-const KIE_API_BASE_URL = 'https://api.kie.ai/v1';
+/** Base URL for kie.ai Claude messages endpoint. The full endpoint is `${BASE}/messages`. */
+const KIE_API_BASE_URL = 'https://api.kie.ai/claude/v1';
 
-/** Map our LlmModel identifiers to kie.ai model string aliases. */
+/** Model alias to send in the kie.ai request body. */
 const MODEL_ALIAS: Record<LlmModel, string> = {
   'claude-sonnet-4-6': 'claude-sonnet-4-6',
+  // GPT-5.4 lives on a different (OpenAI-style) endpoint family on kie.ai
+  // and is not wired up yet. See the file header for details.
   'gpt-5-4': 'gpt-5.4',
 };
+
+/** Max output tokens. kie.ai default is 4096; we keep that explicitly. */
+const DEFAULT_MAX_TOKENS = 4096;
 
 // ─── Prompt loader ────────────────────────────────────────────────────────────
 
@@ -57,26 +71,25 @@ function loadSystemPrompt(language: 'RU' | 'EN'): string {
   return readFileSync(promptPath, 'utf-8');
 }
 
-// ─── kie.ai response shape ────────────────────────────────────────────────────
+// ─── kie.ai response shape (Anthropic-compatible) ─────────────────────────────
 
-interface KieAiChoice {
-  message: {
-    role: string;
-    content: string;
-  };
-  finish_reason?: string;
+interface KieAiContentBlock {
+  type: string;
+  text?: string;
 }
 
 interface KieAiUsage {
-  prompt_tokens: number;
-  completion_tokens: number;
-  total_tokens?: number;
+  input_tokens?: number;
+  output_tokens?: number;
 }
 
 interface KieAiResponse {
   id?: string;
   model?: string;
-  choices: KieAiChoice[];
+  role?: string;
+  type?: string;
+  stop_reason?: string;
+  content: KieAiContentBlock[];
   usage?: KieAiUsage;
 }
 
@@ -99,20 +112,25 @@ export class KieAiLlmProvider implements ILlmProvider {
 
   async generate(input: LlmInput): Promise<LlmResult> {
     const model: LlmModel = input.model ?? LLM_MODEL_DEFAULT;
+    if (model !== 'claude-sonnet-4-6') {
+      throw new KieAiLlmError(
+        `kie.ai integration currently supports only claude-sonnet-4-6; got model=${model}`,
+      );
+    }
     const modelAlias = MODEL_ALIAS[model];
     const systemPrompt = loadSystemPrompt(input.language);
 
     const requestBody = {
       model: modelAlias,
-      messages: [
-        { role: 'system', content: systemPrompt },
-        { role: 'user', content: input.prompt },
-      ],
+      system: systemPrompt,
+      messages: [{ role: 'user', content: input.prompt }],
+      stream: false,
+      max_tokens: DEFAULT_MAX_TOKENS,
     };
 
     let response: Response;
     try {
-      response = await fetch(`${this.baseUrl}/chat/completions`, {
+      response = await fetch(`${this.baseUrl}/messages`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -144,18 +162,26 @@ export class KieAiLlmProvider implements ILlmProvider {
       throw new KieAiLlmError('Failed to parse kie.ai API response as JSON', { reason: err });
     }
 
-    const content = data.choices?.[0]?.message?.content;
-    if (typeof content !== 'string' || content.trim().length === 0) {
+    // Concatenate all text blocks. kie.ai mirrors Anthropic's structure where
+    // a response may contain multiple content blocks (text + tool_use, etc).
+    // We only care about text here — tool_use is not requested in our body.
+    const textPieces =
+      data.content
+        ?.filter((block) => block.type === 'text' && typeof block.text === 'string')
+        .map((block) => block.text as string) ?? [];
+    const text = textPieces.join('').trim();
+
+    if (text.length === 0) {
       throw new KieAiLlmError('kie.ai API returned an empty or missing completion text', {
         reason: data,
       });
     }
 
     return {
-      text: content,
+      text,
       model,
-      tokensIn: data.usage?.prompt_tokens ?? 0,
-      tokensOut: data.usage?.completion_tokens ?? 0,
+      tokensIn: data.usage?.input_tokens ?? 0,
+      tokensOut: data.usage?.output_tokens ?? 0,
     };
   }
 }
