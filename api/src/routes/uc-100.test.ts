@@ -84,11 +84,12 @@ vi.mock('bullmq', () => ({
 
 // ─── Mock S3 ─────────────────────────────────────────────────────────────────
 
-const { mockCompleteMultipart, mockAbortMultipart, mockCreateMultipart, mockPresignPart } = vi.hoisted(() => ({
+const { mockCompleteMultipart, mockAbortMultipart, mockCreateMultipart, mockPresignPart, mockGetPresignedDownloadUrl } = vi.hoisted(() => ({
   mockCompleteMultipart: vi.fn().mockResolvedValue(undefined),
   mockAbortMultipart: vi.fn().mockResolvedValue(undefined),
   mockCreateMultipart: vi.fn().mockResolvedValue('test-upload-id'),
   mockPresignPart: vi.fn().mockResolvedValue('http://localhost:9000/presigned'),
+  mockGetPresignedDownloadUrl: vi.fn().mockResolvedValue('https://test.s3/presigned-get'),
 }))
 
 vi.mock('../storage/s3-adapter.js', () => ({
@@ -103,6 +104,7 @@ vi.mock('../storage/s3-adapter.js', () => ({
     presignUploadPart: mockPresignPart,
     completeMultipartUpload: mockCompleteMultipart,
     abortMultipartUpload: mockAbortMultipart,
+    getPresignedDownloadUrl: mockGetPresignedDownloadUrl,
   })),
 }))
 

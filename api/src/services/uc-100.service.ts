@@ -20,6 +20,7 @@
 import { prisma } from '../db.js'
 import { AppError } from '../plugins/errors.js'
 import { addTranscriptionJob } from '../queue.js'
+import { S3StorageProvider, s3ConfigFromEnv } from '../storage/s3-adapter.js'
 import type { UploadFinalizeResponse } from '@transcrib/shared'
 
 /** Input gathered after S3 multipart upload is complete */
@@ -62,13 +63,18 @@ const LANGUAGE_TO_PRISMA: Record<string, string> = {
  * Probe the container using fluent-ffmpeg/ffprobe.
  * Returns true when valid; false when corrupt or unrecognized.
  *
+ * Input must be something ffprobe can open: an HTTPS URL (browser-style),
+ * a local filesystem path, or a pipe. The `s3://` URI used internally as
+ * the storage reference (ADR-004) is NOT a valid ffprobe input — callers
+ * must convert it to a presigned HTTPS URL first via S3StorageProvider.
+ *
  * RQ-010: Verify container integrity at upload acceptance.
  */
-export async function probeContainer(storagePath: string): Promise<boolean> {
+export async function probeContainer(input: string): Promise<boolean> {
   // Dynamic import to allow mocking in tests
   const ffmpeg = await import('fluent-ffmpeg')
   return new Promise<boolean>((resolve) => {
-    ffmpeg.default.ffprobe(storagePath, (err) => {
+    ffmpeg.default.ffprobe(input, (err) => {
       resolve(!err)
     })
   })
@@ -109,8 +115,12 @@ export async function finalizeUpload(
   const storageUri = `s3://${bucket}/${s3Key}`
 
   // RQ-010: probe container integrity (unless explicitly skipped in tests)
+  // ffprobe cannot parse s3:// URIs — generate a short-lived presigned HTTPS URL.
+  // ffprobe uses HTTP Range requests, so it does not download the entire 500 MB file.
   if (!skipProbe) {
-    const valid = await probeContainer(storageUri)
+    const s3 = new S3StorageProvider(s3ConfigFromEnv())
+    const probeUrl = await s3.getPresignedDownloadUrl(s3Key, 600)
+    const valid = await probeContainer(probeUrl)
     if (!valid) {
       throw new AppError('CONTAINER_INVALID', 422, 'Uploaded file failed container integrity check (ffprobe)')
     }
