@@ -209,7 +209,7 @@ describe('Upload — POST /api/uploads/complete', () => {
     expect(mockQueueAdd).toHaveBeenCalledOnce()
     expect(mockQueueAdd).toHaveBeenCalledWith(
       'transcribe',
-      { transcription_job_id: JOB_UUID },
+      { transcription_job_id: JOB_UUID, speaker_count: null },
     )
   })
 

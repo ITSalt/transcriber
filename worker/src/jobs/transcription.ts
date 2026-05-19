@@ -156,9 +156,12 @@ export async function processTranscriptionJob(
   log: Logger,
   deps?: TranscriptionDeps,
 ): Promise<void> {
-  const { transcription_job_id } = job.data
+  const { transcription_job_id, speaker_count } = job.data
 
-  log.info({ jobId: job.id, transcription_job_id }, 'transcriptionJob starting')
+  log.info(
+    { jobId: job.id, transcription_job_id, speaker_count: speaker_count ?? null },
+    'transcriptionJob starting',
+  )
 
   const redisUrl = deps?.redisUrl ?? process.env['REDIS_URL'] ?? 'redis://localhost:6379'
 
@@ -225,6 +228,7 @@ export async function processTranscriptionJob(
     const asrResult: AsrResult = await asr.transcribe({
       audio: audioBuffer,
       languageHint,
+      speakerCount: speaker_count ?? null,
     })
 
     // ── Step 5+6: Resolve speaker names (RQ-017) ──────────────────────────

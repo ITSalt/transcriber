@@ -23,8 +23,17 @@ export async function uploadCompleteRoutes(app: FastifyInstance): Promise<void> 
       },
     },
     async (request, reply) => {
-      const { s3_key, s3_upload_id, filename, size_bytes, filetype, title, language, parts } =
-        request.body
+      const {
+        s3_key,
+        s3_upload_id,
+        filename,
+        size_bytes,
+        filetype,
+        title,
+        language,
+        speaker_count,
+        parts,
+      } = request.body
 
       if (!s3_key.startsWith('pending/')) {
         throw new AppError('INVALID_REQUEST', 400, 'Invalid s3_key')
@@ -51,6 +60,7 @@ export async function uploadCompleteRoutes(app: FastifyInstance): Promise<void> 
         bucket: s3Cfg.bucket,
         title,
         language: language ?? undefined,
+        speakerCount: speaker_count ?? undefined,
       })
 
       return reply.status(200).send(result)

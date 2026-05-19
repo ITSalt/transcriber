@@ -29,6 +29,13 @@ export interface AudioInput {
    * Pass null to enable Deepgram automatic language detection (BRQ-005).
    */
   languageHint: string | null;
+
+  /**
+   * Optional user-supplied speaker count. When set, providers should pin
+   * diarization to exactly this number (e.g. Deepgram min_speakers /
+   * max_speakers). Null/undefined = let the provider auto-detect.
+   */
+  speakerCount?: number | null;
 }
 
 // ─── AsrSegment ───────────────────────────────────────────────────────────────

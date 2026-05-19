@@ -50,6 +50,10 @@ export const UploadCompleteRequest = z.object({
   filetype: z.enum(['video/mp4', 'video/x-matroska', 'video/quicktime']),
   title: z.string().min(1).max(255),
   language: z.enum(['RU', 'EN']).nullable(),
+  // Optional ASR hint: if provided, pins Deepgram diarization to exactly N
+  // speakers (min_speakers = max_speakers = N). Null/omitted = auto-detect.
+  // Range bounded to keep accidental UI values in a sane space.
+  speaker_count: z.number().int().min(1).max(10).nullable().optional(),
   parts: z.array(z.object({
     part_number: z.number().int().positive(),
     etag: z.string().min(1),

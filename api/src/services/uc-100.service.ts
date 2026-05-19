@@ -39,6 +39,11 @@ export interface FinalizeUploadInput {
   title?: string
   /** Optional language hint (RQ-012: null = auto-detect) */
   language?: string
+  /**
+   * Optional user-supplied speaker count hint. Propagated to the worker via
+   * the BullMQ payload; the worker passes it to Deepgram as min/max_speakers.
+   */
+  speakerCount?: number | null
   /** Whether container has been probed externally — if false, we probe here */
   skipProbe?: boolean
 }
@@ -109,6 +114,7 @@ export async function finalizeUpload(
     bucket,
     title,
     language,
+    speakerCount,
     skipProbe = false,
   } = input
 
@@ -195,7 +201,10 @@ export async function finalizeUpload(
 
   // RQ-011: Enqueue BullMQ job AFTER transaction commits
   try {
-    await addTranscriptionJob({ transcription_job_id: transcriptionJobId })
+    await addTranscriptionJob({
+      transcription_job_id: transcriptionJobId,
+      speaker_count: speakerCount ?? null,
+    })
   } catch (err) {
     // Job row exists in DB; BullMQ enqueue failure is non-fatal at this layer.
     // A reconciliation worker can re-enqueue orphaned jobs.

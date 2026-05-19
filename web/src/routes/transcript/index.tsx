@@ -1,6 +1,7 @@
 import { useParams, useNavigate } from "react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
+import { ArrowLeft } from "lucide-react";
 import { apiGet } from "@/lib/api";
 import { TranscriptResponse } from "@transcrib/shared";
 import {
@@ -48,13 +49,15 @@ export default function TranscriptPage() {
       data-testid="transcript-page"
       className="container mx-auto py-8 px-4 max-w-4xl"
     >
-      {/* Back button */}
-      <div className="mb-4">
+      {/* Back link — sticky at top of viewport so it stays visible while scrolling */}
+      <div className="sticky top-0 z-10 -mx-4 px-4 py-2 mb-4 bg-background/80 backdrop-blur">
         <Button
-          variant="outline"
+          variant="ghost"
+          size="sm"
           data-testid="btn-back-to-meeting"
           onClick={() => void navigate(`/meetings/${meetingId}`)}
         >
+          <ArrowLeft className="mr-2 h-4 w-4" />
           {t("transcript.backToMeeting")}
         </Button>
       </div>

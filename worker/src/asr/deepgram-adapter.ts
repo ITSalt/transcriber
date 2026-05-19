@@ -83,12 +83,22 @@ export class DeepgramAsrProvider implements IAsrProvider {
   }
 
   async transcribe(input: AudioInput): Promise<AsrResult> {
-    const { audio, languageHint } = input;
+    const { audio, languageHint, speakerCount } = input;
 
     // Collect the audio into a Buffer so we can use transcribeFile()
     const buffer = await toBuffer(audio);
 
     const languageParams = resolveLanguage(languageHint);
+
+    // If the user explicitly told us how many speakers there are, pin the
+    // diarizer to that exact count. Without this hint Deepgram occasionally
+    // collapses two soft-voiced speakers into one (observed on a real meeting
+    // upload: two speakers, returned as a single SPEAKER_0 monologue). Setting
+    // min == max gives the model both bounds.
+    const diarizationParams =
+      typeof speakerCount === 'number' && speakerCount >= 1
+        ? { min_speakers: speakerCount, max_speakers: speakerCount }
+        : {};
 
     // HttpResponsePromise<MediaTranscribeResponse> extends Promise<MediaTranscribeResponse>
     // — await yields the body directly (no .body wrapper needed).
@@ -101,6 +111,7 @@ export class DeepgramAsrProvider implements IAsrProvider {
         utterances: true,
         punctuate: true,
         ...languageParams,
+        ...diarizationParams,
       },
     );
 

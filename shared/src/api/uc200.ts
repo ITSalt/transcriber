@@ -6,6 +6,9 @@ import { MeetingLanguage } from '../enums.js';
 // BullMQ queue: 'transcriptionJob'
 export const TranscriptionJobPayload = z.object({
   transcription_job_id: z.string().uuid(),
+  // Optional user-supplied speaker count hint, propagated from the upload form.
+  // When present, the worker pins Deepgram diarization to exactly this value.
+  speaker_count: z.number().int().min(1).max(10).nullable().optional(),
 });
 export type TranscriptionJobPayload = z.infer<typeof TranscriptionJobPayload>;
 

@@ -134,6 +134,10 @@
     "languageAuto": "Автоопределение",
     "languageRu": "Русский (RU)",
     "languageEn": "Английский (EN)",
+    "fieldSpeakerCount": "Количество спикеров (опционально)",
+    "fieldSpeakerCountPlaceholder": "Автоопределение",
+    "fieldSpeakerCountHint": "Укажите точное число говорящих, если оно известно — улучшит разделение по голосам.",
+    "errorSpeakerCountRange": "Количество спикеров должно быть от 1 до 10.",
     "finalizing": "Завершение загрузки…",
     "errorFileTooLarge": "Файл превышает 500 МБ. Выберите файл меньшего размера.",
     "errorUnsupportedMime": "Неподдерживаемый формат. Загрузите файл MP4, MKV или MOV."

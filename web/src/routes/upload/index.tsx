@@ -34,6 +34,7 @@ export default function UploadPage() {
   const [file, setFile] = useState<File | null>(null);
   const [title, setTitle] = useState("");
   const [language, setLanguage] = useState<"RU" | "EN" | "">("");
+  const [speakerCountInput, setSpeakerCountInput] = useState("");
   const [progress, setProgress] = useState(0);
   const [uploadState, setUploadState] = useState<UploadState>("idle");
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
@@ -84,6 +85,16 @@ export default function UploadPage() {
     setErrorMsg(null);
   }
 
+  function parseSpeakerCount(raw: string): { value: number | null; error: string | null } {
+    const trimmed = raw.trim();
+    if (trimmed === "") return { value: null, error: null };
+    const n = Number(trimmed);
+    if (!Number.isInteger(n) || n < 1 || n > 10) {
+      return { value: null, error: t("upload.errorSpeakerCountRange") };
+    }
+    return { value: n, error: null };
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!file) return;
@@ -91,6 +102,12 @@ export default function UploadPage() {
     const validationError = validateFile(file);
     if (validationError) {
       setErrorMsg(validationError);
+      return;
+    }
+
+    const { value: speakerCount, error: speakerErr } = parseSpeakerCount(speakerCountInput);
+    if (speakerErr) {
+      setErrorMsg(speakerErr);
       return;
     }
 
@@ -164,6 +181,7 @@ export default function UploadPage() {
           filetype: file.type,
           title: effectiveTitle,
           language: language || null,
+          speaker_count: speakerCount,
           parts: completedParts,
         },
         UploadFinalizeResponse,
@@ -250,6 +268,32 @@ export default function UploadPage() {
               <SelectItem value="EN">{t("upload.languageEn")}</SelectItem>
             </SelectContent>
           </Select>
+        </div>
+
+        {/* Speaker count field — optional Deepgram diarization pin */}
+        <div className="mb-4">
+          <label
+            htmlFor="upload-speaker-count"
+            className="block text-sm font-medium mb-1"
+          >
+            {t("upload.fieldSpeakerCount")}
+          </label>
+          <Input
+            id="upload-speaker-count"
+            type="number"
+            min={1}
+            max={10}
+            step={1}
+            inputMode="numeric"
+            value={speakerCountInput}
+            onChange={(e) => setSpeakerCountInput(e.target.value)}
+            disabled={isUploading}
+            placeholder={t("upload.fieldSpeakerCountPlaceholder")}
+            data-testid="upload-input-speaker-count"
+          />
+          <p className="text-xs text-gray-500 mt-1">
+            {t("upload.fieldSpeakerCountHint")}
+          </p>
         </div>
 
         {/* Error message */}

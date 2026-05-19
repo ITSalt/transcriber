@@ -134,6 +134,10 @@
     "languageAuto": "Auto-detect",
     "languageRu": "Russian (RU)",
     "languageEn": "English (EN)",
+    "fieldSpeakerCount": "Speaker count (optional)",
+    "fieldSpeakerCountPlaceholder": "Auto-detect",
+    "fieldSpeakerCountHint": "Set the exact number of speakers if known — improves diarization.",
+    "errorSpeakerCountRange": "Speaker count must be between 1 and 10.",
     "finalizing": "Finalizing upload…",
     "errorFileTooLarge": "File exceeds 500 MB limit. Please choose a smaller file.",
     "errorUnsupportedMime": "Unsupported file type. Please upload an MP4, MKV, or MOV file."

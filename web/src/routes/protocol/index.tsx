@@ -2,6 +2,7 @@ import { useRef, useState, useEffect, useCallback } from "react";
 import { useParams, useNavigate, useBlocker } from "react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
+import { ArrowLeft } from "lucide-react";
 import { apiGet, apiPut } from "@/lib/api";
 import { ProtocolResponse, ProtocolSaveResponse } from "@transcrib/shared";
 import type { ProtocolSaveRequest } from "@transcrib/shared";
@@ -169,13 +170,15 @@ export default function ProtocolPage() {
         </DialogContent>
       </Dialog>
 
-      {/* Back button */}
-      <div className="mb-4">
+      {/* Back link — sticky at top of viewport so it stays visible while scrolling */}
+      <div className="sticky top-0 z-10 -mx-4 px-4 py-2 mb-4 bg-background/80 backdrop-blur">
         <Button
-          variant="outline"
+          variant="ghost"
+          size="sm"
           data-testid="btn-back-to-meeting"
           onClick={handleBack}
         >
+          <ArrowLeft className="mr-2 h-4 w-4" />
           {t("protocol.backToMeeting")}
         </Button>
       </div>
