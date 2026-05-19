@@ -116,7 +116,17 @@ describe('extractAudio', () => {
       chain('format')
       chain('on')
 
-      builder['pipe'] = vi.fn(() => {
+      // extractAudio now passes a destination PassThrough to pipe(); when a
+      // destination is provided, write our fake bytes into it. Otherwise
+      // (legacy no-arg form) return a fresh PassThrough.
+      builder['pipe'] = vi.fn((dest?: PassThrough) => {
+        if (dest) {
+          setImmediate(() => {
+            dest.write(Buffer.from('RIFF'))
+            dest.end()
+          })
+          return dest
+        }
         const pt = new PassThrough()
         setImmediate(() => {
           pt.write(Buffer.from('RIFF'))

@@ -155,15 +155,10 @@ function setupSuccessfulMocks() {
   // Prisma: updateMany (mark PROCESSING) returns count=1
   mockPrisma.transcriptionJob.updateMany.mockResolvedValue({ count: 1 })
 
-  // Storage mock
-  const mockStorageStream: AsyncIterable<Uint8Array> = {
-    [Symbol.asyncIterator]: async function* () {
-      yield Buffer.from('fake-video-bytes')
-    },
-  }
+  // Storage mock — pipeline now uses presigned download URLs, not byte streams
   const mockStorage = {
     storageUriToKey: vi.fn().mockReturnValue('recordings/test.mp4'),
-    getObjectStream: vi.fn().mockResolvedValue(mockStorageStream),
+    getPresignedDownloadUrl: vi.fn().mockResolvedValue('https://test.s3/presigned-get'),
   }
   ;(createStorage as MockedFunction<typeof createStorage>).mockReturnValue(mockStorage as any)
 
@@ -265,7 +260,7 @@ describe('T02 (RQ-015) — Failure path: any error → FAILED status', () => {
 
     const mockStorage = {
       storageUriToKey: vi.fn().mockReturnValue('recordings/test.mp4'),
-      getObjectStream: vi.fn().mockRejectedValue(new Error('S3 connection refused')),
+      getPresignedDownloadUrl: vi.fn().mockRejectedValue(new Error('S3 connection refused')),
     }
     ;(createStorage as MockedFunction<typeof createStorage>).mockReturnValue(mockStorage as any)
 
@@ -297,12 +292,9 @@ describe('T02 (RQ-015) — Failure path: any error → FAILED status', () => {
     mockPrisma.transcriptionJob.findUnique.mockResolvedValue(BASE_TX_JOB as any)
     mockPrisma.transcriptionJob.updateMany.mockResolvedValue({ count: 1 })
 
-    const mockStorageStream: AsyncIterable<Uint8Array> = {
-      [Symbol.asyncIterator]: async function* () { yield Buffer.from('fake') },
-    }
     const mockStorage = {
       storageUriToKey: vi.fn().mockReturnValue('recordings/test.mp4'),
-      getObjectStream: vi.fn().mockResolvedValue(mockStorageStream),
+      getPresignedDownloadUrl: vi.fn().mockResolvedValue('https://test.s3/presigned-get'),
     }
     ;(createStorage as MockedFunction<typeof createStorage>).mockReturnValue(mockStorage as any)
 
@@ -472,12 +464,9 @@ describe('T05 (RQ-018) — Language hint and detection', () => {
     mockPrisma.transcriptionJob.findUnique.mockResolvedValue(enJob as any)
     mockPrisma.transcriptionJob.updateMany.mockResolvedValue({ count: 1 })
 
-    const mockStorageStream: AsyncIterable<Uint8Array> = {
-      [Symbol.asyncIterator]: async function* () { yield Buffer.from('fake') },
-    }
     const mockStorage = {
       storageUriToKey: vi.fn().mockReturnValue('recordings/test.mp4'),
-      getObjectStream: vi.fn().mockResolvedValue(mockStorageStream),
+      getPresignedDownloadUrl: vi.fn().mockResolvedValue('https://test.s3/presigned-get'),
     }
     ;(createStorage as MockedFunction<typeof createStorage>).mockReturnValue(mockStorage as any)
 
@@ -542,7 +531,7 @@ describe('T09 (NFR-008) — Human-readable error_reason; terminal state immutabi
 
     const mockStorage = {
       storageUriToKey: vi.fn().mockReturnValue('recordings/test.mp4'),
-      getObjectStream: vi.fn().mockRejectedValue(new Error('Bucket not found')),
+      getPresignedDownloadUrl: vi.fn().mockRejectedValue(new Error('Bucket not found')),
     }
     ;(createStorage as MockedFunction<typeof createStorage>).mockReturnValue(mockStorage as any)
 

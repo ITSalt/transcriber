@@ -3,18 +3,20 @@
  *
  * Provides two public helpers:
  *
- *   extractAudio(inputStream) → Readable
+ *   extractAudio(input) → Readable
  *     Converts any video/audio container to 16 kHz mono PCM/WAV, suitable for
- *     Deepgram Nova-3 (BRQ-003, ADR-006).  Returns a Node.js Readable stream
- *     so callers can pipe directly to S3 putObject without temp files.
+ *     Deepgram Nova-3 (BRQ-003, ADR-006).  `input` is either an HTTPS URL or a
+ *     local filesystem path — both are seekable, which is required by the MP4
+ *     demuxer (most encoders place the moov atom at the end of the file).
+ *     stdin pipes are NOT supported here; they break for non-faststart MP4.
  *
  *   probeContainer(filePath) → Promise<ProbeResult>
- *     Runs ffprobe on a local path (or URL) and returns duration + validity.
+ *     Runs ffprobe on a local path or URL and returns duration + validity.
  *     Returns {isValid: false, durationSec: 0} on any error or zero-duration file.
  */
 
 import ffmpeg from 'fluent-ffmpeg'
-import type { Readable } from 'node:stream'
+import { PassThrough, type Readable } from 'node:stream'
 import type { FfprobeData } from 'fluent-ffmpeg'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -27,8 +29,8 @@ export interface ProbeResult {
 // ── extractAudio ──────────────────────────────────────────────────────────────
 
 /**
- * Wraps a video/audio ReadableStream through ffmpeg and returns a new Readable
- * that emits raw 16 kHz mono PCM WAV bytes.
+ * Spawns ffmpeg against a seekable input (HTTPS URL or local file path) and
+ * returns a Readable that emits raw 16 kHz mono PCM WAV bytes.
  *
  * Output spec (Deepgram-compatible):
  *   - Format:    WAV (RIFF, pcm_s16le)
@@ -36,18 +38,35 @@ export interface ProbeResult {
  *   - Sample rate: 16 000 Hz
  *   - Video:     stripped
  *
- * @param inputStream  - Any Node.js Readable carrying the source media.
- * @returns            A Node.js PassThrough stream emitting WAV bytes.
+ * Why URL instead of stdin Readable: ffmpeg's MP4 demuxer needs to seek to the
+ * moov atom, which is at the END of most non-faststart files. stdin is not
+ * seekable, so feeding an MP4 buffer through stdin fails with
+ * "moov atom not found" and ffmpeg exits before producing output. HTTPS URLs
+ * are seekable via Range requests.
+ *
+ * @param input - HTTPS URL (e.g. an S3 presigned download URL) or local path.
+ * @returns A PassThrough stream that emits WAV bytes; errors from the ffmpeg
+ *          process are forwarded to this stream's 'error' event so consumers
+ *          can `await` on stream-end without unhandled-rejection crashes.
  */
-export function extractAudio(inputStream: Readable): Readable {
-  const output = ffmpeg(inputStream)
-    .inputFormat('mp4')   // hint the demuxer; ffmpeg auto-detects if wrong
+export function extractAudio(input: string | Readable): Readable {
+  const output = new PassThrough()
+
+  const command = ffmpeg(input)
     .noVideo()
     .audioChannels(1)
     .audioFrequency(16000)
     .audioCodec('pcm_s16le')
     .format('wav')
-    .pipe() as unknown as Readable   // pipe() with no dest returns a PassThrough
+    .on('error', (err: Error) => {
+      // Forward ffmpeg process errors to the output stream so the awaiting
+      // consumer sees them. Without this, fluent-ffmpeg emits 'error' on the
+      // command object and Node treats it as an unhandled exception, crashing
+      // the worker and triggering a pm2 restart.
+      output.destroy(err)
+    })
+
+  command.pipe(output, { end: true })
 
   return output
 }

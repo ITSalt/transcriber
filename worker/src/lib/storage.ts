@@ -13,6 +13,7 @@ import {
   NoSuchKey,
   NotFound,
 } from '@aws-sdk/client-s3'
+import { getSignedUrl } from '@aws-sdk/s3-request-presigner'
 import type { IStorage, StorageStream } from '@transcrib/shared'
 import { StorageNotFoundError, StorageError } from '@transcrib/shared'
 
@@ -101,6 +102,20 @@ export class WorkerS3Storage implements Pick<IStorage, 'getObjectStream' | 'stor
       }
       throw new StorageError(`Failed to get object "${key}"`, err)
     }
+  }
+
+  /**
+   * Generate a short-lived HTTPS GET URL the worker can hand to tools like
+   * ffmpeg/ffprobe, which understand HTTP Range requests but not the s3://
+   * scheme. The URL is signed with the same credentials as direct API access,
+   * so no extra bucket-policy work is needed.
+   */
+  async getPresignedDownloadUrl(key: string, expiresSec: number = 1800): Promise<string> {
+    return getSignedUrl(
+      this.client,
+      new GetObjectCommand({ Bucket: this.bucket, Key: key }),
+      { expiresIn: expiresSec },
+    )
   }
 }
 

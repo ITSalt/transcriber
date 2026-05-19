@@ -19,7 +19,7 @@
  */
 import type { Job } from 'bullmq'
 import type { Logger } from 'pino'
-import { Readable } from 'node:stream'
+import type { Readable } from 'node:stream'
 
 
 import type { TranscriptionJobPayload, ProtocolGenerationJobPayload } from '@transcrib/shared'
@@ -121,19 +121,6 @@ function normalizeLang(lang: string): 'RU' | 'EN' | 'AUTO' {
   return 'AUTO'
 }
 
-// ─── AsyncIterable → Readable conversion ─────────────────────────────────────
-
-async function asyncIterableToReadable(
-  iterable: AsyncIterable<Uint8Array>,
-): Promise<Readable> {
-  // Collect into buffer and wrap — acceptable for MVP (NFR-003: no SLA)
-  const chunks: Buffer[] = []
-  for await (const chunk of iterable) {
-    chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk))
-  }
-  return Readable.from(Buffer.concat(chunks))
-}
-
 // ─── AudioInput collector ─────────────────────────────────────────────────────
 
 async function extractedAudioToBuffer(audioReadable: Readable): Promise<Buffer> {
@@ -217,18 +204,17 @@ export async function processTranscriptionJob(
       return
     }
 
-    // ── Step 2: Fetch recording stream from S3 ────────────────────────────
-    // RQ-015: StorageNotFoundError → FAILED
+    // ── Step 2: Generate a short-lived HTTPS URL for ffmpeg ─────────────────
+    // RQ-015: StorageNotFoundError → FAILED. ffmpeg reads the recording via
+    // HTTP Range requests against this presigned URL — no full download into
+    // worker memory (a 500 MB upload would have OOM'd the VM previously).
     const storage = createStorage()
     const key = storage.storageUriToKey(recording.storageUri)
-    const storageStream = await storage.getObjectStream(key)
-
-    // Convert AsyncIterable to Readable for ffmpeg
-    const readable = await asyncIterableToReadable(storageStream)
+    const recordingUrl = await storage.getPresignedDownloadUrl(key, 1800)
 
     // ── Step 3: Extract WAV audio via ffmpeg (TECH-009) ───────────────────
     // RQ-015: ffmpeg error → FAILED
-    const audioReadable = extractAudio(readable)
+    const audioReadable = extractAudio(recordingUrl)
     const audioBuffer = await extractedAudioToBuffer(audioReadable)
 
     // ── Step 4: Submit to Deepgram ASR (TECH-010) ─────────────────────────
