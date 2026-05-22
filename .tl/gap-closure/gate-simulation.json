@@ -1,0 +1,266 @@
+{
+  "_meta": {
+    "project": "transcrib",
+    "simulated_at": "2026-05-22T11:25:43Z",
+    "wave_tip": "f925479",
+    "last_recorded_ci_green_commit": "5258a11 (run 26045597888, 2026-05-18)",
+    "commits_since_last_ci_green": ["461dc2a","5258a11","ebf5070","fa227a4","474e1de","321016e","aeeae53","27da444","4da4aca","0ec0a4e","29c175a","15c6a20","5398e7c","ed6aaa9","cce4674","d6a9f20","5d9585d","66049d5","5eb7e18","1f025b7","7f983f6","ad7b8b4","1b94f5b","40341a6","f925479"],
+    "verdict_legend": "WOULD_FIRE | WOULD_NOT_FIRE | NOT_APPLICABLE"
+  },
+  "catalog_gates": {
+    "G1_repo_checks": {
+      "owning_skill": "nacl-tl-review",
+      "skill_clause": "nacl-tl-review/SKILL.md:92-133",
+      "verdict": "WOULD_FIRE",
+      "workflow_detail_primary": "repo-checks-UNRUN",
+      "workflow_detail_secondary": "repo-checks-UNRUNNABLE",
+      "evidence": {
+        "pnpm_r_lint": "FAILED — ERR_PNPM_RECURSIVE_RUN_NO_SCRIPT: None of the selected workspace packages (api/worker/web/shared) declares a 'lint' script. The root package.json has 'lint: eslint .', but `pnpm -r run lint` excludes the root by definition.",
+        "pnpm_r_typecheck": "UNRUNNABLE — `tsc: command not found`. node_modules absent in every workspace; cannot evaluate locally.",
+        "pnpm_r_test": "NOT_RUN — same node_modules-missing condition; vitest binary unavailable.",
+        "ci_artifact_for_wave_tip": "ABSENT — last recorded green CI run is for commit 5258a11 (2026-05-18). Wave-tip f925479 is 4+ commits ahead with no recorded `repo-checks-GREEN:<sha>` evidence in any task or .tl/ artifact.",
+        "removes_node_modules_doubt": "Even if local install succeeded, the strict-mode evidence requirement is for a `repo-checks-GREEN:<commit-sha>` string against wave-tip in Task.verification_evidence OR in the review artifact. No such record exists for f925479."
+      },
+      "impact": ["Blocks every subsequent VERIFIED at nacl-tl-review for the wave-tip", "Blocks nacl-tl-release Condition 1 (upstream sync) if rerun"]
+    },
+    "G2_wire_evidence": {
+      "owning_skill": "nacl-tl-sync",
+      "skill_clause": "nacl-tl-sync/SKILL.md:231-292",
+      "verdict": "WOULD_FIRE",
+      "workflow_detail": "wire-evidence-missing",
+      "affected_ucs_actor_not_system": ["UC-001","UC-002","UC-003","UC-100","UC-201","UC-301","UC-302"],
+      "exempt_ucs_actor_system": ["UC-200","UC-300"],
+      "evidence": {
+        "wire_evidence_artifact_count": 0,
+        "wire_evidence_fixture_count": 0,
+        "wire_evidence_contract_test_count": 0,
+        "wire_evidence_live_smoke_count": 0,
+        "external_contract_md_count": 0,
+        "checked_paths": [".tl/external-contracts/ — DOES NOT EXIST", "Task.verification_evidence on every UC-NNN-BE / UC-NNN-FE Task node — none reference wire-evidence shapes", "Vitest unit tests exist (uc-100.test.ts etc.) but per G2 do not constitute wire-evidence; MSW-style interception is explicitly excluded by nacl-tl-sync/SKILL.md:296-306"],
+        "high_severity_uc": "UC-100 is actor=AUTHOR AND has S3-multipart provider dependency AND has shipped to prod — the strictest G2 fire shape"
+      },
+      "impact": ["Blocks every UC where actor != SYSTEM until wire-evidence is recorded", "Blocks G4 Condition 1 (upstream-sync-unverified)"]
+    },
+    "G3_mandatory_qa": {
+      "owning_skill": "nacl-tl-qa",
+      "skill_clause": "nacl-tl-qa/SKILL.md:73-117",
+      "verdict": "WOULD_FIRE",
+      "workflow_detail_primary": "LIVE_PROVIDER_SMOKE (UC-200, UC-300)",
+      "workflow_detail_secondary": "PROD_GOLDEN_PATH (every release-gate UC = UC-100/UC-200/UC-300/UC-302 by trait derivation)",
+      "evidence": {
+        "qa_skip_recorded_ucs": [
+          {"uc": "UC-200", "qa_status": "skip", "reason": "Requires real DEEPGRAM_API_KEY not available in test environment", "literal_record": ".tl/status.json line 466"},
+          {"uc": "UC-300", "qa_status": "skip", "reason": "Requires real KIE_API_KEY not available in test environment", "literal_record": ".tl/status.json line 542"}
+        ],
+        "matrix_implied_mandatory_stages": {
+          "UC-100": "COMPONENT_QA, LOCAL_RUNTIME_QA, WIRE_CONTRACT_QA, PROVIDER_FIXTURE_QA, LIVE_PROVIDER_SMOKE, PROD_GOLDEN_PATH (actor=AUTHOR + provider-dep S3 + release-gate)",
+          "UC-200": "All six (actor=SYSTEM + provider-dep Deepgram + release-gate uc-worker)",
+          "UC-300": "All six (actor=SYSTEM + provider-dep kie.ai + release-gate uc-worker)",
+          "UC-302": "PROD_GOLDEN_PATH (actor=AUTHOR, has_ui=false but releases PDF artifact via Puppeteer)"
+        },
+        "phase_5_outcome_in_conductor_state": "literal: 'SKIPPED — Deepgram + kie.ai keys not provided; UC-200/UC-300 worker pipeline E2E deferred' (.tl/conductor-state.json:55)",
+        "verbatim_match_to_postmortem": "Project-Beta postmortem episode 3.3 — same fixture shape; same QA-skip reason; gate-fire-catalog G3 fixture cites this exact pattern"
+      },
+      "impact": ["Aggregate UC-200 and UC-300 forced to UNVERIFIED", "Cascades to G4 Condition 2 (upstream-qa-unverified)", "Cascades to G4 Condition 5 (missing-prod-golden-path) on every release-gate UC", "qa_skip terminal status is the forbidden 'QA_SKIP as terminal success' state listed in strict-mode-changes.md"]
+    },
+    "G4_release": {
+      "owning_skill": "nacl-tl-release",
+      "skill_clause": "nacl-tl-release/SKILL.md:162-193",
+      "verdict": "WOULD_FIRE",
+      "block_conditions_triggered": [
+        {"cond_num": 1, "detail": "upstream-sync-unverified", "reason": "G2 mass fire; no wire-evidence on any UC"},
+        {"cond_num": 2, "detail": "upstream-qa-unverified", "reason": "G3 fire; UC-200/UC-300 aggregate forced UNVERIFIED by mandatory-NOT_RUN floor"},
+        {"cond_num": 3, "detail": "graph-stale", "reason": "ADR-005 'TUS' in live graph contradicts shipped code (S3-multipart since 2026-05-19); multiple post-v0.2.0 features (WEBM, 1GiB, kie.ai endpoint switch, prompt rewrite, speaker count, sticky back-link, SSE event:<type>) not reflected in graph; Wave nodes all status:pending while every Task is approved/done; no recorded snapshot baseline for diff"},
+        {"cond_num": 5, "detail": "missing-prod-golden-path", "reason": "release-status.json declares health:skipped with note 'no production URL in config.yaml' (literal lie; transcriber.itsalt.ru live and curled by deploy-production.yml health-check loop). No recorded PROD_GOLDEN_PATH evidence for UC-100→UC-200→UC-300→UC-301→UC-302 happy path. The ci.yml health-curl that DOES exist is HEALTH_ONLY per W4 distinction."},
+        {"cond_num": 6, "detail": "skipped-pr-without-prototype-exception", "reason": "release-status.json declares merge:skipped 'direct commits on main'; config.yaml does NOT declare project_kind: prototype; no signed exception with affected_gates including [skipped-pr]. Many post-v0.2.0 commits land direct to main while a PR-based workflow is allegedly the strategy (git.strategy: feature-branch). Mixed pattern."}
+      ],
+      "block_condition_4_sa_validate_critical": "NOT_EVALUATED — /nacl-sa-validate full would need to be run for a definitive verdict; from inventory there's an unstated drift (ADR-005, status-quo of Wave statuses, missing inbound-action edges) that almost certainly produces L-rule failures",
+      "evidence": {
+        "release_v020_history": "v0.2.0 shipped 2026-05-18 with merge: skipped, ci: skipped (LIE — CI green), health: skipped (LIE — health curled in deploy)",
+        "post_release_unmodeled_features": "1b94f5b (WEBM + 1GiB), ad7b8b4 (speaker count + back-link), 40341a6 (prompt rewrite); each is a UC-100/UC-200/UC-300 behavior change not reflected in graph"
+      },
+      "impact": ["No next release can proceed at VERIFIED without remediation", "The v0.2.0 release itself currently matches the forbidden 'APPROVED -- UNVERIFIED' / 'SKIPPED_CI without prototype exception' / 'HEALTH_ONLY as product-readiness' patterns"]
+    },
+    "G5_artifact_drift": {
+      "owning_skill": "nacl-tl-conductor",
+      "skill_clause": "nacl-tl-conductor/SKILL.md:664-699",
+      "verdict": "WOULD_FIRE",
+      "workflow_detail": "artifact-drift",
+      "pairwise_checks": {
+        "P-S1_status_vs_graph_counts": "FAIL — status.json: 39 tasks; graph Task nodes: 30 (missing TECH-016..024 and TECH-016+ deployment tasks; UC-201-BE/UC-302-FE etc. either missing or shape-mismatched).",
+        "P-S2_changelog_FR_vs_graph_FR": "N/A — neither changelog nor graph have FR entries; FeatureRequest label absent from schema. Recommended to record at least zero-difference for the pairwise gate.",
+        "P-S3_release_tag_vs_graph": "FAIL or N/A — release-status.json declares tag v0.2.0; no graph node carries release_tag property (UseCase/Module schema lacks this). Either the field is missing or the tag isn't reflected.",
+        "P-S4_conductor_phase_vs_status_terminal": "FAIL — conductor phase=delivered, but .tl/status.json still has 1 pending (TECH-024) and 2 qa_skip terminal states that strict mode forbids as success. UC-200-BE and UC-300-BE listed status=verified-pending in graph Task nodes while UC-level rows in status.json read as approved.",
+        "P-S5_conductor_task_vs_graph_task": "FAIL — conductor-state.techTasks[] lists TECH-001..TECH-015 only (15 entries). Graph has those plus per-UC BE/FE tasks (30 total). status.json has 39 (graph 30 + 9 not-in-graph TECH-016..024). Three sources, three different views of the same task universe."
+      },
+      "graph_unavailable_alternative_verdict": "NOT applicable — live graph reachable on 3627",
+      "impact": ["Blocks reconciliation; cascades to G4 (release wouldn't proceed because conductor refuses to finalize)"]
+    },
+    "G6_clean_checkout": {
+      "owning_skill": "nacl-tl-deliver + nacl-tl-deploy",
+      "skill_clause": "nacl-tl-deliver/SKILL.md:385-400",
+      "verdict": "WOULD_FIRE",
+      "workflow_detail_primary": "clean-checkout-artifact-missing",
+      "workflow_detail_secondary": "clean-checkout-runtime-assets-missing (latent if a run were executed; config.yaml.runtime_assets empty)",
+      "evidence": {
+        "tl_clean_checkout_dir": "ABSENT — no .tl/clean-checkout/ directory anywhere",
+        "wave_tip_artifact": "NONE — no .tl/clean-checkout/<commit>.json exists for f925479 OR for v0.2.0 release commit (4da4aca / aeeae53 era)",
+        "deploy_consumed_by_nacl_tl_deploy_step_1_0": "Would refuse — clean-checkout-artifact-missing; no inline override; deploys to prod that have already happened would be retroactively unverifiable",
+        "production_evidence_for_v020_release": "github actions deploy-production.yml ran successfully + curl /api/health returned 200 — but that's HEALTH_ONLY at best per W4, not clean-checkout evidence"
+      },
+      "impact": ["nacl-tl-deploy Step 1.0 refuses any future deploy until artifact present", "Latent: runtime_assets[] is empty, so even if a clean-checkout were run today it would pass trivially and miss prompt-shipping regression class"]
+    },
+    "G7_nav_actions": {
+      "owning_skill": "nacl-sa-ui + nacl-tl-review",
+      "skill_clause": "nacl-sa-ui/SKILL.md:484-577",
+      "verdict": "WOULD_FIRE",
+      "workflow_detail": "nav-actions-missing",
+      "affected_ucs_actor_triggered_with_ui": ["UC-001","UC-002","UC-003","UC-100","UC-201","UC-301"],
+      "exempt_ucs": ["UC-200 (actor=SYSTEM)", "UC-300 (actor=SYSTEM)", "UC-302 (has_ui=false)"],
+      "evidence": {
+        "has_inbound_action_rel_type_in_graph": "ABSENT from rel-type histogram (HAS_INBOUND_ACTION does not exist as an edge type anywhere)",
+        "forms_inbound_action_edge_count": {"FORM-MeetingCatalog": 0, "FORM-MeetingDetail": 0, "FORM-MeetingDeleteConfirm": 0, "FORM-MeetingUpload": 0, "FORM-TranscriptView": 0, "FORM-ProtocolEditor": 0},
+        "navigation_components_reachable_from_root": "CMP-NavMeetingCatalog (/, in_menu=true) and CMP-NavMeetingUpload (/upload, in_menu=true) are navigation roots; CMP-NavMeetingDetail/Delete/Transcript/Protocol are reachable via parent_menu chain. All six Forms could in principle accept an inbound action — none currently does.",
+        "code_reality": "Real fix 0ec0a4e 'add upload button to catalog page header' already added a UI affordance for UC-100; the graph just doesn't reflect it"
+      },
+      "impact": ["Blocks every UC actor=AUTHOR + has_ui=true at nacl-tl-review for the next wave close; six UCs total"]
+    },
+    "G8_runtime_contract": {
+      "owning_skill": "nacl-sa-uc",
+      "skill_clause": "nacl-sa-uc/SKILL.md:712-742",
+      "verdict": "WOULD_FIRE",
+      "workflow_detail": "runtime_contract_missing",
+      "decision_tree_applies": {
+        "UC-100": "Q3 partial (S3 multipart could be async if chunks fail mid-upload); Q4 partial (RQ-008 implied behavioral — accept/reject by size+MIME); LIKELY MANDATORY (long-running upload, recoverable across browser refresh per S3 multipart spec)",
+        "UC-200": "Q1 (queue/worker/job/async — BullMQ); Q2 (TranscriptionJob lifecycle states PENDING→PROCESSING→DONE/FAILED); Q3 (Deepgram async); Q4 (retry on failure); Q5 (depends on UC-100). MANDATORY × 5.",
+        "UC-300": "Q1 (queue/worker/async — BullMQ); Q2 (ProtocolGenerationJob lifecycle); Q3 (kie.ai async LLM call); Q4 (retry); Q5 (depends on UC-200). MANDATORY × 5.",
+        "UC-302": "Q1 weak (sync request → Puppeteer render → stream); Q4 (might retry on chromium crash). LIKELY OPTIONAL but recommended."
+      },
+      "evidence": {
+        "runtime_contract_rel_types_in_graph": "ABSENT: HAS_TRANSITION, ACQUIRES_LOCK, EMITS_EVENT all missing from histogram",
+        "uc_runtime_contract_property": "NONE — UseCase nodes lack the property entirely; no opt-out marker either",
+        "real_postmortem_match": "Project-Alpha UC-112 'silent restart no-op' postmortem is the canonical fixture; transcrib UC-200 and UC-300 have the same async-worker-with-FSM shape but no documented FSM. EntityState/TRANSITIONS_TO edges exist in graph but on BusinessEntity, not on UC-level RuntimeContract."
+      },
+      "impact": ["Blocks UC-200 and UC-300 at /nacl-sa-uc Phase 4.5 readback for any future modify or spec-update"]
+    },
+    "G9_spec_first": {
+      "owning_skill": "nacl-tl-fix",
+      "skill_clause": "nacl-tl-fix/SKILL.md:48-50, 143-201",
+      "verdict": "WOULD_FIRE",
+      "workflow_detail": "spec-first-prerequisite-missing",
+      "evidence": {
+        "fix_commits_since_v020_release_2026_05_18": [
+          {"sha": "5d9585d", "subject": "fix(UC-100): unblock CI and fix ffprobe s3:// scheme for upload finalize", "implied_level": "L2 (changes UC-100 BusinessProcess step for audio extraction wire shape)", "preceding_spec_commit": "NONE FOUND in git log"},
+          {"sha": "66049d5", "subject": "fix(UC-300): copy llm/prompts/*.md into worker dist on build", "implied_level": "L1 (build-config; postmortem-equivalent of project-beta C1) but runtime-asset list should be documented somewhere", "preceding_spec_commit": "NONE FOUND"},
+          {"sha": "5eb7e18", "subject": "fix(UC-200): feed ffmpeg a presigned S3 URL instead of a stdin Buffer", "implied_level": "L2 (changes UC-200 audio-source contract)", "preceding_spec_commit": "NONE FOUND"},
+          {"sha": "1f025b7", "subject": "fix(UC-300): switch kie.ai client to Anthropic /claude/v1/messages", "implied_level": "L2/L3 (changes external wire envelope shape; new external-contract candidate)", "preceding_spec_commit": "NONE FOUND — ADR-007 prose already names this endpoint, but the actual integration change wasn't preceded by a spec audit"},
+          {"sha": "7f983f6", "subject": "fix(TECH-012): emit SSE event:<type> so client listeners actually fire", "implied_level": "L1 (protocol-detail), but the SSE wire envelope qualifies as an external contract per W6 wire-protocol scope", "preceding_spec_commit": "NONE FOUND"},
+          {"sha": "ed6aaa9", "subject": "feat(UC-100): replace TUS with direct S3 presigned multipart upload", "implied_level": "L3 (ADR-005 → REVOKE+REPLACE; changes architectural decision and external contract)", "preceding_spec_commit": "NONE FOUND — ADR-005 in graph still says TUS"},
+          {"sha": "1b94f5b", "subject": "feat(UC-100): accept WEBM uploads, raise size limit to 1 GiB", "implied_level": "L2 (changes UC-100 BusinessRule about MIME + size cap)", "preceding_spec_commit": "NONE FOUND"},
+          {"sha": "ad7b8b4", "subject": "feat(UC-100/UC-200): optional speaker count + sticky back-link on subpages", "implied_level": "L2 (changes UC-100 form fields and UC-200 BusinessProcess)", "preceding_spec_commit": "NONE FOUND"},
+          {"sha": "40341a6", "subject": "feat(UC-300): rewrite RU protocol prompt with structured XML role/constraints", "implied_level": "L1 (prompt asset) or L2 (changes UC-300 output shape contract)", "preceding_spec_commit": "NONE FOUND"}
+        ],
+        "secondary_signals": {
+          "status_json_phases_docs_done": "Not recorded for any of the above fixes",
+          "changelog_md_l2_l3_doc_update_entries_before_first_code_fix_in_chain": "NONE — every changelog entry above the code-fix entries describes the CODE FIX itself, not a preceding spec update"
+        }
+      },
+      "impact": ["L1+ code-fix history violates spec-first prerequisite for nearly every post-v0.2.0 fix", "Most consequential: ed6aaa9 TUS→S3 (ADR-level reversal landed without ADR-005 update)"]
+    },
+    "G10_stub_shape": {
+      "owning_skill": "nacl-tl-stubs",
+      "skill_clause": "nacl-tl-stubs/SKILL.md:24, 72-191, 662",
+      "verdict": "NOT_APPLICABLE",
+      "evidence": {
+        "stub_registry": "NONE — no .tl/stub-registry.json or equivalent exists; project has not declared any stubs in the W10 sense.",
+        "code_audit_recommendation": "When the stub-registry is created (W10 binding), enumerate any TODOs/placeholder shapes. From a quick provider-adapter scan: no obvious shape-unvalidated stubs."
+      }
+    },
+    "G11_emergency_mode": {
+      "owning_skill": "all Strict-Only gate hosts",
+      "skill_clause": "nacl-tl-core/references/emergency-mode.md",
+      "verdict": "NOT_APPLICABLE",
+      "evidence": {
+        "emergencies_dir": "ABSENT (.tl/emergencies/ does not exist)",
+        "active_bypass": "NONE — no NACL_EMERGENCY=1 event recorded anywhere; no `(emergency-bypass)` suffix in any status",
+        "consequence_for_planning": "Emergency mode is not a planning instrument; this gate cannot fire in planning mode. Wave plan MUST NOT propose emergency mode as a remediation step."
+      }
+    }
+  },
+  "blanket_checks": {
+    "external_contracts_per_provider": {
+      "verdict": "WOULD_FIRE_MASS",
+      "expected_files": [
+        ".tl/external-contracts/deepgram.md",
+        ".tl/external-contracts/kie.md",
+        ".tl/external-contracts/s3-multipart-presigned.md",
+        ".tl/external-contracts/sse.md",
+        ".tl/external-contracts/puppeteer-pdf.md (provider-as-runtime-asset boundary)"
+      ],
+      "found_files": [],
+      "owning_skill": "nacl-sa-architect",
+      "consumer_blockers": ["nacl-tl-plan refuses any task referencing an ExternalContract whose .md is absent (nacl-tl-plan/SKILL.md:168-171)"]
+    },
+    "has_inbound_action_per_form": {
+      "verdict": "WOULD_FIRE_MASS",
+      "details": "0/6 Forms carry HAS_INBOUND_ACTION; UC-302 is the only Form-less UC and is exempt by has_ui=false."
+    },
+    "qa_six_stages_per_provider_uc": {
+      "verdict": "WOULD_FIRE_MASS",
+      "details": "UC-100/UC-200/UC-300 all need six stages; current status.json records only aggregate qa: pass/skip without per-stage decomposition. UC-200 and UC-300 explicitly qa_skip on LIVE_PROVIDER_SMOKE; UC-100 qa: pass without per-stage breakdown."
+    },
+    "exceptions_expiry": {
+      "verdict": "NOT_APPLICABLE",
+      "details": ".tl/exceptions/ directory does not exist; zero exceptions on file."
+    },
+    "removed_skip_flags_search": {
+      "verdict": "WOULD_NOT_FIRE",
+      "command": "grep -rE '\\-\\-skip-(merge|verify|deploy|qa|deliver|plan)|\\-\\-no-test|\\-\\-force\\b' .github package.json .tl/scripts",
+      "exit_code": 1,
+      "matches": "NONE"
+    },
+    "config_yaml_declares_project_kind": {
+      "verdict": "WOULD_FIRE",
+      "details": "config.yaml does not declare project_kind. Per config-schema.md:20-21 default is 'standard'. Per project-gap-closure.md stop-conditions this is a P0/P1 GAP requiring operator clarification.",
+      "user_decision_during_planning": "Assume `standard`; surface as open_question OQ-1 for confirmation."
+    },
+    "source_of_truth_pairwise_reconciliation": "Identical to G5 P-S1..P-S5 above; all five fail."
+  },
+  "additional_drift_findings": {
+    "ADR-005_TUS_vs_code_S3_multipart": {
+      "severity": "P0",
+      "category": "artifact_drift / spec_first_violation",
+      "detail": "Architectural decision in graph contradicts shipped code. ADR-005 must either be REVOKED+REPLACED (via new ADR) or the code must be reverted to TUS. Since TUS is gone, the spec needs to follow."
+    },
+    "config_yaml_runtime_state_unmodeled": {
+      "severity": "P1",
+      "category": "artifact_drift / clean_checkout_failure (latent)",
+      "detail": "config.yaml.deploy, config.yaml.vps, config.yaml.ci_platform all empty; reality = github-actions + transcriber.itsalt.ru + Caddy + pm2. config.yaml.graph.neo4j_bolt_port=3587 but .mcp.json + container = 3627."
+    },
+    "production_node_version_drift": {
+      "severity": "P2",
+      "category": "clean_checkout_failure (latent)",
+      "detail": "deploy-production.yml runs `nvm use 20` on the prod server while ci.yml NODE_VERSION=22, .nvmrc=22, engines.node>=22. Latent runtime risk."
+    },
+    "release_status_json_lies": {
+      "severity": "P0",
+      "category": "release_readiness / artifact_drift",
+      "detail": "release-status.json claims merge/ci/health all skipped — every claim is contradicted by code (ci.yml exists; deploy-production.yml curls /api/health; merge happens via push-to-main with PRs #1..#4 historically). The lie matches the Project-Alpha 'clean across packages/shared, frontend, backend' postmortem shape."
+    },
+    "wave_status_graph_vs_reality": {
+      "severity": "P1",
+      "category": "artifact_drift",
+      "detail": "All six Wave nodes in graph at status: pending; reality = delivered (per conductor) and shipped (per release-status v0.2.0). status.json shows waves up to 10 (deployment), graph only has W0..W5."
+    },
+    "UC_node_properties_required_by_strict_mode_absent": {
+      "severity": "P1",
+      "category": "artifact_drift",
+      "detail": "Every UseCase node lacks entrypoint_type, has_provider_dependency, is_release_gate_uc, runtime_contract. These properties are required predicates for G3/G7/G8/G4."
+    },
+    "approved_unverified_pattern_terminal_states": {
+      "severity": "P0",
+      "category": "release_readiness",
+      "detail": "Seven+ entries in status.json carry 'REVIEW APPLIED -- UNVERIFIED (100% test author overlap, operator override applied)' / 'UNVERIFIED (no live DB)' / 'UNVERIFIED (actionlint not available)'. These are the literal 'APPROVED -- UNVERIFIED' forbidden terminal success state listed in strict-mode-changes.md."
+    }
+  }
+}

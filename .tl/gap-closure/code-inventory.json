@@ -1,0 +1,107 @@
+{
+  "_meta": {
+    "project": "transcrib",
+    "captured_at": "2026-05-22T11:25:43Z",
+    "wave_tip_commit": "f925479b0bf46ee31e98893f81edfb13e77e9ba3",
+    "wave_tip_subject": "chore(graph): add migration dump and restore guide for new-machine setup",
+    "branch": "main",
+    "uncommitted": [".mcp.json", "CLAUDE.md"]
+  },
+  "workspace": {
+    "type": "pnpm-workspace",
+    "package_manager": "pnpm@10.33.0 (pinned in root packageManager)",
+    "node_required": ">=22.0.0 (engines) / .nvmrc=22 / ci NODE_VERSION=22 / deploy-production.yml uses 'nvm use 20' — PROD DRIFT",
+    "packages": ["api", "worker", "web", "shared"],
+    "root_scripts": ["dev", "build", "test", "test:watch", "lint", "lint:fix", "format", "format:check", "typecheck", "clean"],
+    "lockfile": "pnpm-lock.yaml present (8944 lines)"
+  },
+  "ci": {
+    "files_present": [".github/workflows/ci.yml", ".github/workflows/deploy-production.yml"],
+    "ci_jobs_run": "pnpm install --frozen-lockfile; pnpm --filter @transcrib/api run db:generate; pnpm --filter @transcrib/api run db:migrate:deploy; pnpm --filter @transcrib/shared run build; pnpm run lint; pnpm -r run typecheck; pnpm -r run test",
+    "service_containers": ["postgres:16-alpine", "redis:7-alpine"],
+    "deploy_target": "SSH to PRODUCTION_HOST as PRODUCTION_USER; cd /opt/transcrib; git reset --hard origin/main; pnpm install + build + migrate + pm2 delete+start ecosystem.config.cjs; final curl /api/health loop 30x5s",
+    "deploy_node_runtime_used": "nvm use 20 — INCONSISTENT WITH .nvmrc(22) AND engines(>=22)",
+    "secrets_referenced": ["PRODUCTION_SSH_KEY", "PRODUCTION_HOST", "PRODUCTION_USER", "PRODUCTION_URL (var)"]
+  },
+  "config_yaml": {
+    "path": "config.yaml (project root)",
+    "declared_fields": {
+      "project.id": "transcrib",
+      "project.stack": "\"\" (TBD)",
+      "modules": "mod-common / mod-ingest / mod-transcription / mod-protocol (all finalized)",
+      "git.strategy": "feature-branch",
+      "git.main_branch": "main",
+      "graph.neo4j_bolt_port": 3587,
+      "graph.container_prefix": "transcrib"
+    },
+    "missing_fields_required_by_strict_mode": [
+      "project_kind (defaults to standard per schema; absence is P1 GAP because the chain's release-gate has carve-out semantics that key off this field)",
+      "runtime_assets[] (P2 — gate would pass trivially; project has ffmpeg/ffprobe/llm-prompts/chromium runtime dependencies that need enumeration)",
+      "build.package_manager (derivable from pnpm-lock.yaml but explicit declaration recommended)",
+      "build.requires_prisma_generate (Prisma IS used and ci.yml + deploy-production.yml both explicitly run db:generate; should be true)",
+      "build.entrypoint (per ecosystem.config.cjs production = api/dist/index.js per changelog aeeae53 fix)",
+      "build.test_database_url (ci.yml sets DATABASE_URL inline; not in config.yaml)",
+      "build.migrate_cmd ('pnpm --filter @transcrib/api run db:migrate:deploy' per ci.yml)",
+      "deploy.method (empty; reality = github-actions ssh-deploy)",
+      "deploy.urls (empty; reality = https://transcriber.itsalt.ru)",
+      "deploy.health_endpoint (empty; reality = /api/health curled by deploy job)",
+      "deploy.smoke.endpoints[] (empty; default ['/api/health'] would force PASS_HEALTH_ONLY)",
+      "vps (empty; reality = 82.202.156.157 per changelog)",
+      "ci_platform (empty; reality = github-actions)"
+    ],
+    "port_drift": "config.yaml.graph.neo4j_bolt_port=3587, .mcp.json + running container=3627 — pick one and record in both"
+  },
+  "provider_adapters_in_code": [
+    {"provider": "Deepgram Nova-3 ASR", "files": ["worker/src/asr/deepgram-adapter.ts", "worker/src/asr/deepgram-adapter.test.ts"], "external_contract_present": false, "wire_evidence_present": false},
+    {"provider": "kie.ai LLM (Anthropic /claude/v1/messages endpoint per fix 1f025b7)", "files": ["worker/src/llm/kieai.ts", "worker/src/llm/kieai.test.ts"], "external_contract_present": false, "wire_evidence_present": false},
+    {"provider": "S3 multipart presigned (MinIO dev / Cloud.ru prod)", "files": ["api/src/routes/upload-init.ts", "api/src/routes/upload-complete.ts", "api/src/storage/s3-adapter.ts"], "external_contract_present": false, "wire_evidence_present": false, "notes": "Wire protocol with browser: presigned PUT per 10 MB part + POST /complete with ETags. Confirmed PROJECT-BETA postmortem C6 fix (s3:// scheme rejected by ffprobe) already landed (5d9585d)."},
+    {"provider": "SSE eventstream", "files": ["api/src/plugins/sse.ts", "api/src/sse/pubsub.ts", "api/src/sse/sse-formatter.ts", "api/src/routes/events.ts", "shared/src/api/sse-events.ts"], "external_contract_present": false, "wire_evidence_present": false, "notes": "Wire protocol with browser: text/event-stream with event:<type> framing (confirmed by 7f983f6 fix)."},
+    {"provider": "Puppeteer / chromium-headless (UC-302 PDF render)", "files": ["api/src/routes/uc-302.ts"], "external_contract_present": false, "wire_evidence_present": false, "notes": "Local binary; treat as runtime asset, not wire protocol."}
+  ],
+  "non_ts_runtime_assets": [
+    "worker/src/llm/prompts/ru/* (markdown prompts copied to worker/dist on build per 66049d5)",
+    "worker/src/llm/prompts/en/*",
+    "ffmpeg / ffprobe binaries (used by worker pipeline; not vendored — supplied by server bootstrap TECH-017)",
+    "chromium-headless / puppeteer-core (used by UC-302; not vendored — supplied by server bootstrap)",
+    "web/dist/* (rsync'd to /var/www/transcrib/frontend/dist/ on deploy)"
+  ],
+  "tus_state": {
+    "code": "REMOVED 2026-05-19 per ed6aaa9 — @tus/server, @tus/s3-store, tus-js-client uninstalled; api/src/plugins/tus.ts deleted",
+    "graph_spec": "ADR-005 in graph still says '@tus/server on Fastify; tus-js-client on the frontend; Bridge to MinIO via S3 multipart on chunk completion'",
+    "tasks_in_status_json": "TECH-008 'TUS upload wiring' status: approved (the task records work that has since been undone in code)",
+    "claudemd_state": "CLAUDE.md (currently modified, uncommitted) still says 'Upload: TUS protocol (@tus/server + tus-js-client)'",
+    "drift_class": "P0 release_readiness + artifact_drift (graph stale on an architectural decision)"
+  },
+  "post_v020_changes_unmodeled": [
+    "1b94f5b feat(UC-100): accept WEBM uploads, raise size limit to 1 GiB — graph BusinessProcess + Form constraints may not reflect; check RQ-008 (file-size cap) and VideoMimeType enum coverage",
+    "40341a6 feat(UC-300): rewrite RU protocol prompt with structured XML role/constraints — prompt is a runtime asset; runtime_assets[] in config.yaml does not list it",
+    "ad7b8b4 feat(UC-100/UC-200): optional speaker count + sticky back-link on subpages — UC-100 form / UC-200 BusinessProcess may need updates"
+  ],
+  "spec_first_l1_review_candidates_post_v020": [
+    "f925479 chore(graph) — graph dump only; no UC behavior change",
+    "40341a6 feat(UC-300): prompt rewrite — could be L0 prompt-only or L2 spec change (does it shift contracted protocol fields?)",
+    "1b94f5b feat(UC-100): WEBM + 1 GiB — L2/L3 (changes business rule on accepted MIME + size cap)",
+    "7f983f6 fix(TECH-012): SSE event:<type> emission — L1 (no behavioral spec change beyond protocol stream format)",
+    "ad7b8b4 feat(UC-100/UC-200): speaker count + sticky back-link — L2 (form-level requirement change for UC-100)",
+    "1f025b7 fix(UC-300): kie.ai → Anthropic endpoint — should be L2 (wire envelope change; affects ADR-007 detail or new .tl/external-contracts/kie.md)",
+    "66049d5 fix(UC-300): copy llm/prompts/*.md into worker dist — L1 (build-config; postmortem-equivalent of project-beta C1)",
+    "5eb7e18 fix(UC-200): feed ffmpeg a presigned S3 URL — L2 (changes UC-200 BusinessProcess step regarding how ffmpeg sources audio)",
+    "5d9585d fix(UC-100): ffprobe s3:// scheme — L2 (UC-100 contracts s3-multipart pipeline shape)"
+  ],
+  "reverse_proxy": {
+    "config_in_repo": ".tl/scripts/transcrib-caddyblock.conf (planning artifact)",
+    "production_state": "Caddy server-block on transcriber.itsalt.ru; reverse-proxies to 127.0.0.1:3010 (transcrib-api). Coexists with learn-api + Mattermost.",
+    "tls": "Let's Encrypt via Caddy auto"
+  },
+  "test_runners_present": [
+    "vitest (workspace test runner)",
+    "@playwright/test (devDependency)",
+    "fastify-type-provider-zod (Zod schema usage)"
+  ],
+  "stub_registry_present": false,
+  "exceptions_directory": "ABSENT (.tl/exceptions/ does not exist)",
+  "emergencies_directory": "ABSENT (.tl/emergencies/ does not exist)",
+  "external_contracts_directory": "ABSENT (.tl/external-contracts/ does not exist)",
+  "clean_checkout_directory": "ABSENT (.tl/clean-checkout/ does not exist)",
+  "reconciliation_directory": "ABSENT (.tl/reconciliation/ does not exist)"
+}

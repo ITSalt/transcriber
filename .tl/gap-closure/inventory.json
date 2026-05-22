@@ -1,0 +1,141 @@
+{
+  "_meta": {
+    "project": "transcrib",
+    "captured_at": "2026-05-22T11:25:43Z",
+    "graph_source": "live Neo4j bolt://localhost:3627 (transcrib-neo4j container, healthy)",
+    "graph_capture_method": "mcp__neo4j__read-cypher (no .cypher export fallback)",
+    "captured_by": "per-project GAP planning agent (project-gap-closure.md runbook)"
+  },
+  "graph_signature": {
+    "total_nodes": 477,
+    "node_label_histogram": {
+      "ActivityStep": 59, "Requirement": 53, "FormField": 45, "DomainAttribute": 44,
+      "EntityAttribute": 43, "Task": 30, "GlossaryTerm": 28, "WorkflowStep": 28,
+      "BusinessRule": 21, "EnumValue": 16, "EntityState": 15, "Component": 11,
+      "UCStub": 9, "UseCase": 9, "DataFlow": 9, "Form": 6, "BusinessProcess": 6,
+      "DomainEntity": 6, "Wave": 6, "BusinessEntity": 6, "ExternalEntity": 4,
+      "ValidationReport": 4, "Module": 4, "Enumeration": 4, "Stakeholder": 2,
+      "BusinessRole": 2, "SystemRole": 2, "ProcessGroup": 2,
+      "HandoffPackage": 1, "FinalizationReport": 1, "SystemContext": 1
+    },
+    "rel_type_histogram_top": {
+      "HAS_ATTRIBUTE": 87, "HAS_REQUIREMENT": 66, "DEPENDS_ON": 65, "HAS_STEP": 59,
+      "HAS_FIELD": 45, "TYPED_AS": 43, "IMPLEMENTED_BY": 36, "TRACES_TO": 31,
+      "MAPS_TO": 30, "IN_WAVE": 30, "APPLIES_TO": 29, "AUTOMATES_AS": 28,
+      "HAS_WORKFLOW_STEP": 28, "HAS_RULE": 26, "NEXT_STEP": 23, "USED_IN": 22,
+      "DEFINES_TERM": 18, "HAS_VALUE": 16, "GENERATES": 15, "TRANSITIONS_TO": 15,
+      "HAS_STATE": 15, "HAS_PERMISSION": 12, "CONTAINS_ADR": 11,
+      "ACTOR": 9, "CONTAINS_UC": 9, "USES_FORM": 6
+    },
+    "missing_rel_types_required_by_strict_mode": [
+      "HAS_INBOUND_ACTION (G7 nav-actions; needed on every actor!=SYSTEM Form)",
+      "HAS_TRANSITION (G8 runtime-contract FSM)",
+      "ACQUIRES_LOCK (G8 runtime-contract)",
+      "EMITS_EVENT (G8 runtime-contract)"
+    ],
+    "missing_node_labels_or_props_required_by_strict_mode": [
+      "FeatureRequest label (G5 P-S2 changelog↔graph FR pair — none exist; only relevant if changelog cites FRs)",
+      "UseCase.entrypoint_type property (G7 reachability exemption marker)",
+      "UseCase.has_provider_dependency property (G3 mandatory-stage matrix derivation)",
+      "UseCase.is_release_gate_uc property (G3 release-gate UC marker)",
+      "UseCase.runtime_contract property ('not_required' opt-out marker for G8)"
+    ]
+  },
+  "use_cases": [
+    {"id": "UC-001", "name": "View meeting catalog", "actor": "AUTHOR", "has_ui": true, "form_id": "FORM-MeetingCatalog", "system_uc_flag": true, "detail_status": "complete", "provider_deps_implied_by_code": [], "release_gate_implied": false},
+    {"id": "UC-002", "name": "View meeting detail", "actor": "AUTHOR", "has_ui": true, "form_id": "FORM-MeetingDetail", "system_uc_flag": true, "detail_status": "complete", "provider_deps_implied_by_code": [], "release_gate_implied": false},
+    {"id": "UC-003", "name": "Delete meeting", "actor": "AUTHOR", "has_ui": true, "form_id": "FORM-MeetingDeleteConfirm", "system_uc_flag": true, "detail_status": "complete", "provider_deps_implied_by_code": ["s3-multipart (object deletion)"], "release_gate_implied": false},
+    {"id": "UC-100", "name": "Upload meeting video", "actor": "AUTHOR", "has_ui": true, "form_id": "FORM-MeetingUpload", "system_uc_flag": null, "detail_status": "complete", "provider_deps_implied_by_code": ["s3-multipart (MinIO/Cloud.ru); ffprobe local binary"], "release_gate_implied": true, "g3_mandatory_stages_implied": "COMPONENT_QA, LOCAL_RUNTIME_QA, WIRE_CONTRACT_QA, PROVIDER_FIXTURE_QA, LIVE_PROVIDER_SMOKE, PROD_GOLDEN_PATH"},
+    {"id": "UC-200", "name": "Process transcription pipeline", "actor": "SYSTEM", "has_ui": false, "form_id": null, "system_uc_flag": null, "detail_status": "complete", "provider_deps_implied_by_code": ["Deepgram Nova-3 ASR", "ffmpeg local binary", "s3-multipart"], "release_gate_implied": true, "g3_mandatory_stages_implied": "COMPONENT_QA, LOCAL_RUNTIME_QA, WIRE_CONTRACT_QA, PROVIDER_FIXTURE_QA, LIVE_PROVIDER_SMOKE, PROD_GOLDEN_PATH", "g8_traits": "queue (BullMQ), long-running, async-provider, state-bearing (TranscriptionJob lifecycle)"},
+    {"id": "UC-201", "name": "View and download transcript", "actor": "AUTHOR", "has_ui": true, "form_id": "FORM-TranscriptView", "system_uc_flag": true, "detail_status": "complete", "provider_deps_implied_by_code": [], "release_gate_implied": false},
+    {"id": "UC-300", "name": "Generate protocol pipeline", "actor": "SYSTEM", "has_ui": false, "form_id": null, "system_uc_flag": null, "detail_status": "complete", "provider_deps_implied_by_code": ["kie.ai (Claude Sonnet 4.6 / GPT-5.4)", "non-TS runtime asset: worker/dist/llm/prompts/{ru,en}/protocol.md"], "release_gate_implied": true, "g3_mandatory_stages_implied": "COMPONENT_QA, LOCAL_RUNTIME_QA, WIRE_CONTRACT_QA, PROVIDER_FIXTURE_QA, LIVE_PROVIDER_SMOKE, PROD_GOLDEN_PATH", "g8_traits": "queue (BullMQ), long-running, async-provider, state-bearing (ProtocolGenerationJob lifecycle)"},
+    {"id": "UC-301", "name": "Review and edit protocol", "actor": "AUTHOR", "has_ui": true, "form_id": "FORM-ProtocolEditor", "system_uc_flag": true, "detail_status": "complete", "provider_deps_implied_by_code": [], "release_gate_implied": false},
+    {"id": "UC-302", "name": "Export protocol to PDF", "actor": "AUTHOR", "has_ui": false, "form_id": null, "system_uc_flag": true, "detail_status": "complete", "provider_deps_implied_by_code": ["Puppeteer (chromium-headless local binary)"], "release_gate_implied": true, "g3_mandatory_stages_implied": "COMPONENT_QA, LOCAL_RUNTIME_QA, WIRE_CONTRACT_QA, PROVIDER_FIXTURE_QA, LIVE_PROVIDER_SMOKE, PROD_GOLDEN_PATH (puppeteer/chromium presence-as-runtime-asset is the smoke), entrypoint_type=embed-only candidate"}
+  ],
+  "forms": [
+    {"id": "FORM-MeetingCatalog", "used_in_components": ["CMP-NavMeetingCatalog","CMP-FormLayout","CMP-StatusBadge","CMP-DurationFormat","CMP-LanguageSelect"], "has_inbound_action_edge_count": 0},
+    {"id": "FORM-MeetingDetail", "used_in_components": ["CMP-NavMeetingDetail","CMP-FormLayout","CMP-DurationFormat","CMP-StatusBadge","CMP-LanguageSelect"], "has_inbound_action_edge_count": 0},
+    {"id": "FORM-MeetingDeleteConfirm", "used_in_components": ["CMP-NavMeetingDeleteConfirm","CMP-FormLayout","CMP-ConfirmDialog"], "has_inbound_action_edge_count": 0},
+    {"id": "FORM-MeetingUpload", "used_in_components": ["CMP-NavMeetingUpload","CMP-FormLayout","CMP-LanguageSelect"], "has_inbound_action_edge_count": 0},
+    {"id": "FORM-TranscriptView", "used_in_components": ["CMP-NavTranscriptView","CMP-FormLayout","CMP-LanguageSelect"], "has_inbound_action_edge_count": 0},
+    {"id": "FORM-ProtocolEditor", "used_in_components": ["CMP-NavProtocolEditor","CMP-FormLayout","CMP-ConfirmDialog"], "has_inbound_action_edge_count": 0}
+  ],
+  "components_navigation_roots": [
+    {"id": "CMP-NavMeetingCatalog", "route": "/", "in_menu": true, "parent_menu": null, "reachability_root": true},
+    {"id": "CMP-NavMeetingUpload", "route": "/upload", "in_menu": true, "parent_menu": null, "reachability_root": true},
+    {"id": "CMP-NavMeetingDetail", "route": "/meetings/:id", "in_menu": false, "parent_menu": "CMP-NavMeetingCatalog"},
+    {"id": "CMP-NavMeetingDeleteConfirm", "route": "/meetings/:id/delete", "in_menu": false, "parent_menu": "CMP-NavMeetingDetail"},
+    {"id": "CMP-NavTranscriptView", "route": "/meetings/:id/transcript", "in_menu": false, "parent_menu": "CMP-NavMeetingDetail"},
+    {"id": "CMP-NavProtocolEditor", "route": "/meetings/:id/protocol", "in_menu": false, "parent_menu": "CMP-NavMeetingDetail"}
+  ],
+  "feature_requests_in_graph": [],
+  "external_contracts_present_on_disk": [],
+  "exceptions_present_on_disk": [],
+  "emergencies_present_on_disk": [],
+  "reconciliation_artifacts_present_on_disk": [],
+  "clean_checkout_artifacts_present_on_disk": [],
+  "adrs_present_in_graph_relevant_to_drift": {
+    "ADR-005": {"title": "Chunked upload protocol: TUS", "decision": "@tus/server on Fastify (mounted under /api/upload), tus-js-client on the frontend. Bridge to MinIO via S3 multipart on chunk completion.", "current_code_state": "TUS REMOVED 2026-05-19 per changelog; api/src/routes/upload-init.ts + upload-complete.ts use direct S3 presigned multipart; no api/src/plugins/tus.ts exists.", "drift_severity": "P0 — graph ADR contradicts shipped code"},
+    "ADR-004": {"title": "Object Storage: MinIO (S3-compatible)", "decision": "MinIO 2026 in Docker Compose. AWS SDK v3 S3 client used in code so swap to AWS S3 / Cloudflare R2 is a config change only.", "current_code_state": "Production uses Cloud.ru S3 (transcrib-itsalt-prod bucket) per changelog/TECH-016; dev uses MinIO. Provider-swap is consistent with ADR-004, no drift on the decision itself."},
+    "ADR-006": {"title": "Deepgram Nova-3 behind IAsrProvider", "current_code_state": "worker/src/asr/deepgram-adapter.ts + .test.ts exist; consistent with ADR."},
+    "ADR-007": {"title": "kie.ai (Claude Sonnet 4.6 / GPT-5.4)", "current_code_state": "worker/src/llm/kieai.ts. ENDPOINT DRIFT: changelog 1f025b7 'fix(UC-300): switch kie.ai client to Anthropic /claude/v1/messages' — endpoint change; ADR-007 text already names this endpoint, but the FIX category was L1 (code-only) while changing an external wire envelope shape is L2/L3 (spec-first prerequisite would apply).", "drift_severity": "P1 — spec-first prerequisite violation candidate"},
+    "ADR-010": {"title": "Realtime status: Server-Sent Events", "current_code_state": "api/src/plugins/sse.ts + sse/pubsub.ts + routes/events.ts; consistent.", "recent_fix": "7f983f6 fix(TECH-012): emit SSE event:<type> so client listeners actually fire — L1 fix, no spec change required by gate (TECH-012 not in graph)"}
+  ],
+  "tasks_in_graph_vs_status_json_drift": {
+    "status_json_total": 39,
+    "conductor_state_total_techTasks_listed": 15,
+    "conductor_state_total_ucTasks_listed": 9,
+    "graph_task_label_total": 30,
+    "graph_task_total_excludes": "Graph holds TECH-001..TECH-015 + per-UC TECH-side BE/FE splits (UC-001-BE etc.). status.json adds TECH-016..TECH-024 (9 deployment tasks) which DO NOT EXIST as Task nodes in the live graph. status.json also exposes UCs at top level (without BE/FE split). conductor-state lists only TECH-001..TECH-015 in techTasks[] and shows phase: delivered.",
+    "drift_severity": "P0 — multiple pairwise reconciliations (P-S1 totals, P-S4 phase vs status, P-S5 per-task) fail"
+  },
+  "waves_in_graph": [
+    {"id": "W0", "num": 0, "name": "Foundation & Infrastructure", "status_in_graph": "pending"},
+    {"id": "W1", "num": 1, "name": "Core BE: Catalog + Upload", "status_in_graph": "pending"},
+    {"id": "W2", "num": 2, "name": "Core FE + Detail BE + Transcription Pipeline", "status_in_graph": "pending"},
+    {"id": "W3", "num": 3, "name": "Detail/Delete BE+FE + Transcript + Protocol Pipeline", "status_in_graph": "pending"},
+    {"id": "W4", "num": 4, "name": "Delete/Transcript FE + Protocol Editor BE", "status_in_graph": "pending"},
+    {"id": "W5", "num": 5, "name": "Protocol Editor FE + PDF Export", "status_in_graph": "pending"}
+  ],
+  "waves_drift_note": "All six Wave nodes still status: pending, but every task across W0..W5 is approved/done; conductor phase delivered; v0.2.0 shipped to GitHub release; transcriber.itsalt.ru live. W7..W10 deployment waves from status.json do not exist as Wave nodes in graph at all (W6 also absent — numbering skips).",
+  "tl_artifact_snapshots": {
+    "status.json": {
+      "total_uc": 9, "total_tech": 24, "total_tasks": 39,
+      "pending": 1, "approved": 32, "qa_pass": 7, "qa_skip": 2, "done": 0, "blocked": 0,
+      "waves_total": 10, "waves_current": 10,
+      "qa_skip_uc": ["UC-200 (Deepgram key unavailable)", "UC-300 (kie.ai key unavailable)"],
+      "approved_unverified_review_headlines_count": "at least 7 UC/TECH entries carry 'REVIEW APPLIED -- UNVERIFIED (test author overlap 100%, operator override applied)' / 'UNVERIFIED (no live DB)' / 'UNVERIFIED (actionlint not available)'"
+    },
+    "conductor-state.json": {
+      "phase": "delivered",
+      "delivered_at": "2026-05-18T16:15:00Z",
+      "branch": "feature/intake-2026-05-18",
+      "ci_run_url": "https://github.com/ITSalt/transcriber/actions/runs/26045597888",
+      "ci_conclusion": "success",
+      "phase_5_outcome": "SKIPPED — Deepgram + kie.ai keys not provided; UC-200/UC-300 worker pipeline E2E deferred",
+      "release_notes_skip": ["UC-200 (provider E2E)", "UC-300 (provider E2E)"],
+      "bugFixes_count": 7
+    },
+    "release-status.json": {
+      "started": "2026-05-19T10:00:00Z",
+      "merge": "skipped (direct commits on main)",
+      "ci": "skipped (no CI pipeline configured) — STALE LIE: ci.yml + deploy-production.yml exist and last green run 26045597888",
+      "health": "skipped (no production URL in config.yaml) — STALE LIE: deploy-production.yml curl /api/health on PRODUCTION_URL var; transcriber.itsalt.ru live",
+      "version": "v0.2.0 (minor bump)",
+      "tag": "v0.2.0",
+      "release_url": "https://github.com/ITSalt/transcriber/releases/tag/v0.2.0",
+      "drift_severity": "P0 — release-status declares CI+health+merge skipped while the project shipped to production via CI-gated push-to-main pipeline that runs CI then SSH-deploys then runs /api/health curl loop"
+    },
+    "changelog.md": {
+      "head_entry": "[2026-05-19] feat(UC-100): replace TUS with direct S3 presigned multipart upload — TUS removed; ADR-005 in graph unchanged",
+      "deploy_entry": "[2026-05-18] DELIVER — Production deployment LIVE on transcriber.itsalt.ru — pm2 (transcrib-api + transcrib-worker) + Caddy + Let's Encrypt; deploy SHA 27da444; CI+deploy ~4 min total",
+      "phase_5_skip_entry": "Phase 5 (UC-200/UC-300 pipeline E2E): SKIPPED by user direction — provider keys deferred",
+      "fr_entries_count": 0
+    }
+  },
+  "preserved_skip_flag_check": {
+    "command": "grep -rE '\\-\\-skip-(merge|verify|deploy|qa|deliver|plan)|\\-\\-no-test|\\-\\-force\\b' .github package.json .tl/scripts",
+    "exit_code": 1,
+    "matches": []
+  }
+}

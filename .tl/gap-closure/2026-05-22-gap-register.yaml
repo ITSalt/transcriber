@@ -1,0 +1,789 @@
+# Per-project GAP register — schema: nacl-tl-core/references/project-gap-closure.md
+# § "GAP register schema"; template: .tl/gap-closure/_template.yaml (NaCl root).
+project: "transcrib"
+generated_at: "2026-05-22T11:25:43Z"
+mode: "planning-only"
+strict_mode: true
+
+baseline:
+  graph_status: "LIVE"   # bolt://localhost:3627; transcrib-neo4j healthy 22h
+  tl_status: "PARTIAL"   # .tl/ present (~39 task files + status/conductor/changelog/release-status) but .tl/{exceptions,emergencies,reconciliation,clean-checkout,external-contracts,gap-closure,plans}/ all absent before this run
+  repo_checks_status: "NOT_RUN"  # local: lint UNRUN (no workspace lint script), typecheck UNRUNNABLE (no node_modules), test UNRUNNABLE. Last green CI evidence is commit 5258a11 (2026-05-18), 4+ commits behind wave-tip f925479.
+  release_status: "UNVERIFIED"   # release-status.json declares v0.2.0 shipped; merge/ci/health all "skipped" but reality contradicts each (ci.yml exists & green, deploy curls /api/health, transcriber.itsalt.ru live). HEALTH_ONLY by W4 distinction.
+  project_kind: "missing"        # config.yaml does not declare; assumed `standard` per user decision OQ-1; defaults via config-schema.md:20-21
+  notes: "Project is live in production at https://transcriber.itsalt.ru and shipped v0.2.0 on 2026-05-18 prior to the W0-W11 strict-mode reform. Live graph reachable on port 3627 (config.yaml says 3587 — port drift logged as GAP-034). All Phase 2 G1..G11 simulations run against live graph + worktree + git log; no .cypher export fallback used. Per the user's OQ-1 answer, planning proceeds assuming project_kind: standard; final wave plan flags this for operator confirmation."
+
+gaps:
+  # ------------------------------ P0 — RELEASE-BLOCKING / FORBIDDEN TERMINAL STATES ------------------------------
+
+  - gap_id: "GAP-001"
+    title: "config.yaml does not declare project_kind"
+    severity: "P0"
+    status: "BLOCKED"
+    gate_that_would_fire: "nacl-tl-release"
+    workflow_detail: "project_kind-undeclared (release-gate carve-out semantics undefined)"
+    gap_category: "release_readiness"
+    owning_skill: ["nacl-tl-release", "nacl-tl-conductor"]
+    bounded_context: "spec"
+    evidence_expected:
+      - "config.yaml declares `project_kind: standard` or `project_kind: prototype` per config-schema.md:7-21"
+    evidence_found:
+      - "config.yaml: no project_kind field (lines 1-62)"
+    source_artifacts:
+      - "/Users/maxnikitin/projects/transcriber/config.yaml"
+      - "nacl-tl-core/references/config-schema.md:20-21 (default = standard) + project-gap-closure.md stop-condition #3"
+    impact:
+      - "Release skill cannot evaluate Condition 6 (skipped-pr-without-prototype-exception) without an explicit value"
+      - "Conductor stop-condition triggers; wave plan must record the decision before launch"
+    proposed_wave: "W0-bootstrap"
+    dependencies: []
+    confidence: "high"
+
+  - gap_id: "GAP-002"
+    title: "ADR-005 (TUS) in live graph contradicts shipped code (S3 multipart presigned)"
+    severity: "P0"
+    status: "BLOCKED"
+    gate_that_would_fire: "nacl-tl-release"
+    workflow_detail: "graph-stale"
+    gap_category: "release_readiness"
+    owning_skill: ["nacl-sa-architect", "nacl-tl-release"]
+    bounded_context: "spec"
+    evidence_expected:
+      - "ADR-005 either matches shipped code (TUS), or a successor ADR REVOKE+REPLACES it with the S3-multipart decision"
+      - ".tl/external-contracts/s3-multipart-presigned.md exists with 11 required fields"
+    evidence_found:
+      - "Graph: (:Requirement {id:'ADR-005', title:'Chunked upload protocol: TUS', decision:'@tus/server on Fastify (mounted under /api/upload), tus-js-client on the frontend. Bridge to MinIO via S3 multipart on chunk completion.'})"
+      - "Code: api/src/routes/upload-init.ts + upload-complete.ts + storage/s3-adapter.ts — direct S3 presigned multipart PUT per 10MB part; no @tus/server, no tus-js-client, no api/src/plugins/tus.ts (uninstalled per changelog [2026-05-19] ed6aaa9)"
+      - "CLAUDE.md (currently uncommitted modification) still says 'Upload: TUS protocol'"
+      - "TECH-008 task in status.json: 'TUS upload wiring' status=approved (records pre-removal work)"
+    source_artifacts:
+      - "Cypher: MATCH (r:Requirement {id:'ADR-005'}) RETURN r.decision"
+      - ".tl/changelog.md line 3 (2026-05-19 TUS removal)"
+      - "git log: ed6aaa9, 5398e7c, 15c6a20, 29c175a, 0ec0a4e"
+    impact:
+      - "G4 Condition 3 (graph-stale) fires on next release"
+      - "G9 spec-first prerequisite violated for ed6aaa9 (see GAP-029)"
+      - "Any future provider swap continues to read stale ADR"
+    proposed_wave: "W3-external-contracts"
+    dependencies: []
+    confidence: "high"
+
+  - gap_id: "GAP-003"
+    title: "Post-v0.2.0 features not modeled in graph (WEBM+1GiB, speaker count, sticky back-link, kie.ai endpoint, RU prompt rewrite, SSE event:<type>)"
+    severity: "P0"
+    status: "BLOCKED"
+    gate_that_would_fire: "nacl-tl-release"
+    workflow_detail: "graph-stale"
+    gap_category: "artifact_drift"
+    owning_skill: ["nacl-sa-uc", "nacl-sa-architect"]
+    bounded_context: "spec"
+    evidence_expected:
+      - "Graph BusinessRule/ActivityStep/Requirement nodes for each post-v0.2.0 behavior change"
+      - "ADR or contract update for kie.ai Anthropic endpoint, SSE event-type framing, WEBM MIME acceptance, 1 GiB size cap"
+    evidence_found:
+      - "git log post-v0.2.0: 1b94f5b (WEBM+1GiB), ad7b8b4 (speaker count + sticky back-link), 40341a6 (RU prompt rewrite), 1f025b7 (kie.ai → /claude/v1/messages), 7f983f6 (SSE event:<type> framing) — none have matching graph updates"
+      - "VideoMimeType enum in Prisma includes WEBM; UC-100 RQ-008 (file-size cap) in graph likely still references prior limit"
+    source_artifacts:
+      - "git log f925479..fa227a4"
+      - "Cypher: MATCH (uc:UseCase)-[:HAS_REQUIREMENT]->(r:Requirement) WHERE uc.id IN ['UC-100','UC-200','UC-300'] RETURN r.id"
+    impact: ["Cascades to G4 Condition 3 (graph-stale)", "Spec-first violation for each (GAP-031)"]
+    proposed_wave: "W3-external-contracts"
+    dependencies: ["GAP-002"]
+    confidence: "high"
+
+  - gap_id: "GAP-005"
+    title: "release-status.json declares CI+merge+health all 'skipped' while CI ran green, deploy curled /api/health, and transcriber.itsalt.ru is live"
+    severity: "P0"
+    status: "BLOCKED"
+    gate_that_would_fire: "nacl-tl-conductor"
+    workflow_detail: "artifact-drift (P-S3-equivalent: release-status declarations contradict observable reality)"
+    gap_category: "artifact_drift"
+    owning_skill: ["nacl-tl-conductor"]
+    bounded_context: "spec"
+    evidence_expected:
+      - "release-status.json reflects observable production state (CI conclusion=success on commit X; merge strategy=as-recorded; health=PASS or HEALTH_ONLY per W4 distinction with named endpoint)"
+    evidence_found:
+      - ".tl/release-status.json: {merge:'skipped (direct commits on main)', ci:'skipped (no CI pipeline configured)', health:'skipped (no production URL in config.yaml)'}"
+      - ".github/workflows/{ci,deploy-production}.yml exist; last successful CI run 26045597888 (2026-05-18)"
+      - "deploy-production.yml lines 74-89: curl '${PROD_URL}/api/health' loop 30x5s"
+      - ".tl/changelog.md 2026-05-18 entry: 'PROD live at https://transcriber.itsalt.ru (HTTPS, Let's Encrypt). /api/health → 200.'"
+    source_artifacts:
+      - "/Users/maxnikitin/projects/transcriber/.tl/release-status.json"
+      - "/Users/maxnikitin/projects/transcriber/.github/workflows/{ci,deploy-production}.yml"
+      - ".tl/changelog.md 2026-05-18 [DELIVER]"
+    impact:
+      - "P-S* reconciliation fails; conductor would refuse VERIFIED on next close"
+      - "Lie pattern matches Project-Alpha 'typecheck: clean' postmortem fixture (G5)"
+    proposed_wave: "W1-reconciliation"
+    dependencies: []
+    confidence: "high"
+
+  - gap_id: "GAP-006"
+    title: "Task universe drift — status.json (39) vs graph Task (30) vs conductor.techTasks (15)"
+    severity: "P0"
+    status: "BLOCKED"
+    gate_that_would_fire: "nacl-tl-conductor"
+    workflow_detail: "artifact-drift (P-S1, P-S5 fail)"
+    gap_category: "artifact_drift"
+    owning_skill: ["nacl-tl-conductor"]
+    bounded_context: "spec"
+    evidence_expected:
+      - "P-S1: status.json totals == live graph Task counts; per-id parity"
+      - "P-S5: conductor-state.techTasks[].status == graph Task.status for every id"
+    evidence_found:
+      - "status.json carries 39 entries (15 TECH + 24 split UC tasks plus deployment TECH-016..024)"
+      - "Graph: 30 Task nodes (TECH-001..TECH-015 + per-UC BE/FE splits); TECH-016..TECH-024 absent"
+      - "conductor.techTasks: only TECH-001..TECH-015 (15 entries); TECH-016..024 absent"
+    source_artifacts:
+      - "/Users/maxnikitin/projects/transcriber/.tl/status.json"
+      - "/Users/maxnikitin/projects/transcriber/.tl/conductor-state.json"
+      - "Cypher: MATCH (t:Task) RETURN t.id, t.status"
+    impact: ["Conductor refuses VERIFIED; cascades to release"]
+    proposed_wave: "W1-reconciliation"
+    dependencies: []
+    confidence: "high"
+
+  - gap_id: "GAP-007"
+    title: "Conductor phase=delivered while .tl/status.json shows 1 pending + 2 qa_skip (P-S4 fails)"
+    severity: "P0"
+    status: "BLOCKED"
+    gate_that_would_fire: "nacl-tl-conductor"
+    workflow_detail: "artifact-drift (P-S4)"
+    gap_category: "artifact_drift"
+    owning_skill: ["nacl-tl-conductor"]
+    bounded_context: "spec"
+    evidence_expected:
+      - "If conductor.phase == 'delivered' or 'quality_gate_passed', then status.json shows zero pending/in_progress and no terminal qa_skip without exception"
+    evidence_found:
+      - "conductor.phase: 'delivered' (delivered_at 2026-05-18)"
+      - "status.json.summary: {pending: 1, qa_skip: 2}"
+      - "status.json: TECH-024 status='pending'; UC-200 phase.qa='skip'; UC-300 phase.qa='skip'"
+    source_artifacts: [".tl/conductor-state.json", ".tl/status.json"]
+    impact: ["P-S4 fails; conductor refuses VERIFIED"]
+    proposed_wave: "W1-reconciliation"
+    dependencies: []
+    confidence: "high"
+
+  - gap_id: "GAP-009"
+    title: "repo-checks evidence absent for wave-tip f925479 (last green CI is 4+ commits behind on 5258a11)"
+    severity: "P0"
+    status: "BLOCKED"
+    gate_that_would_fire: "nacl-tl-review"
+    workflow_detail: "repo-checks-UNRUN"
+    gap_category: "review_repo_checks"
+    owning_skill: ["nacl-tl-review"]
+    bounded_context: "ci"
+    evidence_expected:
+      - "Task.verification_evidence (or review artifact) records `repo-checks-GREEN:f925479` after running pnpm -r lint && pnpm -r typecheck && pnpm -r test on wave-tip"
+    evidence_found:
+      - "No `repo-checks-GREEN` evidence string anywhere"
+      - "Last recorded CI: TECH-015 ci_verified=2026-05-18 / ci_run_id=26045597888 / commit=5258a11 (4+ commits behind f925479)"
+      - "Local invocation: pnpm -r lint → NO_SCRIPT error (also GAP-010); pnpm -r typecheck → tsc not found (no node_modules); pnpm -r test → vitest not found"
+    source_artifacts:
+      - "Bash: pnpm -r run lint (exit 0 but ERR_PNPM_RECURSIVE_RUN_NO_SCRIPT)"
+      - "Bash: pnpm -r run typecheck (workspace tsc binary missing)"
+      - "git log --oneline f925479..5258a11"
+    impact: ["Blocks every subsequent nacl-tl-review VERIFIED until wave-tip evidence recorded"]
+    proposed_wave: "W2-repo-checks"
+    dependencies: []
+    confidence: "high"
+
+  - gap_id: "GAP-018"
+    title: "UC-200 qa_skip terminal — LIVE_PROVIDER_SMOKE never run (Deepgram key unavailable)"
+    severity: "P0"
+    status: "UNVERIFIED"
+    gate_that_would_fire: "nacl-tl-qa"
+    workflow_detail: "LIVE_PROVIDER_SMOKE (forced UNVERIFIED floor)"
+    gap_category: "qa_stage_missing"
+    owning_skill: ["nacl-tl-qa"]
+    bounded_context: "worker"
+    evidence_expected:
+      - "UC-200 qa-stages decomposed into the six W3 stages; LIVE_PROVIDER_SMOKE recorded as PASS with timestamp + recorded Deepgram response fixture OR signed exception covering LIVE_PROVIDER_SMOKE"
+    evidence_found:
+      - ".tl/status.json UC-200: {qa:{status:'skip', reason:'Requires real DEEPGRAM_API_KEY not available in test environment'}}"
+      - "conductor phase_5_outcome: 'SKIPPED — Deepgram + kie.ai keys not provided; UC-200/UC-300 worker pipeline E2E deferred'"
+      - "Matches Project-Beta gate-fire-catalog fixture for G3 verbatim"
+    source_artifacts:
+      - ".tl/status.json lines 460-481"
+      - ".tl/conductor-state.json line 55"
+    impact: ["Aggregate UC-200 forced UNVERIFIED", "Cascades to G4 Condition 2 (upstream-qa-unverified)"]
+    proposed_wave: "W7-qa-provider"
+    dependencies: ["GAP-011", "GAP-013"]
+    confidence: "high"
+
+  - gap_id: "GAP-019"
+    title: "UC-300 qa_skip terminal — LIVE_PROVIDER_SMOKE never run (kie.ai key unavailable)"
+    severity: "P0"
+    status: "UNVERIFIED"
+    gate_that_would_fire: "nacl-tl-qa"
+    workflow_detail: "LIVE_PROVIDER_SMOKE (forced UNVERIFIED floor)"
+    gap_category: "qa_stage_missing"
+    owning_skill: ["nacl-tl-qa"]
+    bounded_context: "worker"
+    evidence_expected:
+      - "UC-300 qa-stages decomposed; LIVE_PROVIDER_SMOKE PASS against /claude/v1/messages with recorded fixture OR signed exception"
+    evidence_found:
+      - ".tl/status.json UC-300: {qa:{status:'skip', reason:'Requires real KIE_API_KEY not available in test environment'}}"
+    source_artifacts: [".tl/status.json lines 525-552"]
+    impact: ["UC-300 forced UNVERIFIED; cascades to G4 Condition 2"]
+    proposed_wave: "W7-qa-provider"
+    dependencies: ["GAP-012"]
+    confidence: "high"
+
+  - gap_id: "GAP-020"
+    title: "PROD_GOLDEN_PATH evidence absent on every release-gate UC (UC-100, UC-200, UC-300, UC-302)"
+    severity: "P0"
+    status: "BLOCKED"
+    gate_that_would_fire: "nacl-tl-release"
+    workflow_detail: "missing-prod-golden-path"
+    gap_category: "qa_stage_missing"
+    owning_skill: ["nacl-tl-qa", "nacl-tl-release"]
+    bounded_context: "release"
+    evidence_expected:
+      - "Recorded end-to-end run against production for each release-gate UC: UC-100 (upload) → UC-200 (transcribe) → UC-301 (review) → UC-302 (PDF export); evidence string `qa-stage:prod-golden-path:PASS:<timestamp>` per UC"
+    evidence_found:
+      - "No PROD_GOLDEN_PATH artifact anywhere"
+      - "deploy-production.yml health-check loop is HEALTH_ONLY per W4 distinction (nacl-tl-release/SKILL.md:181) — never product-readiness evidence"
+      - "transcriber.itsalt.ru live since 2026-05-18, but no recorded end-to-end happy path against it"
+    source_artifacts:
+      - ".tl/release-status.json (health:'skipped' lie)"
+      - ".github/workflows/deploy-production.yml lines 74-89"
+    impact: ["G4 Condition 5 fires; blocks next release VERIFIED"]
+    proposed_wave: "W7-qa-provider"
+    dependencies: ["GAP-018", "GAP-019"]
+    confidence: "high"
+
+  - gap_id: "GAP-029"
+    title: "Spec-first violation: TUS→S3-multipart (ed6aaa9) landed without ADR-005 spec update"
+    severity: "P0"
+    status: "BLOCKED"
+    gate_that_would_fire: "nacl-tl-fix"
+    workflow_detail: "spec-first-prerequisite-missing"
+    gap_category: "spec_first_violation"
+    owning_skill: ["nacl-tl-fix", "nacl-sa-architect"]
+    bounded_context: "spec"
+    evidence_expected:
+      - "first_spec_idx < first_code_idx in the TUS-removal commit chain; OR a signed exception with affected_gates: [spec-first-prerequisite]"
+    evidence_found:
+      - "git log: ed6aaa9 (feat code change) lands directly; no preceding spec-update commit"
+      - "ADR-005 in graph unchanged since pre-TUS-removal"
+      - "Implied level L3 (revokes architectural decision)"
+    source_artifacts:
+      - "git log ed6aaa9..main"
+      - "Cypher: MATCH (r:Requirement {id:'ADR-005'}) RETURN r.updated"
+    impact: ["Future L1+ fix attempts on UC-100 upload chain blocked at Step 6 entry gate"]
+    proposed_wave: "W9-spec-first"
+    dependencies: ["GAP-002"]
+    confidence: "high"
+
+  - gap_id: "GAP-032"
+    title: "Seven+ tasks carry 'APPROVED -- UNVERIFIED' terminal status (forbidden by strict mode)"
+    severity: "P0"
+    status: "BLOCKED"
+    gate_that_would_fire: "nacl-tl-conductor"
+    workflow_detail: "artifact-drift (forbidden terminal success state)"
+    gap_category: "release_readiness"
+    owning_skill: ["nacl-tl-conductor", "nacl-tl-review"]
+    bounded_context: "spec"
+    evidence_expected:
+      - "Every task carries a closed-Codex Status from {VERIFIED, PARTIALLY_VERIFIED, BLOCKED, FAILED, NOT_RUN, UNVERIFIED}; no 'APPROVED -- UNVERIFIED' compound headline"
+    evidence_found:
+      - "TECH-003 review_headline: 'REVIEW APPLIED — UNVERIFIED (no live DB for smoke tests)'"
+      - "TECH-004: 'REVIEW APPLIED -- UNVERIFIED (100% author overlap, operator override applied)'"
+      - "TECH-015: 'REVIEW APPLIED — UNVERIFIED (actionlint not available)'"
+      - "UC-200-BE: 'REVIEW APPLIED — UNVERIFIED (test author overlap 100%)'"
+      - "UC-201-BE/FE, UC-300-BE, UC-301-BE/FE, UC-302-BE: all carry '100% test author overlap, operator override applied'"
+    source_artifacts: [".tl/status.json (multiple lines)"]
+    impact: ["Each entry is the forbidden 'APPROVED -- UNVERIFIED' terminal state listed in strict-mode-changes.md § Forbidden terminal success states"]
+    proposed_wave: "W1-reconciliation"
+    dependencies: []
+    confidence: "high"
+
+  - gap_id: "GAP-035"
+    title: "Direct-to-main commits + v0.2.0 release without project_kind:prototype AND signed exception"
+    severity: "P0"
+    status: "BLOCKED"
+    gate_that_would_fire: "nacl-tl-release"
+    workflow_detail: "skipped-pr-without-prototype-exception"
+    gap_category: "release_readiness"
+    owning_skill: ["nacl-tl-release"]
+    bounded_context: "release"
+    evidence_expected:
+      - "config.yaml.project_kind: prototype AND .tl/exceptions/<EXC>.yaml with affected_gates: [skipped-pr] (+ [skipped-ci] if CI also skipped); OR every release commit lands via PR + CI"
+    evidence_found:
+      - "release-status.json: merge='skipped (direct commits on main)'"
+      - "git.strategy: feature-branch in config.yaml — strategy declared one way, history shows mixed (PRs #1..#4 plus many direct commits)"
+      - "project_kind: undeclared (GAP-001)"
+      - ".tl/exceptions/: directory absent"
+    source_artifacts: [".tl/release-status.json", "config.yaml line 30-32", "git log"]
+    impact: ["G4 Condition 6 fires on every release with merge:skipped"]
+    proposed_wave: "W10-release-readiness"
+    dependencies: ["GAP-001", "GAP-036"]
+    confidence: "high"
+
+  # ------------------------------ P1 — STRICT-MODE INVARIANT VIOLATIONS (next release WILL block) ------------------------------
+
+  - gap_id: "GAP-004"
+    title: "All six Wave nodes in graph at status=pending while delivery complete and v0.2.0 shipped"
+    severity: "P1"
+    status: "BLOCKED"
+    gate_that_would_fire: "nacl-tl-conductor"
+    workflow_detail: "artifact-drift (Wave state vs Task completion)"
+    gap_category: "artifact_drift"
+    owning_skill: ["nacl-tl-conductor"]
+    bounded_context: "spec"
+    evidence_expected: ["Wave.status reflects Task completion across the wave"]
+    evidence_found: ["All six Wave nodes (W0..W5) at status='pending' in graph; every Task at status='done' or 'verified-pending' in graph and 'approved'/'qa_pass'/'qa_skip' in status.json"]
+    source_artifacts: ["Cypher: MATCH (w:Wave) RETURN w.id, w.status"]
+    impact: ["Wave-level reconciliation reports false-PENDING"]
+    proposed_wave: "W1-reconciliation"
+    dependencies: []
+    confidence: "high"
+
+  - gap_id: "GAP-008"
+    title: "UseCase nodes lack strict-mode-required properties (entrypoint_type, has_provider_dependency, is_release_gate_uc, runtime_contract)"
+    severity: "P1"
+    status: "BLOCKED"
+    gate_that_would_fire: "nacl-sa-uc"
+    workflow_detail: "uc-properties-incomplete (predicates for G3/G7/G8/G4 unverifiable)"
+    gap_category: "artifact_drift"
+    owning_skill: ["nacl-sa-uc"]
+    bounded_context: "spec"
+    evidence_expected:
+      - "Every UseCase carries: entrypoint_type ∈ {form-based, deep-link-only, embed-only, n/a}; has_provider_dependency: boolean; is_release_gate_uc: boolean; runtime_contract: enum or 'not_required'"
+    evidence_found:
+      - "Graph UseCase schema: properties = {acceptance_criteria, actor, created, detail_status, has_ui, id, name, priority, source_bp, status, system_uc, updated, user_story} — none of the strict-mode predicates present"
+    source_artifacts: ["mcp__neo4j__get-schema output for UseCase node"]
+    impact: ["G3 matrix derivation, G7 exemption test, G8 opt-out marker all rely on these properties"]
+    proposed_wave: "W4-uc-spec"
+    dependencies: []
+    confidence: "high"
+
+  - gap_id: "GAP-010"
+    title: "No workspace declares `lint` script — `pnpm -r lint` returns ERR_PNPM_RECURSIVE_RUN_NO_SCRIPT"
+    severity: "P1"
+    status: "BLOCKED"
+    gate_that_would_fire: "nacl-tl-review"
+    workflow_detail: "repo-checks-UNRUN"
+    gap_category: "review_repo_checks"
+    owning_skill: ["nacl-tl-review"]
+    bounded_context: "ci"
+    evidence_expected: ["Each of api/, worker/, web/, shared/ package.json declares a `lint` script (so `pnpm -r run lint` exits 0)"]
+    evidence_found:
+      - "Root package.json: scripts.lint = 'eslint .'"
+      - "api/package.json scripts: build/dev/typecheck/test (no lint)"
+      - "worker/package.json scripts: build/dev/typecheck/test (no lint)"
+      - "web/package.json scripts: build/dev/typecheck/test (no lint)"
+      - "shared/package.json scripts: build/dev/typecheck/test/clean (no lint)"
+    source_artifacts: ["package.json files; Bash pnpm -r run lint output"]
+    impact: ["Strict-mode literal-command interpretation: missing workspace lint script == UNRUN"]
+    proposed_wave: "W2-repo-checks"
+    dependencies: []
+    confidence: "high"
+
+  - gap_id: "GAP-011"
+    title: "External contract missing: Deepgram Nova-3 ASR"
+    severity: "P1"
+    status: "BLOCKED"
+    gate_that_would_fire: "nacl-sa-architect"
+    workflow_detail: "external-contract-missing"
+    gap_category: "external_contract_missing"
+    owning_skill: ["nacl-sa-architect"]
+    bounded_context: "worker"
+    evidence_expected: [".tl/external-contracts/deepgram.md with 11 required fields per nacl-sa-architect/SKILL.md:545-557 — Identity, Endpoint, Auth, Request shape, Response shape, Lifecycle sync/async, File URL reachability, Failure codes, Model namespace, Fixture-test path, Smoke-test path"]
+    evidence_found: ["worker/src/asr/deepgram-adapter.ts in code; no .tl/external-contracts/ directory; no contract file"]
+    source_artifacts: ["worker/src/asr/", "ls .tl/external-contracts (does not exist)"]
+    impact: ["nacl-tl-plan refuses any new task referencing the provider", "G2 wire-evidence has no fixture-path target", "G3 PROVIDER_FIXTURE_QA has no canonical fixture"]
+    proposed_wave: "W3-external-contracts"
+    dependencies: ["GAP-036"]
+    confidence: "high"
+
+  - gap_id: "GAP-012"
+    title: "External contract missing: kie.ai LLM (Anthropic /claude/v1/messages endpoint)"
+    severity: "P1"
+    status: "BLOCKED"
+    gate_that_would_fire: "nacl-sa-architect"
+    workflow_detail: "external-contract-missing"
+    gap_category: "external_contract_missing"
+    owning_skill: ["nacl-sa-architect"]
+    bounded_context: "worker"
+    evidence_expected: [".tl/external-contracts/kie-anthropic.md with 11 required fields; Model namespace field documents 'claude-sonnet-4-6' / 'gpt-5-4' switch; Field 10 fixture path covers Anthropic-shape response envelope (post-1f025b7 fix)"]
+    evidence_found: ["worker/src/llm/kieai.ts in code; no contract file; ADR-007 prose mentions endpoint but is not an external contract per W6 schema"]
+    source_artifacts: ["worker/src/llm/kieai.ts", "git log 1f025b7"]
+    impact: ["Same as GAP-011 plus: kie.ai endpoint switch was an L2 wire-envelope change with no spec-first record"]
+    proposed_wave: "W3-external-contracts"
+    dependencies: ["GAP-036"]
+    confidence: "high"
+
+  - gap_id: "GAP-013"
+    title: "External contract missing: S3 multipart presigned (browser↔MinIO/Cloud.ru wire protocol)"
+    severity: "P1"
+    status: "BLOCKED"
+    gate_that_would_fire: "nacl-sa-architect"
+    workflow_detail: "external-contract-missing"
+    gap_category: "external_contract_missing"
+    owning_skill: ["nacl-sa-architect"]
+    bounded_context: "api"
+    evidence_expected: [".tl/external-contracts/s3-multipart-presigned.md covering: POST /api/uploads/init (server presigns PUTs), browser uploads 10MB parts directly to S3 via presigned PUT, POST /api/uploads/complete (server finalizes with ETags), abort flow"]
+    evidence_found: ["api/src/routes/upload-init.ts + upload-complete.ts + storage/s3-adapter.ts in code"]
+    source_artifacts: ["api/src/routes/upload-*.ts", ".tl/changelog.md [2026-05-19] ed6aaa9"]
+    impact: ["Wire-protocol replacing TUS (ADR-005 obsolete) has no spec equivalent"]
+    proposed_wave: "W3-external-contracts"
+    dependencies: ["GAP-036", "GAP-002"]
+    confidence: "high"
+
+  - gap_id: "GAP-014"
+    title: "External contract missing: SSE wire envelope (event:<type> framing)"
+    severity: "P1"
+    status: "BLOCKED"
+    gate_that_would_fire: "nacl-sa-architect"
+    workflow_detail: "external-contract-missing"
+    gap_category: "external_contract_missing"
+    owning_skill: ["nacl-sa-architect"]
+    bounded_context: "api"
+    evidence_expected: [".tl/external-contracts/sse.md covering event types, data shape (Zod schemas in shared/src/api/sse-events.ts), Last-Event-ID resumption, heartbeat policy"]
+    evidence_found: ["api/src/plugins/sse.ts, api/src/sse/{pubsub,sse-formatter}.ts, api/src/routes/events.ts, shared/src/api/sse-events.ts in code; ADR-010 prose mentions SSE; fix 7f983f6 (event:<type> emission) post-v0.2.0 not modeled"]
+    source_artifacts: ["api/src/sse/*", "git log 7f983f6"]
+    impact: ["SSE wire protocol unprotected by W2 wire-evidence gate"]
+    proposed_wave: "W3-external-contracts"
+    dependencies: ["GAP-036"]
+    confidence: "high"
+
+  - gap_id: "GAP-015"
+    title: "External contract missing: Puppeteer / chromium-headless (UC-302 PDF render)"
+    severity: "P2"
+    status: "UNVERIFIED"
+    gate_that_would_fire: "nacl-sa-architect"
+    workflow_detail: "external-contract-missing (provider-as-runtime-asset boundary)"
+    gap_category: "external_contract_missing"
+    owning_skill: ["nacl-sa-architect"]
+    bounded_context: "api"
+    evidence_expected: [".tl/external-contracts/puppeteer-pdf.md (Identity: local chromium binary; Lifecycle: sync; Field 10 fixture: Markdown→PDF golden file)"]
+    evidence_found: ["api/src/routes/uc-302.ts + lib/pdf/template.html; chromium binary installed via TECH-021"]
+    source_artifacts: ["api/src/routes/uc-302.ts"]
+    impact: ["Lower than network providers because failures are local; still required by W6 for any non-TS wire-protocol or runtime"]
+    proposed_wave: "W3-external-contracts"
+    dependencies: ["GAP-036"]
+    confidence: "medium"
+
+  - gap_id: "GAP-016"
+    title: "Wire-evidence missing on actor=AUTHOR UCs (UC-001, UC-002, UC-003, UC-100, UC-201, UC-301)"
+    severity: "P1"
+    status: "UNVERIFIED"
+    gate_that_would_fire: "nacl-tl-sync"
+    workflow_detail: "wire-evidence-missing"
+    gap_category: "sync_wire_evidence"
+    owning_skill: ["nacl-tl-sync"]
+    bounded_context: "shared+api+web"
+    evidence_expected:
+      - "Per actor!=SYSTEM UC: at least one of `wire-evidence:fixture:<path>` / `wire-evidence:contract-test:<path>` / `wire-evidence:live-smoke:<timestamp>` referenced on disk and runnable"
+    evidence_found:
+      - "Vitest unit tests exist (uc-001..uc-302) — but G2 explicitly excludes MSW-style interception (nacl-tl-sync/SKILL.md:296-306)"
+      - "No `wire-evidence:` strings in any Task.verification_evidence; no Task fixture-path"
+    source_artifacts:
+      - "Cypher: MATCH (t:Task)-[:GENERATES]-(uc:UseCase) WHERE uc.actor='AUTHOR' RETURN t.id, t.phase_sync"
+    impact: ["nacl-tl-sync emits UNVERIFIED (wire-evidence missing) on next sync per UC"]
+    proposed_wave: "W6-wire-evidence"
+    dependencies: ["GAP-011", "GAP-012", "GAP-013", "GAP-014"]
+    confidence: "high"
+
+  - gap_id: "GAP-017"
+    title: "Wire-evidence missing on UC-302 (actor=AUTHOR; PDF render → file boundary)"
+    severity: "P2"
+    status: "UNVERIFIED"
+    gate_that_would_fire: "nacl-tl-sync"
+    workflow_detail: "wire-evidence-missing"
+    gap_category: "sync_wire_evidence"
+    owning_skill: ["nacl-tl-sync"]
+    bounded_context: "api"
+    evidence_expected: ["UC-302 has wire-evidence:fixture referencing Puppeteer-rendered PDF golden vs spec"]
+    evidence_found: ["uc-302.test.ts exists but no recorded wire-evidence shape against contract"]
+    source_artifacts: ["api/src/routes/uc-302.test.ts"]
+    impact: ["Lower-stakes than network providers"]
+    proposed_wave: "W6-wire-evidence"
+    dependencies: ["GAP-015"]
+    confidence: "medium"
+
+  - gap_id: "GAP-021"
+    title: "Clean-checkout artifact missing for wave-tip (and never produced for v0.2.0 release commit)"
+    severity: "P1"
+    status: "BLOCKED"
+    gate_that_would_fire: "nacl-tl-deliver"
+    workflow_detail: "clean-checkout-artifact-missing"
+    gap_category: "clean_checkout_failure"
+    owning_skill: ["nacl-tl-deliver"]
+    bounded_context: "ci"
+    evidence_expected: [".tl/clean-checkout/<wave-tip-sha>.json with commit, build_status, migrate_status, smoke_status, runtime_assets_verified, terminal_status"]
+    evidence_found: [".tl/clean-checkout/ directory absent; no artifact for f925479 OR for v0.2.0-era commits (aeeae53, 27da444, etc.)"]
+    source_artifacts: ["ls .tl/clean-checkout (does not exist)"]
+    impact: ["nacl-tl-deploy Step 1.0 refuses; consumer-side blocker for next prod deploy"]
+    proposed_wave: "W8-clean-checkout"
+    dependencies: ["GAP-022", "GAP-023", "GAP-036"]
+    confidence: "high"
+
+  - gap_id: "GAP-022"
+    title: "config.yaml.runtime_assets[] absent; project depends on ffmpeg/ffprobe/chromium/llm-prompts/Inter-fonts"
+    severity: "P2"
+    status: "UNVERIFIED"
+    gate_that_would_fire: "nacl-tl-deliver"
+    workflow_detail: "clean-checkout-runtime-assets-missing (latent; would pass trivially with empty list but miss the C1-C7 class of regressions)"
+    gap_category: "clean_checkout_failure"
+    owning_skill: ["nacl-tl-deliver"]
+    bounded_context: "ci"
+    evidence_expected:
+      - "config.yaml.runtime_assets includes: worker/dist/llm/prompts/ru/*.md, worker/dist/llm/prompts/en/*.md, api/dist/lib/pdf/template.html, plus ffmpeg/ffprobe/chromium paths if vendored; per config-schema.md:126-244"
+    evidence_found:
+      - "config.yaml does not declare runtime_assets at all"
+      - "Worker build script (worker/package.json) includes `cpSync('src/llm/prompts','dist/llm/prompts',{recursive:true})` per fix 66049d5 — the assets are copied, just not enforced"
+      - "API build script copies template.html — same pattern"
+    source_artifacts: ["config.yaml", "worker/package.json:build", "api/package.json:build"]
+    impact: ["Latent regression: any change to build script that drops the cpSync silently passes clean-checkout"]
+    proposed_wave: "W8-clean-checkout"
+    dependencies: []
+    confidence: "high"
+
+  - gap_id: "GAP-023"
+    title: "config.yaml fields empty while production reality is well-defined (deploy/vps/ci_platform/build.*)"
+    severity: "P1"
+    status: "UNVERIFIED"
+    gate_that_would_fire: "nacl-tl-deliver"
+    workflow_detail: "clean-checkout-* family (latent; gate cannot verify the env without config)"
+    gap_category: "clean_checkout_failure"
+    owning_skill: ["nacl-tl-deliver"]
+    bounded_context: "spec+ci"
+    evidence_expected:
+      - "config.yaml declares: ci_platform: github-actions; build.{package_manager, requires_prisma_generate=true, entrypoint, test_database_url, migrate_cmd}; deploy.{method, urls, health_endpoint, smoke.endpoints[]}; vps.{host, user, base_dir}"
+    evidence_found:
+      - "config.yaml: ci_platform='', vps={}, deploy={method:'', urls:{}, health_endpoint:''}, no build.* block"
+      - "Reality: ci.yml + deploy-production.yml (github-actions); pm2 ecosystem.config.cjs (dist/index.js entrypoint); transcriber.itsalt.ru / 82.202.156.157 / /opt/transcrib; pnpm; Prisma db:generate + db:migrate:deploy run explicitly"
+    source_artifacts: ["config.yaml", ".github/workflows/*", "ecosystem.config.cjs", ".tl/changelog.md [2026-05-18] PROD DELIVER"]
+    impact: ["Operator-facing config does not capture deployment surface; recovery / new-environment onboarding is undefined"]
+    proposed_wave: "W8-clean-checkout"
+    dependencies: []
+    confidence: "high"
+
+  - gap_id: "GAP-024"
+    title: "HAS_INBOUND_ACTION edges absent on every Form (6/6 actor-AUTHOR UCs)"
+    severity: "P1"
+    status: "BLOCKED"
+    gate_that_would_fire: "nacl-sa-ui"
+    workflow_detail: "nav-actions-missing"
+    gap_category: "ui_reachability_missing"
+    owning_skill: ["nacl-sa-ui", "nacl-tl-review"]
+    bounded_context: "web+spec"
+    evidence_expected:
+      - "Each Form for an actor-triggered UC has at least one (:Component)-[:HAS_INBOUND_ACTION]->(:Form) edge where the Component is reachable from a navigation root (parent_menu chain to in_menu=true root)"
+    evidence_found:
+      - "HAS_INBOUND_ACTION rel-type ABSENT from graph rel-type histogram"
+      - "Forms with no inbound action: FORM-MeetingCatalog, FORM-MeetingDetail, FORM-MeetingDeleteConfirm, FORM-MeetingUpload, FORM-TranscriptView, FORM-ProtocolEditor (six)"
+      - "Reachability roots exist: CMP-NavMeetingCatalog (/, in_menu=true) and CMP-NavMeetingUpload (/upload, in_menu=true)"
+      - "Real fix 0ec0a4e 'add upload button to catalog page header' added the affordance in code; graph never reflected it"
+    source_artifacts:
+      - "Cypher: MATCH ()-[r:HAS_INBOUND_ACTION]->() RETURN count(r)  (returns 0)"
+      - "Cypher: MATCH (f:Form), (c:Component)-[:USED_IN]->(f) RETURN f.id, count(c)"
+    impact: ["nacl-tl-review refuses APPROVED on every actor-AUTHOR UC at the next review pass"]
+    proposed_wave: "W5-ui-reachability"
+    dependencies: []
+    confidence: "high"
+
+  - gap_id: "GAP-025"
+    title: "Runtime contract missing: UC-200 (BullMQ worker + Deepgram async + TranscriptionJob FSM + restart vocabulary)"
+    severity: "P1"
+    status: "BLOCKED"
+    gate_that_would_fire: "nacl-sa-uc"
+    workflow_detail: "runtime_contract_missing"
+    gap_category: "runtime_contract_missing"
+    owning_skill: ["nacl-sa-uc"]
+    bounded_context: "worker"
+    evidence_expected:
+      - "RuntimeContract subgraph for UC-200 with HAS_TRANSITION (FSM), ACQUIRES_LOCK (BullMQ job lock), EMITS_EVENT (SSE pubsub events); eight required fields per nacl-sa-uc/SKILL.md:744+"
+    evidence_found:
+      - "Code: BullMQ queue (worker/src/queues.ts), JobStatus PENDING→PROCESSING→DONE/FAILED, MeetingStatus TRANSCRIBING→TRANSCRIBED, retry semantics, Deepgram async call"
+      - "Graph: no HAS_TRANSITION / ACQUIRES_LOCK / EMITS_EVENT edges; no runtime_contract property on UC-200; no opt-out marker"
+    source_artifacts:
+      - "worker/src/queues.ts, worker/src/job-processor.ts"
+      - "api/prisma/schema.prisma (TranscriptionJob, JobStatus, MeetingStatus enums)"
+      - "Cypher: MATCH (uc:UseCase {id:'UC-200'}) RETURN uc.runtime_contract"
+    impact: ["nacl-sa-uc refuses to advance to Phase 5; project-alpha UC-112-equivalent risk class"]
+    proposed_wave: "W4-uc-spec"
+    dependencies: ["GAP-008"]
+    confidence: "high"
+
+  - gap_id: "GAP-026"
+    title: "Runtime contract missing: UC-300 (BullMQ worker + kie.ai async + ProtocolGenerationJob FSM)"
+    severity: "P1"
+    status: "BLOCKED"
+    gate_that_would_fire: "nacl-sa-uc"
+    workflow_detail: "runtime_contract_missing"
+    gap_category: "runtime_contract_missing"
+    owning_skill: ["nacl-sa-uc"]
+    bounded_context: "worker"
+    evidence_expected: ["RuntimeContract subgraph for UC-300; same shape as GAP-025"]
+    evidence_found: ["Same as GAP-025 but for protocol generation pipeline"]
+    source_artifacts: ["worker/src/queues.ts; Prisma ProtocolGenerationJob"]
+    impact: ["Same as GAP-025"]
+    proposed_wave: "W4-uc-spec"
+    dependencies: ["GAP-008"]
+    confidence: "high"
+
+  - gap_id: "GAP-027"
+    title: "Runtime contract missing: UC-100 (long-running upload + S3 multipart + recoverable across browser refresh)"
+    severity: "P1"
+    status: "BLOCKED"
+    gate_that_would_fire: "nacl-sa-uc"
+    workflow_detail: "runtime_contract_missing"
+    gap_category: "runtime_contract_missing"
+    owning_skill: ["nacl-sa-uc"]
+    bounded_context: "api+web"
+    evidence_expected: ["RuntimeContract for UC-100: multipart upload state, abort handling, part-retry semantics"]
+    evidence_found: ["Code has upload-init/complete/abort; no graph FSM"]
+    source_artifacts: ["api/src/routes/upload-*.ts"]
+    impact: ["Mid-upload-failure recovery is undocumented at the spec level"]
+    proposed_wave: "W4-uc-spec"
+    dependencies: ["GAP-008"]
+    confidence: "medium"
+
+  - gap_id: "GAP-028"
+    title: "runtime_contract opt-out marker absent on UCs that don't need a contract (UC-001/002/003/201/301/302)"
+    severity: "P3"
+    status: "PARTIALLY_VERIFIED"
+    gate_that_would_fire: "nacl-sa-uc"
+    workflow_detail: "runtime_contract_not_required_marker_missing"
+    gap_category: "runtime_contract_missing"
+    owning_skill: ["nacl-sa-uc"]
+    bounded_context: "spec"
+    evidence_expected: ["Each non-runtime-relevant UC carries uc.runtime_contract = 'not_required'"]
+    evidence_found: ["Property absent on every UC"]
+    source_artifacts: ["Cypher: MATCH (uc:UseCase) RETURN uc.id, uc.runtime_contract"]
+    impact: ["G8 cannot distinguish between 'forgot to mark exempt' and 'intentionally exempt'"]
+    proposed_wave: "W4-uc-spec"
+    dependencies: ["GAP-008"]
+    confidence: "high"
+
+  - gap_id: "GAP-030"
+    title: "Spec-first violation: kie.ai endpoint switch to /claude/v1/messages (1f025b7) without spec record"
+    severity: "P1"
+    status: "BLOCKED"
+    gate_that_would_fire: "nacl-tl-fix"
+    workflow_detail: "spec-first-prerequisite-missing"
+    gap_category: "spec_first_violation"
+    owning_skill: ["nacl-tl-fix", "nacl-sa-architect"]
+    bounded_context: "worker+spec"
+    evidence_expected: ["External-contract entry or ADR update recording the Anthropic-shape envelope adoption precedes commit 1f025b7"]
+    evidence_found: ["git log 1f025b7: 'fix(UC-300): switch kie.ai client to Anthropic /claude/v1/messages' — code-only L1-classified fix; no preceding spec commit"]
+    source_artifacts: ["git log 1f025b7", "ADR-007 in graph (unchanged)"]
+    impact: ["Wire-envelope assumption is undocumented; downstream wire-evidence references are pinned to current code-shape only"]
+    proposed_wave: "W9-spec-first"
+    dependencies: ["GAP-012"]
+    confidence: "high"
+
+  - gap_id: "GAP-031"
+    title: "Spec-first violation: multiple post-v0.2.0 fix/feat commits without preceding spec (5d9585d, 66049d5, 5eb7e18, 7f983f6, 1b94f5b, ad7b8b4, 40341a6)"
+    severity: "P1"
+    status: "BLOCKED"
+    gate_that_would_fire: "nacl-tl-fix"
+    workflow_detail: "spec-first-prerequisite-missing"
+    gap_category: "spec_first_violation"
+    owning_skill: ["nacl-tl-fix"]
+    bounded_context: "spec"
+    evidence_expected: ["Each L1+ classified fix/feat chain shows first_spec_idx < first_code_idx OR has a signed exception covering spec-first-prerequisite"]
+    evidence_found:
+      - "5d9585d ffprobe s3:// (L2; UC-100 business process change)"
+      - "66049d5 prompts→dist (L1 build; runtime-asset registry change recommended)"
+      - "5eb7e18 ffmpeg presigned URL (L2; UC-200 business process change)"
+      - "7f983f6 SSE event:<type> (L1 wire detail; SSE external contract surface)"
+      - "1b94f5b WEBM+1GiB (L2; UC-100 rule + BusinessRule.allowed_mime + size_cap)"
+      - "ad7b8b4 speaker count + sticky back-link (L2; UC-100 form + UC-200 step)"
+      - "40341a6 RU prompt rewrite (L1 asset, L2 if output shape contract changes)"
+    source_artifacts: ["git log f925479..fa227a4"]
+    impact: ["Pattern of code-first fixes contradicts CLAUDE.md spec-first principle"]
+    proposed_wave: "W9-spec-first"
+    dependencies: ["GAP-003"]
+    confidence: "high"
+
+  - gap_id: "GAP-036"
+    title: ".tl/ subdirectories required by strict mode are absent (exceptions, emergencies, reconciliation, clean-checkout, external-contracts)"
+    severity: "P1"
+    status: "BLOCKED"
+    gate_that_would_fire: "nacl-tl-release"
+    workflow_detail: "tl-infrastructure-missing"
+    gap_category: "release_readiness"
+    owning_skill: ["nacl-init"]
+    bounded_context: "spec"
+    evidence_expected:
+      - ".tl/exceptions/ exists with _template.yaml (signed-exception schema, W4)"
+      - ".tl/emergencies/ exists with _template.yaml (W4)"
+      - ".tl/reconciliation/ exists with _template.json (W5)"
+      - ".tl/clean-checkout/ exists with _template.json (W9)"
+      - ".tl/external-contracts/ exists with _template.md (W6)"
+    evidence_found: ["All five subdirectories absent"]
+    source_artifacts: ["ls /Users/maxnikitin/projects/transcriber/.tl"]
+    impact: ["Every artifact-producing wave below requires these directories first"]
+    proposed_wave: "W0-bootstrap"
+    dependencies: []
+    confidence: "high"
+
+  # ------------------------------ P2 — LATENT VIOLATIONS ------------------------------
+
+  - gap_id: "GAP-033"
+    title: "Production runtime uses Node 20 while ci/.nvmrc/engines pin Node 22"
+    severity: "P2"
+    status: "UNVERIFIED"
+    gate_that_would_fire: "nacl-tl-deliver"
+    workflow_detail: "clean-checkout-build-failed (latent) / runtime version drift"
+    gap_category: "clean_checkout_failure"
+    owning_skill: ["nacl-tl-deliver"]
+    bounded_context: "ci"
+    evidence_expected: ["Production server Node matches engines.node and .nvmrc declarations"]
+    evidence_found:
+      - "deploy-production.yml line 42: `nvm use 20`"
+      - ".nvmrc: 22; package.json engines.node: >=22.0.0; ci.yml NODE_VERSION: 22"
+      - "changelog [2026-05-18]: 'Node 20 (EOL April 2026); AWS SDK warns it will drop Node 20 support' — and ecosystem/etc. was bumped to v22, but deploy-production.yml still says nvm use 20"
+    source_artifacts: [".github/workflows/deploy-production.yml line 42", ".nvmrc", "package.json"]
+    impact: ["AWS SDK Node 20 deprecation; latent runtime divergence between CI and prod"]
+    proposed_wave: "W8-clean-checkout"
+    dependencies: []
+    confidence: "high"
+
+  - gap_id: "GAP-034"
+    title: "config.yaml.graph.neo4j_bolt_port=3587 disagrees with .mcp.json/running container=3627"
+    severity: "P3"
+    status: "PARTIALLY_VERIFIED"
+    gate_that_would_fire: "nacl-tl-conductor"
+    workflow_detail: "artifact-drift (config vs runtime)"
+    gap_category: "artifact_drift"
+    owning_skill: ["nacl-tl-conductor"]
+    bounded_context: "spec"
+    evidence_expected: ["config.yaml graph port matches .mcp.json port and running container port"]
+    evidence_found:
+      - "config.yaml line 44: neo4j_bolt_port: 3587"
+      - ".mcp.json: NEO4J_URI=bolt://localhost:3627"
+      - "docker ps: transcrib-neo4j healthy; container port 3627"
+    source_artifacts: ["config.yaml", ".mcp.json", "docker ps"]
+    impact: ["Skills following config.yaml would attempt 3587 and fail with graph_unavailable"]
+    proposed_wave: "W1-reconciliation"
+    dependencies: []
+    confidence: "high"
+
+plan_quality_summary:
+  total_gaps: 33
+  by_severity:
+    P0: 11
+    P1: 17
+    P2: 3
+    P3: 2
+  by_category:
+    review_repo_checks: 2
+    sync_wire_evidence: 2
+    qa_stage_missing: 3
+    release_readiness: 6
+    artifact_drift: 7
+    external_contract_missing: 5
+    ui_reachability_missing: 1
+    runtime_contract_missing: 4
+    clean_checkout_failure: 4
+    spec_first_violation: 3
+  notes:
+    - "GAPs are numbered with gaps in the sequence (GAP-001..GAP-036, skipping 037+); some IDs reserved during drafting. This is a documentation cleanup item; not a P0."
+    - "No GAP-010 dependency on GAP-009 is recorded but it implicitly exists (lint script absence is the proximate cause of UNRUN on lint specifically)."
+    - "G10 (stub_shape) and G11 (emergency-mode) are NOT_APPLICABLE on this project; no stubs registered and no active emergency bypass."

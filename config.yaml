@@ -4,6 +4,10 @@ project:
   description: "Transcription of large video files with speaker diarization and automated meeting report generation"
   stack: ""  # TBD — to be decided at nacl-tl-plan (OQ-4: ASR vendor, LLM provider, storage, PDF renderer)
 
+# Declared in W0 of GAP-closure 2026-05-22 (see .tl/plans/2026-05-22-gap-closure-wave-plan.yaml).
+# Per nacl-tl-core/references/config-schema.md:7-21. Switching to "prototype" is irreversible without a signed exception.
+project_kind: "standard"
+
 modules:
   mod-common:
     name: "Common"

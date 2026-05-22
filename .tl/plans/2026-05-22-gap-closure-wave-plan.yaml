@@ -1,0 +1,803 @@
+# Project GAP-Closure Wave Plan
+# Schema: nacl-tl-core/references/project-gap-closure.md § "Wave-plan schema"
+# Template: .tl/plans/_gap-closure-wave-plan-template.yaml (NaCl root)
+plan_id: "2026-05-22-gap-closure"
+project: "transcrib"
+generated_at: "2026-05-22T11:35:00Z"
+register_ref: ".tl/gap-closure/2026-05-22-gap-register.yaml"
+mode: "planning-only"
+
+waves:
+
+  # ========================================================================
+  - wave_id: "W0-bootstrap"
+    title: "Declare project_kind and create .tl/ strict-mode subdirectories"
+    priority: "P0"
+    size: "XS"
+    why_this_wave_exists: |
+      The runbook's stop-condition #3 fires when project_kind is undeclared. Five strict-mode
+      subdirectories under .tl/ (exceptions, emergencies, reconciliation, clean-checkout,
+      external-contracts) are absent, so every later wave that writes into them would fail.
+      This bootstrap wave is a precondition for every other wave; it must be P0 and run first.
+    target_skills: ["nacl-init"]
+    owner_skills: ["nacl-init"]
+    scope_in:
+      - "config.yaml (add project_kind field)"
+      - ".tl/exceptions/_template.yaml (copy from NaCl root)"
+      - ".tl/emergencies/_template.yaml"
+      - ".tl/reconciliation/_template.json"
+      - ".tl/clean-checkout/_template.json"
+      - ".tl/external-contracts/_template.md"
+    scope_out:
+      - "nacl-*/SKILL.md"
+      - "skills-for-codex/nacl-*/SKILL.md"
+      - "Any code under api/, worker/, web/, shared/"
+      - "Any existing .tl/ file other than config.yaml"
+      - "Graph writes (this wave is filesystem-only)"
+    inputs:
+      - "config.yaml (current state)"
+      - "Templates at /Users/maxnikitin/projects/NaCl/.tl/{exceptions,emergencies,reconciliation,clean-checkout,external-contracts}/_template.*"
+      - "OQ-1 user decision on project_kind value"
+    expected_changes:
+      - "config.yaml gains `project_kind: standard` (or `prototype` per OQ-1) at top level"
+      - "Five new directories under .tl/ with templates copied verbatim from NaCl"
+    orchestrator_prechecks:
+      - "OQ-1 resolved (user has confirmed standard vs prototype)"
+      - "NaCl reference checkout exists at /Users/maxnikitin/projects/NaCl"
+      - "No uncommitted edits to .tl/ from prior failed runs"
+    subagent_instructions: |
+      Invoke /nacl-init in 'project_kind+tl-skeleton' mode. Steps:
+      1) Read OQ-1 answer from the orchestrator's environment (standard or prototype).
+      2) Edit config.yaml: insert `project_kind: <value>` at the top of the file under the
+         project: block, with a comment naming the bootstrap event.
+      3) Create the five .tl/ subdirectories and copy each _template.* file from
+         /Users/maxnikitin/projects/NaCl/.tl/<subdir>/_template.* into the project copy
+         (no edits to template content; copy verbatim).
+      4) Do NOT create any per-project exception/emergency/contract file in this wave;
+         those belong to W3, W7, W8, W10.
+      5) Commit on the wave branch with message "chore(gap-closure): W0 bootstrap —
+         declare project_kind and seed .tl/ strict-mode dirs". Do NOT push.
+    acceptance_checks:
+      - "Bash: grep -E '^project_kind:' config.yaml — exit 0 with value standard|prototype"
+      - "Bash: test -f .tl/exceptions/_template.yaml -a -f .tl/emergencies/_template.yaml -a -f .tl/reconciliation/_template.json -a -f .tl/clean-checkout/_template.json -a -f .tl/external-contracts/_template.md"
+      - "git diff --name-only HEAD~1 returns exactly: config.yaml plus the five _template.* files"
+    blocking_rules_added: []
+    artifacts_to_produce:
+      - "config.yaml (edited)"
+      - ".tl/exceptions/_template.yaml"
+      - ".tl/emergencies/_template.yaml"
+      - ".tl/reconciliation/_template.json"
+      - ".tl/clean-checkout/_template.json"
+      - ".tl/external-contracts/_template.md"
+    dependencies: []
+    risks_and_rollback: "Rollback: git revert <bootstrap-commit-sha>. Pure-filesystem change; no graph mutations to undo."
+    definition_of_done: "VERIFIED — project_kind declared; five strict-mode .tl/ subdirectories seeded with templates; orchestrator confirms acceptance_checks all PASS."
+    gap_ids: ["GAP-001", "GAP-036"]
+
+  # ========================================================================
+  - wave_id: "W1-reconciliation"
+    title: "Conductor cross-artifact reconciliation: status / changelog / release-status / graph (P-S1..P-S5)"
+    priority: "P0"
+    size: "L"
+    why_this_wave_exists: |
+      Every downstream gate (release, deliver, publish) reads from status.json / conductor-state /
+      changelog / live graph / release-status and reconciles pairwise. All five P-S* pairs fail
+      today: status.json claims 39 tasks while graph has 30; conductor.phase=delivered while
+      status.json has 1 pending + 2 qa_skip; Wave nodes pending while delivery complete; and
+      release-status.json declares ci/merge/health all skipped while CI is wired and prod is
+      live. Until this reconciliation lands, no remediation wave can advance to VERIFIED.
+    target_skills: ["nacl-tl-conductor", "nacl-publish"]
+    owner_skills: ["nacl-tl-conductor"]
+    scope_in:
+      - ".tl/status.json (rewrite to use closed-Codex Status vocabulary; drop 'APPROVED -- UNVERIFIED' headlines)"
+      - ".tl/conductor-state.json (align phase + per-task statuses with graph)"
+      - ".tl/release-status.json (rewrite to reflect observable production state)"
+      - ".tl/reconciliation/2026-05-22-W1.json (new P-S* evidence artifact)"
+      - "Live graph: Wave.status update for W0..W5; backfill release_tag on a release-marker node; add missing TECH-016..024 Task nodes; align Task.status with code reality"
+      - "config.yaml graph.neo4j_bolt_port (3587 → 3627) and document the change"
+    scope_out:
+      - "Spec changes: ADR-005 revoke, post-v0.2.0 feature modeling, UC property backfill (those are W3/W4)"
+      - "External-contracts authoring (W3)"
+      - "Wire-evidence / QA stages (W6/W7)"
+      - "Any code under api/, worker/, web/, shared/"
+      - "nacl-*/SKILL.md"
+    inputs:
+      - ".tl/status.json, .tl/conductor-state.json, .tl/release-status.json, .tl/changelog.md (current)"
+      - "Live graph via mcp__neo4j__read-cypher: Task / Wave / Module / UseCase / Requirement"
+      - "git log f925479..origin/main"
+      - "github actions runs (gh run list / view) for last successful CI"
+    expected_changes:
+      - ".tl/status.json: each task status uses closed-set vocabulary; UNVERIFIED entries either upgraded by adding missing evidence (only if cheap) or kept UNVERIFIED with a recorded `exception_id` pointer (no signed exception authored in this wave — just the placeholder); 'APPROVED -- UNVERIFIED' headlines removed"
+      - ".tl/conductor-state.json: phase reflects post-W1 state; techTasks[] enumerates TECH-016..024"
+      - ".tl/release-status.json: merge/ci/health fields name the observed reality (e.g., merge: 'mixed (direct + PR)'; ci: { status: 'PASS', run_id: 26045597888, commit: 5258a11, gap: 'wave-tip f925479 has no recorded green run — see W2' }; health: 'HEALTH_ONLY at /api/health on transcriber.itsalt.ru — no PROD_GOLDEN_PATH evidence per W4 distinction')"
+      - ".tl/reconciliation/2026-05-22-W1.json: results of P-S1..P-S5 with each pair PASS or BLOCKED-with-named-follow-up"
+      - "Graph: Wave.status flipped to 'delivered' for W0..W5; release_tag = 'v0.2.0' set on a release-marker node (chosen schema: add a property to FinalizationReport.release_tag, or a new Release label); TECH-016..024 Task nodes created with status mirroring status.json"
+      - "config.yaml neo4j_bolt_port → 3627 with a comment noting the bootstrap origin"
+    orchestrator_prechecks:
+      - "W0-bootstrap VERIFIED"
+      - "Live graph reachable on bolt://localhost:3627"
+      - "git status clean (no other unstaged edits in .tl/)"
+    subagent_instructions: |
+      Invoke /nacl-tl-conductor in 'reconcile' mode. Steps:
+      1) Run Phase 4.5 pairwise checks P-S1..P-S5 from nacl-tl-conductor/SKILL.md:680-687
+         against the project's live graph and current .tl/ files. Capture initial state into
+         .tl/reconciliation/2026-05-22-W1.json.
+      2) For each failing pair, propose a minimal write that makes the pair PASS — but do NOT
+         touch the spec layer (ADRs, ExternalContracts, UC properties beyond status updates).
+         Spec corrections live in W3/W4.
+      3) Apply the writes:
+         a. status.json: rewrite review_headline fields that carry 'APPROVED -- UNVERIFIED' to
+            split into status='APPROVED' + verification='UNVERIFIED' (closed-set vocabulary).
+            Do not promote to VERIFIED.
+         b. conductor-state.json: add TECH-016..024 to techTasks[] mirroring status.json.
+         c. release-status.json: rewrite merge/ci/health to name the observable state without
+            promoting any to VERIFIED beyond what reality supports. Health stays HEALTH_ONLY.
+         d. Live graph (via mcp__neo4j__write-cypher): SET Wave.status='delivered' for W0..W5;
+            CREATE missing Task nodes for TECH-016..024 with properties from status.json;
+            add release_tag property to a release-marker node.
+      4) Re-run P-S1..P-S5; every pair must now PASS or carry a named follow-up wave id in
+         the reconciliation artifact (no silent BLOCKED).
+      5) Update config.yaml neo4j_bolt_port and commit. Push not in scope.
+    acceptance_checks:
+      - "Cypher: MATCH (w:Wave) WHERE w.status <> 'delivered' RETURN count(w) — returns 0"
+      - "Cypher: MATCH (t:Task) RETURN count(t) — equals status.json.summary.total_tasks (39)"
+      - "Bash: jq '.summary | (.pending + .in_progress)' .tl/status.json — returns 0 (TECH-024 either advances or moves to closed-set with named follow-up)"
+      - "Bash: grep -c 'APPROVED -- UNVERIFIED\\|REVIEW APPLIED -- UNVERIFIED' .tl/status.json — returns 0"
+      - "Bash: jq '.ci.status' .tl/release-status.json — returns 'PASS' (or named-mismatch-with-gap)"
+      - "Bash: jq '.health.status' .tl/release-status.json — returns 'HEALTH_ONLY' (not 'skipped' lie)"
+      - "Bash: test -f .tl/reconciliation/2026-05-22-W1.json"
+      - "Cypher: MATCH (n) WHERE n.release_tag = 'v0.2.0' RETURN count(n) >= 1"
+      - "grep '^  neo4j_bolt_port: 3627' config.yaml — exit 0"
+    blocking_rules_added: []
+    artifacts_to_produce:
+      - ".tl/status.json (rewritten)"
+      - ".tl/conductor-state.json (rewritten)"
+      - ".tl/release-status.json (rewritten)"
+      - ".tl/reconciliation/2026-05-22-W1.json (new)"
+      - "config.yaml (port fixed)"
+      - "Graph: Wave.status updates, TECH-016..024 Task nodes, release_tag property"
+    dependencies: ["W0-bootstrap"]
+    risks_and_rollback: |
+      Rollback: git revert <W1-commit-sha> for filesystem; for graph mutations, the reconciliation
+      artifact records every Cypher write and a paired DELETE/SET-back recipe. Risk: if subagent
+      misreads a Task.status while reconciling, it could mark a genuinely failed task as done.
+      Mitigation: every write is paired with a `previous_value` capture in the reconciliation
+      artifact, and the orchestrator diffs the artifact against status.json before commit.
+    definition_of_done: "VERIFIED — all five P-S* pairs PASS or carry named follow-up; closed-Codex vocabulary used throughout .tl/; no forbidden terminal-success headlines remain."
+    gap_ids: ["GAP-004", "GAP-005", "GAP-006", "GAP-007", "GAP-032", "GAP-034"]
+
+  # ========================================================================
+  - wave_id: "W2-repo-checks"
+    title: "Add workspace lint scripts and record repo-checks-GREEN evidence for wave-tip"
+    priority: "P0"
+    size: "S"
+    why_this_wave_exists: |
+      `pnpm -r lint` returns NO_SCRIPT because no workspace declares a lint script. The wave-tip
+      f925479 carries no `repo-checks-GREEN:<sha>` evidence either. nacl-tl-review refuses
+      VERIFIED on the next review pass without both fixed.
+    target_skills: ["nacl-tl-review"]
+    owner_skills: ["nacl-tl-review"]
+    scope_in:
+      - "api/package.json, worker/package.json, web/package.json, shared/package.json (add `lint: eslint .` per workspace)"
+      - "Run `pnpm -r lint && pnpm -r typecheck && pnpm -r test` on wave-tip"
+      - "Task.verification_evidence for the wave-tip review artifact"
+    scope_out:
+      - "Fixing lint errors that surface from the new scripts beyond trivial style adjustments"
+      - "nacl-*/SKILL.md"
+      - "Any spec changes"
+    inputs:
+      - "Root package.json scripts (lint = eslint .)"
+      - "Each workspace package.json (current scripts block)"
+      - "Wave-tip commit SHA f925479 (or current head when wave runs)"
+    expected_changes:
+      - "Each of api/, worker/, web/, shared/ gains a `lint: eslint .` script"
+      - "If new lint errors surface, fix them (style-level only; refactor is out of scope)"
+      - "Review artifact records `repo-checks-GREEN:<wave-tip-sha>` with timestamps and per-workspace exit codes"
+    orchestrator_prechecks:
+      - "W1-reconciliation VERIFIED"
+      - "Local node_modules present (pnpm install --frozen-lockfile completed) OR a CI run can be triggered for wave-tip"
+    subagent_instructions: |
+      Invoke /nacl-tl-review in 'repo-checks' mode. Steps:
+      1) Edit each workspace package.json to add `"lint": "eslint ."` to the scripts block,
+         positioned alphabetically.
+      2) Run `pnpm install --frozen-lockfile` if node_modules absent.
+      3) Run literally: `pnpm -r lint`, `pnpm -r typecheck`, `pnpm -r test`. All three must
+         exit 0. Capture stdout/stderr.
+      4) If any lint command flags new errors, fix them WITH MINIMUM EDIT (eslint --fix is
+         allowed). If a workspace's lint cannot exit 0 without refactoring, file a follow-up
+         task and report `repo-checks-RED` to the orchestrator — do NOT proceed.
+      5) Record `repo-checks-GREEN:<wave-tip-sha>` in .tl/conductor-state.json under
+         tech_tasks/wave-tip-evidence (or equivalent agreed slot).
+      6) Commit per workspace, message "chore(gap-closure): W2 add lint scripts +
+         record repo-checks-GREEN evidence".
+    acceptance_checks:
+      - "Bash: pnpm -r run lint && pnpm -r run typecheck && pnpm -r run test — exit 0"
+      - "Bash: jq -r '.tech_tasks_evidence // .repo_checks_evidence' .tl/conductor-state.json | grep -F 'repo-checks-GREEN:<wave-tip-sha>'"
+      - "Bash: for ws in api worker web shared; do jq -er '.scripts.lint' \"$ws/package.json\"; done"
+    blocking_rules_added: []
+    artifacts_to_produce:
+      - "api/package.json, worker/package.json, web/package.json, shared/package.json (lint script)"
+      - ".tl/conductor-state.json (evidence)"
+    dependencies: ["W1-reconciliation"]
+    risks_and_rollback: "Rollback: git revert. Risk: lint surfaces existing style issues in checked-in code — those become this wave's scope or a named follow-up."
+    definition_of_done: "VERIFIED — pnpm -r lint && pnpm -r typecheck && pnpm -r test all exit 0 on wave-tip; evidence recorded."
+    gap_ids: ["GAP-009", "GAP-010"]
+
+  # ========================================================================
+  - wave_id: "W3-external-contracts"
+    title: "External contracts + ADR-005 REVOKE — author 5 contracts and replace TUS decision"
+    priority: "P0"
+    size: "L"
+    why_this_wave_exists: |
+      Five external boundaries (Deepgram, kie.ai Anthropic endpoint, S3 multipart presigned,
+      SSE, Puppeteer) currently lack the .tl/external-contracts/<slug>.md files required by
+      W6 nacl-sa-architect. ADR-005 still names TUS while shipped code uses S3 multipart.
+      Post-v0.2.0 features (WEBM, 1GiB, speaker count, sticky back-link, RU prompt rewrite,
+      SSE event:<type>) aren't modeled. All of this is owned by nacl-sa-architect (one wave,
+      one owner; ADR + external-contracts are the same skill).
+    target_skills: ["nacl-sa-architect"]
+    owner_skills: ["nacl-sa-architect"]
+    scope_in:
+      - ".tl/external-contracts/deepgram.md"
+      - ".tl/external-contracts/kie-anthropic.md"
+      - ".tl/external-contracts/s3-multipart-presigned.md"
+      - ".tl/external-contracts/sse.md"
+      - ".tl/external-contracts/puppeteer-pdf.md"
+      - "Graph: REVOKE ADR-005 (mark status='revoked' or 'superseded'); CREATE successor ADR-005R for S3-multipart presigned upload"
+      - "Graph: new Requirements/BusinessRules for post-v0.2.0 features (WEBM acceptance, 1GiB cap, speaker_count field, sticky-back-link UX rule, RU-prompt-XML structure, SSE event:<type> framing)"
+    scope_out:
+      - "UC node property backfill (W4)"
+      - "RuntimeContract subgraph authoring (W4)"
+      - "Wire-evidence fixtures (W6)"
+      - "QA stage decomposition (W7)"
+      - "Any code change"
+      - "nacl-*/SKILL.md"
+    inputs:
+      - "worker/src/asr/deepgram-adapter.ts (Deepgram contract source)"
+      - "worker/src/llm/kieai.ts (kie.ai/Anthropic contract source)"
+      - "api/src/routes/upload-init.ts, upload-complete.ts, storage/s3-adapter.ts (S3-multipart contract source)"
+      - "api/src/plugins/sse.ts, sse/pubsub.ts, sse/sse-formatter.ts, shared/src/api/sse-events.ts (SSE contract source)"
+      - "api/src/routes/uc-302.ts, api/src/lib/pdf/template.html (Puppeteer contract source)"
+      - "git log f925479..fa227a4 (post-v0.2.0 features for spec backfill)"
+      - "Graph: MATCH (r:Requirement {id:'ADR-005'}) for REVOKE"
+    expected_changes:
+      - "Five .tl/external-contracts/*.md with all 11 fields per nacl-sa-architect/SKILL.md:545-557"
+      - "Graph: ADR-005.status='revoked'; new ADR-005R (or ADR-012) decision for S3-multipart"
+      - "Graph: 5–10 new Requirement/BusinessRule nodes for post-v0.2.0 features, linked to UC-100/UC-200/UC-300"
+      - "Graph: VideoMimeType enum updated to include WEBM if not already; file-size BusinessRule updated to 1 GiB"
+    orchestrator_prechecks:
+      - "W0-bootstrap VERIFIED (.tl/external-contracts/_template.md present)"
+      - "W1-reconciliation VERIFIED (graph reconciled before adding new nodes)"
+      - "Live graph reachable"
+    subagent_instructions: |
+      Invoke /nacl-sa-architect in 'phase-3.5-external-contracts + ADR-management' mode. Steps:
+      1) For each of the five provider/protocol boundaries, author a contract file by copying
+         .tl/external-contracts/_template.md and filling the 11 fields by reading the named
+         source files. Field 10 (Fixture-test path) and Field 11 (Smoke-test path) MAY reference
+         files that don't exist yet — W6 will create them. Use the path pattern
+         `worker/test/fixtures/<provider>.fixture.json` and
+         `worker/test/contract/<provider>.contract.test.ts` consistently.
+      2) Mark ADR-005 status='revoked' (or 'superseded-by:ADR-012') via mcp__neo4j__write-cypher.
+         Do NOT delete the node — keep it for audit trail with the superseded-by pointer.
+      3) Create ADR-012 (or ADR-005R) for S3-multipart presigned upload with full Decision +
+         Rationale fields, linked via CONTAINS_ADR to the FinalizationReport.
+      4) For each post-v0.2.0 commit in the git log range, decide: (a) is it modeled at the
+         right level (new Requirement, BusinessRule, ActivityStep, or Form field)? (b) is the
+         change L1 (code-only, no spec implication) or L2/L3 (spec-relevant)? Author the
+         minimum spec nodes that capture L2/L3 changes.
+      5) Re-run /nacl-sa-validate full and ensure no new CRITICAL findings are introduced.
+      6) Commit per artifact, message "feat(gap-closure): W3 author <slug> external contract"
+         or "feat(gap-closure): W3 ADR-005 REVOKE → S3-multipart presigned (ADR-012)".
+    acceptance_checks:
+      - "Bash: ls .tl/external-contracts/{deepgram,kie-anthropic,s3-multipart-presigned,sse,puppeteer-pdf}.md — all five exist"
+      - "Bash: for f in .tl/external-contracts/*.md; do for field in 'Identity' 'Endpoint' 'Auth' 'Request shape' 'Response shape' 'Lifecycle' 'File URL reachability' 'Failure codes' 'Model namespace' 'Fixture-test path' 'Smoke-test path'; do grep -F \"$field\" \"$f\" || echo \"MISSING $field in $f\"; done; done"
+      - "Cypher: MATCH (r:Requirement {id:'ADR-005'}) RETURN r.status — returns 'revoked' or 'superseded'"
+      - "Cypher: MATCH (r:Requirement) WHERE r.id IN ['ADR-012','ADR-005R'] RETURN count(r) >= 1"
+      - "Skill: /nacl-sa-validate full — emits no new CRITICAL findings"
+    blocking_rules_added: []
+    artifacts_to_produce:
+      - "Five .tl/external-contracts/*.md files"
+      - "Graph: ADR-005 status update; new ADR for S3-multipart; new Requirement/BusinessRule nodes for post-v0.2.0 features"
+    dependencies: ["W0-bootstrap", "W1-reconciliation"]
+    risks_and_rollback: |
+      Rollback: git revert for files; Cypher to restore ADR-005.status and delete new ADR node.
+      Risk: misclassifying L1 vs L2 fixes during the spec-first backfill. Mitigation: every
+      L1 vs L2 decision logged in the wave's reconciliation note for operator audit.
+    definition_of_done: "VERIFIED — five external contracts authored; ADR-005 revoked + successor in place; post-v0.2.0 spec drift closed at the L2/L3 layer."
+    gap_ids: ["GAP-002", "GAP-003", "GAP-011", "GAP-012", "GAP-013", "GAP-014", "GAP-015"]
+
+  # ========================================================================
+  - wave_id: "W4-uc-spec"
+    title: "UC property backfill + RuntimeContract subgraph for worker/upload UCs"
+    priority: "P1"
+    size: "M"
+    why_this_wave_exists: |
+      Every UseCase lacks entrypoint_type / has_provider_dependency / is_release_gate_uc /
+      runtime_contract properties — predicates that G3/G7/G8/G4 depend on. UC-100/UC-200/UC-300
+      satisfy multiple W8 decision-tree clauses (queue, long-running, async-provider, state-bearing)
+      and require RuntimeContract subgraphs. UC-001/002/003/201/301/302 need the opt-out marker.
+      All owned by nacl-sa-uc.
+    target_skills: ["nacl-sa-uc"]
+    owner_skills: ["nacl-sa-uc"]
+    scope_in:
+      - "Graph UseCase property additions on all 9 UCs"
+      - "Graph RuntimeContract subgraphs for UC-100, UC-200, UC-300 (HAS_TRANSITION, ACQUIRES_LOCK, EMITS_EVENT edges + eight required Phase 4.5.2 fields)"
+      - "Graph runtime_contract='not_required' opt-out on UC-001, UC-002, UC-003, UC-201, UC-301, UC-302"
+    scope_out:
+      - "External contracts (W3)"
+      - "Wire evidence / QA stages / runtime asset declarations"
+      - "Any code"
+      - "nacl-*/SKILL.md"
+    inputs:
+      - "Live graph UC inventory"
+      - "Code: worker/src/queues.ts, worker/src/job-processor.ts (FSM source)"
+      - "api/prisma/schema.prisma (MeetingStatus + JobStatus enums)"
+      - "api/src/routes/upload-{init,complete,abort}.ts (upload FSM source)"
+      - ".tl/external-contracts/{deepgram,kie-anthropic}.md (sync_vs_async fields from W3)"
+    expected_changes:
+      - "Cypher SET: each UseCase gains entrypoint_type, has_provider_dependency, is_release_gate_uc, runtime_contract"
+      - "Cypher CREATE: RuntimeContract node per UC-100/UC-200/UC-300; HAS_TRANSITION / ACQUIRES_LOCK / EMITS_EVENT edges; Phase 4.5.2 fields populated"
+      - "Cypher SET runtime_contract='not_required' on the six exempt UCs"
+    orchestrator_prechecks:
+      - "W3-external-contracts VERIFIED (provider sync_vs_async needed)"
+      - "W1-reconciliation VERIFIED"
+    subagent_instructions: |
+      Invoke /nacl-sa-uc in 'Phase 4.5 runtime-contract + property-backfill' mode. Steps:
+      1) Property backfill — for each of the 9 UCs:
+         - entrypoint_type: 'form-based' for actor=AUTHOR + has_ui=true (UC-001/002/003/100/201/301);
+           'embed-only' for UC-302 (PDF render is action-triggered, no own form); 'n/a' for UC-200/300
+           (actor=SYSTEM).
+         - has_provider_dependency: true for UC-100/UC-200/UC-300/UC-302 (S3, Deepgram, kie.ai, Puppeteer);
+           false otherwise.
+         - is_release_gate_uc: true for UC-100/UC-200/UC-300/UC-302; false otherwise.
+      2) Decision-tree (Q1..Q5) for each UC; mandatory verdict for UC-100/UC-200/UC-300; optional
+         (mark not_required) for the rest. UC-302 → not_required (Puppeteer is sync-stream; no FSM).
+      3) RuntimeContract authoring for UC-200:
+         - HAS_TRANSITION edges over the TranscriptionJob.status FSM: PENDING → PROCESSING →
+           {DONE | FAILED}; plus MeetingStatus side: UPLOADED → TRANSCRIBING → TRANSCRIBED|ERROR.
+         - ACQUIRES_LOCK: BullMQ job lock per meetingId.
+         - EMITS_EVENT: meeting.status, transcription.progress, transcription.complete (per
+           shared/src/api/sse-events.ts).
+         - Eight Phase 4.5.2 fields filled per worker/src/job-processor.ts.
+      4) Same shape for UC-300 (ProtocolGenerationJob FSM + protocol.* SSE events).
+      5) RuntimeContract for UC-100: upload-multipart FSM with parts[].uploaded counter, abort
+         path, presigned-URL TTL guard. Smaller contract; may flag as PARTIALLY for the recover-
+         across-refresh case if not yet implemented.
+      6) Run /nacl-sa-validate full; expect no new CRITICALs.
+    acceptance_checks:
+      - "Cypher: MATCH (uc:UseCase) WHERE uc.entrypoint_type IS NULL OR uc.has_provider_dependency IS NULL OR uc.is_release_gate_uc IS NULL OR uc.runtime_contract IS NULL RETURN count(uc) — returns 0"
+      - "Cypher: MATCH (uc:UseCase)-[:HAS_TRANSITION|ACQUIRES_LOCK|EMITS_EVENT]->() WHERE uc.id IN ['UC-100','UC-200','UC-300'] RETURN uc.id, count(*) — each row has count >= 1"
+      - "Cypher: MATCH (uc:UseCase) WHERE uc.runtime_contract = 'not_required' RETURN collect(uc.id) — equals ['UC-001','UC-002','UC-003','UC-201','UC-301','UC-302'] in any order"
+      - "Skill: /nacl-sa-validate full — passes"
+    blocking_rules_added: []
+    artifacts_to_produce:
+      - "Graph property updates on 9 UCs"
+      - "Graph RuntimeContract subgraphs for UC-100, UC-200, UC-300"
+    dependencies: ["W3-external-contracts"]
+    risks_and_rollback: "Rollback: Cypher REMOVE properties + DETACH DELETE RuntimeContract subgraph. Risk: incorrect FSM modeling; mitigation: subagent reads code as ground truth and produces a side-by-side diff for operator review."
+    definition_of_done: "VERIFIED — all UC properties populated; runtime contracts authored for the three mandatory UCs; opt-out markers recorded on the rest."
+    gap_ids: ["GAP-008", "GAP-025", "GAP-026", "GAP-027", "GAP-028"]
+
+  # ========================================================================
+  - wave_id: "W5-ui-reachability"
+    title: "Add HAS_INBOUND_ACTION edges so every actor-AUTHOR UC's Form is reachable"
+    priority: "P1"
+    size: "S"
+    why_this_wave_exists: |
+      Zero HAS_INBOUND_ACTION edges exist; six actor-AUTHOR UCs would block at nacl-tl-review.
+      Real code already wires the affordances (per fix 0ec0a4e); only the graph is missing.
+    target_skills: ["nacl-sa-ui"]
+    owner_skills: ["nacl-sa-ui"]
+    scope_in:
+      - "Graph: CREATE (:Component)-[:HAS_INBOUND_ACTION]->(:Form) edges for each Form with the right reachable component"
+      - "Form Nav Actions sub-blocks per nacl-sa-ui/SKILL.md:484-540"
+    scope_out:
+      - "Component property edits beyond what the rule requires"
+      - "Code changes"
+      - "nacl-*/SKILL.md"
+    inputs:
+      - "Live graph Form + Component inventory"
+      - "Code reachability check: web/src/routes/* for the actual UI affordances"
+    expected_changes:
+      - "6 new HAS_INBOUND_ACTION edges (one per Form-for-actor=AUTHOR UC):"
+      - "  FORM-MeetingCatalog ← CMP-NavMeetingCatalog (route /, in_menu, primary action: open meeting row)"
+      - "  FORM-MeetingDetail ← CMP-NavMeetingCatalog (row click → /meetings/:id; primary action: 'Open meeting')"
+      - "  FORM-MeetingDeleteConfirm ← CMP-NavMeetingDetail (action: 'Delete meeting' button on detail page)"
+      - "  FORM-MeetingUpload ← CMP-NavMeetingCatalog (action: 'Upload' button per fix 0ec0a4e + /upload in menu)"
+      - "  FORM-TranscriptView ← CMP-NavMeetingDetail (action: 'View transcript' link)"
+      - "  FORM-ProtocolEditor ← CMP-NavMeetingDetail (action: 'Open protocol editor' link)"
+    orchestrator_prechecks:
+      - "W4-uc-spec VERIFIED (entrypoint_type populated; reachability rule reads it)"
+      - "Live graph reachable"
+    subagent_instructions: |
+      Invoke /nacl-sa-ui in 'navigation Phase 3.3 + Nav Actions backfill' mode. Steps:
+      1) For each Form whose owning UseCase has actor != SYSTEM and entrypoint_type ='form-based',
+         identify the reachable Component that carries the user affordance — confirm with web/src/
+         routes/<route>/index.tsx and web/src/components/* code.
+      2) CREATE (:Component {id})-[:HAS_INBOUND_ACTION {affordance:'<label>', action_type:'<click|nav|submit>'}]->
+         (:Form {id}) via mcp__neo4j__write-cypher.
+      3) Run the ui_reachability_blockers query from nacl-sa-ui/references/reachability.cypher § 4;
+         must return zero rows.
+      4) Commit message "feat(gap-closure): W5 add HAS_INBOUND_ACTION edges for 6 actor=AUTHOR UCs".
+    acceptance_checks:
+      - "Cypher: MATCH ()-[r:HAS_INBOUND_ACTION]->(f:Form) RETURN count(r) — returns 6"
+      - "Cypher (ui_reachability_blockers): MATCH (uc:UseCase) WHERE uc.actor <> 'SYSTEM' AND uc.has_ui = true AND coalesce(uc.entrypoint_type,'form-based') = 'form-based' OPTIONAL MATCH (uc)-[:USES_FORM]->(f:Form)<-[:HAS_INBOUND_ACTION]-(c:Component) WHERE c IS NULL OR NOT EXISTS { MATCH path = (root:Component {parent_menu:null, in_menu:true})-[:USED_IN*0..]-() WHERE root.id = c.id OR (c.parent_menu IS NOT NULL AND root.id = c.parent_menu) } RETURN uc.id — returns 0 rows"
+    blocking_rules_added: []
+    artifacts_to_produce:
+      - "Graph: 6 HAS_INBOUND_ACTION edges"
+    dependencies: ["W4-uc-spec"]
+    risks_and_rollback: "Rollback: Cypher MATCH ()-[r:HAS_INBOUND_ACTION]->() DELETE r. Risk: wrong affordance attribution; mitigation: cite the source code location in the affordance label."
+    definition_of_done: "VERIFIED — ui_reachability_blockers returns 0 rows; six edges exist with code-citation affordance labels."
+    gap_ids: ["GAP-024"]
+
+  # ========================================================================
+  - wave_id: "W6-wire-evidence"
+    title: "Author wire-evidence fixtures/contract-tests for every actor=AUTHOR UC"
+    priority: "P1"
+    size: "L"
+    why_this_wave_exists: |
+      G2 fires on UC-001/002/003/100/201/301 (and weaker on UC-302) until a wire-evidence shape
+      is referenced and runnable. The fixtures land at Field 10 paths defined in W3 contracts.
+    target_skills: ["nacl-tl-sync"]
+    owner_skills: ["nacl-tl-sync"]
+    scope_in:
+      - "worker/test/fixtures/<provider>.fixture.json (recorded request/response samples)"
+      - "worker/test/contract/<provider>.contract.test.ts (consumer contract tests against fixtures or sandbox)"
+      - "api/test/contract/* and web/test/contract/* analogues for browser↔server wire shapes (uploads, SSE)"
+      - "Task.verification_evidence records `wire-evidence:fixture:<path>` per UC"
+    scope_out:
+      - "Live provider smoke (W7)"
+      - "PROD_GOLDEN_PATH (W7)"
+      - "Code changes outside test/ directories"
+      - "nacl-*/SKILL.md"
+    inputs:
+      - "Five .tl/external-contracts/*.md (W3) — Field 10 fixture paths and Field 11 smoke paths"
+      - "Provider sandboxes (Deepgram public docs, kie.ai sandbox if available; otherwise recorded fixtures only)"
+      - "Existing vitest unit tests (uc-100.test.ts etc. — to identify which are MSW-only and need real fixtures)"
+    expected_changes:
+      - "~6 new fixture files under worker/test/fixtures/, api/test/fixtures/, web/test/fixtures/"
+      - "~6 contract test files referencing those fixtures"
+      - "Task.verification_evidence updated for each UC"
+    orchestrator_prechecks:
+      - "W3-external-contracts VERIFIED (Field 10/11 paths defined)"
+      - "W2-repo-checks VERIFIED (repo tooling green)"
+    subagent_instructions: |
+      Invoke /nacl-tl-sync in 'Step 7b wire-evidence authoring' mode. Steps:
+      1) For each actor=AUTHOR UC, look up the relevant external-contract from W3 and the
+         Field 10/11 paths.
+      2) Record a fixture (response sample captured via SDK or copied from contract.md
+         appendix); commit to fixture path.
+      3) Author the contract test that loads the fixture and asserts the consumer-side
+         parser/handler accepts it (without MSW interception — actual byte parity).
+      4) Set `wire-evidence:fixture:<path>` on the corresponding Task.verification_evidence
+         via Cypher SET.
+      5) Run /nacl-tl-sync against each affected UC; verdict must be PASS or
+         PARTIALLY_VERIFIED with a named follow-up (e.g., live-smoke deferred to W7).
+    acceptance_checks:
+      - "Bash: ls worker/test/fixtures/{deepgram,kie-anthropic}.fixture.json — both exist"
+      - "Bash: ls api/test/fixtures/{s3-multipart,sse}.fixture.json — both exist"
+      - "Bash: pnpm -r run test — exits 0 (new contract tests pass)"
+      - "Cypher: MATCH (t:Task)-[:GENERATES]-(uc:UseCase) WHERE uc.actor='AUTHOR' AND NONE(e IN coalesce(t.verification_evidence, []) WHERE e STARTS WITH 'wire-evidence:') RETURN count(t) — returns 0"
+      - "Skill: /nacl-tl-sync per UC — no UNVERIFIED (wire-evidence missing) verdicts"
+    blocking_rules_added: []
+    artifacts_to_produce:
+      - "Fixture and contract test files (~12)"
+      - "Cypher: Task.verification_evidence updates"
+    dependencies: ["W3-external-contracts", "W2-repo-checks"]
+    risks_and_rollback: "Rollback: git revert. Risk: fixture captures stale provider responses; mitigation: include a 'captured_at' timestamp in each fixture and a refresh-policy line."
+    definition_of_done: "VERIFIED — wire-evidence shape recorded for every UC with actor=AUTHOR; sync passes per UC."
+    gap_ids: ["GAP-016", "GAP-017"]
+
+  # ========================================================================
+  - wave_id: "W7-qa-provider"
+    title: "Decompose QA into six W3 stages and run LIVE_PROVIDER_SMOKE / PROD_GOLDEN_PATH"
+    priority: "P0"
+    size: "L"
+    why_this_wave_exists: |
+      UC-200 and UC-300 carry qa_skip with the Project-Beta postmortem reason verbatim. Strict
+      mode treats those as forbidden terminal success. The W3 six-stage matrix forces UNVERIFIED
+      until either LIVE_PROVIDER_SMOKE runs with real keys + PROD_GOLDEN_PATH evidence is
+      captured, or a signed exception covers the gate. PROD_GOLDEN_PATH on UC-100→UC-200→
+      UC-300→UC-302 is mandatory per the W4 release block conditions.
+    target_skills: ["nacl-tl-qa"]
+    owner_skills: ["nacl-tl-qa"]
+    scope_in:
+      - ".tl/status.json: per-UC qa stages (replace aggregate 'pass'/'skip' with the six W3 stage statuses)"
+      - "Recorded fixture + contract-test artifacts from W6 (consumed for PROVIDER_FIXTURE_QA)"
+      - "Live calls to Deepgram + kie.ai with real keys (when keys provided) for LIVE_PROVIDER_SMOKE"
+      - "PROD_GOLDEN_PATH: end-to-end run against transcriber.itsalt.ru capturing the upload→transcribe→protocol→PDF happy path"
+      - "OR: signed exception(s) under .tl/exceptions/ for stages the operator deliberately defers"
+    scope_out:
+      - "Any code change outside test/ scripts"
+      - "Spec changes"
+      - "nacl-*/SKILL.md"
+    inputs:
+      - "Five .tl/external-contracts/*.md (W3)"
+      - "W6 fixtures and contract tests"
+      - "DEEPGRAM_API_KEY, KIE_API_KEY (operator-provided; required for LIVE_PROVIDER_SMOKE; absence triggers signed-exception path)"
+      - "Production URL: https://transcriber.itsalt.ru"
+    expected_changes:
+      - ".tl/status.json: per-UC qa block replaced by qa.stages.{component_qa, local_runtime_qa, wire_contract_qa, provider_fixture_qa, live_provider_smoke, prod_golden_path} with closed-Codex status each"
+      - ".tl/tasks/UC-200/qa-evidence/*.yaml and UC-300/qa-evidence/*.yaml records of stage runs"
+      - "PROD_GOLDEN_PATH evidence file capturing the happy path run-id, timestamps, screenshots / curl traces"
+      - "OPTIONAL: .tl/exceptions/EXC-2026-MM-DD-uc-200-live-smoke.yaml (if operator defers; affected_gates=[LIVE_PROVIDER_SMOKE]; expiry concrete; followup_task named)"
+    orchestrator_prechecks:
+      - "W6-wire-evidence VERIFIED"
+      - "W4-uc-spec VERIFIED (has_provider_dependency / is_release_gate_uc populated for matrix derivation)"
+      - "User OQ-3 resolved (which UC stages are run live vs covered by signed exception)"
+    subagent_instructions: |
+      Invoke /nacl-tl-qa per UC. Steps:
+      1) Per UC, derive the mandatory stage set from the W3 matrix using the UC properties from
+         W4 (has_provider_dependency, is_release_gate_uc).
+      2) Record stage statuses from existing evidence:
+         - COMPONENT_QA: vitest unit-test PASS counts (uc-NNN.test.ts)
+         - LOCAL_RUNTIME_QA: local stack (docker-compose) bring-up + smoke
+         - WIRE_CONTRACT_QA: W6 contract tests
+         - PROVIDER_FIXTURE_QA: W6 fixtures consumed by replay test
+         - LIVE_PROVIDER_SMOKE: live call against real provider with operator-supplied key,
+           response captured to .tl/tasks/<UC>/qa-evidence/live-smoke-<timestamp>.yaml. If
+           key absent, propose signed exception (do NOT author it — only propose; W10 owns
+           exception authoring).
+         - PROD_GOLDEN_PATH: full upload→transcribe→protocol→PDF run on transcriber.itsalt.ru
+           with operator-driven inputs; capture each leg's evidence file.
+      3) Aggregate per UC; if any mandatory stage is NOT_RUN AND no exception, status =
+         UNVERIFIED with named gate.
+      4) Update .tl/status.json per the new schema; leave the legacy qa.status field for
+         compatibility with conductor migrations.
+    acceptance_checks:
+      - "Bash: for uc in UC-100 UC-200 UC-300 UC-302; do jq -er \".tasks[] | select(.id==\\\"$uc\\\") | .phases.qa.stages.prod_golden_path\" .tl/status.json; done — each returns a non-null status"
+      - "Bash: jq '.tasks[] | select(.phases.qa.status == \"skip\")' .tl/status.json — empty (every previous qa:skip is either upgraded or backed by an exception)"
+      - "Bash: ls .tl/tasks/UC-200/qa-evidence/ .tl/tasks/UC-300/qa-evidence/ — populated"
+      - "Skill: /nacl-tl-qa per UC — aggregate VERIFIED or PARTIALLY_VERIFIED with named exception"
+    blocking_rules_added: []
+    artifacts_to_produce:
+      - ".tl/status.json (rewritten qa blocks)"
+      - ".tl/tasks/UC-NNN/qa-evidence/* files"
+      - "Optionally: .tl/exceptions/<EXC>.yaml (with operator approval)"
+    dependencies: ["W6-wire-evidence", "W4-uc-spec"]
+    risks_and_rollback: "Rollback: git revert (status.json + new evidence files). Risk: PROD_GOLDEN_PATH run against prod could expose live-data privacy issues; mitigation: use an operator-owned test meeting with synthetic content."
+    definition_of_done: "VERIFIED — every release-gate UC has a closed-set aggregate; no qa:skip remains as terminal success."
+    gap_ids: ["GAP-018", "GAP-019", "GAP-020"]
+
+  # ========================================================================
+  - wave_id: "W8-clean-checkout"
+    title: "Populate config.yaml build/deploy/runtime_assets and produce wave-tip clean-checkout artifact"
+    priority: "P1"
+    size: "M"
+    why_this_wave_exists: |
+      config.yaml.{build, deploy, vps, ci_platform, runtime_assets} are empty while production
+      reality is well-defined. nacl-tl-deliver Step 4b needs these to evaluate. Prod uses
+      Node 20 while the rest of the project pins 22. No .tl/clean-checkout/<sha>.json artifact
+      exists for any commit.
+    target_skills: ["nacl-tl-deliver"]
+    owner_skills: ["nacl-tl-deliver"]
+    scope_in:
+      - "config.yaml additions for ci_platform, build.*, deploy.{method,urls,health_endpoint,smoke.endpoints}, vps, runtime_assets[]"
+      - ".github/workflows/deploy-production.yml line 42 (Node 20 → 22) — config-side change"
+      - ".tl/clean-checkout/<wave-tip-sha>.json (new evidence artifact via clean-checkout shape run)"
+    scope_out:
+      - "Provider QA (W7)"
+      - "Wire evidence (W6)"
+      - "Spec changes (W3/W4)"
+      - "nacl-*/SKILL.md"
+    inputs:
+      - "Current config.yaml"
+      - ".github/workflows/{ci,deploy-production}.yml (reality reference)"
+      - "ecosystem.config.cjs (pm2 entrypoint reference)"
+      - "Worker + API build scripts (cpSync calls identify runtime assets)"
+    expected_changes:
+      - "config.yaml.ci_platform = 'github-actions'"
+      - "config.yaml.build.package_manager = 'pnpm', requires_prisma_generate = true, entrypoint = 'api/dist/index.js', test_database_url, migrate_cmd"
+      - "config.yaml.deploy.method = 'github-actions-ssh', urls = {prod: 'https://transcriber.itsalt.ru'}, health_endpoint = '/api/health', smoke.endpoints = ['/api/health'] (HEALTH_ONLY explicit) + at least one product endpoint when known"
+      - "config.yaml.vps = {host:'82.202.156.157', user:'deploy', base_dir:'/opt/transcrib'}"
+      - "config.yaml.runtime_assets per config-schema.md project-shape defaults (ffprobe, ffmpeg, worker/dist/llm/prompts/{ru,en}/*.md, api/dist/lib/pdf/template.html, api/dist/index.js, worker/dist/index.js)"
+      - "deploy-production.yml: nvm use 22 (consistency with .nvmrc and CI)"
+      - ".tl/clean-checkout/<wave-tip-sha>.json with all stages PASS (or named follow-ups)"
+    orchestrator_prechecks:
+      - "W2-repo-checks VERIFIED (build/typecheck/test green; clean-checkout shape can rely on them)"
+      - "W1-reconciliation VERIFIED (release-status.json no longer lies about CI/health)"
+    subagent_instructions: |
+      Invoke /nacl-tl-deliver in 'Step 4b clean-checkout shape' mode. Steps:
+      1) Edit config.yaml to declare the build/deploy/vps/runtime_assets fields per the
+         config-schema.md project-shape defaults, sourcing values from .github/workflows/*,
+         ecosystem.config.cjs, package.json scripts.
+      2) Edit deploy-production.yml: change `nvm use 20` to `nvm use 22`; commit with message
+         'fix(deploy): align prod Node version with CI and .nvmrc'.
+      3) Run the clean-checkout gate shape: shallow clone into a temp dir, pnpm install
+         --frozen-lockfile, pnpm -r build, pnpm --filter @transcrib/api run db:generate +
+         db:migrate:deploy (against scratch DB), boot api dist/index.js, curl smoke endpoints,
+         verify runtime_assets[] paths exist.
+      4) Write .tl/clean-checkout/<wave-tip-sha>.json per the W9 template with per-stage
+         status, commit, started_at, completed_at, runtime_assets_verified.
+    acceptance_checks:
+      - "Bash: grep -E '^project_kind|^ci_platform|^vps:|^build:|^deploy:|^runtime_assets:' config.yaml — every field present"
+      - "Bash: grep 'nvm use 22' .github/workflows/deploy-production.yml — exit 0"
+      - "Bash: jq -r '.terminal_status' .tl/clean-checkout/*.json — returns 'PASS'"
+      - "Bash: jq -r '.runtime_assets_verified[] | select(.present == false)' .tl/clean-checkout/*.json — empty"
+    blocking_rules_added: []
+    artifacts_to_produce:
+      - "config.yaml (extended)"
+      - ".github/workflows/deploy-production.yml (Node version fix)"
+      - ".tl/clean-checkout/<sha>.json"
+    dependencies: ["W2-repo-checks", "W1-reconciliation"]
+    risks_and_rollback: "Rollback: git revert. Risk: clean-checkout fails on first run because a runtime asset path is wrong; mitigation: subagent records the actual built tree under runtime_assets_verified and the operator corrects the list before re-running."
+    definition_of_done: "VERIFIED — config.yaml fully captures the deploy/build surface; clean-checkout artifact PASS on wave-tip."
+    gap_ids: ["GAP-021", "GAP-022", "GAP-023", "GAP-033"]
+
+  # ========================================================================
+  - wave_id: "W9-spec-first"
+    title: "Spec-first remediation for post-v0.2.0 L1+ commits (retroactive discipline)"
+    priority: "P1"
+    size: "M"
+    why_this_wave_exists: |
+      Every post-v0.2.0 L1+ change (TUS→S3, kie.ai endpoint, WEBM+1GiB, etc.) landed without a
+      preceding spec-update commit. nacl-tl-fix Step 6.SF refuses VERIFIED on the next L1+ fix
+      attempt until the chain is either retroactively repaired or covered by a signed exception.
+    target_skills: ["nacl-tl-fix"]
+    owner_skills: ["nacl-tl-fix"]
+    scope_in:
+      - ".tl/tasks/<UC>/fix-discipline.md per past fix chain"
+      - ".tl/changelog.md addendum entries recording the spec-update timestamps observed via W3/W4 graph mutations"
+      - "OR: signed exceptions under .tl/exceptions/ with affected_gates: [spec-first-prerequisite]"
+    scope_out:
+      - "Any code change"
+      - "Spec changes (already done in W3/W4)"
+      - "nacl-*/SKILL.md"
+    inputs:
+      - "git log f925479..fa227a4 (the post-v0.2.0 fix/feat range)"
+      - "W3 ADRs + external contracts (the now-correct spec)"
+      - "W4 UC property updates"
+    expected_changes:
+      - "Per fix commit in the range: a one-line entry in .tl/changelog.md noting the W3/W4 spec write that retroactively satisfies the spec-first prerequisite, dated to the actual W3/W4 commit"
+      - "OR: signed exception(s) covering the chain (operator-approved)"
+    orchestrator_prechecks:
+      - "W3-external-contracts VERIFIED (spec catch-up landed)"
+      - "W4-uc-spec VERIFIED"
+    subagent_instructions: |
+      Invoke /nacl-tl-fix in 'spec-first retroactive audit' mode. Steps:
+      1) For each commit in the post-v0.2.0 range, classify level (L0/L1/L2/L3) using the
+         categorisation in inventory.json:code-inventory.spec_first_l1_review_candidates_post_v020.
+      2) For each L1+ commit, identify whether W3 or W4 retroactively created the missing spec
+         node. If yes, record that timestamp in the changelog addendum as the retroactive
+         spec-first satisfaction. Verdict: PARTIALLY_VERIFIED (with retroactive-evidence note).
+      3) For any commit where no retroactive spec exists yet, propose a signed exception with
+         concrete expiry naming a follow-up task that creates the missing spec. Do not
+         author the exception in this wave; the operator approves it in W10.
+      4) Update .tl/changelog.md addendum block dated 2026-05-22 with the retroactive
+         discipline summary.
+    acceptance_checks:
+      - "Bash: grep -A 1 'W9 spec-first retroactive' .tl/changelog.md | wc -l — non-zero"
+      - "Bash: for sha in 5d9585d 66049d5 5eb7e18 1f025b7 7f983f6 1b94f5b ad7b8b4 40341a6 ed6aaa9; do grep -F $sha .tl/changelog.md && echo \"$sha covered\"; done — every sha has an entry"
+      - "Skill: /nacl-tl-fix prerequisite-check — verdict PASS or PARTIALLY_VERIFIED with named exception slots"
+    blocking_rules_added: []
+    artifacts_to_produce:
+      - ".tl/changelog.md (addendum)"
+      - "Optional exception proposals (handed to operator for W10)"
+    dependencies: ["W3-external-contracts", "W4-uc-spec"]
+    risks_and_rollback: "Rollback: git revert. Risk: retroactive evidence is weaker than spec-first prevention; mitigation: every retroactive entry includes the lag (Δt between code-fix and spec-update) so future audit can see the discipline gap."
+    definition_of_done: "VERIFIED or PARTIALLY_VERIFIED — each post-v0.2.0 L1+ commit has a retroactive spec-first record or a named exception slot ready for W10 authoring."
+    gap_ids: ["GAP-029", "GAP-030", "GAP-031"]
+
+  # ========================================================================
+  - wave_id: "W10-release-readiness"
+    title: "Release readiness — author signed exceptions where deferral is intended; close W4 conditions"
+    priority: "P0"
+    size: "S"
+    why_this_wave_exists: |
+      The v0.2.0 release shipped with merge=skipped, ci=skipped (lie), health=skipped (lie),
+      and the production environment is live. Strict mode requires either project_kind:
+      prototype + signed exceptions, OR a clean re-affirmation against the now-reconciled
+      state. This wave authors the exceptions (operator-approved) and produces a fresh
+      release-readiness validation.
+    target_skills: ["nacl-tl-release"]
+    owner_skills: ["nacl-tl-release"]
+    scope_in:
+      - ".tl/exceptions/EXC-2026-MM-DD-<slug>.yaml files (one per deferred gate)"
+      - "Fresh release-status.json after W1+W7+W8 are in"
+      - "/nacl-tl-release prelude: validate project_kind, evaluate six block conditions"
+    scope_out:
+      - "Spec changes"
+      - "Wire evidence / QA stages"
+      - "nacl-*/SKILL.md"
+    inputs:
+      - "User OQ approvals for each exception candidate (owner, reason, expiry, affected_gates)"
+      - "Current state of release-status.json (post-W1)"
+      - "All upstream waves at VERIFIED"
+    expected_changes:
+      - "Zero or more signed exceptions in .tl/exceptions/ (operator decides exact set):"
+      - "  - Likely: EXC for LIVE_PROVIDER_SMOKE/PROD_GOLDEN_PATH on UC-200/UC-300 if provider keys remain unavailable"
+      - "  - Likely: EXC for skipped-pr-without-prototype-exception on the historical v0.2.0 release (frozen-in-history; concrete expiry = retroactive)"
+      - "  - Unlikely: any blanket exception (rejected by schema)"
+      - "release-status.json carries an `exceptions` array referencing each exception_id with their affected_gates"
+      - "Where no exception is authored, the underlying gap is closed by the relevant upstream wave"
+    orchestrator_prechecks:
+      - "W0..W9 all VERIFIED or PARTIALLY_VERIFIED with named follow-ups"
+      - "Operator has reviewed OQ-3, OQ-4, OQ-6 and provided exception parameters"
+    subagent_instructions: |
+      Invoke /nacl-tl-release in 'prelude + readiness check' mode. Steps:
+      1) Read project_kind from config.yaml. If 'standard' (per OQ-1), apply standard gate
+         semantics; if 'prototype', apply the carve-out semantics from config-schema.md:61-95.
+      2) Evaluate the six block conditions against the reconciled state.
+      3) For each condition that still fires AND the operator has provided exception
+         parameters, copy .tl/exceptions/_template.yaml to
+         .tl/exceptions/EXC-2026-05-NN-<slug>.yaml, fill fields per the operator's OQ
+         answer, and validate against the schema.
+      4) Re-run the readiness check; verdict must be PARTIALLY_VERIFIED or VERIFIED with
+         every active exception referenced in release-status.json.exceptions[].
+    acceptance_checks:
+      - "Bash: for f in .tl/exceptions/EXC-*.yaml; do yq '.expiry, .affected_gates, .owner, .reason' \"$f\"; done — every file declares all four"
+      - "Bash: grep -E '^affected_gates:\\s*\\[\\\"?\\*\\\"?\\]' .tl/exceptions/EXC-*.yaml — empty (no blanket overrides)"
+      - "Skill: /nacl-tl-release prelude — verdict PARTIALLY_VERIFIED with exceptions, or VERIFIED"
+      - "Bash: jq -er '.exceptions[].exception_id' .tl/release-status.json — matches the file ids"
+    blocking_rules_added: []
+    artifacts_to_produce:
+      - ".tl/exceptions/EXC-*.yaml (operator-approved set)"
+      - ".tl/release-status.json (exceptions[] block)"
+    dependencies: ["W1-reconciliation", "W7-qa-provider", "W8-clean-checkout", "W9-spec-first"]
+    risks_and_rollback: "Rollback: git rm the exception files. Risk: operator approves over-broad exception; mitigation: every exception has concrete expiry and followup_task; expiry-watch can detect renewal-without-new-id."
+    definition_of_done: "VERIFIED — release readiness check passes (possibly PARTIALLY_VERIFIED with all exceptions signed); no orphan W4 block conditions remain."
+    gap_ids: ["GAP-035"]
+
+  # ========================================================================
+  - wave_id: "W11-pilot-replay"
+    title: "Replay every Phase 2 gate simulation against post-remediation state and prove closure"
+    priority: "P1"
+    size: "S"
+    why_this_wave_exists: |
+      Closes the loop on the GAP register. For every WOULD_FIRE from Phase 2, replay the
+      simulation against the post-W10 state and confirm verdict transitions to WOULD_NOT_FIRE
+      or remains-named-blocker (with a signed exception referenced).
+    target_skills: ["nacl-tl-status", "nacl-sa-validate"]
+    owner_skills: ["nacl-tl-status"]
+    scope_in:
+      - ".tl/gap-closure/2026-05-22-pilot-replay.json (new evidence artifact)"
+      - "Re-run of every Cypher query and acceptance check from W1..W10"
+    scope_out:
+      - "Any new remediation"
+      - "Spec / code changes"
+      - "nacl-*/SKILL.md"
+    inputs:
+      - ".tl/gap-closure/gate-simulation.json (Phase 2 baseline)"
+      - ".tl/gap-closure/2026-05-22-gap-register.yaml"
+      - "Live graph + .tl/ + code at post-W10 state"
+    expected_changes:
+      - "New artifact .tl/gap-closure/2026-05-22-pilot-replay.json mirroring gate-simulation.json shape but with verdicts updated to WOULD_NOT_FIRE for closed gaps"
+      - "Any remaining WOULD_FIRE rows MUST cite an exception_id from W10 OR a deferred-task id in a future wave"
+    orchestrator_prechecks:
+      - "W0..W10 VERIFIED"
+    subagent_instructions: |
+      Invoke /nacl-tl-status in 'gap-closure pilot-replay' mode. Steps:
+      1) Walk every entry in gate-simulation.json. For each, re-run the canonical Cypher or
+         filesystem check.
+      2) For each entry, record post-remediation verdict and a one-line proof citation
+         (Cypher result, file existence, evidence string presence).
+      3) Cross-check against the gap-register: every gap_id must be closed (verdict transition)
+         OR carry an exception_id reference (verdict still WOULD_FIRE but documented).
+      4) Emit summary: total_gaps_closed, total_gaps_remaining_with_exception, total_gaps_remaining_without_exception (must be 0).
+    acceptance_checks:
+      - "Bash: jq '.summary.total_gaps_remaining_without_exception' .tl/gap-closure/2026-05-22-pilot-replay.json — returns 0"
+      - "Bash: jq -r '.gates | to_entries[] | select(.value.verdict==\"WOULD_FIRE\" and (.value.exception_id // \"\") == \"\") | .key' .tl/gap-closure/2026-05-22-pilot-replay.json — empty"
+      - "Skill: /nacl-sa-validate full — no new CRITICAL findings"
+    blocking_rules_added: []
+    artifacts_to_produce:
+      - ".tl/gap-closure/2026-05-22-pilot-replay.json"
+    dependencies: ["W10-release-readiness"]
+    risks_and_rollback: "Rollback: git rm the pilot-replay artifact (read-only wave). Risk: replay surfaces a regression introduced by an earlier wave; mitigation: the artifact names the failing gap, and the orchestrator branches to a focused remediation wave rather than re-running the full plan."
+    definition_of_done: "VERIFIED — every Phase 2 WOULD_FIRE transitions to WOULD_NOT_FIRE or to WOULD_FIRE-with-exception; the artifact summary confirms total_gaps_remaining_without_exception=0."
+    gap_ids: []  # W11 closes no GAP directly; it proves closure of all others
+
+plan_quality_checks:
+  - "every gap in the register is closed by exactly one wave (verified by gap_ids[] union across waves == GAP-001..GAP-036, no duplicates; W11 carries empty gap_ids[] by design — it's the replay wave)"
+  - "no wave references a gap that does not exist in the register (verified manually against 2026-05-22-gap-register.yaml)"
+  - "wave dependencies form a DAG (W0 ← W1 ← {W2, W3}; W2 ← W6/W8; W3 ← W4/W6; W4 ← W5/W7; W6 ← W7; all → W10 → W11)"
+  - "every wave's owner_skills[] is non-empty and refers only to recognised NaCl skill names (nacl-init, nacl-tl-conductor, nacl-tl-review, nacl-sa-architect, nacl-sa-uc, nacl-sa-ui, nacl-tl-sync, nacl-tl-qa, nacl-tl-deliver, nacl-tl-fix, nacl-tl-release, nacl-tl-status — all recognised)"
+  - "every wave's acceptance_checks[] is runnable (Cypher queries quoted verbatim; Bash commands quoted with concrete paths)"
+  - "no wave touches a path in scope_out (each scope_out includes nacl-*/SKILL.md by template; spec-first principle preserved)"
+
+confidence: "high"
+notes:
+  - "12 waves total, at the upper bound of the runbook's 8–12 limit. A phase-2 plan is not required."
+  - "Total GAPs closed: 36 (all entries in 2026-05-22-gap-register.yaml). W11 is the pilot replay (zero direct gap_ids; proves the others closed)."
+  - "Two GAPs (GAP-008/GAP-028) on the same UC node graph properties are closed by the same wave (W4) but tracked as separate gaps because their evidence shapes and severity differ (P1 vs P3)."
+  - "GAP-016 + GAP-017 are owned by nacl-tl-sync; consolidated into one wave (W6) since they share the same artifact-creation pattern."
+  - "W7 contains both LIVE_PROVIDER_SMOKE and PROD_GOLDEN_PATH because both are owned by nacl-tl-qa; release skill is downstream consumer."
