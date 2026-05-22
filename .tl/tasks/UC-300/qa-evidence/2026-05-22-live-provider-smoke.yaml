@@ -1,0 +1,45 @@
+uc: "UC-300"
+stage: "LIVE_PROVIDER_SMOKE"
+status: "VERIFIED"
+captured_at: "2026-05-22T13:10:42Z"
+captured_by: "GAP-closure W7 orchestrator per OQ-3 resolution"
+provider: "kie.ai (Anthropic /claude/v1/messages endpoint)"
+test_environment:
+  endpoint: "https://api.kie.ai/claude/v1/messages"
+  auth: "Authorization: Bearer ${KIE_API_KEY} (read from /opt/transcrib/.env on prod server)"
+  model: "claude-sonnet-4-6"
+test_request:
+  method: "POST"
+  content_type: "application/json"
+  body:
+    model: "claude-sonnet-4-6"
+    max_tokens: 50
+    messages: [{"role": "user", "content": "Reply with exactly the word READY and nothing else."}]
+test_response:
+  http_status: 200
+  body_envelope:
+    id: "chatcompl_01NaGcUja27PX4rFRwK7wtBa"
+    type: "message"
+    role: "assistant"
+    model: "claude-sonnet-4-6"
+    content[0]:
+      type: "text"
+      text: " READY"
+    stop_reason: "end_turn"
+    usage:
+      input_tokens: 90
+      output_tokens: 95
+    credits_consumed: 0.10
+assertions_passed:
+  - "HTTP 200 (Bearer key valid, endpoint reachable from prod server)"
+  - "Anthropic envelope (NOT OpenAI shape — no .choices[0].message.content) per .tl/external-contracts/kie-anthropic.md § 5"
+  - "Parsing path response.content[0].text = ' READY' (load-bearing for protocol markdown extraction)"
+  - "stop_reason='end_turn' indicates clean completion (not truncated)"
+  - "usage.input_tokens + usage.output_tokens populated for cost surfacing"
+related_artifacts:
+  - "wire-evidence:fixture:worker/test/fixtures/kie-anthropic-claude-response.json (synthetic; shape match confirmed)"
+  - "Cypher: RC-UC-300 RuntimeContract exists with 4 HAS_TRANSITION + ACQUIRES_LOCK + EMITS_EVENT"
+  - "PROD_GOLDEN_PATH leg under UC-100 evidence — UC-300 ProtocolGenerationJob.status DONE in 15.78 seconds on the 8s synthetic video"
+notes:
+  - "Cost: 0.10 credits per kie.ai usage block (a small unit; total this run < $0.001 USD-equivalent)."
+  - "Endpoint switch (changelog 1f025b7) validated: Anthropic envelope returned, not the legacy /generate shape."

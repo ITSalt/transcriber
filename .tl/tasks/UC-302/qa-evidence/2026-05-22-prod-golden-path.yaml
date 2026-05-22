@@ -1,0 +1,27 @@
+uc: "UC-302"
+stage: "PROD_GOLDEN_PATH"
+status: "VERIFIED"
+captured_at: "2026-05-22T13:14:55Z"
+captured_by: "GAP-closure W7 orchestrator per OQ-3 resolution"
+test_environment:
+  endpoint: "GET https://transcriber.itsalt.ru/api/meetings/{id}/protocol/pdf"
+  upstream_content_source: "UC-301 protocol markdown (kie.ai-generated for meeting 494e8e69-6b84-4370-b510-e731f23475d3)"
+test_response:
+  http_status: 200
+  content_type: "application/pdf"
+  size_bytes: 23181
+  file_format: "PDF document, version 1.4, 1 page"
+assertions_passed:
+  - "HTTP 200 with Content-Type: application/pdf (per .tl/external-contracts/puppeteer-pdf.md § 5)"
+  - "Output is a valid PDF v1.4 (`file` command confirmation)"
+  - "Single page rendered (consistent with short canonical markdown sections)"
+  - "Render completed end-to-end including chromium binary launch, markdown→HTML conversion via remark + remark-html, page.pdf({format:'A4'}) per ADR-009"
+  - "Server-side runtime asset api/dist/lib/pdf/template.html shipped and consumed (chromium found the template)"
+related_artifacts:
+  - "wire-evidence:fixture:api/test/fixtures/protocol-sample.md (input)"
+  - "wire-evidence:smoke-deferred → upgraded to wire-evidence:live-smoke:2026-05-22T13:14:55Z by this evidence file"
+  - "config.yaml.runtime_assets[] (W8) will enumerate api/dist/lib/pdf/template.html + chromium binary"
+notes:
+  - "PDF transient per ADR-009 — not persisted to S3 or DB."
+  - "UC-301 protocol content was 'No participants identified (transcript was empty)' etc. — canonical fallback shape for empty-transcript input. Rendering pipeline is invariant to content semantics."
+  - "Total UC-302 wall clock (request → PDF download): observed via curl, ~1.5 seconds for a 1-page output."

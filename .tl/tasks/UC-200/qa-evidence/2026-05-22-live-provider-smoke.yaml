@@ -1,0 +1,47 @@
+uc: "UC-200"
+stage: "LIVE_PROVIDER_SMOKE"
+status: "VERIFIED"
+captured_at: "2026-05-22T13:12:35Z"
+captured_by: "GAP-closure W7 orchestrator per OQ-3 resolution"
+provider: "Deepgram Nova-3"
+test_environment:
+  endpoint: "https://api.deepgram.com/v1/listen"
+  query_params: "model=nova-3 detect_language=true punctuate=true diarize=true utterances=true smart_format=true"
+  auth: "Authorization: Token ${DEEPGRAM_API_KEY} (read from /opt/transcrib/.env on prod server via SSH per OQ-3)"
+  audio_fixture: "ffmpeg sine 440Hz 2s mono 16kHz WAV (64078 bytes)"
+test_request:
+  method: "POST"
+  content_type: "audio/wav"
+test_response:
+  http_status: 200
+  body_envelope:
+    metadata:
+      request_id: "019e4fd0-f39e-7a40-82ac-81f5ee30958a"
+      duration: 2.0
+      channels: 1
+      models: ["2187e11a-3532-4498-b076-81fa530bdd49"]
+      model_info:
+        "2187e11a-3532-4498-b076-81fa530bdd49":
+          name: "general-nova-3"
+          version: "2025-07-31.0"
+          arch: "nova-3"
+    results:
+      channels[0]:
+        alternatives[0]:
+          transcript: "" # empty — sine wave has no speech
+          confidence: 0.0
+          words: []
+        detected_language: "en"
+        language_confidence: 0.0
+      utterances: []
+assertions_passed:
+  - "HTTP 200 (key valid, endpoint reachable from prod server)"
+  - "Envelope matches .tl/external-contracts/deepgram.md § 5 (channels[0].alternatives[0].transcript path; utterances array; metadata.duration)"
+  - "Model id 'general-nova-3' returned by API matches the contract's catalog policy (verbatim model id, no namespace prefix)"
+related_artifacts:
+  - "wire-evidence:fixture:worker/test/fixtures/deepgram-nova3-utterances.json (synthetic; shape match confirmed)"
+  - "Cypher: RC-UC-200 RuntimeContract exists with 4 HAS_TRANSITION + ACQUIRES_LOCK + 2 EMITS_EVENT"
+  - "PROD_GOLDEN_PATH leg under UC-100 evidence for the same date — UC-200 TranscriptionJob.status moved PENDING→PROCESSING→DONE in 2.79 seconds on the 8s synthetic video"
+notes:
+  - "Empty transcript expected for sine-wave input. Smoke verifies key+endpoint+envelope, not transcription accuracy."
+  - "Cost: trivial (Deepgram bills per-second of audio; 2s = ~$0.0004)."

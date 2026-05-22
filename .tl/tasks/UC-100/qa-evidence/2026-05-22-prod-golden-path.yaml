@@ -1,0 +1,26 @@
+uc: "UC-100"
+stage: "PROD_GOLDEN_PATH"
+status: "VERIFIED"
+captured_at: "2026-05-22T13:14:34Z"
+captured_by: "GAP-closure W7 orchestrator (Claude Opus 4.7 acting as nacl-tl-qa subagent per OQ-3 resolution)"
+test_environment:
+  upload_url: "https://transcriber.itsalt.ru/api/uploads/init"
+  s3_endpoint: "https://s3.cloud.ru/transcrib-itsalt-prod (Cloud.ru, AWS SigV4 region ru-central-1)"
+  fixture_source: "ffmpeg-generated synthetic 8s MP4 (sine 440Hz + dark-blue color frame); 76524 bytes; vendor MIME video/mp4"
+test_steps:
+  - "POST /api/uploads/init {filename, size_bytes=76524, filetype=video/mp4, title, language=null}"
+  - "→ 200 OK with s3_key=pending/bc304c73-79b9-4533-bf91-37f02d0ef238.mp4, s3_upload_id, parts[0].url=https://s3.cloud.ru/...?X-Amz-Algorithm=AWS4-HMAC-SHA256"
+  - "PUT to S3 presigned URL with file body → 200 OK, ETag=1c3e9ae1c265ec8464c0f1e18d950db5"
+  - "POST /api/uploads/complete {s3_key, s3_upload_id, parts:[{part_number:1,etag:...}], filename, size_bytes, filetype, title, language:null}"
+  - "→ 200 OK with meeting_id=494e8e69-6b84-4370-b510-e731f23475d3, status=TRANSCRIBING"
+  - "UC-003 cleanup: DELETE /api/meetings/494e8e69... → 200 {deleted:true, in_flight_failed:false}"
+assertions_passed:
+  - "Init response carries the four contract-required fields (s3_key, s3_upload_id, part_size=10485760, parts[])"
+  - "Presigned URL uses https scheme + AWS SigV4 + Cloud.ru endpoint per § 7 of .tl/external-contracts/s3-multipart-presigned.md"
+  - "Complete response returns meeting_id + transition to TRANSCRIBING per UC-100 RuntimeContract"
+related_artifacts:
+  - "wire-evidence:fixture:api/test/fixtures/s3-multipart-init-response.json (shape match confirmed against live response)"
+  - "Cypher: MATCH (uc:UseCase {id:'UC-100'})-[:HAS_RUNTIME_CONTRACT]->(rc:RuntimeContract) — RC-UC-100 with 5 transitions traversed (INIT → UPLOADING_PARTS → COMPLETING → UPLOADED)"
+notes:
+  - "Total wall clock from /init to meeting=TRANSCRIBING: ~3 seconds"
+  - "Synthesized fixture file uploaded; no real user content. Meeting was deleted post-golden-path to avoid lingering prod data."
