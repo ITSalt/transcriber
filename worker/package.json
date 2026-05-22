@@ -6,6 +6,7 @@
   "scripts": {
     "build": "tsc --build && node -e \"require('fs').cpSync('src/llm/prompts', 'dist/llm/prompts', { recursive: true })\"",
     "dev": "tsc --build --watch",
+    "lint": "eslint .",
     "typecheck": "tsc --noEmit",
     "clean": "rimraf dist tsconfig.tsbuildinfo",
     "test": "vitest run",
