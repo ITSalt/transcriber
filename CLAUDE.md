@@ -106,8 +106,8 @@ THEN write code that conforms to that behavior.
 ## Graph Infrastructure
 
 Neo4j is running locally for this project:
-- **Browser:** http://localhost:3574
-- **Bolt:** bolt://localhost:3587
+- **Browser:** http://localhost:3614
+- **Bolt:** bolt://localhost:3627
 - **Credentials:** neo4j / neo4j_graph_dev
 - **Container:** transcrib-neo4j
 - **MCP config:** `.mcp.json` at project root
