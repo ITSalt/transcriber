@@ -1,0 +1,43 @@
+{
+  "_meta": {
+    "captured_for": "UC-200 worker pipeline; .tl/external-contracts/deepgram.md § 10",
+    "shape": "Deepgram listen.prerecorded.transcribeFile response for diarized RU audio",
+    "captured_at": "2026-05-22 (synthesized from Deepgram Nova-3 documented response shape — to be replaced with a real captured response during the first W7 LIVE_PROVIDER_SMOKE)",
+    "audio_source": "5-second RU sample with 2 speakers (placeholder)",
+    "sdk_version": "@deepgram/sdk@5.2.0"
+  },
+  "results": {
+    "channels": [
+      {
+        "alternatives": [
+          {
+            "transcript": "Привет всем. Сегодня обсуждаем план на квартал. Я думаю, что нам нужно сфокусироваться на трёх ключевых задачах.",
+            "confidence": 0.94,
+            "words": [
+              {"word": "Привет", "start": 0.1, "end": 0.5, "confidence": 0.96, "speaker": 0},
+              {"word": "всем", "start": 0.5, "end": 0.9, "confidence": 0.94, "speaker": 0},
+              {"word": "Сегодня", "start": 1.4, "end": 1.9, "confidence": 0.92, "speaker": 0},
+              {"word": "обсуждаем", "start": 1.9, "end": 2.6, "confidence": 0.93, "speaker": 0},
+              {"word": "план", "start": 2.6, "end": 2.9, "confidence": 0.95, "speaker": 0},
+              {"word": "на", "start": 2.9, "end": 3.0, "confidence": 0.92, "speaker": 0},
+              {"word": "квартал", "start": 3.0, "end": 3.6, "confidence": 0.93, "speaker": 0},
+              {"word": "Я", "start": 4.0, "end": 4.1, "confidence": 0.94, "speaker": 1},
+              {"word": "думаю", "start": 4.1, "end": 4.5, "confidence": 0.93, "speaker": 1}
+            ]
+          }
+        ],
+        "detected_language": "ru"
+      }
+    ],
+    "utterances": [
+      {"speaker": 0, "transcript": "Привет всем. Сегодня обсуждаем план на квартал.", "start": 0.1, "end": 3.6, "confidence": 0.93},
+      {"speaker": 1, "transcript": "Я думаю, что нам нужно сфокусироваться на трёх ключевых задачах.", "start": 4.0, "end": 8.2, "confidence": 0.92}
+    ]
+  },
+  "metadata": {
+    "duration": 8.5,
+    "channels": 1,
+    "models": ["nova-3"],
+    "model_info": {"nova-3": {"name": "nova-3", "version": "2026-01-01.0", "arch": "nova"}}
+  }
+}

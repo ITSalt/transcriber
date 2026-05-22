@@ -1,0 +1,21 @@
+{
+  "_meta": {
+    "captured_for": "UC-100 upload pipeline; .tl/external-contracts/s3-multipart-presigned.md § 10",
+    "shape": "POST /api/uploads/init success body",
+    "captured_at": "2026-05-22 (synthesized — to be regenerated against a real MinIO/Cloud.ru instance during W7 LIVE_PROVIDER_SMOKE)",
+    "input_size_bytes": 52428800,
+    "input_filetype": "video/mp4",
+    "calculated_parts": 5,
+    "part_size": 10485760
+  },
+  "s3_key": "pending/0a1b2c3d-4e5f-6789-abcd-ef0123456789.mp4",
+  "s3_upload_id": "EXAMPLEJZ6e0YupT2h66iePQCc9IEbYbDUy4RTpMeoSMLPRp8Z5o1u8feSRonpvnWsKKG35tI2LB9VDPiCgTy.Gq2VxQLYjrue4Nq.NBdqI-",
+  "part_size": 10485760,
+  "parts": [
+    {"part_number": 1, "url": "https://minio.transcrib.example/transcrib/pending/0a1b2c3d-4e5f-6789-abcd-ef0123456789.mp4?partNumber=1&uploadId=EXAMPLE&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Signature=abcd1234"},
+    {"part_number": 2, "url": "https://minio.transcrib.example/transcrib/pending/0a1b2c3d-4e5f-6789-abcd-ef0123456789.mp4?partNumber=2&uploadId=EXAMPLE&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Signature=efgh5678"},
+    {"part_number": 3, "url": "https://minio.transcrib.example/transcrib/pending/0a1b2c3d-4e5f-6789-abcd-ef0123456789.mp4?partNumber=3&uploadId=EXAMPLE&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Signature=ijkl9012"},
+    {"part_number": 4, "url": "https://minio.transcrib.example/transcrib/pending/0a1b2c3d-4e5f-6789-abcd-ef0123456789.mp4?partNumber=4&uploadId=EXAMPLE&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Signature=mnop3456"},
+    {"part_number": 5, "url": "https://minio.transcrib.example/transcrib/pending/0a1b2c3d-4e5f-6789-abcd-ef0123456789.mp4?partNumber=5&uploadId=EXAMPLE&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Signature=qrst7890"}
+  ]
+}

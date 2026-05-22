@@ -1,0 +1,30 @@
+{
+  "_meta": {
+    "captured_for": "TECH-012 SSE protocol; .tl/external-contracts/sse.md § 10",
+    "shape": "Recorded raw text/event-stream frames as emitted by api/src/sse/sse-formatter.ts",
+    "captured_at": "2026-05-22 (synthesized from the canonical frame layout enforced by 7f983f6 fix)",
+    "note": "Each frame is the literal bytes a browser EventSource would receive. The leading 'event: <type>' line is mandatory; without it the browser fires 'message' listeners instead of typed listeners."
+  },
+  "frames": [
+    {
+      "type": "meeting.status",
+      "raw": "event: meeting.status\ndata: {\"type\":\"meeting.status\",\"meeting_id\":\"0a1b2c3d-4e5f-6789-abcd-ef0123456789\",\"status\":\"TRANSCRIBING\"}\n\n",
+      "parsed_payload": {"type": "meeting.status", "meeting_id": "0a1b2c3d-4e5f-6789-abcd-ef0123456789", "status": "TRANSCRIBING"}
+    },
+    {
+      "type": "meeting.status",
+      "raw": "event: meeting.status\ndata: {\"type\":\"meeting.status\",\"meeting_id\":\"0a1b2c3d-4e5f-6789-abcd-ef0123456789\",\"status\":\"PROTOCOL_READY\"}\n\n",
+      "parsed_payload": {"type": "meeting.status", "meeting_id": "0a1b2c3d-4e5f-6789-abcd-ef0123456789", "status": "PROTOCOL_READY"}
+    },
+    {
+      "type": "meeting.deleted",
+      "raw": "event: meeting.deleted\ndata: {\"type\":\"meeting.deleted\",\"meeting_id\":\"0a1b2c3d-4e5f-6789-abcd-ef0123456789\"}\n\n",
+      "parsed_payload": {"type": "meeting.deleted", "meeting_id": "0a1b2c3d-4e5f-6789-abcd-ef0123456789"}
+    },
+    {
+      "type": "ping",
+      "raw": "event: ping\ndata: {\"type\":\"ping\"}\n\n",
+      "parsed_payload": {"type": "ping"}
+    }
+  ]
+}

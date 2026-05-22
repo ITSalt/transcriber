@@ -1,0 +1,23 @@
+{
+  "_meta": {
+    "captured_for": "UC-300 worker pipeline; .tl/external-contracts/kie-anthropic.md § 10",
+    "shape": "kie.ai POST /claude/v1/messages response (Anthropic Messages API envelope)",
+    "captured_at": "2026-05-22 (synthesized from kie.ai Anthropic-compat documented shape — to be replaced with a real captured response during the first W7 LIVE_PROVIDER_SMOKE for UC-300)",
+    "input_summary": "8.5-second transcript with 2 speakers, prompted via worker/src/llm/prompts/ru/protocol.md"
+  },
+  "id": "msg_01ABCdefgh1234567890",
+  "type": "message",
+  "role": "assistant",
+  "model": "claude-sonnet-4-6",
+  "content": [
+    {
+      "type": "text",
+      "text": "# Протокол встречи\n\n## Участники\n- Speaker 0\n- Speaker 1\n\n## Дата\n2026-05-22\n\n## Обсуждённые вопросы\n1. План на квартал — общая постановка задачи.\n2. Фокус на трёх ключевых задачах (детализация в обсуждении).\n\n## Принятые решения\n- Приоритизировать три ключевые задачи (Speaker 1).\n\n## Открытые вопросы\n- Конкретный список трёх задач не определён в этом фрагменте.\n\n## Дальнейшие действия\n- Speaker 0: подготовить список приоритетов к следующей встрече."
+    }
+  ],
+  "stop_reason": "end_turn",
+  "usage": {
+    "input_tokens": 312,
+    "output_tokens": 187
+  }
+}
