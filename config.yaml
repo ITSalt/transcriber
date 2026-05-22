@@ -35,14 +35,40 @@ git:
   main_branch: "main"
   branch_prefix: "feature/"
 
-vps: {}  # TBD — fill after deployment decisions
+# Filled in W8 of GAP-closure 2026-05-22; previously {} / "" while production was already live.
+vps:
+  host: "82.202.156.157"
+  user: "deploy"
+  base_dir: "/opt/transcrib"
 
-ci_platform: ""  # TBD — "github-actions" | "gitlab-ci" | etc.
+ci_platform: "github-actions"
+
+build:
+  package_manager: "pnpm"
+  requires_prisma_generate: true
+  entrypoint: "api/dist/index.js"   # pm2 entry per ecosystem.config.cjs; NOT api/dist/server.js (postmortem class C2)
+  test_database_url: "postgresql://transcrib:transcrib@localhost:5432/transcrib_test"
+  migrate_cmd: "pnpm --filter @transcrib/api run db:migrate:deploy"
 
 deploy:
-  method: ""  # TBD
-  urls: {}
-  health_endpoint: ""
+  method: "github-actions-ssh"   # .github/workflows/deploy-production.yml
+  urls:
+    prod: "https://transcriber.itsalt.ru"
+  health_endpoint: "/api/health"
+  smoke:
+    endpoints:
+      - "/api/health"              # HEALTH_ONLY per W4 distinction
+      - "/api/meetings"            # exercises UC-001 catalog list — real product surface
+
+# In-repo runtime assets (paths relative to project root after install + build).
+# System binaries (ffmpeg, ffprobe, chromium) come from TECH-017 server bootstrap
+# and are out of config.yaml.runtime_assets scope per config-schema.md.
+runtime_assets:
+  - "worker/dist/llm/prompts/ru/protocol.md"   # copied by worker build script (66049d5)
+  - "worker/dist/llm/prompts/en/protocol.md"
+  - "api/dist/lib/pdf/template.html"           # copied by api build script (UC-302 render)
+  - "api/dist/index.js"                        # pm2 transcrib-api entry
+  - "worker/dist/index.js"                     # pm2 transcrib-worker entry
 
 graph:
   # Port corrected in W1-reconciliation 2026-05-22 (GAP-034): config previously

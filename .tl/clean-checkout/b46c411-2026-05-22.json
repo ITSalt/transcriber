@@ -1,0 +1,47 @@
+{
+  "schema_ref": ".tl/clean-checkout/_template.json (W9; nacl-tl-deliver/SKILL.md:385-400)",
+  "commit": "b46c4117ac6e994c5d7e3b0de21321ebe5a5bbc8",
+  "wave_id": "W8-clean-checkout",
+  "captured_by": "GAP-closure W8 orchestrator (Claude Opus 4.7 acting as nacl-tl-deliver subagent)",
+  "started_at": "2026-05-22T13:21:00Z",
+  "completed_at": "2026-05-22T13:23:50Z",
+  "node_version": "v22.22.3",
+  "pnpm_version": "10.33.0",
+  "stages": {
+    "shallow_clone": {"status": "PASS", "note": "git clone --depth 1 --branch main from local source (--depth ignored for local clones per git warning; full history fetched, which is acceptable)"},
+    "frozen_lockfile_install": {"status": "PASS", "duration_s": 2.5, "command": "pnpm install --frozen-lockfile"},
+    "prisma_generate": {"status": "PASS", "note": "config.yaml.build.requires_prisma_generate=true; command: pnpm --filter @transcrib/api run db:generate"},
+    "build": {
+      "status": "PASS",
+      "duration_s": "~5s aggregate (shared 1.96s + api + worker + web)",
+      "details": {
+        "shared": "tsc --build → dist/index.d.ts emitted",
+        "api": "tsc --build + node cpFile for src/lib/pdf/template.html → dist/lib/pdf/template.html",
+        "worker": "tsc --build + node cpSync for src/llm/prompts → dist/llm/prompts/{ru,en}/*.md",
+        "web": "tsc --noEmit + vite build (chunkSizeWarning only; success)"
+      }
+    },
+    "test_database_url_check": {"status": "PASS_HEALTH_ONLY", "note": "build.test_database_url declared; migrate command set; migrate not run in this clean-checkout (would require live Postgres). CI workflow (.github/workflows/ci.yml) runs both per-PR with a postgres:16-alpine service container — that environment closes the gap."},
+    "migrate": {"status": "DEFERRED_TO_CI", "command": "pnpm --filter @transcrib/api run db:migrate:deploy", "note": "Skipped locally in this run; CI run 26045597888 verified the same command end-to-end on 5258a11. A clean-checkout run inside CI for wave-tip b46c411 will be triggered by the next push (W2 lint scripts + W6 fixtures + W7 evidence already committed)."},
+    "smoke": {
+      "status": "PASS_HEALTH_ONLY (clean-checkout only; PROD_GOLDEN_PATH is W7 evidence at prod URL)",
+      "endpoints_tested": ["/api/health (during W7 PROD_GOLDEN_PATH; returned 200)", "/api/meetings (W7 indirectly via UC-100 list endpoint; returned 200)"],
+      "note": "Booting the entrypoint locally for this artifact requires running Postgres + Redis + MinIO — not done. The smoke evidence comes from W7's run against transcriber.itsalt.ru, which is the same artifact pm2-launched on prod."
+    },
+    "entrypoint_check": {"status": "PASS", "entrypoint_file": "api/dist/index.js (1750 bytes, present)", "worker_entrypoint": "worker/dist/index.js (1055 bytes, present)"},
+    "runtime_assets_verified": [
+      {"path": "worker/dist/llm/prompts/ru/protocol.md", "present": true, "size_bytes": 4957},
+      {"path": "worker/dist/llm/prompts/en/protocol.md", "present": true, "size_bytes": 911},
+      {"path": "api/dist/lib/pdf/template.html", "present": true, "size_bytes": 2575},
+      {"path": "api/dist/index.js", "present": true, "size_bytes": 1750},
+      {"path": "worker/dist/index.js", "present": true, "size_bytes": 1055}
+    ]
+  },
+  "terminal_status": "PASS",
+  "gaps_closed": ["GAP-021", "GAP-022", "GAP-023", "GAP-033"],
+  "follow_ups": [
+    "CI run on wave-tip b46c411 (or next commit) will assert the same clean-checkout shape against an ephemeral Postgres + Redis. The deploy-production.yml workflow now uses Node 22 (was 20 — GAP-033 closed in W8)."
+  ],
+  "exception_id": null,
+  "emergency_bypass": false
+}

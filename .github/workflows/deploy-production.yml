@@ -39,7 +39,7 @@ jobs:
             set -euo pipefail
             export NVM_DIR="$HOME/.nvm"
             [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"
-            nvm use 20
+            nvm use 22
 
             cd /opt/transcrib
             git fetch --all --prune
