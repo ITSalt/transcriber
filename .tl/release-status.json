@@ -42,7 +42,15 @@
   "release": {"status": "done", "url": "https://github.com/ITSalt/transcriber/releases/tag/v0.2.0"},
   "yougile": {"status": "skipped", "note": "YouGile not configured for this project (config.yaml.yougile = {})"},
   "exceptions": [
-    {"_pending": "W10-release-readiness will author EXC-2026-05-22-v020-historical-skipped-pr.yaml per OQ-6 resolution; this array populated then."}
+    {
+      "exception_id": "EXC-2026-05-22-v020-historical-skipped-pr",
+      "owner": "magznikitin",
+      "affected_gates": ["skipped-pr"],
+      "expiry": "2026-05-18T23:59:59Z",
+      "purpose": "Retroactive coverage for v0.2.0 release that landed direct-to-main before W11 strict mode existed. Frozen-in-history: expiry = release date; provides no carve-out for any future release.",
+      "file": ".tl/exceptions/EXC-2026-05-22-v020-historical-skipped-pr.yaml",
+      "followup_task": "RFC-2026-05-22-future-release-protocol"
+    }
   ],
   "production": {
     "url": "https://transcriber.itsalt.ru",
