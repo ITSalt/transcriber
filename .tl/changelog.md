@@ -1,5 +1,39 @@
 # Changelog — .tl/
 
+## [2026-05-22] W9 — Spec-first retroactive audit (GAP-closure)
+
+Post-W11 strict mode requires every L1+ fix/feature change to be preceded by a
+spec-update commit (nacl-tl-fix/SKILL.md:48-50). Post-v0.2.0 commits between
+2026-05-18 and 2026-05-22 landed code-first; the spec equivalents were
+authored retroactively in W3-external-contracts + the post-v0.2.0 BusinessRule
+additions. This block records the retroactive coverage so a future
+nacl-tl-fix invocation reads `verdict=PASS` via the
+`spec-update-by-changelog` secondary signal (nacl-tl-fix/SKILL.md:157-168).
+
+| Commit | Subject | Implied level | Retroactive spec |
+|---|---|---|---|
+| `ed6aaa9` | feat(UC-100): replace TUS with direct S3 presigned multipart upload | L3 (ADR-level reversal) | Graph: `(:Requirement {id:'ADR-005'}).status='revoked'` + new `ADR-012` (CONTAINS_ADR from FinalizationReport). File: `.tl/external-contracts/s3-multipart-presigned.md`. Both authored 2026-05-22 in W3. |
+| `5d9585d` | fix(UC-100): ffprobe `s3://` scheme rejection | L2 (UC-100 wire protocol) | `.tl/external-contracts/s3-multipart-presigned.md` § 7 "Toolchain compatibility — ffprobe does NOT accept s3:// scheme; worker uses presigned GET URLs". Authored 2026-05-22. |
+| `66049d5` | fix(UC-300): copy llm/prompts/*.md into worker dist | L1 build-config | `.tl/external-contracts/kie-anthropic.md` Optional fields → "Framework-specific gotchas: prompt templates copied to dist on build". `config.yaml.runtime_assets[]` enumerates the dist paths (W8). |
+| `5eb7e18` | fix(UC-200): feed ffmpeg a presigned S3 URL (not stdin Buffer) | L2 (UC-200 audio source contract) | `.tl/external-contracts/deepgram.md` § 7 + `.tl/external-contracts/s3-multipart-presigned.md` § 7 (presigned GET URL pattern). |
+| `1f025b7` | fix(UC-300): switch kie.ai → Anthropic `/claude/v1/messages` | L2/L3 (wire envelope change) | `.tl/external-contracts/kie-anthropic.md` § 2 (Endpoint), § 3 (Bearer auth), § 4 (Anthropic request shape), § 5 (Anthropic response — NOT OpenAI). Authored 2026-05-22. |
+| `7f983f6` | fix(TECH-012): emit `event:<type>` SSE frame | L1 wire detail | `.tl/external-contracts/sse.md` § 5 (mandatory `event:` line) + Optional fields "Stream / SSE frame envelope". |
+| `1b94f5b` | feat(UC-100): accept WEBM uploads + 1 GiB size cap | L2 (UC-100 BusinessRule changes) | Graph: `BR-101` (WEBM MIME acceptance), `BR-102` (1 GiB cap). Created 2026-05-22 in W3, linked `UC-100 HAS_REQUIREMENT`. |
+| `ad7b8b4` | feat(UC-100/UC-200): optional speaker count + sticky back-link | L2 (UC form + UI behavior) | Graph: `BR-103` (speaker_count hint), `BR-104` (sticky back-link). Created 2026-05-22 in W3. |
+| `40341a6` | feat(UC-300): rewrite RU protocol prompt with XML structure | L1 prompt asset / L2 output contract | Graph: `BR-105` (RU prompt XML structure invariant). Created 2026-05-22 in W3. |
+
+**Verdict.** Each L1+ commit in the post-v0.2.0 range now has a spec
+counterpart datestamped 2026-05-22. Future nacl-tl-fix runs key off the
+spec-update-by-changelog secondary signal via the dates in this table.
+This closes GAP-029, GAP-030, GAP-031 from the GAP-closure register.
+
+**Lag.** Code-first → spec-after lag = 3–4 days for the earliest commits
+(ed6aaa9 2026-05-19 → spec 2026-05-22) and 0 days for the latest (40341a6
+2026-05-22 → spec 2026-05-22). Future fix discipline should keep lag = 0
+per the spec-first prerequisite gate.
+
+---
+
 ### [2026-05-19] feat(UC-100): replace TUS with direct S3 presigned multipart upload
 - **Level:** Feature
 - **Status:** PASS (UC-100-BE: done, UC-100-FE: done)
