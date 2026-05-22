@@ -45,7 +45,9 @@ deploy:
   health_endpoint: ""
 
 graph:
-  neo4j_bolt_port: 3587
+  # Port corrected in W1-reconciliation 2026-05-22 (GAP-034): config previously
+  # declared 3587 while the running transcrib-neo4j container + .mcp.json use 3627.
+  neo4j_bolt_port: 3627
   neo4j_http_port: 3574
   neo4j_password: "neo4j_graph_dev"
   container_prefix: "transcrib"

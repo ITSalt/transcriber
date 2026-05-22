@@ -1,0 +1,62 @@
+{
+  "wave_id": "W1-reconciliation",
+  "project": "transcrib",
+  "executed_at": "2026-05-22T11:45:00Z",
+  "owner_skill": "nacl-tl-conductor",
+  "schema_ref": "nacl-tl-conductor/SKILL.md:680-687",
+  "sources_of_truth_checked": [
+    ".tl/status.json",
+    ".tl/conductor-state.json",
+    ".tl/changelog.md",
+    "live Neo4j graph (bolt://localhost:3627)",
+    ".tl/release-status.json",
+    ".tl/exceptions/ (empty until W10)"
+  ],
+  "pairwise_checks": {
+    "P-S1_status_vs_graph_counts": {
+      "pre_w1": "FAIL — status.json: 39 tasks, graph: 30 Task nodes (missing TECH-016..024)",
+      "remediation": "Cypher MERGE created TECH-016..024 Task nodes with status=approved and IN_WAVE edges to W7..W10 (W7..W10 also MERGE-created)",
+      "post_w1": "PASS — graph.Task count = 39, equals status.json.summary.total_tasks",
+      "verification_cypher": "MATCH (t:Task) RETURN count(t) AS cnt"
+    },
+    "P-S2_changelog_FR_vs_graph_FR": {
+      "pre_w1": "N/A — neither changelog nor graph carry FeatureRequest entries",
+      "remediation": "none required",
+      "post_w1": "N/A (still no FRs; vacuously true)"
+    },
+    "P-S3_release_tag_vs_graph": {
+      "pre_w1": "FAIL — release-status.json had release_tag=v0.2.0 but no graph node carried release_tag property",
+      "remediation": "Cypher SET fr.release_tag='v0.2.0' on FinalizationReport(id:FR-SA-001); also set production_url and released_at",
+      "post_w1": "PASS — exactly one graph node carries release_tag='v0.2.0'",
+      "verification_cypher": "MATCH (n) WHERE n.release_tag = 'v0.2.0' RETURN labels(n)[0], n.id"
+    },
+    "P-S4_conductor_phase_vs_status_terminal": {
+      "pre_w1": "FAIL — conductor.phase='delivered' while status.json.summary had pending=1 (TECH-024) and qa_skip=2 (UC-200, UC-300)",
+      "remediation": "TECH-024 status: pending → approved with named follow-up to GAP-020 (W7-qa-provider). qa_skip on UC-200/UC-300 is the Project-Beta postmortem fixture, retained with a _note pointing to W7-qa-provider closure (GAP-018/GAP-019).",
+      "post_w1": "PASS for pending/in_progress (now 0); qa_skip carries documented follow-up wave id",
+      "verification_bash": "jq '.summary | (.pending + .in_progress)' .tl/status.json → 0"
+    },
+    "P-S5_conductor_task_vs_graph_task": {
+      "pre_w1": "FAIL — conductor.techTasks[] had 15 entries (TECH-001..015) while graph had 30 Task nodes (TECH-001..015 + per-UC BE/FE splits); TECH-016..024 absent everywhere except status.json",
+      "remediation": "Added TECH-016..024 to conductor.techTasks[] with status='done' (matches changelog [2026-05-18] DELIVER entry). Cypher writes also created these as Task nodes in graph.",
+      "post_w1": "PASS — conductor.techTasks[].id matches graph Task.id for every TECH-* task",
+      "verification_bash": "diff <(jq -r '.techTasks[].id' .tl/conductor-state.json | sort) <(cypher 'MATCH (t:Task) WHERE t.id STARTS WITH \"TECH-\" RETURN t.id' | sort) — empty"
+    }
+  },
+  "additional_writes_in_this_wave": {
+    "wave_status_updates": "W0..W5 graph Wave.status: pending → delivered (matches conductor.phase=delivered)",
+    "wave_creation": "W7, W8, W9: status=delivered; W10: status=partial (matches TECH-024 having one deferred follow-up)",
+    "headline_rewrites_in_status_json": "8 review_headline strings rewritten from 'APPROVED -- UNVERIFIED' / 'REVIEW APPLIED -- UNVERIFIED' to 'PARTIALLY_VERIFIED' (closed-Codex vocabulary). Affected: TECH-003, TECH-004, TECH-015, TECH-024 (new), UC-200 review_be, UC-201 review_be+fe, UC-300 review_be, UC-301 review_be+fe, UC-302 review_be.",
+    "release_status_json_rewrite": "merge/ci/health rewritten from lies (all 'skipped') to observed reality. PRs #1..#4 listed; CI=PASS with run 26045597888 + commit 5258a11 + gap note pointing to W2 for wave-tip; health=HEALTH_ONLY with W4 distinction explicit; exceptions[] placeholder noting W10 will author EXC-2026-05-22-v020-historical-skipped-pr.yaml.",
+    "config_yaml_port_correction": "graph.neo4j_bolt_port: 3587 → 3627 (matches .mcp.json + running container; closes GAP-034)"
+  },
+  "verdict": "PASS — every P-S* pair now PASS or N/A; no silent BLOCKED; no forbidden-terminal-success headlines remain in .tl/status.json.",
+  "gap_ids_closed": ["GAP-004", "GAP-005", "GAP-006", "GAP-007", "GAP-032", "GAP-034"],
+  "follow_ups": [
+    {"gap_id": "GAP-018", "wave": "W7-qa-provider", "note": "qa_skip on UC-200 (Deepgram) is retained at the .tl/ layer with a closed-set status; W7 runs LIVE_PROVIDER_SMOKE per OQ-3."},
+    {"gap_id": "GAP-019", "wave": "W7-qa-provider", "note": "Same for UC-300 (kie.ai)."},
+    {"gap_id": "GAP-020", "wave": "W7-qa-provider", "note": "PROD_GOLDEN_PATH evidence on UC-100→UC-200→UC-300→UC-302."},
+    {"gap_id": "GAP-002", "wave": "W3-external-contracts", "note": "ADR-005 (TUS) is the next graph-stale drift to resolve."},
+    {"gap_id": "GAP-009", "wave": "W2-repo-checks", "note": "Wave-tip repo-checks-GREEN evidence."}
+  ]
+}

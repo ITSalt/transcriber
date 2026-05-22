@@ -26,8 +26,22 @@
     { "id": "TECH-012", "status": "done" },
     { "id": "TECH-013", "status": "done" },
     { "id": "TECH-014", "status": "done" },
-    { "id": "TECH-015", "status": "done", "ci_run_id": 26045597888, "ci_verified": "2026-05-18", "iterations": "3 CI fix iterations: pnpm-lock.yaml gitignore + frozen-lockfile; shared build + prisma generate; prisma migrate deploy" }
+    { "id": "TECH-015", "status": "done", "ci_run_id": 26045597888, "ci_verified": "2026-05-18", "iterations": "3 CI fix iterations: pnpm-lock.yaml gitignore + frozen-lockfile; shared build + prisma generate; prisma migrate deploy" },
+    { "id": "TECH-016", "status": "done", "_w1_backfill": "added 2026-05-22 by W1 reconciliation" },
+    { "id": "TECH-017", "status": "done", "_w1_backfill": "added 2026-05-22 by W1 reconciliation" },
+    { "id": "TECH-018", "status": "done", "_w1_backfill": "added 2026-05-22 by W1 reconciliation" },
+    { "id": "TECH-019", "status": "done", "_w1_backfill": "added 2026-05-22 by W1 reconciliation" },
+    { "id": "TECH-020", "status": "done", "_w1_backfill": "added 2026-05-22 by W1 reconciliation" },
+    { "id": "TECH-021", "status": "done", "_w1_backfill": "added 2026-05-22 by W1 reconciliation" },
+    { "id": "TECH-022", "status": "done", "_w1_backfill": "added 2026-05-22 by W1 reconciliation" },
+    { "id": "TECH-023", "status": "done", "_w1_backfill": "added 2026-05-22 by W1 reconciliation" },
+    { "id": "TECH-024", "status": "done", "_w1_backfill": "added 2026-05-22 by W1 reconciliation", "followup_task": "GAP-020 PROD_GOLDEN_PATH closed in W7-qa-provider" }
   ],
+  "_w1_reconciliation": {
+    "updated_at": "2026-05-22T11:45:00Z",
+    "artifact": ".tl/reconciliation/2026-05-22-W1.json",
+    "note": "Pairwise checks P-S1..P-S5 reconciled per nacl-tl-conductor/SKILL.md:680-687. Headlines using 'APPROVED -- UNVERIFIED' rewritten to closed-Codex 'PARTIALLY_VERIFIED'. TECH-016..024 (deployment tasks) backfilled. Wave nodes W0..W5 set to delivered; W7..W10 created and set to delivered/partial in graph."
+  },
   "ucTasks": [
     { "id": "UC-001", "wave": 1, "status": "be+fe-done", "follow_ups": [], "follow_ups_resolved": ["shared/IStorage TS4113 (L1, pre-applied commit 77f4c73, storageCause rename)", "Zod v3/v4 split (L1, shared/ correct at zod@4.4.3; web/ unused zod@3.25.76 needs web-agent fix in web/package.json)"] },
     { "id": "UC-100", "wave": 1, "status": "be+fe-done" },
