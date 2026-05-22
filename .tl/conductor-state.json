@@ -42,6 +42,23 @@
     "artifact": ".tl/reconciliation/2026-05-22-W1.json",
     "note": "Pairwise checks P-S1..P-S5 reconciled per nacl-tl-conductor/SKILL.md:680-687. Headlines using 'APPROVED -- UNVERIFIED' rewritten to closed-Codex 'PARTIALLY_VERIFIED'. TECH-016..024 (deployment tasks) backfilled. Wave nodes W0..W5 set to delivered; W7..W10 created and set to delivered/partial in graph."
   },
+  "_w2_repo_checks_evidence": {
+    "updated_at": "2026-05-22T11:58:00Z",
+    "commit": "f2ab81d",
+    "previous_wave_tip": "f925479",
+    "evidence_string": "repo-checks-GREEN:f2ab81d",
+    "commands_run_literally": ["pnpm -r run lint", "pnpm -r run typecheck", "pnpm -r run test"],
+    "exit_codes": {"lint": 0, "typecheck": 0, "test": 0},
+    "node_version": "v22.22.3",
+    "pnpm_version": "10.33.0",
+    "workspace_results": {
+      "api": {"lint": "PASS", "typecheck": "PASS", "test": "PASS (170 passed, 7 skipped)"},
+      "worker": {"lint": "PASS (116 non-failing warnings: @typescript-eslint/no-explicit-any)", "typecheck": "PASS", "test": "PASS"},
+      "web": {"lint": "PASS", "typecheck": "PASS", "test": "PASS (134 passed)"},
+      "shared": {"lint": "PASS", "typecheck": "PASS", "test": "PASS"}
+    },
+    "note": "Closes GAP-009 (repo-checks-UNRUN) and GAP-010 (no workspace lint script). Surfaced + fixed an environmental bug: jsdom 26 + react-router 7 + undici AbortSignal mismatch; workaround in web/src/test-setup.ts."
+  },
   "ucTasks": [
     { "id": "UC-001", "wave": 1, "status": "be+fe-done", "follow_ups": [], "follow_ups_resolved": ["shared/IStorage TS4113 (L1, pre-applied commit 77f4c73, storageCause rename)", "Zod v3/v4 split (L1, shared/ correct at zod@4.4.3; web/ unused zod@3.25.76 needs web-agent fix in web/package.json)"] },
     { "id": "UC-100", "wave": 1, "status": "be+fe-done" },
