@@ -82,6 +82,10 @@ export function apiPut<T>(
   );
 }
 
+export function apiPostEmpty<T>(path: string, schema: ZodLike<T>): Promise<T> {
+  return request(path, { method: "POST" }, schema);
+}
+
 export function apiDelete(path: string): Promise<void>;
 export function apiDelete<T>(path: string, schema: ZodLike<T>): Promise<T>;
 export function apiDelete<T>(

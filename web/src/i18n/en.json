@@ -77,6 +77,15 @@
       "successBody": "The meeting and all its data have been removed.",
       "errorTitle": "Delete failed",
       "errorBody": "Could not delete the meeting. Please try again."
+    },
+    "retry": {
+      "action": "Retry processing",
+      "confirmTitle": "Retry processing?",
+      "confirmBody": "This will re-run the failed stage. The meeting will return to its in-progress state.",
+      "conflictTitle": "Already in progress",
+      "conflictBody": "The meeting is no longer in a failed state or a retry is already running.",
+      "errorTitle": "Retry failed",
+      "errorBody": "Could not start retry. Please try again."
     }
   },
   "transcript": {
