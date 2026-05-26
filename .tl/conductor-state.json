@@ -6,7 +6,7 @@
     { "id": "FR-001", "type": "feature", "title": "Worker Job Retry Resilience", "ucs": ["UC-200", "UC-300", "UC-004"], "tech": ["TECH-025", "TECH-026"] }
   ],
   "started": "2026-05-26T00:00:00Z",
-  "phase": "quality_gate_passed",
+  "phase": "complete",
   "quality_gate": {
     "stubs_final": "0 critical, 3 warnings (W1 dead type removed, W2 fragility fixed, W3 casts removed in cleanup commit 30d3d6d)",
     "graph_terminal_gate": "PASS (no pending/in_progress FR-001 tasks)",
@@ -35,6 +35,10 @@
   ],
   "bugFixes": [],
   "delivery": {
-    "status": "pending"
+    "status": "done",
+    "pr": "https://github.com/ITSalt/transcriber/pull/5",
+    "ci_run_url": "https://github.com/ITSalt/transcriber/actions/runs/26451603692",
+    "ci_conclusion": "success",
+    "production_deploy": "NOT triggered — feature-branch delivery; deploy-production.yml fires only on merge-to-main (human-gated /nacl-tl-release). Branch carries production-bound ERROR->FAILED enum migration."
   }
 }
