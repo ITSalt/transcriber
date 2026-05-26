@@ -22,14 +22,28 @@ import type {
 
 // ─── Error Types ─────────────────────────────────────────────────────────────
 
+/**
+ * Error thrown by DeepgramAsrProvider when the ASR call fails.
+ *
+ * `isTransient` = true  → 429 / 5xx: retriable with BullMQ backoff (RC-UC-200 FR-001)
+ * `isTransient` = false → 401/400/402/413 or local errors: permanent, write FAILED immediately.
+ */
 export class DeepgramAsrError extends Error {
   public readonly reason: unknown;
+  /** True when the error is transient (429/5xx) and safe to retry with BullMQ backoff. */
+  public readonly isTransient: boolean;
 
-  constructor(message: string, reason?: unknown) {
+  constructor(message: string, reason?: unknown, isTransient = false) {
     super(message);
     this.name = 'DeepgramAsrError';
     this.reason = reason;
+    this.isTransient = isTransient;
   }
+}
+
+/** Returns true if the error should be retried (transient Deepgram 429/5xx). RC-UC-200 FR-001. */
+export function isTransientAsrError(err: unknown): boolean {
+  return err instanceof DeepgramAsrError && err.isTransient;
 }
 
 // ─── Helper: map language hint → Deepgram language param ─────────────────────

@@ -19,6 +19,9 @@ export type QueueName = (typeof QueueName)[keyof typeof QueueName]
 /**
  * Creates BullMQ Queue instances connected to the provided Redis URL.
  *
+ * RC-UC-200 FR-001: transcription queue defaults to attempts=3 + exponential backoff
+ * (initial 5s, multiplier 2: 5s, 10s, 20s) so BullMQ retries transient Deepgram errors.
+ *
  * @param redisUrl - Redis connection URL (e.g. redis://localhost:6379)
  * @returns Map of queue name to Queue instance
  */
@@ -28,7 +31,13 @@ export function createQueues(
   const connection = parseRedisUrl(redisUrl)
 
   return {
-    [QueueName.Transcription]: new Queue(QueueName.Transcription, { connection }),
+    [QueueName.Transcription]: new Queue(QueueName.Transcription, {
+      connection,
+      defaultJobOptions: {
+        attempts: 3,
+        backoff: { type: 'exponential', delay: 5000 },
+      },
+    }),
     [QueueName.Protocol]: new Queue(QueueName.Protocol, { connection }),
   }
 }

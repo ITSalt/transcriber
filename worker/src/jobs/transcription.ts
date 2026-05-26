@@ -5,17 +5,17 @@
  * Dequeued by BullMQ worker (queue: 'transcriptionJob').
  *
  * Pipeline steps:
- *   1. Mark job IN_PROGRESS (PROCESSING) — RQ-014
+ *   1. Mark job PROCESSING — RQ-014
  *   2. Fetch recording stream from S3 — RQ-015
  *   3. Extract WAV audio via ffmpeg — RQ-015
  *   4. Submit to Deepgram ASR — RQ-015, RQ-018
  *   5. Resolve speaker names — RQ-017
  *   6. Persist Transcript row — step 7
  *   7. Update Meeting.status → TRANSCRIBED — BRQ-008
- *   8. Mark job DONE (COMPLETED) — RQ-014
+ *   8. Mark job DONE — RQ-014
  *   9. Auto-create ProtocolGenerationJob — RQ-016
  *  10. Publish SSE event — TECH-012
- *  ALT: On any error → FAILED path — RQ-015
+ *  ALT: On any error → FAILED path → Meeting.status=FAILED — RQ-015
  */
 import type { Job } from 'bullmq'
 import type { Logger } from 'pino'
@@ -27,11 +27,15 @@ import type { AsrResult, AsrSegment } from '@transcrib/shared'
 import type { IAsrProvider } from '@transcrib/shared'
 
 import { extractAudio } from '../lib/ffmpeg.js'
-import { DeepgramAsrProvider } from '../asr/deepgram-adapter.js'
+import { DeepgramAsrProvider, isTransientAsrError } from '../asr/deepgram-adapter.js'
 import { publishMeetingEvent } from '../lib/publisher.js'
 import { prisma } from '../lib/prisma.js'
 import { createStorage } from '../lib/storage.js'
 import { createQueues, QueueName } from '../queues.js'
+
+// ─── Retry configuration (RC-UC-200 FR-001) ──────────────────────────────────
+/** Maximum BullMQ attempts for a transcription job. Must match job-processor.ts defaultJobOptions. */
+const MAX_ATTEMPTS = 3
 
 // ─── Speaker name resolution (RQ-017) ────────────────────────────────────────
 
@@ -181,7 +185,7 @@ export async function processTranscriptionJob(
     }
 
     // ── Idempotency guard (BRQ-009): skip if already terminal ───────────────
-    // RQ-014: TranscriptionJob lifecycle: QUEUED -> IN_PROGRESS -> {COMPLETED, FAILED}
+    // RQ-014: TranscriptionJob lifecycle: PENDING -> PROCESSING -> {DONE, FAILED}
     if (txJob.status === 'DONE' || txJob.status === 'FAILED') {
       log.info({ transcription_job_id, status: txJob.status }, 'Job already terminal — skipping')
       return
@@ -194,7 +198,7 @@ export async function processTranscriptionJob(
       throw new Error(`Meeting ${meeting.id} has no Recording`)
     }
 
-    // ── Step 1b: Mark IN_PROGRESS (optimistic concurrency guard) ────────────
+    // ── Step 1b: Mark PROCESSING (optimistic concurrency guard) ─────────────
     // RQ-014: only transition from PENDING, prevents double-processing
     const updated = await prisma.transcriptionJob.updateMany({
       where: { id: transcription_job_id, status: 'PENDING' },
@@ -319,26 +323,61 @@ export async function processTranscriptionJob(
 
     log.info({ jobId: job.id, transcription_job_id }, 'transcriptionJob completed')
   } catch (err) {
-    // ── ALT: Failure path (RQ-015) ────────────────────────────────────────
+    // ── ALT: Failure path (RQ-015, FR-001) ───────────────────────────────────
+    //
+    // FR-001 retry semantics (RC-UC-200):
+    //   - TRANSIENT error (DeepgramAsrError.isTransient=true, e.g. 429/5xx) with
+    //     attempts remaining → re-throw WITHOUT writing FAILED so BullMQ schedules
+    //     the next attempt. The BRQ-009 idempotency guard must NOT see a FAILED row.
+    //   - PERMANENT error (storage-not-found, ffmpeg, non-retriable ASR 4xx) OR
+    //     final exhausted attempt → write FAILED + Meeting.status=ERROR.
+    //   - attempt_count mirrors job.attemptsMade on every FAILED write (TECH-026).
+
     const errorMessage = err instanceof Error ? err.message : String(err)
+    const attemptsMade: number = typeof (job as any).attemptsMade === 'number'
+      ? (job as any).attemptsMade
+      : 0
+    const isFinalAttempt = attemptsMade >= MAX_ATTEMPTS - 1
+
+    // Determine if this is a transient error we should let BullMQ retry.
+    // isTransientAsrError returns true only for DeepgramAsrError with isTransient=true.
+    const shouldRetry = isTransientAsrError(err) && !isFinalAttempt
 
     log.error(
-      { jobId: job.id, transcription_job_id, error: errorMessage },
-      'transcriptionJob failed',
+      {
+        jobId: job.id,
+        transcription_job_id,
+        error: errorMessage,
+        attemptsMade,
+        isFinalAttempt,
+        shouldRetry,
+      },
+      shouldRetry ? 'transcriptionJob transient failure — will retry' : 'transcriptionJob failed',
     )
 
-    // Mark job FAILED + Meeting.status → ERROR
+    if (shouldRetry) {
+      // Do NOT write FAILED — let BullMQ retry with backoff.
+      // Re-throw so BullMQ sees the error and schedules the next attempt.
+      throw err
+    }
+
+    // Permanent failure or final attempt: write FAILED + Meeting.status=FAILED.
     // Guard: only update if not already terminal (BRQ-009)
     try {
       await prisma.$transaction(async (tx) => {
         await tx.transcriptionJob.updateMany({
           where: { id: transcription_job_id, status: { in: ['PENDING', 'PROCESSING'] } },
-          data: { status: 'FAILED', errorMsg: errorMessage, finishedAt: new Date() },
+          data: {
+            status: 'FAILED',
+            errorMsg: errorMessage,
+            finishedAt: new Date(),
+            attemptCount: attemptsMade + 1,
+          },
         })
 
         await tx.meeting.updateMany({
           where: { id: (await tx.transcriptionJob.findUnique({ where: { id: transcription_job_id } }))?.meetingId ?? '' },
-          data: { status: 'ERROR' },
+          data: { status: 'FAILED' },
         })
       })
     } catch (dbErr) {
@@ -358,7 +397,7 @@ export async function processTranscriptionJob(
           {
             type: 'meeting.status',
             meeting_id: txJobForEvent.meetingId,
-            status: 'ERROR',
+            status: 'FAILED',
             error_reason: errorMessage,
           },
           txJobForEvent.meetingId,

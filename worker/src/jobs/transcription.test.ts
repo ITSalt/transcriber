@@ -48,9 +48,16 @@ vi.mock('../lib/ffmpeg.js', () => ({
   extractAudio: vi.fn(),
 }))
 
-vi.mock('../asr/deepgram-adapter.js', () => ({
-  DeepgramAsrProvider: vi.fn(),
-}))
+vi.mock('../asr/deepgram-adapter.js', async (importOriginal) => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const original = (await importOriginal()) as any
+  return {
+    DeepgramAsrProvider: vi.fn(),
+    // Keep the real error class and helper so the catch branch can call isTransientAsrError
+    DeepgramAsrError: original.DeepgramAsrError,
+    isTransientAsrError: original.isTransientAsrError,
+  }
+})
 
 vi.mock('../lib/publisher.js', () => ({
   publishMeetingEvent: vi.fn(),
