@@ -27,6 +27,7 @@ import { meetingDeleteRoutes } from './routes/uc-003.js'
 import { transcriptRoutes } from './routes/uc-201.js'
 import { protocolRoutes } from './routes/uc-301.js'
 import { protocolPdfRoutes } from './routes/uc-302.js'
+import { retryMeetingRoutes } from './routes/uc-004.js'
 
 export interface BuildAppOptions {
   logLevel?: string
@@ -71,6 +72,8 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<FastifyIn
   await app.register(protocolRoutes)
   // UC-302: export protocol to PDF
   await app.register(protocolPdfRoutes)
+  // UC-004: retry failed meeting processing
+  await app.register(retryMeetingRoutes)
 
   return app
 }
