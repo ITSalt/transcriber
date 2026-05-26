@@ -1,5 +1,42 @@
 # Changelog — .tl/
 
+## [2026-05-26] nacl-sa-feature: FR-001 — Worker job retry resilience (spec)
+
+- **Artifact:** `.tl/feature-requests/FR-001-retry-resilience.md` + `:FeatureRequest {id:'FR-001'}` graph node (status `spec-complete`). Closes the follow-up flagged in the kie.ai L0 entry below.
+- **Impact method:** Neo4j graph traversal (fulltext `sa_impact_analysis` + RuntimeContract trace). Pre-flight: restored the OOM-killed `transcrib-neo4j` container and backfilled two graph-infra prereqs the current skill needs — `fulltext_ba_search` index + `constraint_featurerequest_id` (this project's committed graph-infra lagged the skill version).
+- **Scope decisions (user gate):** Regenerate action placed in `mod-common` as UC-004 (covers both transcription + protocol failures); auto-retry folded in as spec refinement (not a separate bug-fix).
+- **Key finding:** auto retry-with-backoff was ALREADY specified in `RC-UC-200`/`RC-UC-300` ("max 3 attempts, exp backoff, retry 429/5xx, halt on permanent"), but (a) `RQ-015`/`RQ-026` said "on ANY failure → FAILED" (contradiction) and (b) no contract addressed the FAILED-write-before-exhaustion + idempotency-guard interaction that actually breaks retry in code.
+- **Graph writes — NEW:** UseCase `UC-004` (+ActivityStep AS01–AS06, ACTOR→SR-01, USES_FORM→FORM-MeetingDetail); Requirement `RQ-034/035/036`; RuntimeContract `RC-UC-004`; Component `CMP-RetryProcessing`; DomainAttribute `attempt_count` on `TranscriptionJob-A08` + `ProtocolGenerationJob-A09`. **MODIFIED:** `RQ-015`/`RQ-026` (permanent-OR-exhaustion semantics); `RC-UC-200`/`RC-UC-300` (FAILED-write timing); `SR-01` permissions (RU/scope=own on both job entities).
+- **Validation:** UC-004 fully connected (actor/form/runtime-contract/6 steps/3 reqs); new reqs all linked; `attempt_count` on both entities. Sole L4 hit (`FORM-MeetingDetail-F11`) is the pre-existing `delete_button` (field_category=action, exempt) — not introduced here.
+- **Recommended TECH (→ /nacl-tl-plan):** TECH-025 — `parseRedisUrl()` drops the URL db-index (worker on Redis DB 0 despite `REDIS_URL=.../1`).
+- **Next:** `/nacl-tl-plan --feature FR-001` to generate dev tasks. Implementation note: reconcile the worker's `Meeting.status='ERROR'` to the spec enum value `FAILED` during dev.
+
+## [2026-05-26] nacl-tl-fix: kie.ai HTTP 404 — transient outage, prod meeting recovered
+
+- **Level:** L0 (environment — transient external API failure; no code/spec change shipped)
+- **Status:** PASS (operational recovery verified end-to-end on production)
+- **Spec-first verdict:** SKIPPED (L0)
+- **Root cause:** kie.ai (`POST https://api.kie.ai/claude/v1/messages`, model `claude-sonnet-4-6`) returned HTTP 404 in a ~2-minute window on 2026-05-26 ~12:48–12:50 MSK. Two protocol-generation jobs failed in that window (meetings `5e1f92b5`, `b2841092`). Verified transient: identical request (same key/model/endpoint, curl + Node fetch) returns HTTP 200 ×5 from the prod VPS (`learn-prod`, 82.202.156.157) at 13:02 MSK. Last pre-outage protocol (meeting `a5a6b2ab`, 2026-05-25 18:02) succeeded; all post-recovery succeed.
+- **Affected UC:** UC-300 (protocol generation)
+- **Recovery action (prod):** meeting `b2841092` ("Статус Госключ и TCB") reset `ERROR→TRANSCRIBED`; job `a0d1137c` reset `FAILED→PENDING` (cleared error_msg/started_at/finished_at); re-enqueued to BullMQ (`bull:protocolGenerationJob`, Redis DB 0). Worker job 16 ran 13:07:21→13:07:52, Protocol v1 persisted (2355 chars), meeting `PROTOCOL_READY`. Meeting `5e1f92b5` was user-deleted before recovery — nothing to restore.
+- **Docs updated:** none (L0)
+- **Code changed:** none
+- **Tests:** none (no code change; recovery validated by live prod state transition PROCESSING→DONE and persisted Protocol row)
+- **Follow-up (NOT shipped here — needs spec change to RQ-026):** transient ASR/LLM failures permanently brick a meeting. No BullMQ retry is configured (default attempts=1), and even if it were, the failure handler sets the Prisma job to FAILED so the idempotency guard (`status===FAILED → return`) would no-op any BullMQ re-attempt. RQ-026 currently mandates "do NOT re-enqueue". Recommend a feature flow (`/nacl-sa-feature`) for retry-with-backoff and/or a user-facing "regenerate" action. Also noted: `parseRedisUrl()` silently drops the URL db-index (`/1`), so the worker runs on Redis DB 0 despite `REDIS_URL=.../1` — harmless today (producer+consumer agree) but a latent foot-gun.
+
+## [2026-05-22] UC-200 reconcile — graph + task-be docs synced to code (nacl-tl-reconcile)
+
+- **Trigger.** Re-run of `/nacl-tl-verify-code UC-200` on 2026-05-22 surfaced 3 confirmed drifts pre-flagged in `UC-200/review-be.md` (m-1 JobStatus/MeetingStatus enum vocab; m-4 ProtocolGenerationJob audit fields) plus 4 new findings (Transcript.full_text→raw_text rename + segments_blob addition + segments_count/speakers_count/language now derived; TranscriptionJob.recording_id removal; completed_at→finished_at; error_reason→error_msg).
+- **Mode.** Code-canonical reconcile (the exception to spec-first). Source of truth = `api/prisma/schema.prisma` + `shared/src/enums.ts`. No code mutations — only doc-style updates (Neo4j SA graph + task-be.md files + worker JSDoc header).
+- **Pre-Phase-3 gap closure.** `UC-200 review-be.md` carried `REVIEW APPLIED — UNVERIFIED (test author overlap 100%)`. To resolve the upstream UNVERIFIED qualifier before reconciling docs to code, an independent test author (developer subagent, no awareness of original `transcription.test.ts`) authored `worker/src/jobs/transcription.regression.test.ts` — 14 tests covering lifecycle/optimistic-lock, happy-path persistence, after-commit BullMQ enqueue ordering, failure-path state, terminal-state immutability. Each test mutation-verified RED→restore→GREEN. Full worker suite 118 → 132 tests, all passing.
+- **DRIFT #4 resolution.** Option B (spec follows code). Removed `transcript_id` and `prompt_template_version` from `ProtocolGenerationJob` in graph + all task-be.md tables. MVP uses a single hard-coded prompt template version; Transcript is reached via `meeting_id` at protocol-gen time.
+- **Graph writes.** Enumeration JobStatus + MeetingStatus values populated (were NULL). DomainAttribute renames + additions + derived-flagging on Transcript / TranscriptionJob / ProtocolGenerationJob. FormField MAPS_TO Transcript.language preserved by marking derived rather than deleting.
+- **Doc updates.** UC-200/task-be.md, UC-100/task-be.md, UC-300/task-be.md, UC-301/task-be.md — Enumerations sections, entity tables, System steps, RQ descriptions. Worker `transcription.ts:1-18` JSDoc + RQ-014 comment + step label updated (authorized by user as "doc lines mirroring spec, not runtime code"; no runtime code touched).
+- **Health Score.** 75 raw → 75 adjusted (no `verified-pending` tasks in `.tl/status.json`).
+- **Headline.** `RECONCILE COMPLETE` — upstream-fix status flipped from UNVERIFIED to PASS after the independent regression test landed in pre-Phase-3.
+- **Scope.** MEDIUM. 5 doc files modified, 0 created. 1 review-be.md metadata bump (`prior_blockers_resolved: [M-1, M-2, m-1, m-4]`). 1 worker JSDoc + 2 inline-comment edits.
+- **E2E gap (post-reconcile decision 2026-05-22).** Local Playwright suite is NO_INFRA — `@playwright/test` is in `package.json` but no `playwright.config.ts`, no `.spec.ts` files, no `e2e/` directory exist in the repo. Per user decision, the authoritative E2E coverage for UC-200 is the existing `LIVE_PROVIDER_SMOKE` (2026-05-22T13:12:35Z, captured in `.tl/tasks/UC-200/qa-evidence/2026-05-22-live-provider-smoke.yaml`) plus the `PROD_GOLDEN_PATH` run on transcriber.itsalt.ru (meeting `494e8e69`, recorded in `.tl/status.json#summary._w7_closure_note`). No new E2E tests authored as part of this reconcile.
+
 ## [2026-05-22] W9 — Spec-first retroactive audit (GAP-closure)
 
 Post-W11 strict mode requires every L1+ fix/feature change to be preceded by a
@@ -449,3 +486,15 @@ per the spec-first prerequisite gate.
 - BRQ-008 honored: Meeting.status mirror in single $transaction
 - BRQ-009 honored: terminal-state guards via WHERE status PENDING/PROCESSING in updateMany
 - Follow-up: route M1-M5 doc drift through /nacl-tl-reconcile before UC-300 final sign-off
+
+## [PLAN] 2026-05-26 — FR-001 Worker Job Retry Resilience
+
+- Incremental plan from Neo4j graph (/nacl-tl-plan --feature FR-001).
+- Scope (FeatureRequest INCLUDES_UC): UC-004 (NEW, mod-common, AUTHOR, has_ui), UC-200 (MODIFIED — transcription failure path), UC-300 (MODIFIED — protocol failure path).
+- New tasks: UC-004-BE + UC-004-FE (8 task files), TECH-025 (Redis URL db-index), TECH-026 (attempt_count Prisma migration).
+- Re-planned: UC-200-BE and UC-300-BE (existing verified-pending nodes) with FR-001 failure-path refinement addenda (task-be-fr001.md); intake_id set to FR-001.
+- Migration decision: the attempt_count Prisma migration was emitted as its OWN TECH task (TECH-026), NOT folded into a UC BE task. UC-200-BE/UC-300-BE/UC-004-BE depend on it.
+- 3 new waves: Wave 11 (TECH-026 + TECH-025), Wave 12 (UC-200-BE + UC-300-BE refinements), Wave 13 (UC-004-BE + UC-004-FE).
+- Dependencies (graph DEPENDS_ON): UC-200-BE→TECH-026; UC-300-BE→TECH-026,UC-200-BE; UC-004-BE→UC-200-BE,UC-300-BE; UC-004-FE→UC-004-BE; TECH-025 independent. UC-002-FE (Meeting detail host) already done.
+- External Contracts Gate: no REQUIRES_EXTERNAL/DEPENDS_ON_EXTERNAL edges on the three UCs in this graph — gate had nothing to enforce; PASS.
+- Graph writes: 3 Wave nodes (11-13), 4 new Task nodes (TECH-025, TECH-026, UC-004-BE, UC-004-FE), 2 re-planned Task nodes (UC-200-BE, UC-300-BE intake_id=FR-001), plus IN_WAVE / GENERATES / DEPENDS_ON edges.

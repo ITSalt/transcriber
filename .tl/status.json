@@ -1,13 +1,13 @@
 {
   "project": "Transcrib",
   "created": "2026-05-18",
-  "updated": "2026-05-18T17:00:00Z",
+  "updated": "2026-05-26T10:46:57Z",
   "source": "nacl-tl-plan",
   "summary": {
-    "total_uc": 9,
-    "total_tech": 24,
-    "total_tasks": 39,
-    "pending": 0,
+    "total_uc": 10,
+    "total_tech": 26,
+    "total_tasks": 42,
+    "pending": 3,
     "in_progress": 0,
     "ready_for_review": 0,
     "verified_pending": 0,
@@ -16,12 +16,13 @@
     "qa_skip": 0,
     "done": 0,
     "blocked": 0,
-    "_w7_closure_note": "qa_skip 2 → 0 on 2026-05-22 via W7-qa-provider. UC-200 and UC-300 LIVE_PROVIDER_SMOKE run live per OQ-3 (keys read from /opt/transcrib/.env via SSH); PROD_GOLDEN_PATH covered by single E2E run on transcriber.itsalt.ru (meeting 494e8e69 created and deleted)."
+    "_w7_closure_note": "qa_skip 2 \u2192 0 on 2026-05-22 via W7-qa-provider. UC-200 and UC-300 LIVE_PROVIDER_SMOKE run live per OQ-3 (keys read from /opt/transcrib/.env via SSH); PROD_GOLDEN_PATH covered by single E2E run on transcriber.itsalt.ru (meeting 494e8e69 created and deleted).",
+    "_fr001_plan_note": "FR-001 planned 2026-05-26T10:46:57Z: +UC-004 (BE+FE w13), +TECH-025/TECH-026 (w11), UC-200-BE/UC-300-BE re-planned (w12). 3 new waves (11-13)."
   },
   "updated_by_W1_reconciliation": "2026-05-22T11:45:00Z",
   "W1_reconciliation_artifact": ".tl/reconciliation/2026-05-22-W1.json",
   "waves": {
-    "total": 10,
+    "total": 13,
     "current": 10
   },
   "partial_inputs": [],
@@ -77,7 +78,7 @@
       ],
       "reviewed": "2026-05-18T22:00:00Z",
       "review_result": "approved",
-      "review_headline": "REVIEW APPLIED — PARTIALLY_VERIFIED (no live DB for smoke tests; gap covered by W8 clean-checkout artifact)"
+      "review_headline": "REVIEW APPLIED \u2014 PARTIALLY_VERIFIED (no live DB for smoke tests; gap covered by W8 clean-checkout artifact)"
     },
     {
       "id": "TECH-004",
@@ -95,7 +96,7 @@
       ],
       "reviewed": "2026-05-18T22:00:00Z",
       "review_result": "approved",
-      "review_headline": "REVIEW APPLIED — PARTIALLY_VERIFIED (100% author overlap; operator override; mitigated by W6 wire-evidence)"
+      "review_headline": "REVIEW APPLIED \u2014 PARTIALLY_VERIFIED (100% author overlap; operator override; mitigated by W6 wire-evidence)"
     },
     {
       "id": "TECH-005",
@@ -281,7 +282,7 @@
       "blocks": [],
       "reviewed": "2026-05-18T22:00:00Z",
       "review_result": "approved",
-      "review_headline": "REVIEW APPLIED — PARTIALLY_VERIFIED (actionlint not available locally; CI workflow validated via run 26045597888)",
+      "review_headline": "REVIEW APPLIED \u2014 PARTIALLY_VERIFIED (actionlint not available locally; CI workflow validated via run 26045597888)",
       "commit": "3286bb9"
     },
     {
@@ -439,8 +440,8 @@
             "local_runtime_qa": "VERIFIED (docker-compose stack curl smoke; pre-existing convention)",
             "wire_contract_qa": "VERIFIED (api/test/wire/s3-multipart.fixture.test.ts + shared/test/fixtures/sse-event-frames.json round-trip)",
             "provider_fixture_qa": "VERIFIED (api/test/fixtures/s3-multipart-init-response.json shape match against live presigned URL)",
-            "live_provider_smoke": "VERIFIED — captured 2026-05-22T13:14:34Z; .tl/tasks/UC-100/qa-evidence/2026-05-22-prod-golden-path.yaml",
-            "prod_golden_path": "VERIFIED — captured 2026-05-22T13:14:34Z; .tl/tasks/UC-100/qa-evidence/2026-05-22-prod-golden-path.yaml"
+            "live_provider_smoke": "VERIFIED \u2014 captured 2026-05-22T13:14:34Z; .tl/tasks/UC-100/qa-evidence/2026-05-22-prod-golden-path.yaml",
+            "prod_golden_path": "VERIFIED \u2014 captured 2026-05-22T13:14:34Z; .tl/tasks/UC-100/qa-evidence/2026-05-22-prod-golden-path.yaml"
           }
         }
       },
@@ -464,7 +465,7 @@
       "priority": "high",
       "phases": {
         "be": {
-          "status": "approved"
+          "status": "pending"
         },
         "review-be": {
           "status": "approved"
@@ -478,9 +479,9 @@
             "component_qa": "VERIFIED (worker/src/asr/deepgram-adapter.test.ts unit suite)",
             "local_runtime_qa": "VERIFIED (docker-compose worker; pre-existing)",
             "wire_contract_qa": "VERIFIED (worker/test/wire/deepgram.fixture.test.ts)",
-            "provider_fixture_qa": "VERIFIED (worker/test/fixtures/deepgram-nova3-utterances.json — synthetic; shape match confirmed by live smoke)",
-            "live_provider_smoke": "VERIFIED — 2026-05-22T13:12:35Z; .tl/tasks/UC-200/qa-evidence/2026-05-22-live-provider-smoke.yaml",
-            "prod_golden_path": "VERIFIED — via UC-100 PROD_GOLDEN_PATH run; TranscriptionJob.status moved PENDING→PROCESSING→DONE in 2.79s on 8-sec synthetic video (.tl/tasks/UC-100/qa-evidence/2026-05-22-prod-golden-path.yaml)"
+            "provider_fixture_qa": "VERIFIED (worker/test/fixtures/deepgram-nova3-utterances.json \u2014 synthetic; shape match confirmed by live smoke)",
+            "live_provider_smoke": "VERIFIED \u2014 2026-05-22T13:12:35Z; .tl/tasks/UC-200/qa-evidence/2026-05-22-live-provider-smoke.yaml",
+            "prod_golden_path": "VERIFIED \u2014 via UC-100 PROD_GOLDEN_PATH run; TranscriptionJob.status moved PENDING\u2192PROCESSING\u2192DONE in 2.79s on 8-sec synthetic video (.tl/tasks/UC-100/qa-evidence/2026-05-22-prod-golden-path.yaml)"
           }
         }
       },
@@ -497,7 +498,15 @@
         "UC-201",
         "UC-300"
       ],
-      "review_be_headline": "REVIEW APPLIED — PARTIALLY_VERIFIED (test author overlap 100%; W6 wire-evidence + W7 LIVE_PROVIDER_SMOKE will tighten to VERIFIED)"
+      "review_be_headline": "REVIEW APPLIED \u2014 PARTIALLY_VERIFIED (test author overlap 100%; W6 wire-evidence + W7 LIVE_PROVIDER_SMOKE will tighten to VERIFIED)",
+      "fr001_replan": {
+        "wave": 12,
+        "depends_on": [
+          "TECH-026"
+        ],
+        "note": "failure-path refinement (RQ-015 / RC-UC-200)",
+        "at": "2026-05-26T10:46:57Z"
+      }
     },
     {
       "id": "UC-201",
@@ -536,10 +545,10 @@
       "blocks": [],
       "reviewed_be": "2026-05-18T23:30:00Z",
       "review_be_result": "approved",
-      "review_be_headline": "REVIEW APPLIED — PARTIALLY_VERIFIED (100% test author overlap; W6 wire-evidence will tighten to VERIFIED)",
+      "review_be_headline": "REVIEW APPLIED \u2014 PARTIALLY_VERIFIED (100% test author overlap; W6 wire-evidence will tighten to VERIFIED)",
       "reviewed_fe": "2026-05-18T23:30:00Z",
       "review_fe_result": "approved",
-      "review_fe_headline": "REVIEW APPLIED — PARTIALLY_VERIFIED (100% test author overlap; W6 wire-evidence will tighten to VERIFIED)"
+      "review_fe_headline": "REVIEW APPLIED \u2014 PARTIALLY_VERIFIED (100% test author overlap; W6 wire-evidence will tighten to VERIFIED)"
     },
     {
       "id": "UC-300",
@@ -549,7 +558,7 @@
       "priority": "high",
       "phases": {
         "be": {
-          "status": "approved"
+          "status": "pending"
         },
         "review-be": {
           "status": "approved"
@@ -563,9 +572,9 @@
             "component_qa": "VERIFIED (worker/src/llm/kieai.test.ts unit suite)",
             "local_runtime_qa": "VERIFIED",
             "wire_contract_qa": "VERIFIED (worker/test/wire/kie-anthropic.fixture.test.ts)",
-            "provider_fixture_qa": "VERIFIED (worker/test/fixtures/kie-anthropic-claude-response.json — synthetic; shape match confirmed)",
-            "live_provider_smoke": "VERIFIED — 2026-05-22T13:10:42Z; .tl/tasks/UC-300/qa-evidence/2026-05-22-live-provider-smoke.yaml",
-            "prod_golden_path": "VERIFIED — via UC-100 PROD_GOLDEN_PATH run; ProtocolGenerationJob.status moved PENDING→PROCESSING→DONE in 15.78s; markdown rendered with canonical 4-section structure"
+            "provider_fixture_qa": "VERIFIED (worker/test/fixtures/kie-anthropic-claude-response.json \u2014 synthetic; shape match confirmed)",
+            "live_provider_smoke": "VERIFIED \u2014 2026-05-22T13:10:42Z; .tl/tasks/UC-300/qa-evidence/2026-05-22-live-provider-smoke.yaml",
+            "prod_golden_path": "VERIFIED \u2014 via UC-100 PROD_GOLDEN_PATH run; ProtocolGenerationJob.status moved PENDING\u2192PROCESSING\u2192DONE in 15.78s; markdown rendered with canonical 4-section structure"
           }
         }
       },
@@ -578,7 +587,16 @@
       ],
       "reviewed_be": "2026-05-18T23:45:00Z",
       "review_be_result": "approved",
-      "review_be_headline": "REVIEW APPLIED — PARTIALLY_VERIFIED (100% test author overlap; W6 wire-evidence + W7 LIVE_PROVIDER_SMOKE will tighten to VERIFIED)"
+      "review_be_headline": "REVIEW APPLIED \u2014 PARTIALLY_VERIFIED (100% test author overlap; W6 wire-evidence + W7 LIVE_PROVIDER_SMOKE will tighten to VERIFIED)",
+      "fr001_replan": {
+        "wave": 12,
+        "depends_on": [
+          "TECH-026",
+          "UC-200-BE"
+        ],
+        "note": "failure-path refinement (RQ-026 / RC-UC-300)",
+        "at": "2026-05-26T10:46:57Z"
+      }
     },
     {
       "id": "UC-301",
@@ -618,10 +636,10 @@
       ],
       "reviewed_be": "2026-05-18T17:00:00Z",
       "review_be_result": "approved",
-      "review_be_headline": "REVIEW APPLIED — PARTIALLY_VERIFIED (100% test author overlap; W6 wire-evidence will tighten to VERIFIED)",
+      "review_be_headline": "REVIEW APPLIED \u2014 PARTIALLY_VERIFIED (100% test author overlap; W6 wire-evidence will tighten to VERIFIED)",
       "reviewed_fe": "2026-05-18T17:00:00Z",
       "review_fe_result": "approved",
-      "review_fe_headline": "REVIEW APPLIED — PARTIALLY_VERIFIED (100% test author overlap; W6 wire-evidence will tighten to VERIFIED)"
+      "review_fe_headline": "REVIEW APPLIED \u2014 PARTIALLY_VERIFIED (100% test author overlap; W6 wire-evidence will tighten to VERIFIED)"
     },
     {
       "id": "UC-302",
@@ -645,8 +663,8 @@
             "local_runtime_qa": "VERIFIED (chromium installed by TECH-021)",
             "wire_contract_qa": "VERIFIED (api/test/wire/puppeteer-pdf.fixture.test.ts)",
             "provider_fixture_qa": "VERIFIED (api/test/fixtures/protocol-sample.md input + live render produces PDF v1.4 1-page output)",
-            "live_provider_smoke": "VERIFIED — chromium binary launches on prod; .tl/tasks/UC-302/qa-evidence/2026-05-22-prod-golden-path.yaml",
-            "prod_golden_path": "VERIFIED — GET /api/meetings/{id}/protocol/pdf → 200 application/pdf 23181 bytes 1-page; same date as UC-100 golden path"
+            "live_provider_smoke": "VERIFIED \u2014 chromium binary launches on prod; .tl/tasks/UC-302/qa-evidence/2026-05-22-prod-golden-path.yaml",
+            "prod_golden_path": "VERIFIED \u2014 GET /api/meetings/{id}/protocol/pdf \u2192 200 application/pdf 23181 bytes 1-page; same date as UC-100 golden path"
           }
         }
       },
@@ -657,7 +675,7 @@
       "blocks": [],
       "reviewed_be": "2026-05-18T16:35:00Z",
       "review_be_result": "approved",
-      "review_be_headline": "REVIEW APPLIED — PARTIALLY_VERIFIED (100% test author overlap; W6 wire-evidence + W7 PROD_GOLDEN_PATH will tighten to VERIFIED)"
+      "review_be_headline": "REVIEW APPLIED \u2014 PARTIALLY_VERIFIED (100% test author overlap; W6 wire-evidence + W7 PROD_GOLDEN_PATH will tighten to VERIFIED)"
     },
     {
       "id": "TECH-016",
@@ -818,8 +836,69 @@
       "blocks": [],
       "reviewed": "2026-05-18T19:28:00Z",
       "review_result": "approved",
-      "review_headline": "REVIEW APPLIED — PARTIALLY_VERIFIED (deploy runbook complete and DNS live at transcriber.itsalt.ru; UC golden-path smoke deferred — covered by GAP-020 → W7-qa-provider per .tl/plans/2026-05-22-gap-closure-wave-plan.yaml)",
-      "followup_task": "W7-qa-provider closes UC-100→UC-200→UC-300→UC-302 PROD_GOLDEN_PATH evidence"
+      "review_headline": "REVIEW APPLIED \u2014 PARTIALLY_VERIFIED (deploy runbook complete and DNS live at transcriber.itsalt.ru; UC golden-path smoke deferred \u2014 covered by GAP-020 \u2192 W7-qa-provider per .tl/plans/2026-05-22-gap-closure-wave-plan.yaml)",
+      "followup_task": "W7-qa-provider closes UC-100\u2192UC-200\u2192UC-300\u2192UC-302 PROD_GOLDEN_PATH evidence"
+    },
+    {
+      "id": "TECH-026",
+      "title": "attempt_count Prisma migration (TranscriptionJob + ProtocolGenerationJob)",
+      "type": "tech",
+      "status": "pending",
+      "wave": 11,
+      "priority": "high",
+      "intake_id": "FR-001",
+      "blockers": [],
+      "blocks": [
+        "UC-200-BE",
+        "UC-300-BE",
+        "UC-004-BE"
+      ]
+    },
+    {
+      "id": "TECH-025",
+      "title": "Redis URL db-index dropped by parseRedisUrl()",
+      "type": "tech",
+      "status": "pending",
+      "wave": 11,
+      "priority": "medium",
+      "intake_id": "FR-001",
+      "blockers": [],
+      "blocks": []
+    },
+    {
+      "id": "UC-004",
+      "title": "Retry failed meeting processing",
+      "type": "uc",
+      "intake_id": "FR-001",
+      "phases": {
+        "be": {
+          "status": "pending"
+        },
+        "fe": {
+          "status": "pending"
+        },
+        "sync": {
+          "status": "pending"
+        },
+        "review-be": {
+          "status": "pending"
+        },
+        "review-fe": {
+          "status": "pending"
+        },
+        "qa": {
+          "status": "pending"
+        }
+      },
+      "wave": 13,
+      "priority": "high",
+      "blockers": [
+        "UC-200-BE",
+        "UC-300-BE",
+        "TECH-026"
+      ],
+      "blocks": []
     }
-  ]
+  ],
+  "updated_by_FR001_plan": "2026-05-26T10:46:57Z"
 }
