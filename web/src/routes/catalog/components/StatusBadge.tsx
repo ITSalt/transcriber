@@ -15,7 +15,7 @@ const TRANSIENT_STATUSES: MeetingStatus[] = [
 function getVariant(
   status: MeetingStatus,
 ): "default" | "secondary" | "destructive" | "outline" {
-  if (status === "ERROR") return "destructive";
+  if (status === "FAILED") return "destructive";
   if (status === "PROTOCOL_READY" || status === "EDITED") return "default";
   if (TRANSIENT_STATUSES.includes(status)) return "secondary";
   return "outline";

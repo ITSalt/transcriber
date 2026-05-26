@@ -1,27 +1,29 @@
 {
   "project": "Transcrib",
   "created": "2026-05-18",
-  "updated": "2026-05-18T17:00:00Z",
+  "updated": "2026-05-26",
   "source": "nacl-tl-plan",
   "summary": {
-    "total_uc": 9,
-    "total_tech": 24,
-    "total_tasks": 39,
+    "total_uc": 10,
+    "total_tech": 26,
+    "total_tasks": 43,
     "pending": 0,
     "in_progress": 0,
     "ready_for_review": 0,
-    "verified_pending": 0,
+    "verified_pending": 1,
     "approved": 33,
     "qa_pass": 9,
     "qa_skip": 0,
     "done": 0,
     "blocked": 0,
-    "_w7_closure_note": "qa_skip 2 → 0 on 2026-05-22 via W7-qa-provider. UC-200 and UC-300 LIVE_PROVIDER_SMOKE run live per OQ-3 (keys read from /opt/transcrib/.env via SSH); PROD_GOLDEN_PATH covered by single E2E run on transcriber.itsalt.ru (meeting 494e8e69 created and deleted)."
+    "_w7_closure_note": "qa_skip 2 → 0 on 2026-05-22 via W7-qa-provider. UC-200 and UC-300 LIVE_PROVIDER_SMOKE run live per OQ-3 (keys read from /opt/transcrib/.env via SSH); PROD_GOLDEN_PATH covered by single E2E run on transcriber.itsalt.ru (meeting 494e8e69 created and deleted).",
+    "_fr001_plan_note": "FR-001 planned 2026-05-26T10:46:57Z: +UC-004 (BE+FE w13), +TECH-025/TECH-026 (w11), UC-200-BE/UC-300-BE re-planned (w12). 3 new waves (11-13).",
+    "_fr001_conductor_sync": "2026-05-26: synced status.json to live graph (source of truth). FR-001 tasks TECH-025/026, UC-200-BE, UC-300-BE, UC-004-BE -> terminal/approved; UC-004 verification=verified-pending (FE E2E nav-actions deferred). total_tasks 42->43 to match 43 graph Task nodes (P-S1). Closes Phase-4.5 P-S1 + P-S4 drift."
   },
   "updated_by_W1_reconciliation": "2026-05-22T11:45:00Z",
   "W1_reconciliation_artifact": ".tl/reconciliation/2026-05-22-W1.json",
   "waves": {
-    "total": 10,
+    "total": 13,
     "current": 10
   },
   "partial_inputs": [],
@@ -464,7 +466,9 @@
       "priority": "high",
       "phases": {
         "be": {
-          "status": "approved"
+          "status": "approved",
+          "commit": "6d3fa21",
+          "verification_evidence": "test-GREEN:worker/src/jobs/transcription.regression.test.ts"
         },
         "review-be": {
           "status": "approved"
@@ -497,7 +501,17 @@
         "UC-201",
         "UC-300"
       ],
-      "review_be_headline": "REVIEW APPLIED — PARTIALLY_VERIFIED (test author overlap 100%; W6 wire-evidence + W7 LIVE_PROVIDER_SMOKE will tighten to VERIFIED)"
+      "review_be_headline": "REVIEW APPLIED — PARTIALLY_VERIFIED (test author overlap 100%; W6 wire-evidence + W7 LIVE_PROVIDER_SMOKE will tighten to VERIFIED)",
+      "fr001_replan": {
+        "wave": 12,
+        "depends_on": [
+          "TECH-026"
+        ],
+        "note": "failure-path refinement (RQ-015 / RC-UC-200)",
+        "at": "2026-05-26T10:46:57Z",
+        "status": "done",
+        "commit": "6d3fa21"
+      }
     },
     {
       "id": "UC-201",
@@ -549,7 +563,9 @@
       "priority": "high",
       "phases": {
         "be": {
-          "status": "approved"
+          "status": "approved",
+          "commit": "b0f8779",
+          "verification_evidence": "test-GREEN:worker/src/jobs/protocol-generation.regression.test.ts"
         },
         "review-be": {
           "status": "approved"
@@ -578,7 +594,18 @@
       ],
       "reviewed_be": "2026-05-18T23:45:00Z",
       "review_be_result": "approved",
-      "review_be_headline": "REVIEW APPLIED — PARTIALLY_VERIFIED (100% test author overlap; W6 wire-evidence + W7 LIVE_PROVIDER_SMOKE will tighten to VERIFIED)"
+      "review_be_headline": "REVIEW APPLIED — PARTIALLY_VERIFIED (100% test author overlap; W6 wire-evidence + W7 LIVE_PROVIDER_SMOKE will tighten to VERIFIED)",
+      "fr001_replan": {
+        "wave": 12,
+        "depends_on": [
+          "TECH-026",
+          "UC-200-BE"
+        ],
+        "note": "failure-path refinement (RQ-026 / RC-UC-300)",
+        "at": "2026-05-26T10:46:57Z",
+        "status": "done",
+        "commit": "b0f8779"
+      }
     },
     {
       "id": "UC-301",
@@ -820,6 +847,82 @@
       "review_result": "approved",
       "review_headline": "REVIEW APPLIED — PARTIALLY_VERIFIED (deploy runbook complete and DNS live at transcriber.itsalt.ru; UC golden-path smoke deferred — covered by GAP-020 → W7-qa-provider per .tl/plans/2026-05-22-gap-closure-wave-plan.yaml)",
       "followup_task": "W7-qa-provider closes UC-100→UC-200→UC-300→UC-302 PROD_GOLDEN_PATH evidence"
+    },
+    {
+      "id": "TECH-026",
+      "title": "attempt_count Prisma migration (TranscriptionJob + ProtocolGenerationJob)",
+      "type": "tech",
+      "status": "approved",
+      "wave": 11,
+      "priority": "high",
+      "intake_id": "FR-001",
+      "blockers": [],
+      "blocks": [
+        "UC-200-BE",
+        "UC-300-BE",
+        "UC-004-BE"
+      ],
+      "commit": "ba55313",
+      "completed_at": "2026-05-26",
+      "verification_evidence": "test-GREEN:shared/src/dto/dto.test.ts"
+    },
+    {
+      "id": "TECH-025",
+      "title": "Redis URL db-index dropped by parseRedisUrl()",
+      "type": "tech",
+      "status": "approved",
+      "wave": 11,
+      "priority": "medium",
+      "intake_id": "FR-001",
+      "blockers": [],
+      "blocks": [],
+      "commit": "e8ee543",
+      "completed_at": "2026-05-26",
+      "verification_evidence": "test-GREEN:worker/src/queues.test.ts"
+    },
+    {
+      "id": "UC-004",
+      "title": "Retry failed meeting processing",
+      "type": "uc",
+      "intake_id": "FR-001",
+      "phases": {
+        "be": {
+          "status": "approved",
+          "commit": "326d94f",
+          "verification_evidence": "test-GREEN:api/src/routes/uc-004.test.ts"
+        },
+        "review-be": {
+          "status": "approved"
+        },
+        "fe": {
+          "status": "approved",
+          "commit": "ea9bf40",
+          "verification_evidence": "test-GREEN:web/src/routes/meeting/components/RetryProcessingButton.test.tsx"
+        },
+        "review-fe": {
+          "status": "approved",
+          "note": "clean on merits; nav-actions Condition 2 (E2E natural-entrypoint) deferred"
+        },
+        "sync": {
+          "status": "pass",
+          "note": "FE imports shared RetryMeetingFullResponse DTO; contract verified in FE review"
+        },
+        "qa": {
+          "status": "deferred",
+          "verdict": "UNVERIFIED",
+          "reason": "E2E nav-actions evidence not producible: no running stack / no DEEPGRAM+KIE keys / no DB+Redis config. Run /nacl-tl-qa UC-004 when infra available."
+        }
+      },
+      "wave": 13,
+      "priority": "high",
+      "blockers": [
+        "UC-200-BE",
+        "UC-300-BE",
+        "TECH-026"
+      ],
+      "blocks": [],
+      "verification": "verified-pending"
     }
-  ]
+  ],
+  "updated_by_FR001_plan": "2026-05-26T10:46:57Z"
 }

@@ -20,7 +20,7 @@ enum MeetingStatus {
   GENERATING_PROTOCOL
   PROTOCOL_READY
   EDITED
-  ERROR
+  FAILED
 }
 
 enum MeetingLanguage {
@@ -81,14 +81,15 @@ model Recording {
 
 /// mod-transcription — ASR job tracker
 model TranscriptionJob {
-  id          String    @id @default(uuid()) @db.Uuid
-  meetingId   String    @unique @map("meeting_id") @db.Uuid
-  status      JobStatus @default(PENDING)
-  startedAt   DateTime? @map("started_at")
-  finishedAt  DateTime? @map("finished_at")
-  errorMsg    String?   @map("error_msg")
-  createdAt   DateTime  @default(now()) @map("created_at")
-  updatedAt   DateTime  @updatedAt @map("updated_at")
+  id           String    @id @default(uuid()) @db.Uuid
+  meetingId    String    @unique @map("meeting_id") @db.Uuid
+  status       JobStatus @default(PENDING)
+  startedAt    DateTime? @map("started_at")
+  finishedAt   DateTime? @map("finished_at")
+  errorMsg     String?   @map("error_msg")
+  attemptCount Int       @default(0) @map("attempt_count")
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
 
   meeting Meeting @relation(fields: [meetingId], references: [id], onDelete: Cascade)
 
@@ -115,14 +116,15 @@ model Transcript {
 
 /// mod-protocol — LLM generation job tracker
 model ProtocolGenerationJob {
-  id          String    @id @default(uuid()) @db.Uuid
-  meetingId   String    @unique @map("meeting_id") @db.Uuid
-  status      JobStatus @default(PENDING)
-  startedAt   DateTime? @map("started_at")
-  finishedAt  DateTime? @map("finished_at")
-  errorMsg    String?   @map("error_msg")
-  createdAt   DateTime  @default(now()) @map("created_at")
-  updatedAt   DateTime  @updatedAt @map("updated_at")
+  id           String    @id @default(uuid()) @db.Uuid
+  meetingId    String    @unique @map("meeting_id") @db.Uuid
+  status       JobStatus @default(PENDING)
+  startedAt    DateTime? @map("started_at")
+  finishedAt   DateTime? @map("finished_at")
+  errorMsg     String?   @map("error_msg")
+  attemptCount Int       @default(0) @map("attempt_count")
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
 
   meeting Meeting @relation(fields: [meetingId], references: [id], onDelete: Cascade)
 

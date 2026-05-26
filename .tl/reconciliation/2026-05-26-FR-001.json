@@ -1,0 +1,26 @@
+{
+  "timestamp": "2026-05-26T00:00:00Z",
+  "intake_id": "FR-001",
+  "gate": "nacl-tl-conductor Phase 4.5 cross-artifact reconciliation",
+  "sources_checked": [
+    { "name": "status.json", "path": ".tl/status.json", "read_at": "2026-05-26", "summary": "total_uc=10, total_tech=26, total_tasks=43 (post-sync), pending=0" },
+    { "name": "conductor-state.json", "path": ".tl/conductor-state.json", "read_at": "2026-05-26", "summary": "phase=quality_gate_passed; TECH-025/026 done; UC-200/300 done; UC-004 be done / fe verified-pending" },
+    { "name": "changelog.md", "path": ".tl/changelog.md", "read_at": "2026-05-26", "summary": "FR-001 cited in 2026-05-26 nacl-sa-feature section + 2026-05-26 plan entry" },
+    { "name": "live-neo4j-graph", "path": "bolt://localhost:3627", "read_at": "2026-05-26", "summary": "modules=4, use_cases=10, tasks=43; FR-001 intake 6 tasks all terminal w/ evidence; FeatureRequest{FR-001} release_tag=null" },
+    { "name": "release-status.json", "path": ".tl/release-status.json", "read_at": "2026-05-26", "summary": "release_tag=null (FR-001 not yet released); version.value=v0.2.0 (prior release)" },
+    { "name": "exceptions", "path": ".tl/exceptions/", "read_at": "2026-05-26", "summary": "1 exception (EXC-2026-05-22-v020-historical-skipped-pr); expiry 2026-05-18 -> EXPIRED/frozen-in-history; affects skipped-pr gate only, not FR-001" }
+  ],
+  "deltas": [
+    { "pair_id": "P-S1", "assertion": "status.json totals == live graph counts", "outcome": "PASS", "details": "Detected drift: graph.tasks=43 vs status.json.total_tasks=42 (off-by-one). Reconciled by setting total_tasks=43 to match the 43 live graph Task nodes (26 TECH + 17 UC BE/FE nodes). use_cases 10==10, modules 4==4." },
+    { "pair_id": "P-S2", "assertion": "changelog FR-IDs subset of graph FeatureRequest nodes", "outcome": "PASS", "details": "changelog cites FR-001; graph has FeatureRequest{id:'FR-001'}." },
+    { "pair_id": "P-S3", "assertion": "release-status.release_tag reflected in graph", "outcome": "PASS", "details": "release_status.release_tag is null (FR-001 not released yet) -> assertion vacuously satisfied. Prior v0.2.0 historical state out of FR-001 scope." },
+    { "pair_id": "P-S4", "assertion": "conductor phase=quality_gate_passed implies all intake tasks terminal in status.json", "outcome": "PASS", "details": "Detected drift: FR-001 entries (TECH-025/026 pending, UC-004 phases pending, UC-200/300 be pending) lagged the graph. Reconciled by syncing each entry to its graph-terminal status; status.json pending now 0." },
+    { "pair_id": "P-S5", "assertion": "conductor-state per-task == live graph Task.status", "outcome": "PASS", "details": "TECH-025/026 done; UC-200-BE/UC-300-BE/UC-004-BE done; UC-004-FE verified-pending. Fully consistent with conductor-state.json." }
+  ],
+  "active_exceptions": [],
+  "expired_exceptions": [
+    { "exception_id": "EXC-2026-05-22-v020-historical-skipped-pr", "affected_gates": ["skipped-pr"], "expiry": "2026-05-18T23:59:59Z", "note": "Frozen-in-history (expiry == v0.2.0 release date). Does not influence any FR-001 pair." }
+  ],
+  "terminal_status": "VERIFIED",
+  "note": "Two real drifts detected (P-S1 off-by-one task count; P-S4 status.json lagging graph for FR-001 task statuses), both root-caused to status.json not being updated as tasks completed while the graph (source of truth) was. Reconciled by syncing status.json to the live graph. No signed exception required. Separately: 6 carried-in .tl/tasks/*.md doc edits left uncommitted (out of FR-001 scope, conflict with ERROR->FAILED reconciliation) -- not part of any Phase-4.5 pair; flagged for /nacl-tl-reconcile."
+}

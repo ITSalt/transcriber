@@ -265,11 +265,11 @@ describe("MeetingDetailPage", () => {
     });
   });
 
-  // CT10 — error_reason field (only when ERROR status)
-  it("CT10: renders error label when status is ERROR", async () => {
+  // CT10 — error_reason field (only when FAILED status)
+  it("CT10: renders error label when status is FAILED", async () => {
     const errorDetail = {
       ...MOCK_DETAIL_BASE,
-      meeting: { ...MOCK_DETAIL_BASE.meeting, status: "ERROR" as const },
+      meeting: { ...MOCK_DETAIL_BASE.meeting, status: "FAILED" as const },
       latest_transcription_job: {
         status: "FAILED" as const,
         started_at: "2026-05-18T10:01:00.000Z",
@@ -285,10 +285,10 @@ describe("MeetingDetailPage", () => {
     });
   });
 
-  it("CT10: renders error_reason text when status is ERROR", async () => {
+  it("CT10: renders error_reason text when status is FAILED", async () => {
     const errorDetail = {
       ...MOCK_DETAIL_BASE,
-      meeting: { ...MOCK_DETAIL_BASE.meeting, status: "ERROR" as const },
+      meeting: { ...MOCK_DETAIL_BASE.meeting, status: "FAILED" as const },
       latest_transcription_job: {
         status: "FAILED" as const,
         started_at: "2026-05-18T10:01:00.000Z",

@@ -31,9 +31,16 @@ vi.mock('../lib/prisma.js', () => ({
   },
 }))
 
-vi.mock('../llm/kieai.js', () => ({
-  KieAiLlmProvider: vi.fn(),
-}))
+vi.mock('../llm/kieai.js', async (importOriginal) => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const original = (await importOriginal()) as any
+  return {
+    KieAiLlmProvider: vi.fn(),
+    // Expose the real error class and helper so production code can import them
+    KieAiLlmError: original.KieAiLlmError,
+    isTransientLlmError: original.isTransientLlmError,
+  }
+})
 
 vi.mock('../lib/publisher.js', () => ({
   publishMeetingEvent: vi.fn(),
@@ -499,7 +506,7 @@ describe('T05 (RQ-025) — Protocol version=1 and Meeting.status PROTOCOL_READY 
 
 // ─── T06 (RQ-026) — Failure path ─────────────────────────────────────────────
 
-describe('T06 (RQ-026) — On ANY failure: job FAILED, Meeting FAILED, no re-enqueue', () => {
+describe('T06 (RQ-026) — On ANY failure: job FAILED, Meeting status FAILED, no re-enqueue', () => {
   function setupFailurePath() {
     mockPrisma.$transaction.mockImplementation(async (cb: any) => {
       const txMock = {
@@ -517,7 +524,7 @@ describe('T06 (RQ-026) — On ANY failure: job FAILED, Meeting FAILED, no re-enq
       .mockResolvedValueOnce({ meetingId: MEETING_ID } as any)
   }
 
-  it('marks job FAILED and meeting ERROR when LLM throws', async () => {
+  it('marks job FAILED and meeting FAILED when LLM throws', async () => {
     mockPrisma.protocolGenerationJob.updateMany.mockResolvedValue({ count: 1 })
 
     setupFailurePath()
@@ -594,7 +601,7 @@ describe('T06 (RQ-026) — On ANY failure: job FAILED, Meeting FAILED, no re-enq
 
     expect(publishMeetingEvent).toHaveBeenCalledWith(
       expect.any(String),
-      expect.objectContaining({ type: 'meeting.status', status: 'ERROR' }),
+      expect.objectContaining({ type: 'meeting.status', status: 'FAILED' }),
       expect.any(String),
     )
   })

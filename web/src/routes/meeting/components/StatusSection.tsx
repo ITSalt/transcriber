@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/dialog";
 import { useState } from "react";
 import type { MeetingStatus } from "@transcrib/shared";
+import { RetryProcessingButton } from "./RetryProcessingButton";
 
 interface StatusSectionProps {
   meetingId: string;
@@ -22,6 +23,7 @@ interface StatusSectionProps {
   isDeleting?: boolean;
   onDelete: () => void;
 }
+
 
 /**
  * RQ-005 — Action links gated by status:
@@ -94,6 +96,11 @@ export function StatusSection({
         >
           {t("meeting.detail.exportPdf")}
         </Button>
+      )}
+
+      {/* CMP-RetryProcessing — RQ-036: only visible when FAILED */}
+      {status === "FAILED" && (
+        <RetryProcessingButton meetingId={meetingId} />
       )}
 
       <Button

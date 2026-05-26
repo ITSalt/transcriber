@@ -18,14 +18,22 @@ const TRANSCRIPTION_QUEUE_NAME = 'transcriptionJob'
 /** Canonical BullMQ queue name for protocol generation jobs (mirrors worker/src/queues.ts) */
 const PROTOCOL_GENERATION_QUEUE_NAME = 'protocolGenerationJob'
 
-function parseRedisUrl(redisUrl: string): { host: string; port: number; password?: string } {
+/** @internal Exported for unit testing only */
+export function parseRedisUrl(redisUrl: string): { host: string; port: number; password?: string; db?: number } {
   const url = new URL(redisUrl)
-  const opts: { host: string; port: number; password?: string } = {
+  const opts: { host: string; port: number; password?: string; db?: number } = {
     host: url.hostname || 'localhost',
     port: url.port ? parseInt(url.port, 10) : 6379,
   }
   if (url.password) {
     opts.password = url.password
+  }
+  const dbSegment = url.pathname.replace(/^\//, '')
+  if (dbSegment !== '') {
+    const db = parseInt(dbSegment, 10)
+    if (!isNaN(db)) {
+      opts.db = db
+    }
   }
   return opts
 }

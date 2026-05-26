@@ -9,7 +9,7 @@ interface JobErrorBannerProps {
 }
 
 /**
- * RQ-004 — surfaces the current job's error_reason when Meeting.status=ERROR.
+ * RQ-004 — surfaces the current job's error_reason when Meeting.status=FAILED.
  */
 export function JobErrorBanner({
   transcriptionJob,

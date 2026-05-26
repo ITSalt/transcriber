@@ -64,7 +64,7 @@ export default function MeetingDetailPage() {
       {data && (
         <div className="space-y-6">
           {/* Error banner — RQ-004 */}
-          {data.meeting.status === "ERROR" && (
+          {data.meeting.status === "FAILED" && (
             <JobErrorBanner
               transcriptionJob={data.latest_transcription_job}
               protocolJob={data.latest_protocol_job}

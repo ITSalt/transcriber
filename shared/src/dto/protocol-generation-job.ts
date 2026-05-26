@@ -10,6 +10,7 @@ export const ProtocolGenerationJobDto = z.object({
   startedAt: z.string().datetime().nullable(),
   finishedAt: z.string().datetime().nullable(),
   errorMsg: z.string().nullable(),
+  attemptCount: z.number().int().nonnegative(),
   createdAt: z.string().datetime(),
   updatedAt: z.string().datetime(),
 });

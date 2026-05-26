@@ -69,7 +69,7 @@ export function MetadataCard({ meeting, recording }: MetadataCardProps) {
           <div className="mt-1">
             <Badge
               data-testid="meeting-status"
-              variant={meeting.status === "ERROR" ? "destructive" : "secondary"}
+              variant={meeting.status === "FAILED" ? "destructive" : "secondary"}
             >
               {t(`catalog.status.${meeting.status}`, {
                 defaultValue: meeting.status,

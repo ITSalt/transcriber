@@ -12,7 +12,7 @@ describe('MeetingStatus', () => {
       'GENERATING_PROTOCOL',
       'PROTOCOL_READY',
       'EDITED',
-      'ERROR',
+      'FAILED',
     ] as const;
     for (const v of values) {
       expect(MeetingStatus.parse(v)).toBe(v);

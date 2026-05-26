@@ -31,16 +31,30 @@ import { LLM_MODEL_DEFAULT } from '@transcrib/shared';
 
 // ─── Error type ───────────────────────────────────────────────────────────────
 
+/**
+ * Error thrown by KieAiLlmProvider when the LLM call fails.
+ *
+ * `isTransient` = true  → 429 / 5xx: retriable with BullMQ backoff (RC-UC-300 FR-001)
+ * `isTransient` = false → 401/400/404 or local parse errors: permanent, write FAILED immediately.
+ */
 export class KieAiLlmError extends Error {
   public readonly status?: number;
   public readonly reason?: unknown;
+  /** True when the error is transient (429/5xx) and safe to retry with BullMQ backoff. */
+  public readonly isTransient: boolean;
 
-  constructor(message: string, opts?: { status?: number; reason?: unknown }) {
+  constructor(message: string, opts?: { status?: number; reason?: unknown; isTransient?: boolean }) {
     super(message);
     this.name = 'KieAiLlmError';
     this.status = opts?.status;
     this.reason = opts?.reason;
+    this.isTransient = opts?.isTransient ?? false;
   }
+}
+
+/** Returns true if the error should be retried (transient kie.ai 429/5xx). RC-UC-300 FR-001. */
+export function isTransientLlmError(err: unknown): boolean {
+  return err instanceof KieAiLlmError && err.isTransient;
 }
 
 // ─── kie.ai API constants ─────────────────────────────────────────────────────
@@ -149,9 +163,11 @@ export class KieAiLlmProvider implements ILlmProvider {
       } catch {
         body = await response.text();
       }
+      // RC-UC-300 FR-001: 429 and 5xx are transient (retriable); 4xx others are permanent.
+      const isTransient = response.status === 429 || response.status >= 500;
       throw new KieAiLlmError(
         `kie.ai API error: HTTP ${response.status} ${response.statusText}`,
-        { status: response.status, reason: body },
+        { status: response.status, reason: body, isTransient },
       );
     }
 

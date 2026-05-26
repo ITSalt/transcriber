@@ -11,7 +11,7 @@ export const MeetingStatus = z.enum([
   'GENERATING_PROTOCOL',
   'PROTOCOL_READY',
   'EDITED',
-  'ERROR',
+  'FAILED',
 ]);
 export type MeetingStatus = z.infer<typeof MeetingStatus>;
 
