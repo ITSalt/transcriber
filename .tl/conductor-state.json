@@ -6,17 +6,32 @@
     { "id": "FR-001", "type": "feature", "title": "Worker Job Retry Resilience", "ucs": ["UC-200", "UC-300", "UC-004"], "tech": ["TECH-025", "TECH-026"] }
   ],
   "started": "2026-05-26T00:00:00Z",
-  "phase": "development",
+  "phase": "quality_gate_passed",
+  "quality_gate": {
+    "stubs_final": "0 critical, 3 warnings (W1 dead type removed, W2 fragility fixed, W3 casts removed in cleanup commit 30d3d6d)",
+    "graph_terminal_gate": "PASS (no pending/in_progress FR-001 tasks)",
+    "evidence_completeness_gate": "PASS (all terminal tasks carry verification_evidence)",
+    "cleanup_commit": "30d3d6d"
+  },
+  "phase_4_5_reconciliation": {
+    "terminal_status": "VERIFIED",
+    "artifact": ".tl/reconciliation/2026-05-26-FR-001.json",
+    "result": "P-S1..P-S5 all PASS. Detected + reconciled 2 drifts (P-S1 task count 42->43; P-S4 status.json FR-001 entries lagged graph). status.json synced to live graph."
+  },
+  "uncommitted_out_of_scope": {
+    "files": [".tl/tasks/UC-100/task-be.md", ".tl/tasks/UC-200/api-contract.md", ".tl/tasks/UC-200/review-be.md", ".tl/tasks/UC-200/task-be.md", ".tl/tasks/UC-300/task-be.md", ".tl/tasks/UC-301/task-be.md"],
+    "decision": "left uncommitted — pre-existing carried-in doc WIP, out of FR-001 scope; partially conflicts with the ERROR->FAILED reconciliation (docs set status to ERROR) and adds enum values not in graph ENUM-MeetingStatus. Resolve separately via /nacl-tl-reconcile. Not pushed (commits-only)."
+  },
   "scope_source": "neo4j-graph",
   "notes": "Prior delivered batch state archived to .tl/conductor-state.intake-2026-05-18.delivered.json. Uncommitted worker/transcription.ts + regression test + task-doc edits carried from main. UC-200/UC-300 re-plan addenda live at .tl/tasks/UC-{200,300}/task-be-fr001.md (dev agents must read these, not the original task-be.md). Known drift to reconcile on failure path: code uses Meeting.status='ERROR' vs spec 'FAILED'.",
   "techTasks": [
-    { "id": "TECH-026", "wave": 11, "title": "attempt_count Prisma migration (TranscriptionJob + ProtocolGenerationJob)", "status": "pending" },
-    { "id": "TECH-025", "wave": 11, "title": "Redis URL db-index dropped by parseRedisUrl()", "status": "pending" }
+    { "id": "TECH-026", "wave": 11, "title": "attempt_count Prisma migration (TranscriptionJob + ProtocolGenerationJob)", "status": "done", "commit": "ba55313", "evidence": "test-GREEN:shared/src/dto/dto.test.ts" },
+    { "id": "TECH-025", "wave": 11, "title": "Redis URL db-index dropped by parseRedisUrl()", "status": "done", "commit": "e8ee543", "evidence": "test-GREEN:worker/src/queues.test.ts" }
   ],
   "ucTasks": [
-    { "id": "UC-200", "wave": 12, "kind": "modified", "status": "pending", "task_doc": ".tl/tasks/UC-200/task-be-fr001.md" },
-    { "id": "UC-300", "wave": 12, "kind": "modified", "status": "pending", "task_doc": ".tl/tasks/UC-300/task-be-fr001.md" },
-    { "id": "UC-004", "wave": 13, "kind": "new", "status": "pending" }
+    { "id": "UC-200", "wave": 12, "kind": "modified", "status": "done", "commit": "6d3fa21", "evidence": "test-GREEN:worker/src/jobs/transcription.regression.test.ts", "note": "BE-only worker UC; retry refinement + ERROR->FAILED reconciliation (commit 605d75a)" },
+    { "id": "UC-300", "wave": 12, "kind": "modified", "status": "done", "commit": "b0f8779", "evidence": "test-GREEN:worker/src/jobs/protocol-generation.regression.test.ts", "note": "BE-only worker UC; symmetric retry refinement" },
+    { "id": "UC-004", "wave": 13, "kind": "new", "status": "unverified", "be": "done", "be_commit": "326d94f", "be_evidence": "test-GREEN:api/src/routes/uc-004.test.ts", "fe": "verified-pending", "fe_commit": "ea9bf40", "fe_evidence": "test-UNVERIFIED", "unverified_reason": "FE component tests GREEN; E2E nav-actions Condition 2 evidence deferred (no stack/providers). BE fully PASS." }
   ],
   "bugFixes": [],
   "delivery": {
