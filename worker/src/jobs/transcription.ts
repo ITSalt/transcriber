@@ -330,12 +330,12 @@ export async function processTranscriptionJob(
     //     attempts remaining → re-throw WITHOUT writing FAILED so BullMQ schedules
     //     the next attempt. The BRQ-009 idempotency guard must NOT see a FAILED row.
     //   - PERMANENT error (storage-not-found, ffmpeg, non-retriable ASR 4xx) OR
-    //     final exhausted attempt → write FAILED + Meeting.status=ERROR.
+    //     final exhausted attempt → write FAILED + Meeting.status=FAILED.
     //   - attempt_count mirrors job.attemptsMade on every FAILED write (TECH-026).
 
     const errorMessage = err instanceof Error ? err.message : String(err)
-    const attemptsMade: number = typeof (job as any).attemptsMade === 'number'
-      ? (job as any).attemptsMade
+    const attemptsMade: number = typeof job.attemptsMade === 'number'
+      ? job.attemptsMade
       : 0
     const isFinalAttempt = attemptsMade >= MAX_ATTEMPTS - 1
 
@@ -375,10 +375,13 @@ export async function processTranscriptionJob(
           },
         })
 
-        await tx.meeting.updateMany({
-          where: { id: (await tx.transcriptionJob.findUnique({ where: { id: transcription_job_id } }))?.meetingId ?? '' },
-          data: { status: 'FAILED' },
-        })
+        const failedJob = await tx.transcriptionJob.findUnique({ where: { id: transcription_job_id } })
+        if (failedJob?.meetingId) {
+          await tx.meeting.updateMany({
+            where: { id: failedJob.meetingId },
+            data: { status: 'FAILED' },
+          })
+        }
       })
     } catch (dbErr) {
       log.error({ error: dbErr instanceof Error ? dbErr.message : String(dbErr) }, 'Failed to persist FAILED state')

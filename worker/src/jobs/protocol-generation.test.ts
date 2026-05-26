@@ -524,7 +524,7 @@ describe('T06 (RQ-026) — On ANY failure: job FAILED, Meeting status FAILED, no
       .mockResolvedValueOnce({ meetingId: MEETING_ID } as any)
   }
 
-  it('marks job FAILED and meeting ERROR when LLM throws', async () => {
+  it('marks job FAILED and meeting FAILED when LLM throws', async () => {
     mockPrisma.protocolGenerationJob.updateMany.mockResolvedValue({ count: 1 })
 
     setupFailurePath()

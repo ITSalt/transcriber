@@ -12,7 +12,7 @@
  * - Prisma $transaction interceptor captures AND executes the callback, then marks
  *   "TX_COMMITTED" in the log — so we can assert enqueue came AFTER.
  * - Terminal-state guard verified by asserting zero calls on EVERY mock, not just $transaction.
- * - Failure-path verified by asserting Meeting.status='ERROR' update was invoked explicitly
+ * - Failure-path verified by asserting Meeting.status='FAILED' update was invoked explicitly
  *   (not just log.error), and ProtocolGenerationJob.create was NEVER called.
  * - Double-pickup verified by confirming that when updateMany returns {count:0} the pipeline
  *   halts and $transaction is never reached.

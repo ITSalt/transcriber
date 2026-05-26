@@ -224,8 +224,8 @@ export async function processProtocolGenerationJob(
     //   - attempt_count mirrors job.attemptsMade on every FAILED write (TECH-026).
 
     const errorMessage = err instanceof Error ? err.message : String(err)
-    const attemptsMade: number = typeof (job as any).attemptsMade === 'number'
-      ? (job as any).attemptsMade
+    const attemptsMade: number = typeof job.attemptsMade === 'number'
+      ? job.attemptsMade
       : 0
     const isFinalAttempt = attemptsMade >= MAX_ATTEMPTS - 1
 

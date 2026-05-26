@@ -8,7 +8,7 @@
  *   T01 — happy path: returns correct MeetingDetailResponse shape
  *   T02 — 404 when meeting does not exist (MEETING_NOT_FOUND)
  *   T03 — 404 when meeting has no recording
- *   T04 — RQ-004: error_reason is surfaced when Meeting.status=ERROR
+ *   T04 — RQ-004: error_reason is surfaced when Meeting.status=FAILED
  *   T05 — nullable fields: latest_transcription_job / latest_protocol_job = null
  *   T06 — transcript_exists / protocol_exists flags
  *   T07 — NFR-007: endpoint reachable without Authorization header

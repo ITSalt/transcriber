@@ -259,9 +259,9 @@ describe('T01 (RQ-014) — Happy path: PENDING → PROCESSING → DONE', () => {
   })
 })
 
-// T02: RQ-015 — Any failure → job FAILED, Meeting.status ERROR
+// T02: RQ-015 — Any failure → job FAILED, Meeting.status FAILED
 describe('T02 (RQ-015) — Failure path: any error → FAILED status', () => {
-  it('marks job FAILED and meeting ERROR when storage fetch throws', async () => {
+  it('marks job FAILED and meeting FAILED when storage fetch throws', async () => {
     mockPrisma.transcriptionJob.findUnique.mockResolvedValue(BASE_TX_JOB as any)
     mockPrisma.transcriptionJob.updateMany.mockResolvedValue({ count: 1 })
 
@@ -295,7 +295,7 @@ describe('T02 (RQ-015) — Failure path: any error → FAILED status', () => {
     expect(log.error).toHaveBeenCalled()
   })
 
-  it('marks job FAILED and meeting ERROR when ASR throws', async () => {
+  it('marks job FAILED and meeting FAILED when ASR throws', async () => {
     mockPrisma.transcriptionJob.findUnique.mockResolvedValue(BASE_TX_JOB as any)
     mockPrisma.transcriptionJob.updateMany.mockResolvedValue({ count: 1 })
 
@@ -580,7 +580,7 @@ describe('T09 (NFR-008) — Human-readable error_reason; terminal state immutabi
     )
   })
 
-  it('publishMeetingEvent is called on failure with ERROR status', async () => {
+  it('publishMeetingEvent is called on failure with FAILED status', async () => {
     mockPrisma.transcriptionJob.findUnique.mockResolvedValue(null as any)
     ;(publishMeetingEvent as MockedFunction<typeof publishMeetingEvent>).mockResolvedValue(undefined)
     mockPrisma.$transaction.mockImplementation(async (cb: any) => {
