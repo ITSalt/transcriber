@@ -36,6 +36,7 @@ export function createQueues(
 /**
  * Parse a Redis URL into BullMQ ConnectionOptions.
  * BullMQ accepts { host, port, password } or a full URL string via ioredis.
+ * The URL path segment (e.g. /1) is parsed as the Redis db-index.
  */
 export function parseRedisUrl(redisUrl: string): ConnectionOptions {
   const url = new URL(redisUrl)
@@ -45,6 +46,13 @@ export function parseRedisUrl(redisUrl: string): ConnectionOptions {
   }
   if (url.password) {
     opts.password = url.password
+  }
+  const dbSegment = url.pathname.replace(/^\//, '')
+  if (dbSegment !== '') {
+    const db = parseInt(dbSegment, 10)
+    if (!isNaN(db)) {
+      opts.db = db
+    }
   }
   return opts
 }

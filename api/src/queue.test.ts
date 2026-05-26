@@ -1,20 +1,31 @@
 /**
- * TECH-006 — Queue registry unit tests
+ * TECH-025 — parseRedisUrl unit tests for api/src/queue.ts
  */
-import { describe, it, expect } from 'vitest'
-import { QueueName, parseRedisUrl } from './queues.js'
+import { describe, it, expect, vi } from 'vitest'
 
-describe('QueueName', () => {
-  it('has Transcription queue name', () => {
-    expect(QueueName.Transcription).toBe('transcriptionJob')
-  })
+// Stub config before any module-under-test import to prevent env validation
+vi.mock('./config.js', () => ({
+  config: {
+    PORT: 3000,
+    HOST: '0.0.0.0',
+    DATABASE_URL: 'postgresql://test:test@localhost:5432/test',
+    REDIS_URL: 'redis://localhost:6379',
+    LOG_LEVEL: 'silent',
+    NODE_ENV: 'test',
+  },
+}))
 
-  it('has Protocol queue name', () => {
-    expect(QueueName.Protocol).toBe('protocolGenerationJob')
-  })
-})
+// Stub BullMQ Queue so it does not attempt real Redis connections
+vi.mock('bullmq', () => ({
+  Queue: vi.fn().mockImplementation(() => ({
+    add: vi.fn(),
+    close: vi.fn(),
+  })),
+}))
 
-describe('parseRedisUrl', () => {
+const { parseRedisUrl } = await import('./queue.js')
+
+describe('parseRedisUrl (api)', () => {
   it('parses a standard redis URL', () => {
     const opts = parseRedisUrl('redis://localhost:6379')
     expect(opts.host).toBe('localhost')
