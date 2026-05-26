@@ -20,7 +20,7 @@ enum MeetingStatus {
   GENERATING_PROTOCOL
   PROTOCOL_READY
   EDITED
-  ERROR
+  FAILED
 }
 
 enum MeetingLanguage {

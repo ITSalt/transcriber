@@ -165,10 +165,10 @@ describe('UC-002-BE — GET /api/meetings/:id', () => {
 
   // ─── T04: RQ-004 error_reason surfaced from latest job ───────────────────────
 
-  it('T04 — RQ-004: error_reason surfaces from transcription job when status=ERROR', async () => {
+  it('T04 — RQ-004: error_reason surfaces from transcription job when status=FAILED', async () => {
     mockFindUnique.mockResolvedValue(
       makeDbMeeting({
-        status: 'ERROR',
+        status: 'FAILED',
         transcriptionJob: {
           id: 'aaa00000-e89b-12d3-a456-426614174999',
           meetingId: MEETING_UUID,
@@ -189,7 +189,7 @@ describe('UC-002-BE — GET /api/meetings/:id', () => {
 
     expect(res.statusCode).toBe(200)
     const body = res.json()
-    expect(body.meeting.status).toBe('ERROR')
+    expect(body.meeting.status).toBe('FAILED')
     expect(body.latest_transcription_job).toMatchObject({
       status: 'FAILED',
       started_at: '2024-03-01T12:05:00.000Z',
@@ -282,7 +282,7 @@ describe('UC-002-BE — GET /api/meetings/:id', () => {
   it('T10 — RQ-004: error_reason surfaces from protocol job when protocol gen failed', async () => {
     mockFindUnique.mockResolvedValue(
       makeDbMeeting({
-        status: 'ERROR',
+        status: 'FAILED',
         protocolGenJob: {
           id: 'ddd00000-e89b-12d3-a456-426614174003',
           meetingId: MEETING_UUID,

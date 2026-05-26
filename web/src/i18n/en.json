@@ -35,7 +35,7 @@
       "GENERATING_PROTOCOL": "Generating Protocol",
       "PROTOCOL_READY": "Protocol Ready",
       "EDITED": "Edited",
-      "ERROR": "Error"
+      "FAILED": "Failed"
     }
   },
   "meeting": {

@@ -236,7 +236,7 @@ export async function processProtocolGenerationJob(
         if (pgJobForMeeting) {
           await tx.meeting.updateMany({
             where: { id: pgJobForMeeting.meetingId },
-            data: { status: 'ERROR' },
+            data: { status: 'FAILED' },
           })
         }
       })
@@ -263,7 +263,7 @@ export async function processProtocolGenerationJob(
           {
             type: 'meeting.status',
             meeting_id: meetingIdForEvent,
-            status: 'ERROR',
+            status: 'FAILED',
             error_reason: errorMessage,
           },
           meetingIdForEvent,

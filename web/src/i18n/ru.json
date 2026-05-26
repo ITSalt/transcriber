@@ -35,7 +35,7 @@
       "GENERATING_PROTOCOL": "Генерация протокола",
       "PROTOCOL_READY": "Протокол готов",
       "EDITED": "Отредактировано",
-      "ERROR": "Ошибка"
+      "FAILED": "Ошибка"
     }
   },
   "meeting": {
