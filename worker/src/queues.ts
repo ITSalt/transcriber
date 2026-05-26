@@ -21,6 +21,7 @@ export type QueueName = (typeof QueueName)[keyof typeof QueueName]
  *
  * RC-UC-200 FR-001: transcription queue defaults to attempts=3 + exponential backoff
  * (initial 5s, multiplier 2: 5s, 10s, 20s) so BullMQ retries transient Deepgram errors.
+ * RC-UC-300 FR-001: protocol queue mirrors the same retry config for transient kie.ai errors.
  *
  * @param redisUrl - Redis connection URL (e.g. redis://localhost:6379)
  * @returns Map of queue name to Queue instance
@@ -38,7 +39,13 @@ export function createQueues(
         backoff: { type: 'exponential', delay: 5000 },
       },
     }),
-    [QueueName.Protocol]: new Queue(QueueName.Protocol, { connection }),
+    [QueueName.Protocol]: new Queue(QueueName.Protocol, {
+      connection,
+      defaultJobOptions: {
+        attempts: 3,
+        backoff: { type: 'exponential', delay: 5000 },
+      },
+    }),
   }
 }
 

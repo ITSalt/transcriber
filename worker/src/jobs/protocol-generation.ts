@@ -23,9 +23,13 @@ import type { ProtocolGenerationJobPayload } from '@transcrib/shared'
 import type { ILlmProvider, LlmModel } from '@transcrib/shared'
 import { LLM_MODEL_DEFAULT } from '@transcrib/shared'
 
-import { KieAiLlmProvider } from '../llm/kieai.js'
+import { KieAiLlmProvider, isTransientLlmError } from '../llm/kieai.js'
 import { publishMeetingEvent } from '../lib/publisher.js'
 import { prisma } from '../lib/prisma.js'
+
+// ─── Retry configuration (RC-UC-300 FR-001) ──────────────────────────────────
+/** Maximum BullMQ attempts for a protocol generation job. Must match queues.ts defaultJobOptions. */
+const MAX_ATTEMPTS = 3
 
 // ─── Required section headers ─────────────────────────────────────────────────
 
@@ -209,22 +213,57 @@ export async function processProtocolGenerationJob(
 
     log.info({ jobId: job.id, protocol_generation_job_id }, 'protocolGenerationJob completed')
   } catch (err) {
-    // ── ALT: Failure path (RQ-026) ────────────────────────────────────────────
+    // ── ALT: Failure path (RQ-026, FR-001) ────────────────────────────────────
+    //
+    // FR-001 retry semantics (RC-UC-300):
+    //   - TRANSIENT error (KieAiLlmError.isTransient=true, e.g. 429/5xx) with
+    //     attempts remaining → re-throw WITHOUT writing FAILED so BullMQ schedules
+    //     the next attempt. The BRQ-009 idempotency guard must NOT see a FAILED row.
+    //   - PERMANENT error (parse error, missing-section, 401/400/404) OR
+    //     final exhausted attempt → write FAILED + Meeting.status=FAILED.
+    //   - attempt_count mirrors job.attemptsMade on every FAILED write (TECH-026).
+
     const errorMessage = err instanceof Error ? err.message : String(err)
+    const attemptsMade: number = typeof (job as any).attemptsMade === 'number'
+      ? (job as any).attemptsMade
+      : 0
+    const isFinalAttempt = attemptsMade >= MAX_ATTEMPTS - 1
+
+    // Determine if this is a transient error we should let BullMQ retry.
+    // isTransientLlmError returns true only for KieAiLlmError with isTransient=true.
+    const shouldRetry = isTransientLlmError(err) && !isFinalAttempt
 
     log.error(
-      { jobId: job.id, protocol_generation_job_id, error: errorMessage },
-      'protocolGenerationJob failed',
+      {
+        jobId: job.id,
+        protocol_generation_job_id,
+        error: errorMessage,
+        attemptsMade,
+        isFinalAttempt,
+        shouldRetry,
+      },
+      shouldRetry ? 'protocolGenerationJob transient failure — will retry' : 'protocolGenerationJob failed',
     )
 
-    // RQ-026: Mark job FAILED + Meeting.status → ERROR
+    if (shouldRetry) {
+      // Do NOT write FAILED — let BullMQ retry with backoff.
+      // Re-throw so BullMQ sees the error and schedules the next attempt.
+      throw err
+    }
+
+    // Permanent failure or final attempt: write FAILED + Meeting.status=FAILED.
     // Guard: only update if not already terminal (BRQ-009)
     let meetingIdForEvent: string | undefined
     try {
       await prisma.$transaction(async (tx) => {
         await tx.protocolGenerationJob.updateMany({
           where: { id: protocol_generation_job_id, status: { in: ['PENDING', 'PROCESSING'] } },
-          data: { status: 'FAILED', errorMsg: errorMessage, finishedAt: new Date() },
+          data: {
+            status: 'FAILED',
+            errorMsg: errorMessage,
+            finishedAt: new Date(),
+            attemptCount: attemptsMade + 1,
+          },
         })
 
         const pgJobForMeeting = await tx.protocolGenerationJob.findUnique({

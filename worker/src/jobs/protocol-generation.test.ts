@@ -31,9 +31,16 @@ vi.mock('../lib/prisma.js', () => ({
   },
 }))
 
-vi.mock('../llm/kieai.js', () => ({
-  KieAiLlmProvider: vi.fn(),
-}))
+vi.mock('../llm/kieai.js', async (importOriginal) => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const original = (await importOriginal()) as any
+  return {
+    KieAiLlmProvider: vi.fn(),
+    // Expose the real error class and helper so production code can import them
+    KieAiLlmError: original.KieAiLlmError,
+    isTransientLlmError: original.isTransientLlmError,
+  }
+})
 
 vi.mock('../lib/publisher.js', () => ({
   publishMeetingEvent: vi.fn(),
