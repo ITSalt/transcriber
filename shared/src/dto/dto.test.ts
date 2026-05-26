@@ -105,6 +105,7 @@ describe('TranscriptionJobDto', () => {
     startedAt: null,
     finishedAt: null,
     errorMsg: null,
+    attemptCount: 0,
     createdAt: now,
     updatedAt: now,
   };
@@ -118,6 +119,18 @@ describe('TranscriptionJobDto', () => {
       TranscriptionJobDto.parse({ ...valid, status: 'PROCESSING', startedAt: now }),
     ).toMatchObject({ status: 'PROCESSING', startedAt: now });
   });
+
+  it('accepts attemptCount >= 0', () => {
+    expect(TranscriptionJobDto.parse({ ...valid, attemptCount: 3 })).toMatchObject({ attemptCount: 3 });
+  });
+
+  it('rejects negative attemptCount', () => {
+    expect(() => TranscriptionJobDto.parse({ ...valid, attemptCount: -1 })).toThrow();
+  });
+
+  it('rejects non-integer attemptCount', () => {
+    expect(() => TranscriptionJobDto.parse({ ...valid, attemptCount: 1.5 })).toThrow();
+  });
 });
 
 describe('ProtocolGenerationJobDto', () => {
@@ -128,12 +141,25 @@ describe('ProtocolGenerationJobDto', () => {
     startedAt: now,
     finishedAt: now,
     errorMsg: null,
+    attemptCount: 0,
     createdAt: now,
     updatedAt: now,
   };
 
   it('round-trips a valid object', () => {
     expect(ProtocolGenerationJobDto.parse(valid)).toEqual(valid);
+  });
+
+  it('accepts attemptCount >= 0', () => {
+    expect(ProtocolGenerationJobDto.parse({ ...valid, attemptCount: 5 })).toMatchObject({ attemptCount: 5 });
+  });
+
+  it('rejects negative attemptCount', () => {
+    expect(() => ProtocolGenerationJobDto.parse({ ...valid, attemptCount: -1 })).toThrow();
+  });
+
+  it('rejects non-integer attemptCount', () => {
+    expect(() => ProtocolGenerationJobDto.parse({ ...valid, attemptCount: 2.7 })).toThrow();
   });
 });
 
