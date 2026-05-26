@@ -1,5 +1,28 @@
 # Changelog — .tl/
 
+## v0.3.0 — 2026-05-26 — Worker Job Retry Resilience (RELEASE)
+
+Released via `/nacl-tl-release` (PR #5 squash-merged → main `86c5834`; deploy run 26455409466 success; prod health 200 OK; tag v0.3.0).
+
+### Features
+- **UC-004 — Retry failed meeting processing** (BE + FE): AUTHOR-triggered `POST /api/meetings/:id/retry` re-enqueues the most-recent FAILED stage (transcription or protocol), resets the job to PENDING + `attempt_count=0` + clears error, flips `Meeting.status` back to TRANSCRIBING / GENERATING_PROTOCOL. FE: "Retry processing" button + confirm dialog on the meeting detail page, shown only when status is FAILED. (commits 326d94f, ea9bf40)
+- **UC-200 / UC-300 — bounded retry-with-backoff** for transient ASR/LLM failures: transient errors (429/5xx) with attempts remaining re-throw WITHOUT writing FAILED so BullMQ retry (attempts=3, exponential backoff) works; permanent errors or final attempt write FAILED + attempt_count. (commits 6d3fa21, b0f8779)
+
+### Infrastructure
+- **TECH-026** — `attempt_count` added to TranscriptionJob + ProtocolGenerationJob (Prisma migration + shared DTOs). (ba55313)
+- **TECH-025** — `parseRedisUrl()` honors the Redis URL db-index. (e8ee543)
+
+### Fixes / reconciliation
+- **L1 spec-first** — `MeetingStatus` enum `ERROR → FAILED` reconciled to the graph spec (Prisma `ALTER TYPE RENAME VALUE` migration + all code/i18n). (605d75a)
+- **SA-graph debt closed at release gate #4** — `Transcript.segments_blob` repaired (Transcript-A09/JSON); BR-101..105 linked to Requirements (RQ-008/009/022 extended, RQ-037/038 created); UC-004 activity-step actors normalized to User/System.
+
+### Verification
+- Repo-wide gate green (581 tests). All BE/worker test-GREEN. **UC-004-FE is verified-pending** — E2E natural-entrypoint deferred under signed exception EXC-2026-05-26-uc004-qa-deferred (expires 2026-06-09); run `/nacl-tl-qa UC-004` on production to close.
+
+> Active exception: EXC-2026-05-26-uc004-qa-deferred — gates [upstream-qa-unverified, missing-prod-golden-path, nav-actions-no-natural-entrypoint-evidence] for UC-004; followup = run /nacl-tl-qa UC-004 on transcriber.itsalt.ru.
+
+---
+
 ## [2026-05-26] nacl-sa-feature: FR-001 — Worker job retry resilience (spec)
 
 - **Artifact:** `.tl/feature-requests/FR-001-retry-resilience.md` + `:FeatureRequest {id:'FR-001'}` graph node (status `spec-complete`). Closes the follow-up flagged in the kie.ai L0 entry below.

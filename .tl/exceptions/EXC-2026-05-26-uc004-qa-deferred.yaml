@@ -1,0 +1,37 @@
+exception_id: "EXC-2026-05-26-uc004-qa-deferred"
+
+owner: "magznikitin"
+
+reason: >
+  UC-004 (Retry failed meeting processing) has GREEN component tests (15/15
+  RetryProcessingButton.test.tsx) and GREEN BE integration tests (15/15
+  uc-004.test.ts). Both layers reviewed clean on all merits. The only missing
+  evidence is E2E natural-entrypoint PROD_GOLDEN_PATH: no running local stack
+  / no DB+Redis config was available in the build environment when the
+  conductor ran, making /nacl-tl-qa UC-004 impossible locally. The production
+  server at transcriber.itsalt.ru already carries Deepgram and kie.ai provider
+  keys (confirmed by W7 LIVE_PROVIDER_SMOKE + PROD_GOLDEN_PATH run on
+  2026-05-22). PROD_GOLDEN_PATH evidence will be collected on production once
+  this feature is live: trigger a meeting through a FAILED state, click
+  Retry, verify reprocessing completes and Meeting.status transitions to
+  TRANSCRIBING/GENERATING_PROTOCOL. Exception expires in 14 days; followup
+  task is mandatory before renewal.
+
+created_at: "2026-05-26T12:00:00Z"
+
+expiry: "2026-06-09T23:59:59Z"
+
+affected_gates:
+  - "upstream-qa-unverified"
+  - "missing-prod-golden-path"
+  - "nav-actions-no-natural-entrypoint-evidence"
+
+affected_projects:
+  - "transcrib"
+
+followup_task: >
+  Run /nacl-tl-qa UC-004 on transcriber.itsalt.ru once feature/FR-001 is
+  deployed (LIVE_PROVIDER_SMOKE + PROD_GOLDEN_PATH). Record evidence in
+  .tl/tasks/UC-004/qa-evidence/. Update graph UC-004-FE.verification_evidence
+  from test-UNVERIFIED to test-GREEN + qa-evidence path. Renewal of this
+  exception requires a new exception_id.

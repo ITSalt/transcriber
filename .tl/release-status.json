@@ -1,62 +1,86 @@
 {
-  "started": "2026-05-19T10:00:00Z",
-  "updated_by_W1_reconciliation": "2026-05-22T11:45:00Z",
-  "_note": "Pre-W1 file declared merge/ci/health all 'skipped' — every claim contradicted by observable reality. Rewritten in W1-reconciliation per .tl/plans/2026-05-22-gap-closure-wave-plan.yaml to remove the lies.",
+  "started": "2026-05-26T12:00:00Z",
+  "intake": "FR-001",
   "prs": [
-    {"id": "#1", "title": "feat(prod-deploy): server bootstrap + code wiring + GH Actions deploy (TECH-016..024)", "sha": "474e1de"},
-    {"id": "#2", "title": "fix: add upload button to catalog page header", "sha": "0ec0a4e"},
-    {"id": "#3", "title": "fix: TUS upload metadata key — filetype instead of mime_type (UC-100)", "sha": "29c175a"},
-    {"id": "#4", "title": "fix: register content-type parser for TUS PATCH (prevented 415)", "sha": "5398e7c"}
-  ],
-  "merge": {
-    "status": "mixed",
-    "note": "Historical v0.2.0 release used a mix of PRs (#1..#4) and direct-to-main commits. Strict mode requires either project_kind=prototype + signed exception with affected_gates=[skipped-pr], OR every release commit via PR+CI. See W10-release-readiness + EXC-2026-05-22-v020-historical-skipped-pr (per OQ-6 resolution)."
-  },
-  "ci": {
-    "status": "PASS",
-    "run_id": 26045597888,
-    "run_url": "https://github.com/ITSalt/transcriber/actions/runs/26045597888",
-    "commit": "5258a11",
-    "verified": "2026-05-18",
-    "workflow": ".github/workflows/ci.yml",
-    "deploy_workflow": ".github/workflows/deploy-production.yml",
-    "gap": "Wave-tip f925479 is 4+ commits ahead of last recorded green run; W2-repo-checks records repo-checks-GREEN:<wave-tip-sha> evidence."
-  },
-  "health": {
-    "status": "HEALTH_ONLY",
-    "endpoint": "/api/health",
-    "url": "https://transcriber.itsalt.ru/api/health",
-    "verified": "2026-05-18",
-    "method": "deploy-production.yml runs `curl -s -o /dev/null -w '%{http_code}' \"${PROD_URL}/api/health\"` in a 30x5s loop after every deploy",
-    "_w4_distinction": "HEALTH_ONLY (HTTP 200 on /api/health) is NEVER product-readiness evidence per nacl-tl-release/SKILL.md:181. PROD_GOLDEN_PATH for UC-100→UC-200→UC-300→UC-302 is gated on GAP-020 closure in W7-qa-provider."
-  },
-  "version": {"status": "done", "bump": "minor", "value": "v0.2.0"},
-  "tag": {"status": "done", "value": "v0.2.0"},
-  "graph": {
-    "status": "done",
-    "version": "v0.2.0",
-    "release_tag_property_set_on": "FinalizationReport(id:FR-SA-001) per W1 Cypher write",
-    "updated": "2026-05-22T11:45:00Z",
-    "_drift_note": "ADR-005 (TUS) in graph is REVOKED by W3-external-contracts (ADR-012 successor for S3-multipart). Tracked in GAP-002."
-  },
-  "release": {"status": "done", "url": "https://github.com/ITSalt/transcriber/releases/tag/v0.2.0"},
-  "yougile": {"status": "skipped", "note": "YouGile not configured for this project (config.yaml.yougile = {})"},
-  "exceptions": [
     {
-      "exception_id": "EXC-2026-05-22-v020-historical-skipped-pr",
-      "owner": "magznikitin",
-      "affected_gates": ["skipped-pr"],
-      "expiry": "2026-05-18T23:59:59Z",
-      "purpose": "Retroactive coverage for v0.2.0 release that landed direct-to-main before W11 strict mode existed. Frozen-in-history: expiry = release date; provides no carve-out for any future release.",
-      "file": ".tl/exceptions/EXC-2026-05-22-v020-historical-skipped-pr.yaml",
-      "followup_task": "RFC-2026-05-22-future-release-protocol"
+      "number": 5,
+      "title": "FR-001: Worker job retry resilience (retry-with-backoff + user retry action)",
+      "status": "pending"
     }
   ],
-  "production": {
-    "url": "https://transcriber.itsalt.ru",
-    "host": "82.202.156.157",
-    "deployed_via": "GitHub Actions deploy-production.yml (push-to-main)",
-    "pm2_apps": ["transcrib-api", "transcrib-worker"],
-    "reverse_proxy": "Caddy with Let's Encrypt"
+  "merge": {
+    "status": "done",
+    "merged_count": 1,
+    "total": 1,
+    "commit": "86c5834",
+    "method": "squash"
+  },
+  "ci": {
+    "status": "done",
+    "run_id": 26455409300,
+    "conclusion": "success"
+  },
+  "health": {
+    "status": "done",
+    "endpoint": "/api/health",
+    "url": "https://transcriber.itsalt.ru/api/health",
+    "code": 200,
+    "note": "HEALTH_ONLY; PROD_GOLDEN_PATH for UC-004 deferred under exception"
+  },
+  "version": {
+    "status": "done",
+    "bump": "minor",
+    "value": "v0.3.0",
+    "previous": "v0.2.0"
+  },
+  "tag": {
+    "status": "pending"
+  },
+  "graph": {
+    "status": "done",
+    "version": "v0.3.0",
+    "stamped": "FeatureRequest FR-001",
+    "baseline": {
+      "nodes": 541,
+      "captured": "2026-05-26",
+      "note": "live capture; pre-flight diff at Step 7 matched (no drift)"
+    }
+  },
+  "release": {
+    "status": "pending"
+  },
+  "yougile": {
+    "status": "skipped",
+    "reason": "no YouGile configured"
+  },
+  "exceptions": [
+    {
+      "exception_id": "EXC-2026-05-26-uc004-qa-deferred",
+      "affected_gates": [
+        "upstream-qa-unverified",
+        "missing-prod-golden-path",
+        "nav-actions-no-natural-entrypoint-evidence"
+      ],
+      "expiry": "2026-06-09T23:59:59Z",
+      "followup_task": "run /nacl-tl-qa UC-004 on production after deploy"
+    }
+  ],
+  "_note": "FR-001 release. Overrides prior v0.2.0 status for this release run.",
+  "gates": {
+    "gate1_upstream_sync": "PASS",
+    "gate2_upstream_qa": "PASS (exception EXC-2026-05-26-uc004-qa-deferred for UC-004)",
+    "gate3_graph_stale": "PASS (baseline 541 captured this run)",
+    "gate4_sa_validate": "PASS (0 CRITICAL after fixing 6 pre-existing findings)",
+    "gate5_prod_golden_path": "PASS (UC-200/300 W7 evidence; UC-004 via exception)",
+    "gate6_pr_ci": "PASS (PR #5, CI green)"
+  },
+  "deploy": {
+    "status": "done",
+    "run_id": 26455409466,
+    "conclusion": "success",
+    "migrations_applied": [
+      "20260526120000_add_attempt_count",
+      "20260526130000_rename_meeting_status_error_to_failed"
+    ]
   }
 }
