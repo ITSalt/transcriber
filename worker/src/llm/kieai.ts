@@ -15,6 +15,10 @@
  *   { content:[{type:'text', text:'…'}],
  *     usage:{ input_tokens, output_tokens }, stop_reason, model, id }
  *
+ * kie.ai ALSO delivers provider errors inside an HTTP 200 gateway envelope
+ * ({ code, msg }) — see .tl/external-contracts/kie-anthropic.md § 5.1. All
+ * classification therefore runs on the EFFECTIVE status, not the HTTP status.
+ *
  * Prompt templates: worker/src/llm/prompts/{en,ru}/protocol.md
  *
  * GPT-5.4 is intentionally not wired here yet — kie.ai exposes a separate
@@ -34,8 +38,16 @@ import { LLM_MODEL_DEFAULT } from '@transcrib/shared';
 /**
  * Error thrown by KieAiLlmProvider when the LLM call fails.
  *
- * `isTransient` = true  → 429 / 5xx: retriable with BullMQ backoff (RC-UC-300 FR-001)
- * `isTransient` = false → 401/400/404 or local parse errors: permanent, write FAILED immediately.
+ * Classification runs on the EFFECTIVE status (see `effectiveStatus`), per
+ * RC-UC-300 / RQ-026 / DEC-001:
+ *
+ * `isTransient` = true  → 404 / 408 / 429 / 5xx, plus network/transport failures:
+ *                         retriable with BullMQ backoff.
+ * `isTransient` = false → 400 / 401 / 402 / 413, any other unlisted 4xx, and local
+ *                         parse / empty-completion errors: permanent, write FAILED
+ *                         immediately.
+ *
+ * `status` carries the effective status (so an in-envelope 429 reports 429, not 200).
  */
 export class KieAiLlmError extends Error {
   public readonly status?: number;
@@ -52,9 +64,52 @@ export class KieAiLlmError extends Error {
   }
 }
 
-/** Returns true if the error should be retried (transient kie.ai 429/5xx). RC-UC-300 FR-001. */
+/** Returns true if the error should be retried. RC-UC-300 FR-001 / DEC-001. */
 export function isTransientLlmError(err: unknown): boolean {
   return err instanceof KieAiLlmError && err.isTransient;
+}
+
+/**
+ * Is this (effective) status worth retrying? RC-UC-300 / DEC-001.
+ *
+ * 404 is transient because on kie.ai it means the gateway did not route the path
+ * (its unrouted-path response is a Spring whitelabel body). The model id travels in
+ * the request body, never the URL, so a 404 can never mean MODEL_NOT_FOUND — the
+ * older spec claim to that effect was wrong. Observed 2026-05-26: the identical
+ * request returned 200 twelve minutes later.
+ */
+export function isTransientStatus(status: number): boolean {
+  return status === 404 || status === 408 || status === 429 || status >= 500;
+}
+
+/**
+ * The status classification should run on.
+ *
+ * kie.ai returns provider errors inside an HTTP 200 gateway envelope — e.g.
+ * `{"code":401,"msg":"Unauthorized …"}` — so the HTTP status alone is not the real
+ * outcome. A successful Anthropic response carries `content[]` and no top-level
+ * numeric `code`, so the two shapes are unambiguous.
+ * See .tl/external-contracts/kie-anthropic.md § 5.1.
+ */
+export function effectiveStatus(httpStatus: number, body: unknown): number {
+  if (
+    httpStatus === 200 &&
+    typeof body === 'object' &&
+    body !== null &&
+    !Array.isArray(body) &&
+    typeof (body as { code?: unknown }).code === 'number' &&
+    (body as { code: number }).code !== 200
+  ) {
+    return (body as { code: number }).code;
+  }
+  return httpStatus;
+}
+
+/** Short, log-safe excerpt of a response body, for the error message. */
+function bodyExcerpt(body: unknown, max = 200): string {
+  const raw = typeof body === 'string' ? body : JSON.stringify(body);
+  if (!raw) return '';
+  return raw.length > max ? `${raw.slice(0, max)}…` : raw;
 }
 
 // ─── kie.ai API constants ─────────────────────────────────────────────────────
@@ -153,7 +208,12 @@ export class KieAiLlmProvider implements ILlmProvider {
         body: JSON.stringify(requestBody),
       });
     } catch (err) {
-      throw new KieAiLlmError('Network error calling kie.ai API', { reason: err });
+      // DEC-001: a transport failure (DNS, reset, socket timeout) is transient —
+      // retrying is exactly what BullMQ backoff is for.
+      throw new KieAiLlmError('Network error calling kie.ai API', {
+        reason: err,
+        isTransient: true,
+      });
     }
 
     if (!response.ok) {
@@ -163,11 +223,13 @@ export class KieAiLlmProvider implements ILlmProvider {
       } catch {
         body = await response.text();
       }
-      // RC-UC-300 FR-001: 429 and 5xx are transient (retriable); 4xx others are permanent.
-      const isTransient = response.status === 429 || response.status >= 500;
+      // RC-UC-300 / DEC-001: classify on the effective status.
+      const status = effectiveStatus(response.status, body);
+      const excerpt = bodyExcerpt(body);
       throw new KieAiLlmError(
-        `kie.ai API error: HTTP ${response.status} ${response.statusText}`,
-        { status: response.status, reason: body, isTransient },
+        `kie.ai API error: HTTP ${response.status} ${response.statusText}` +
+          (excerpt ? ` — ${excerpt}` : ''),
+        { status, reason: body, isTransient: isTransientStatus(status) },
       );
     }
 
@@ -176,6 +238,20 @@ export class KieAiLlmProvider implements ILlmProvider {
       data = (await response.json()) as KieAiResponse;
     } catch (err) {
       throw new KieAiLlmError('Failed to parse kie.ai API response as JSON', { reason: err });
+    }
+
+    // RC-UC-300 / DEC-001 § 5.1: kie.ai can deliver a provider error inside an HTTP 200
+    // gateway envelope. Such a body has no content[], so without this check it would fall
+    // through to the "empty completion" path below — losing the real code and reporting a
+    // rate limit as a permanent parse error.
+    const envelopeStatus = effectiveStatus(200, data);
+    if (envelopeStatus !== 200) {
+      const msg = (data as unknown as { msg?: unknown }).msg;
+      throw new KieAiLlmError(
+        `kie.ai API error: code ${envelopeStatus}` +
+          (typeof msg === 'string' && msg ? ` — ${msg}` : ` — ${bodyExcerpt(data)}`),
+        { status: envelopeStatus, reason: data, isTransient: isTransientStatus(envelopeStatus) },
+      );
     }
 
     // Concatenate all text blocks. kie.ai mirrors Anthropic's structure where

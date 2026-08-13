@@ -1,12 +1,15 @@
 # Changelog — .tl/
 
-## [2026-08-13] nacl-tl-fix (spec-update): kie.ai transience classified by effective status — DEC-001
+## [2026-08-13] nacl-tl-fix: kie.ai transience classified by effective status — DEC-001
 
-Spec-first half of the L2 fix for "kie.ai HTTP 404 bricks a meeting on attempt 1, and provider
-errors delivered inside HTTP 200 are misreported as an empty completion". Code follows in the
-next commit.
+L2 fix for "kie.ai HTTP 404 bricks a meeting on attempt 1, and provider errors delivered inside
+HTTP 200 are misreported as an empty completion". Shipped as two commits: spec `3c7c757`, then
+code.
 
-- **Level:** L2 — **Decision:** `DEC-001` (graph `:Decision`, `JUSTIFIES` → UC-300, UC-004)
+- **Level:** L2 — **Status:** PASS — **Decision:** `DEC-001` (graph `:Decision`, `JUSTIFIES` → UC-300, UC-004)
+- **Spec-first verdict:** PASS — spec-update commit `3c7c757` precedes the code-fix commit
+  (fix chain = 2 commits off `b7aad56`; `last_spec_idx_before_code` = 0)
+- **Affected UC:** UC-300 (owner); UC-004 / UC-002 / UC-001 are impact-only read paths
 - **Root cause:** `worker/src/llm/kieai.ts:167` classified transience from the raw HTTP status
   (`429 || >= 500`), an assumption the spec itself asserted wrongly. On kie.ai a 404 means the
   gateway did not route the path — the model id travels in the request **body**
@@ -30,10 +33,31 @@ next commit.
   HTTP-200 error envelope. `.tl/tasks/UC-300/task-be.md` — RQ-026 row + system step 11 resynced
   (the row still carried pre-FR-001 text, stale since 2026-05-26); `MeetingStatus.ERROR`
   corrected to `FAILED` in the enum list, which had been reverted below the v0.3.0 rename.
+- **Code changed:** `worker/src/llm/kieai.ts` only — new exported `isTransientStatus()` and
+  `effectiveStatus()`; the `!response.ok` branch and a new pre-parse envelope check both
+  classify through them; the network-error throw is now `isTransient: true`; error messages
+  carry a 200-char body excerpt (so a routing 404 shows its `"path"`) or the envelope `msg`
+  instead of "empty completion". `worker/src/jobs/protocol-generation.ts` deliberately
+  untouched — it already routes on `isTransientLlmError()`.
+- **Tests:** `worker/src/llm/kieai.test.ts` — new block "effective-status classification
+  (DEC-001)", authored by an isolated test-author sub-agent and verified RED (6 failing) before
+  the fix, GREEN after. Includes a first-ever assertion that the default endpoint is exactly
+  `https://api.kie.ai/claude/v1/messages` — the regression that caused the `1f025b7` outage was
+  previously untested. Stale header comment in `protocol-generation.regression.test.ts`
+  (T6a/T6c) resynced to the new sets.
+- **Verification:** worker 154 → 169 tests; repo-wide gate **596 passed** (shared 75 / worker 169 /
+  api 203 +7 skipped / web 149), `pnpm -r run build` clean. No new failures; baseline had none.
+- **Self-adversarial re-read:** all seven `KieAiLlmError` throw sites audited — missing-API-key,
+  `gpt-5-4` guard, JSON-parse failure and empty-completion remain permanent by design (retrying
+  cannot fix any of them); network / HTTP-status / in-envelope are now transient. `kieai.ts` is
+  the only caller of the kie.ai endpoint and `protocol-generation.ts:234` its only classifier
+  consumer, so there is no sibling carrier of the defect.
 - **Scope caveat:** the retry policy is only observable on the worker-enqueued path
   (`worker/src/queues.ts`, attempts=3). `api/src/queue.ts` still enqueues with BullMQ's default
   `attempts=1`, so FR-001 retry is inert for the UC-100 upload and the UC-004 retry button —
   registered as **F-004**, not fixed here. Deepgram parity registered as **F-005**.
+- **Not fixed, noted:** `api/src/services/uc-002.service.ts:12` JSDoc still references the
+  pre-v0.3.0 `Meeting.status=ERROR`; left alone to respect the agreed worker-only code scope.
 
 ## v0.3.0 — 2026-05-26 — Worker Job Retry Resilience (RELEASE)
 

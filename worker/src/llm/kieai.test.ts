@@ -300,4 +300,199 @@ describe('KieAiLlmProvider', () => {
       expect(url).toContain('https://custom.kie.ai/v2');
     });
   });
+
+  // ── Regression: DEC-001 effective-status classification (kie-anthropic.md §5.1/§8) ──
+  // Bug: adapter classifies isTransient from the raw HTTP status alone, so a
+  // 404 (gateway did not route the path — transient per §8) is treated as
+  // permanent, and a provider error delivered inside an HTTP 200 envelope
+  // ({code, msg}) is missed entirely because response.ok is true.
+
+  describe('effective-status classification (DEC-001)', () => {
+    it('DEFAULT ENDPOINT: calls exactly https://api.kie.ai/claude/v1/messages when no baseUrl override is given', async () => {
+      const provider = new KieAiLlmProvider({ apiKey: 'test-key' });
+      mockFetchOk(makeKieAiResponse({}));
+
+      await provider.generate({ prompt: 'test', language: 'EN' });
+
+      const [url] = mockFetch.mock.calls[0] as [string, RequestInit];
+      expect(url).toBe('https://api.kie.ai/claude/v1/messages');
+    });
+
+    it('HTTP 404 (Spring whitelabel body) is transient, not permanent', async () => {
+      const provider = new KieAiLlmProvider({ apiKey: 'test-key' });
+      mockFetchError(404, {
+        timestamp: '2026-08-13T00:00:00.000Z',
+        status: 404,
+        error: 'Not Found',
+        message: 'No message available',
+        path: '/claude/v1/messages',
+      });
+
+      let caught: KieAiLlmError | undefined;
+      try {
+        await provider.generate({ prompt: 'test', language: 'EN' });
+      } catch (err) {
+        caught = err as KieAiLlmError;
+      }
+
+      expect(caught).toBeInstanceOf(KieAiLlmError);
+      expect(caught?.status).toBe(404);
+      expect(caught?.isTransient).toBe(true);
+    });
+
+    it('HTTP 408 (request timeout) is transient', async () => {
+      const provider = new KieAiLlmProvider({ apiKey: 'test-key' });
+      mockFetchError(408, { error: 'Request Timeout' });
+
+      let caught: KieAiLlmError | undefined;
+      try {
+        await provider.generate({ prompt: 'test', language: 'EN' });
+      } catch (err) {
+        caught = err as KieAiLlmError;
+      }
+
+      expect(caught?.isTransient).toBe(true);
+    });
+
+    it('HTTP 429 remains transient (regression guard)', async () => {
+      const provider = new KieAiLlmProvider({ apiKey: 'test-key' });
+      mockFetchError(429, { error: 'Rate limit exceeded' });
+
+      let caught: KieAiLlmError | undefined;
+      try {
+        await provider.generate({ prompt: 'test', language: 'EN' });
+      } catch (err) {
+        caught = err as KieAiLlmError;
+      }
+
+      expect(caught?.isTransient).toBe(true);
+    });
+
+    it('HTTP 503 remains transient (regression guard)', async () => {
+      const provider = new KieAiLlmProvider({ apiKey: 'test-key' });
+      mockFetchError(503, { error: 'Service Unavailable' });
+
+      let caught: KieAiLlmError | undefined;
+      try {
+        await provider.generate({ prompt: 'test', language: 'EN' });
+      } catch (err) {
+        caught = err as KieAiLlmError;
+      }
+
+      expect(caught?.isTransient).toBe(true);
+    });
+
+    it.each([400, 401, 402, 413])(
+      'HTTP %i is permanent, not transient',
+      async (status) => {
+        const provider = new KieAiLlmProvider({ apiKey: 'test-key' });
+        mockFetchError(status, { error: 'client error' });
+
+        let caught: KieAiLlmError | undefined;
+        try {
+          await provider.generate({ prompt: 'test', language: 'EN' });
+        } catch (err) {
+          caught = err as KieAiLlmError;
+        }
+
+        expect(caught?.isTransient).toBe(false);
+      },
+    );
+
+    it('HTTP 200 envelope {code:401,msg:...} throws with effective status 401, permanent, and a message naming the real cause', async () => {
+      const provider = new KieAiLlmProvider({ apiKey: 'test-key' });
+      mockFetchOk({
+        code: 401,
+        msg: 'Unauthorized – Authentication failed. Please check that your Authorization and Content-Type headers are correctly set.',
+      });
+
+      let caught: KieAiLlmError | undefined;
+      try {
+        await provider.generate({ prompt: 'test', language: 'EN' });
+      } catch (err) {
+        caught = err as KieAiLlmError;
+      }
+
+      expect(caught).toBeInstanceOf(KieAiLlmError);
+      expect(caught?.status).toBe(401);
+      expect(caught?.isTransient).toBe(false);
+      expect(caught?.message).not.toMatch(/empty or missing completion text/);
+      expect(caught?.message).toMatch(/Unauthorized|401/);
+    });
+
+    it('HTTP 200 envelope {code:429,msg:...} throws with effective status 429, transient', async () => {
+      const provider = new KieAiLlmProvider({ apiKey: 'test-key' });
+      mockFetchOk({ code: 429, msg: 'Rate limit exceeded, please retry later.' });
+
+      let caught: KieAiLlmError | undefined;
+      try {
+        await provider.generate({ prompt: 'test', language: 'EN' });
+      } catch (err) {
+        caught = err as KieAiLlmError;
+      }
+
+      expect(caught).toBeInstanceOf(KieAiLlmError);
+      expect(caught?.status).toBe(429);
+      expect(caught?.isTransient).toBe(true);
+    });
+
+    it('HTTP 200 envelope {code:500,msg:...} is transient', async () => {
+      const provider = new KieAiLlmProvider({ apiKey: 'test-key' });
+      mockFetchOk({ code: 500, msg: 'Internal provider error.' });
+
+      let caught: KieAiLlmError | undefined;
+      try {
+        await provider.generate({ prompt: 'test', language: 'EN' });
+      } catch (err) {
+        caught = err as KieAiLlmError;
+      }
+
+      expect(caught).toBeInstanceOf(KieAiLlmError);
+      expect(caught?.status).toBe(500);
+      expect(caught?.isTransient).toBe(true);
+    });
+
+    it('network/transport failure (fetch rejects) is transient', async () => {
+      const provider = new KieAiLlmProvider({ apiKey: 'test-key' });
+      mockFetch.mockRejectedValueOnce(new Error('ECONNREFUSED'));
+
+      let caught: KieAiLlmError | undefined;
+      try {
+        await provider.generate({ prompt: 'test', language: 'EN' });
+      } catch (err) {
+        caught = err as KieAiLlmError;
+      }
+
+      expect(caught).toBeInstanceOf(KieAiLlmError);
+      expect(caught?.isTransient).toBe(true);
+    });
+
+    it('GUARD: a valid Anthropic HTTP 200 envelope still parses text and token usage', async () => {
+      const provider = new KieAiLlmProvider({ apiKey: 'test-key' });
+      mockFetchOk(
+        makeKieAiResponse({ content: 'Valid protocol text', promptTokens: 42, completionTokens: 17 }),
+      );
+
+      const result = await provider.generate({ prompt: 'test', language: 'EN' });
+
+      expect(result.text).toBe('Valid protocol text');
+      expect(result.tokensIn).toBe(42);
+      expect(result.tokensOut).toBe(17);
+    });
+
+    it('GUARD: HTTP 200 Anthropic envelope with empty content[] is still the permanent empty-completion error', async () => {
+      const provider = new KieAiLlmProvider({ apiKey: 'test-key' });
+      mockFetchOk({ content: [], usage: { input_tokens: 10, output_tokens: 0 } });
+
+      let caught: KieAiLlmError | undefined;
+      try {
+        await provider.generate({ prompt: 'test', language: 'EN' });
+      } catch (err) {
+        caught = err as KieAiLlmError;
+      }
+
+      expect(caught).toBeInstanceOf(KieAiLlmError);
+      expect(caught?.isTransient).toBe(false);
+    });
+  });
 });
