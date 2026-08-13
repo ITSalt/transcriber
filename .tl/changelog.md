@@ -1,5 +1,40 @@
 # Changelog — .tl/
 
+## [2026-08-13] nacl-tl-fix (spec-update): kie.ai transience classified by effective status — DEC-001
+
+Spec-first half of the L2 fix for "kie.ai HTTP 404 bricks a meeting on attempt 1, and provider
+errors delivered inside HTTP 200 are misreported as an empty completion". Code follows in the
+next commit.
+
+- **Level:** L2 — **Decision:** `DEC-001` (graph `:Decision`, `JUSTIFIES` → UC-300, UC-004)
+- **Root cause:** `worker/src/llm/kieai.ts:167` classified transience from the raw HTTP status
+  (`429 || >= 500`), an assumption the spec itself asserted wrongly. On kie.ai a 404 means the
+  gateway did not route the path — the model id travels in the request **body**
+  (`kieai.ts:138`), never the URL, so a 404 can never carry model semantics. Separately, kie.ai
+  returns provider errors inside **HTTP 200** with a `{code,msg}` envelope; such a body has no
+  `content[]`, so the adapter threw the local "empty or missing completion text" error and the
+  classifier was never consulted.
+- **Evidence:** live probes against `api.kie.ai` on 2026-08-13 — `POST /claude/v1/messages` with
+  an invalid Bearer → `HTTP 200` + `{"code":401,…}`; any unrouted path → `HTTP 404` + Spring
+  whitelabel `{"timestamp":…,"status":404,"path":"…"}`. Matches the 2026-05-26 incident
+  (`.tl/changelog.md` entry below) where the identical request returned 200 twelve minutes later.
+- **New policy (effective status = `body.code` when an HTTP 200 body carries a numeric
+  `code != 200`, else the HTTP status):** TRANSIENT = 404 / 408 / 429 / 5xx + network/transport
+  failures; PERMANENT = 400 / 401 / 402 / 413, any other unlisted 4xx, and local
+  parse / empty-completion / missing-section errors.
+- **Graph:** `RC-UC-300.retry_semantics` rewritten (404 moved out of the halt list);
+  `RQ-026.description` revised; `RC-UC-004` annotated with a KNOWN GAP; `DEC-001` created;
+  `UC-300.spec_version` → 1; task `UC-300-BE` stamped `review_status='stale'`.
+- **Docs:** `.tl/external-contracts/kie-anthropic.md` — §8 rewritten around effective status
+  (the old "404 = model not found → halt" row was factually wrong), new §5.1 documenting the
+  HTTP-200 error envelope. `.tl/tasks/UC-300/task-be.md` — RQ-026 row + system step 11 resynced
+  (the row still carried pre-FR-001 text, stale since 2026-05-26); `MeetingStatus.ERROR`
+  corrected to `FAILED` in the enum list, which had been reverted below the v0.3.0 rename.
+- **Scope caveat:** the retry policy is only observable on the worker-enqueued path
+  (`worker/src/queues.ts`, attempts=3). `api/src/queue.ts` still enqueues with BullMQ's default
+  `attempts=1`, so FR-001 retry is inert for the UC-100 upload and the UC-004 retry button —
+  registered as **F-004**, not fixed here. Deepgram parity registered as **F-005**.
+
 ## v0.3.0 — 2026-05-26 — Worker Job Retry Resilience (RELEASE)
 
 Released via `/nacl-tl-release` (PR #5 squash-merged → main `86c5834`; deploy run 26455409466 success; prod health 200 OK; tag v0.3.0).
