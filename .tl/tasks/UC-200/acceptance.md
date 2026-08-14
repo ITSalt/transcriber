@@ -14,7 +14,7 @@
 - **RQ-015** — On ANY failure (storage fetch, audio extraction, ASR call, response parsing) -> job.status=FAILED with non-null error_reason; Meeting.status -> FAILED (BRQ-008/010).
 - **RQ-016** — On successful completion of TranscriptionJob, auto-create exactly one ProtocolGenerationJob (status=QUEUED, transcript_id, prompt_template_version=current) per BRQ-007.
 - **RQ-017** — Speaker name resolution MUST attempt to map anonymous diarization labels to real names via self-introductions / addressed names in the transcript. Confident matches substitute across full_text and populate speaker_map. Unresolved labels remain 'Speaker N' (BRQ-021).
-- **RQ-018** — Language: if Meeting.language is null, ASR detects and writes Transcript.language; Meeting.language stays null. If set, it is passed as hint and Transcript.language SHOULD match (BRQ-005).
+- **RQ-018** — Language: `Meeting.language` is the author's document-language choice and is NEVER overwritten by detection (BRQ-005). `AUTO` → no ASR hint; the detected language is **persisted** as `Transcript.language` (column `transcripts.language`) while `Meeting.language` stays `AUTO`. `RU`/`EN` → sent as hint and persisted as `Transcript.language`. `Transcript.language` is {RU, EN} or NULL when the provider reported neither — never coerced, never `AUTO`. It records the recording and does NOT select the protocol template (UC-300 RQ-022).
 - **NFR-002** — Async job-based execution; no UI blocking.
 - **NFR-003** — No processing-time SLA at MVP.
 - **NFR-004** — RU + EN throughout.

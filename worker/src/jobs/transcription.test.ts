@@ -177,11 +177,14 @@ function setupSuccessfulMocks() {
   const mockAsr = { transcribe: vi.fn().mockResolvedValue(BASE_ASR_RESULT) }
   ;(DeepgramAsrProvider as unknown as MockedFunction<() => typeof mockAsr>).mockReturnValue(mockAsr)
 
+  // Hoisted so tests can assert on the persisted Transcript payload (RQ-018).
+  const transcriptCreate = vi.fn().mockResolvedValue({ id: TRANSCRIPT_ID, meetingId: MEETING_ID })
+
   // Prisma $transaction: simulate the transaction callback
   mockPrisma.$transaction.mockImplementation(async (cb: any) => {
     const txMock = {
       transcript: {
-        create: vi.fn().mockResolvedValue({ id: TRANSCRIPT_ID, meetingId: MEETING_ID }),
+        create: transcriptCreate,
       },
       recording: { update: vi.fn().mockResolvedValue({}) },
       meeting: { update: vi.fn().mockResolvedValue({}) },
@@ -206,7 +209,7 @@ function setupSuccessfulMocks() {
   // Publisher
   ;(publishMeetingEvent as MockedFunction<typeof publishMeetingEvent>).mockResolvedValue(undefined)
 
-  return { mockStorage, mockAsr, mockProtocolQueue }
+  return { mockStorage, mockAsr, mockProtocolQueue, transcriptCreate }
 }
 
 // ─── Tests ────────────────────────────────────────────────────────────────────
@@ -503,6 +506,61 @@ describe('T05 (RQ-018) — Language hint and detection', () => {
     expect(mockAsr.transcribe).toHaveBeenCalledWith(
       expect.objectContaining({ languageHint: 'EN' }),
     )
+  })
+
+  // RQ-018 / BRQ-005: before the 2026-08-14 fix the detected language was computed
+  // and only written to a log line — `transcripts` had no language column at all.
+  it.each([
+    ['ru', 'RU'],
+    ['ru-RU', 'RU'],
+    ['en', 'EN'],
+    ['en-US', 'EN'],
+  ])('persists detected language %s as %s on the Transcript', async (detected, expected) => {
+    const { mockAsr, transcriptCreate } = setupSuccessfulMocks()
+    mockAsr.transcribe.mockResolvedValue({ ...BASE_ASR_RESULT, detectedLanguage: detected })
+
+    await processTranscriptionJob(makeJob('bullmq-lang', JOB_ID) as any, makeLogger())
+
+    expect(transcriptCreate).toHaveBeenCalledWith(
+      expect.objectContaining({ data: expect.objectContaining({ language: expected }) }),
+    )
+  })
+
+  it.each(['de', 'multi', 'auto'])(
+    'persists NULL (not a coerced default) when ASR reports unsupported language %s',
+    async (detected) => {
+      const { mockAsr, transcriptCreate } = setupSuccessfulMocks()
+      mockAsr.transcribe.mockResolvedValue({ ...BASE_ASR_RESULT, detectedLanguage: detected })
+
+      await processTranscriptionJob(makeJob('bullmq-lang-x', JOB_ID) as any, makeLogger())
+
+      expect(transcriptCreate).toHaveBeenCalledWith(
+        expect.objectContaining({ data: expect.objectContaining({ language: null }) }),
+      )
+    },
+  )
+
+  it('never writes AUTO to Transcript.language and never overwrites Meeting.language', async () => {
+    /*
+     * BRQ-005: detection must not silently overwrite the author's choice.
+     * The meeting fixture is AUTO; after the run it must still be AUTO, and the
+     * transcript must carry the detected value instead.
+     */
+    const { mockAsr, transcriptCreate } = setupSuccessfulMocks()
+    mockAsr.transcribe.mockResolvedValue({ ...BASE_ASR_RESULT, detectedLanguage: 'ru' })
+
+    await processTranscriptionJob(makeJob('bullmq-lang-auto', JOB_ID) as any, makeLogger())
+
+    const payload = transcriptCreate.mock.calls[0]?.[0] as { data: { language: unknown } }
+    expect(payload.data.language).toBe('RU')
+    expect(payload.data.language).not.toBe('AUTO')
+
+    // No meeting.update anywhere in this flow writes `language`.
+    for (const call of mockPrisma.meeting.update.mock.calls) {
+      expect((call[0] as { data?: Record<string, unknown> })?.data ?? {}).not.toHaveProperty(
+        'language',
+      )
+    }
   })
 })
 

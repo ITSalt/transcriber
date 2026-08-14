@@ -1,5 +1,41 @@
 # Changelog — .tl/
 
+## [2026-08-14] nacl-tl-fix: Russian transcript produced an English protocol
+
+- **Level:** L2 (spec-sync)
+- **Status:** spec-update committed; code fix pending (Phase B)
+- **Spec-first verdict:** PASS — this spec-update commit precedes any code-fix commit
+- **Root cause:** `Meeting.language` defaults to `AUTO`, and
+  `worker/src/jobs/protocol-generation.ts:149` collapsed it with
+  `rawLang === 'RU' ? 'RU' : 'EN'`, so every `AUTO` meeting selected the English prompt.
+  The ASR-detected language computed at `worker/src/jobs/transcription.ts:246` was only
+  logged, never persisted — `transcripts` had no `language` column, contradicting RQ-018 and
+  BRQ-005. Section validation used the same collapsed value, so an English protocol for a
+  Russian meeting passed RQ-023 and was persisted silently.
+- **Confirmed in production:** 3 of 24 meetings (all `language='AUTO'`) —
+  `ef347894…`, `bffb1611…`, `3afc6f2e…`; all `edit_count=0`.
+- **Affected UC:** UC-100, UC-200, UC-201, UC-300
+- **Decision:** `DEC-003` — Protocol language is decided by `Meeting.language` (RU by
+  default), not by the detected transcript language. `JUSTIFIES` → UC-100, UC-200, UC-201,
+  UC-300, BRQ-013.
+- **BA-layer amendment:** `BRQ-013` (severity `hard`) restated — protocol is Russian by
+  default regardless of the recording's language; English only on explicit author choice.
+  Prior statement retained on the node as `superseded_statement`. `BRQ-005` unchanged.
+- **Graph updated** via `/nacl-ba-rules` + `/nacl-tl-fix` (L2): `Transcript-A06`
+  `derived:true→false` (now persisted), `Meeting-A03` `nullable:true→false` (default `AUTO`),
+  `ENUM-MeetingLanguage` +`AUTO` (`V03`, was missing since bootstrap while Prisma always had
+  it), `RQ-012`, `RQ-018`, `RQ-022`, `UC-200-AS08`, `UC-300-AS02`, `UC-300-AS03`.
+- **Docs updated:** `.tl/tasks/UC-200/{task-be,acceptance,test-spec}.md`,
+  `.tl/tasks/UC-300/{task-be,acceptance,test-spec,review-be}.md`
+- **Superseded verdict:** `UC-300/review-be.md:38,65` had certified “AUTO falls back to EN”
+  as *correct*. Struck through and annotated rather than deleted — the wrong verdict is part
+  of the record.
+- **Stale (to re-plan):** UC-100-BE, UC-100-FE, UC-200-BE, UC-201-BE, UC-201-FE, UC-300-BE
+- **Scope guard:** language semantics only. UC-200's stale job-status vocabulary
+  (`QUEUED`/`IN_PROGRESS`/`COMPLETED`, `full_text`, `transcript_id`) is deliberately NOT
+  touched here; partial working-tree sync preserved at
+  `scratchpad/uc200-task-be-vocab-sync.patch` for a separate follow-up.
+
 ## v0.3.1 — 2026-08-14 — kie.ai transient classification by effective status
 
 **RELEASE COMPLETE** · tag `v0.3.1` · PR #6 squash-merged as `1ab2907` · release

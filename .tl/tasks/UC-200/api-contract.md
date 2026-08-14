@@ -51,7 +51,7 @@ All errors are `AppError` (see TECH-005). Stable codes returned in body `{code, 
 
 | HTTP | Code | When |
 |------|------|------|
-_Worker UC — failures are written to TranscriptionJob.error_reason (RQ-015), not HTTP. See system steps ALT path._
+_Worker UC — failures are written to TranscriptionJob.error_msg DB column (RQ-015), not HTTP. SSE event payload uses the legacy `error_reason` field name (DTO contract, shared/src/api/uc002.ts) — that is the wire-level name and remains stable; the rename only affects the persisted column. See system steps ALT path._
 
 ## Authentication
 

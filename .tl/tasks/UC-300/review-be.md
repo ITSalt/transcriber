@@ -35,7 +35,7 @@ Skipped suite is api/src/prisma.smoke.test.ts (7 tests; requires live Postgres -
 - Success-path writes (Protocol insert, Meeting -> PROTOCOL_READY, Job -> DONE) live in a single prisma.$transaction (worker/src/jobs/protocol-generation.ts:165-191), satisfying BRQ-008 (Meeting.status mirror).
 - Terminal write uses updateMany WHERE status=PROCESSING guard inside the tx - race-safe.
 - Failure path (worker/src/jobs/protocol-generation.ts:211-278): catches all thrown errors (LLM, parse, section-missing, missing transcript, missing meeting, missing job), guards FAILED write to non-terminal states only, then publishes ERROR SSE best-effort, then re-throws so BullMQ records the failure (RQ-021 / RQ-026).
-- Language fallback (RU or fallback to EN) correctly maps Prisma three-valued MeetingLanguage (RU/EN/AUTO) onto the LLM provider two-valued language input.
+- ~~Language fallback (RU or fallback to EN) correctly maps Prisma three-valued MeetingLanguage (RU/EN/AUTO) onto the LLM provider two-valued language input.~~ **SUPERSEDED 2026-08-14 (DEC-003) — this verdict was wrong.** The `AUTO -> EN` collapse is the root cause of a production defect: every meeting left on the default `AUTO` produced an English protocol from a Russian transcript (3 of 24 prod meetings; e.g. `3afc6f2e-8f7b-44fe-9281-627db34504d8`). Because section validation used the same collapsed value, the wrong-language output passed RQ-023 and was persisted silently. Corrected rule: `EN -> EN`, `RU`/`AUTO` -> `RU` (RQ-022).
 - Section validation in validateProtocolSections is a pure function - easy to test, returns null on success or descriptive error string listing missing sections.
 
 ### 2. Code Quality - PASS
@@ -62,7 +62,7 @@ Skipped suite is api/src/prisma.smoke.test.ts (7 tests; requires live Postgres -
 - Coverage:
   - Happy path: PROCESSING claim, transaction with DONE write, PROTOCOL_READY SSE publish.
   - Idempotency: DONE-terminal skip, FAILED-terminal skip, concurrent-claim (updateMany count=0) skip.
-  - Language: EN dispatched as EN, RU dispatched as RU + RU section validation, AUTO falls back to EN.
+  - Language: EN dispatched as EN, RU dispatched as RU + RU section validation, ~~AUTO falls back to EN~~ **(SUPERSEDED — DEC-003: AUTO now dispatches as RU; the test asserting the EN fallback encoded the defect and was replaced).**
   - Section validation: pure-function tests for EN, RU, empty, partial; full-pipeline test confirming protocol.create is NOT called when sections are missing.
   - Failure: LLM throws, job not found, meeting has no transcript, error message captured in errorMsg, ERROR status SSE published.
   - Storage: markdown stored verbatim in Protocol.markdownContent.

@@ -31,6 +31,7 @@ import { DeepgramAsrProvider, isTransientAsrError } from '../asr/deepgram-adapte
 import { publishMeetingEvent } from '../lib/publisher.js'
 import { prisma } from '../lib/prisma.js'
 import { createStorage } from '../lib/storage.js'
+import { normalizeLanguageTag } from '../lib/language.js'
 import { createQueues, QueueName } from '../queues.js'
 
 // ─── Retry configuration (RC-UC-200 FR-001) ──────────────────────────────────
@@ -115,14 +116,6 @@ function speakerLabelToDisplay(label: string): string {
     return `Speaker ${parseInt(match[1], 10) + 1}`
   }
   return label
-}
-
-/** Normalize detected language string to Prisma MeetingLanguage enum value. */
-function normalizeLang(lang: string): 'RU' | 'EN' | 'AUTO' {
-  const l = lang.toLowerCase()
-  if (l.startsWith('ru')) return 'RU'
-  if (l.startsWith('en')) return 'EN'
-  return 'AUTO'
 }
 
 // ─── AudioInput collector ─────────────────────────────────────────────────────
@@ -242,8 +235,11 @@ export async function processTranscriptionJob(
     const segmentsCount = asrResult.segments.length
     const speakersCount = asrResult.speakers.length
 
-    // ── RQ-018: Persist detected language to Transcript ───────────────────
-    const detectedLang = normalizeLang(asrResult.detectedLanguage)
+    // ── RQ-018 / BRQ-005: Persist detected language to Transcript ─────────
+    // RU or EN when the provider reported one we support; null otherwise ('de',
+    // 'multi', or no detection at all). NOT coerced to a default — this column
+    // records what the provider actually said. Meeting.language is left untouched.
+    const detectedLanguage = normalizeLanguageTag(asrResult.detectedLanguage)
 
     // ── Step 7+8+9: Persist Transcript + update Meeting + mark DONE ───────
     // All writes in a single transaction (BRQ-008: Meeting.status mirror)
@@ -255,6 +251,7 @@ export async function processTranscriptionJob(
           rawText: fullText,
           speakerMap: speakerMap as object,
           segmentsBlob: asrResult.segments as object[],
+          language: detectedLanguage,
         },
       })
 
@@ -283,7 +280,7 @@ export async function processTranscriptionJob(
     })
 
     log.info(
-      { transcription_job_id, transcript_id: transcript.id, segmentsCount, speakersCount, detectedLang },
+      { transcription_job_id, transcript_id: transcript.id, segmentsCount, speakersCount, detectedLanguage },
       'Transcript persisted',
     )
 

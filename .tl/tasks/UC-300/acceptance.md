@@ -21,7 +21,7 @@
 ## Tied to requirements
 
 - **RQ-021** — ProtocolGenerationJob lifecycle: `PENDING → PROCESSING → {DONE, FAILED}`. Terminal immutable (BRQ-009).
-- **RQ-022** — LLM prompt template selected by `Meeting.language` (BRQ-013); resulting protocol language MUST match transcript language. Template version is a module constant at MVP, not a job column.
+- **RQ-022** — LLM prompt template selected by `Meeting.language` (BRQ-013, amended 2026-08-14 / DEC-003): `EN` → EN template; `RU` and `AUTO` → RU template. Protocol is Russian by default regardless of the recording's language. `Transcript.language` MUST NOT influence selection, and there is no `AUTO → EN` fallback. RQ-023 validation uses the same language value passed to the provider. Template version is a module constant at MVP, not a job column.
 - **RQ-023** — Persisted Protocol MUST contain Participants, Discussion Topics, Decisions, Action Items (BRQ-011). Missing section → job FAILED (permanent).
 - **RQ-024** — Action items SHOULD include assignee/deadline when stated (BRQ-012). Best-effort by LLM.
 - **RQ-025** — Initial Protocol on success: `version=1`, `edit_count=0`, `generated_at=now`. `Meeting.status → PROTOCOL_READY` (BRQ-008/014/015).
