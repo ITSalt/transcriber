@@ -5,104 +5,133 @@
     {
       "number": 6,
       "title": "fix(UC-300): retry kie.ai 404 and in-envelope errors instead of bricking the meeting",
-      "status": "not_merged",
+      "status": "merged",
       "classifier": {
         "verdict": "MERGE",
         "detail": null,
         "proof": "Decision DEC-001 accepted"
       },
       "ci": "SUCCESS (Lint + Typecheck + Test, run 31696083633)",
-      "mergeable": "MERGEABLE"
+      "mergeable": "MERGEABLE",
+      "merge_commit": "1ab2907"
     }
   ],
-  "merge": { "status": "halted_before_merge", "merged_count": 0, "total": 1 },
-  "ci": { "status": "pending" },
-  "health": { "status": "pending" },
-  "version": { "status": "pending", "bump": null, "value": null },
-  "tag": { "status": "pending" },
-  "graph": {
-    "status": "pending",
-    "baseline": {
-      "nodes": 542,
-      "captured": "2026-08-13 (live Cypher, Step 0 of this run)",
-      "labels": {
-        "ActivityStep": 65, "BusinessEntity": 6, "BusinessProcess": 6, "BusinessRole": 2,
-        "BusinessRule": 26, "Component": 12, "DataFlow": 9, "Decision": 1,
-        "DomainAttribute": 44, "DomainEntity": 6, "EntityAttribute": 43, "EntityState": 15,
-        "EnumValue": 16, "Enumeration": 4, "ExternalEntity": 4, "FeatureRequest": 1,
-        "FinalizationReport": 1, "Form": 6, "FormField": 45, "GlossaryTerm": 28,
-        "HandoffPackage": 1, "Module": 4, "ProcessGroup": 2, "Requirement": 59,
-        "RuntimeContract": 4, "RuntimeEvent": 4, "RuntimeLock": 3, "RuntimeState": 13,
-        "Stakeholder": 2, "SystemContext": 1, "SystemRole": 2, "Task": 43,
-        "UCStub": 9, "UseCase": 10, "ValidationReport": 4, "Wave": 13, "WorkflowStep": 28
-      },
-      "rels_total": 967,
-      "_rels_total_correction": "Recorded as 966 on first write — an arithmetic slip summing the live histogram, not a graph change. Live value was 967 at baseline capture and is 967 now; all 56 rel-type counts verified identical. Corrected so the next release does not diff against a bad baseline.",
-      "_superseded_by": "baseline_post_remediation — this pre-remediation capture is retained for audit only"
-    },
-    "baseline_post_remediation": {
-      "nodes": 543,
-      "rels_total": 1024,
-      "realized_by_edges": 53,
-      "captured": "2026-08-14 (live Cypher, after gate-4 remediation + review-round-2 corrections)",
-      "authoritative_for_next_release": true,
-      "round_2_delta": {
-        "rels": "+5 (1019 -> 1024)",
-        "detail": [
-          "+6 REALIZED_BY: second anchors added after adversarial review — RQ-008/009/010 -> UC-100-AS04 (the System validator step, where enforcement actually lives), RQ-037 -> UC-200-AS04 (the ASR pass-through half), RQ-014 -> UC-200-AS08 and RQ-021 -> UC-300-AS08 (the missing COMPLETED leg of both lifecycle requirements)",
-          "-1 REALIZED_BY: dropped RQ-003 -> UC-002-AS02 as speculative — that step's text carries no ownership scoping, so the edge asserted a constraint the artifact does not state. RQ-003 keeps its true anchor UC-001-AS02.",
-          "0 count change: restamped authored_by on all 48 original edges from 'nacl-tl-plan/L3.7-adoption' to 'manual/...' — the edges were hand-authored and must not attribute human judgement to a skill run",
-          "0 count change: RQ-023 rq_type validation -> behavioral (property only)",
-          "0 count change: UC-100-AS04.description and FORM-MeetingUpload-F02.label drift correction (500 MB -> 1 GiB, +video/webm)"
-        ]
-      },
-      "delta_vs_pre_remediation": {
-        "nodes": "+1",
-        "rels": "+52",
-        "fully_enumerated": true,
-        "detail": [
-          "+1 node: Decision DEC-002 (label Decision 1 -> 2) — L9.1 provenance backfill for FR-001",
-          "+48 rels: REALIZED_BY (new rel type, was 0) — L3.7 anchor adoption across all 38 must-anchor Requirements",
-          "+1 rel: IMPLEMENTS (new rel type, was 0) — (FR-001)-[:IMPLEMENTS]->(DEC-002)",
-          "+3 rels: JUSTIFIES 2 -> 5 — DEC-002 JUSTIFIES UC-004 (creates), UC-200 (shapes), UC-300 (shapes)"
-        ],
-        "arithmetic_check": "48 + 1 + 3 = 52 — matches the observed rel delta exactly; zero unexplained drift",
-        "note": "This delta was authored BY this release run as the gate-4 remediation, not discovered as pre-existing staleness. Gate 3 exists to catch unexplained snapshot-vs-live mismatch; every unit here is itemized above and reproducible from the write queries recorded in .tl/changelog.md. The pre-remediation capture is kept above so the two states remain independently auditable."
-      }
-    }
+  "merge": {
+    "status": "done",
+    "merged_count": 1,
+    "total": 1,
+    "method": "squash",
+    "commit": "1ab2907",
+    "note": "gh pr merge reported a git failure, but that was only the local --delete-branch checkout blocked by uncommitted .tl/ edits; the remote merge landed (state=MERGED, mergedAt 2026-08-14T08:22:31Z)."
   },
-  "release": { "status": "pending" },
-  "yougile": { "status": "skipped", "reason": "no YouGile configured" },
+  "ci": {
+    "status": "done",
+    "run_id": 31783718614,
+    "conclusion": "success",
+    "head_sha": "241970f",
+    "note": "Run 31783645184 on 1ab2907 was cancelled by concurrency when the docs commit landed; the authoritative green run is 31783718614 on 241970f, which includes the merge."
+  },
+  "health": {
+    "status": "done",
+    "url": "https://transcriber.itsalt.ru/api/health",
+    "code": 200,
+    "product_surface": {
+      "url": "/api/meetings",
+      "code": 200,
+      "meetings": 24,
+      "failed": 0,
+      "note": "HEALTH_ONLY is never product-readiness evidence (project-beta episode), so the config smoke list surface was probed too and returned real data."
+    },
+    "observation": "/api/health returns version:\"unknown\" — it does not report the deployed build, which weakens deploy verification. Worth wiring."
+  },
+  "version": {
+    "status": "done",
+    "bump": "patch",
+    "value": "v0.3.1",
+    "previous": "v0.3.0",
+    "rationale": "Single L2 bug fix + docs; no new endpoint or UC."
+  },
+  "tag": {
+    "status": "done",
+    "value": "v0.3.1",
+    "pushed": true
+  },
+  "graph": {
+    "status": "done",
+    "version": "v0.3.1",
+    "intake_items_stamped": 0,
+    "intake_note": "The graph holds zero IntakeItem nodes, so the canonical Step-7 query was a no-op. Stamped the artifact that actually shipped instead: DEC-001.delivered_in_release = v0.3.1. DEC-002 was stamped v0.3.0 — the release its subject matter shipped in, not the one that authored the node.",
+    "baseline_ref": "baseline_post_remediation (543 nodes / 1024 rels)"
+  },
+  "release": {
+    "status": "done",
+    "url": "https://github.com/ITSalt/transcriber/releases/tag/v0.3.1"
+  },
+  "yougile": {
+    "status": "skipped",
+    "reason": "no YouGile configured"
+  },
   "exceptions": [],
   "gates": {
     "gate1_upstream_sync": "PASS — UC-300 actor is SYSTEM; the wire-evidence requirement targets UCs with actor != SYSTEM. UC-300 wire_contract_qa VERIFIED (worker/test/wire/kie-anthropic.fixture.test.ts).",
-    "gate2_upstream_qa": "NOT DECIDED — scope question unresolved. UC-300 aggregate is VERIFIED (all six stages). UC-004-FE is verified-pending / test-UNVERIFIED and EXC-2026-05-26-uc004-qa-deferred EXPIRED 2026-06-09. Moot this run: gate 4 halts first.",
+    "gate2_upstream_qa": "PASS (scoped) — candidate set for this release is {UC-300}, whose QA aggregate is VERIFIED across all six stages. UC-004 was released in v0.3.0 and is not re-delivered here; its expired-exception debt is recorded as outstanding, not silently cleared.",
     "gate3_graph_stale": "PASS — live 542 nodes / 967 rels; all 37 label counts and all 56 rel-type counts identical to the Step-0 live baseline. Zero delta.",
-    "gate4_sa_validate": "FAIL — /nacl-sa-validate full = Status: FAIL, 39 CRITICAL (38x L3.7 Requirement missing REALIZED_BY; 1x L9.1 FeatureRequest FR-001 has no IMPLEMENTS->Decision). 16 WARNING, 8 INFO, 0 exempt. Neither cluster introduced by PR #6.",
-    "gate5_prod_golden_path": "NOT DECIDED — same scope question as gate 2. UC-300 prod_golden_path VERIFIED. Moot this run.",
+    "gate4_sa_validate": "PASS — re-run after remediation: Status WARN, counts {critical:0, warning:35, info:8, exempt:0}. Gate 4 fires only on FAIL with >=1 CRITICAL. Closed by fixing the findings, NOT by exception.",
+    "gate5_prod_golden_path": "PASS (scoped) — UC-300 prod_golden_path VERIFIED; complemented this run by a live /api/meetings probe over real production data.",
     "gate6_pr_ci": "PASS (PR #6 open, CI green 'Lint + Typecheck + Test', mergeable MERGEABLE / mergeStateStatus CLEAN)",
     "gate7_stale_downstream": "CLEARED 2026-08-13 by /nacl-tl-plan incremental re-plan of UC-300 — UC-300-BE regenerated (shipped-stale policy: dev state preserved), planned_from_version=1 stamped, review_status/stale_* removed from both Task and source UseCase. Verified 0 stale nodes and 0 version-drift rows."
   },
-  "halt": {
-    "headline": "RELEASE HALTED — UNVERIFIED (sa-validate-critical)",
-    "workflow_detail": "sa-validate-critical",
-    "block_condition": 4,
-    "run": "second invocation, 2026-08-13",
-    "critical_clusters": [
-      {
-        "check": "L3.7",
-        "count": 38,
-        "detail": "Every must-anchor Requirement lacks a REALIZED_BY edge to its implementer. There are ZERO REALIZED_BY relationships in the graph, and REALIZED_BY does not appear in the committed graph-infra/schema/sa-schema.cypher at all — this is a newer skill-version invariant this graph never adopted (consistent with the recorded graph-infra version drift). anchor_exempt is NULL on all 59 requirements, so nothing is exempted.",
-        "attribution": "pre-existing; not introduced by PR #6"
-      },
-      {
-        "check": "L9.1",
-        "count": 1,
-        "detail": "FeatureRequest FR-001 (status='spec-complete') has no IMPLEMENTS edge to a :Decision. DEC-001 itself is well-formed (accepted, non-empty rationale, JUSTIFIES -> UC-300 + UC-004, so L9.2/L9.3/L9.4 pass) — only the FR->Decision provenance edge is missing.",
-        "attribution": "pre-existing; shipped in v0.3.0"
-      }
-    ],
-    "prior_halt_resolved": "gate 7 (stale-downstream, block condition 7) was cleared earlier today by /nacl-tl-plan; L8 re-verified clean by an independent validation pass with three corroborating probes (graph-wide review_status census = 0 rows, snapshot-label census all 'current', UC-300-BE review_status NULL).",
-    "still_outstanding": "EXC-2026-05-26-uc004-qa-deferred expired 2026-06-09 — gates 2 and 5 are uncovered for UC-004 (UC-004-FE is verified-pending / test-UNVERIFIED). Renewal requires a NEW exception_id (editing expiry is schema tampering), or run /nacl-tl-qa UC-004 on production to collect the owed PROD_GOLDEN_PATH evidence. Note UC-300's own PROD_GOLDEN_PATH is VERIFIED (status.json), so this is a UC-004 debt, not a UC-300 one."
-  }
+  "deploy": {
+    "status": "done",
+    "run_id": 31783718944,
+    "conclusion": "success"
+  },
+  "scoping_decision": {
+    "question": "Do gates 2 and 5 scope to the release candidate set or to every UC in the graph?",
+    "chosen": "candidate set = {UC-300}",
+    "reasoning": "PR #6 changes only worker/src/llm/kieai.ts. UC-004 is not re-delivered by it, and the PR explicitly documents that this retry policy is inert on the UC-004 path (F-004). Gate text scopes to \"every UC where the matrix marks PROD_GOLDEN_PATH mandatory\" in what is being released.",
+    "counter_argument": "A graph-wide reading would block every future release until the UC-004 QA debt clears. That is the more conservative reading and was NOT taken.",
+    "not_hidden": "The UC-004 debt is recorded under outstanding_debt below and in the GitHub release notes."
+  },
+  "outstanding_debt": [
+    {
+      "item": "UC-004 QA",
+      "detail": "EXC-2026-05-26-uc004-qa-deferred expired 2026-06-09; UC-004-FE is verified-pending / test-UNVERIFIED with no live cover. Run /nacl-tl-qa UC-004 on production, or renew under a NEW exception_id (editing expiry is schema tampering).",
+      "blocking": "gates 2 and 5 cannot be settled graph-wide until closed"
+    },
+    {
+      "item": "F-004",
+      "detail": "api/src/queue.ts lacks defaultJobOptions, so attempts=1 makes the retry policy inert on the UC-100 upload and UC-004 retry paths."
+    },
+    {
+      "item": "F-005",
+      "detail": "Deepgram parity for effective-status classification."
+    },
+    {
+      "item": "L3.8 reverse coverage",
+      "detail": "18 System ActivitySteps have no realizing requirement, newly visible because REALIZED_BY adoption switched the opt-in check on. ~5 are real spec gaps (UC-100-AS04/AS05, UC-200-AS03, UC-300-AS04, UC-302-AS04); ~11 are plumbing that should NOT be chased. WARNING only."
+    },
+    {
+      "item": "L3.7b residue",
+      "detail": "3 WARNINGs: RQ-008/009/010 carry a second anchor to UC-100-AS04 (an ActivityStep) while their class is validation. Deliberate — the FormField anchor alone left the real server-side enforcer unreachable. Net effect: converted 1 warning into 3 in exchange for true traceability."
+    },
+    {
+      "item": "RQ-003 ownership anchoring",
+      "detail": "Anchored only to UC-001-AS02. UC-002-AS02 and UC-003 steps carry no ownership scoping in their text; either add it or leave RQ-003 single-anchored."
+    },
+    {
+      "item": "web/ duplicated constant",
+      "detail": "web/src/routes/upload/index.tsx:17 redeclares MAX_SIZE_BYTES instead of importing MAX_UPLOAD_BYTES from @transcrib/shared — the exact copy-paste the shared constant exists to prevent."
+    },
+    {
+      "item": "UCStub dialect residue",
+      "detail": "9 UCStub nodes with 31 WorkflowStep-[:TRACES_TO]->UCStub edges form a shadow traceability path parallel to AUTOMATES_AS. Candidate for /nacl-tl-reconcile."
+    },
+    {
+      "item": "/api/health version",
+      "detail": "Returns version:\"unknown\"; cannot confirm which build is live."
+    }
+  ],
+  "headline": "RELEASE COMPLETE",
+  "status": "PASS"
 }

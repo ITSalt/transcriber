@@ -1,5 +1,39 @@
 # Changelog — .tl/
 
+## v0.3.1 — 2026-08-14 — kie.ai transient classification by effective status
+
+**RELEASE COMPLETE** · tag `v0.3.1` · PR #6 squash-merged as `1ab2907` · release
+https://github.com/ITSalt/transcriber/releases/tag/v0.3.1
+
+### Bug Fixes
+- **UC-300** — a kie.ai gateway routing 404 no longer bricks a meeting on the first attempt,
+  and provider errors delivered inside HTTP 200 `{code,msg}` are classified instead of being
+  misreported as an empty completion. L2 fix, `DEC-001`. Classification runs on an effective
+  status: transient = 404/408/429/5xx + network; permanent = 400/401/402/413, other unlisted
+  4xx, and local parse/empty-completion/missing-section errors.
+
+### Spec / graph integrity
+- 39 `sa-validate` CRITICAL findings closed **by fixing them, not by exception** — see the
+  `[GRAPH] 2026-08-14` entry below for the full account, including the six defects an
+  adversarial re-review found in the first anchoring pass.
+- Drift the anchoring exposed and fixed: `UC-100-AS04` / `FORM-MeetingUpload-F02` said
+  500 MB / 3 MIME types against a shipped reality of 1 GiB / 4 types incl. `video/webm`.
+
+### Release gates
+All seven Strict-Only gates evaluated. Gate 4 `PASS` after remediation (`Status: WARN`,
+`critical: 0`). Gates 2 and 5 passed **scoped to the candidate set `{UC-300}`** — the
+reasoning and the counter-argument are both recorded in `.tl/release-status.json`
+under `scoping_decision`, not buried.
+
+### Verification
+CI `31783718614` success · deploy `31783718944` success · `/api/health` 200 ·
+`/api/meetings` 200 over real data, 24 meetings, **zero** FAILED.
+
+### Outstanding (carried, not closed)
+UC-004 QA debt (exception expired 2026-06-09), F-004, F-005, 18 L3.8 reverse-coverage
+warnings newly made visible, 3 L3.7b warnings accepted deliberately. Full list in
+`.tl/release-status.json` → `outstanding_debt`.
+
 ## [GRAPH] 2026-08-14 — closure of the 39 sa-validate CRITICAL findings (release gate 4)
 
 Remediation done to unblock the release of PR #6. Both clusters predated PR #6; neither was
