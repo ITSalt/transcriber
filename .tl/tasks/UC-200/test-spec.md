@@ -36,11 +36,16 @@ Each test references an RQ ID. Add new tests when adding new RQs.
 // (Implement against the endpoint / worker handler in task-be.md.)
 ```
 
-### T05. RQ-018 — Language: if Meeting.language is null, ASR detects and writes Transcript.language; Meeting.language stays null.
+### T05. RQ-018 — detected language is PERSISTED on Transcript; Meeting.language is never overwritten.
 ```ts
-// RQ-018: Language: if Meeting.language is null, ASR detects and writes Transcript.language; Meeting.language stays null. If set, it is passed as hint and Transcript.language SHOULD match (BRQ-005).
-// Setup -> Action -> Assert
-// (Implement against the endpoint / worker handler in task-be.md.)
+// RQ-018 / BRQ-005 (DEC-003):
+//   Meeting.language='AUTO' -> asr called with languageHint=null; detected 'ru'
+//     => transcript.create receives language:'RU'; Meeting.language stays 'AUTO'.
+//   Tag normalization: 'ru'->'RU', 'ru-RU'->'RU', 'en-US'->'EN'.
+//   Unsupported / absent detection ('de', 'multi', 'auto') => language:null persisted.
+//     MUST NOT coerce to 'EN' and MUST NOT write 'AUTO'.
+//   Meeting.language='EN' -> languageHint 'EN' passed AND persisted as Transcript.language.
+// (Implement against the worker handler in task-be.md.)
 ```
 
 ### T06. NFR-002 — Async job-based execution; no UI blocking..

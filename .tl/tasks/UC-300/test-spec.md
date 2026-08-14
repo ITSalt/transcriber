@@ -22,9 +22,13 @@ Job picked up flips `PENDING→PROCESSING` with `started_at`; success reaches
 `DONE` with `finished_at`; a terminal row is never mutated again (BRQ-009).
 
 ### T02. RQ-022 — prompt template selected by `Meeting.language`
-RU meeting → RU template and RU section headers; EN meeting → EN. Assert the
-resulting protocol language matches. Do **not** assert a
-`prompt_template_version` column — none exists (module constant only).
+`Meeting.language = EN` → EN template and EN section headers. `RU` → RU. **`AUTO`
+→ RU** (DEC-003), including when `Transcript.language = 'EN'` — the recording's
+language MUST NOT change the template. There is no `AUTO → EN` fallback; a test
+asserting one encodes the 2026-08-14 defect and MUST NOT be reintroduced.
+Anti-regression: `AUTO` + a Russian transcript + an LLM returning valid **English**
+markdown ⇒ job FAILED on missing sections and `protocol.create` NOT called. Do
+**not** assert a `prompt_template_version` column — none exists (module constant only).
 
 ### T03. RQ-023 — four required sections enforced
 RU headers `## Участники / ## Обсуждение / ## Решения / ## Задачи`; EN headers

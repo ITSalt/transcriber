@@ -63,7 +63,7 @@ Permissions (AUTHOR is the only human role; SYSTEM owns job lifecycles):
 | ID | Type | Priority | Description |
 |----|------|----------|-------------|
 | RQ-021 | functional | high | ProtocolGenerationJob lifecycle: PENDING -> PROCESSING -> {DONE, FAILED}. Terminal immutable (BRQ-009). |
-| RQ-022 | functional | high | LLM prompt template selected by Meeting.language (Transcript.language is derived from this); resulting protocol language MUST match transcript language. Template version NOT persisted on job at MVP (single hard-coded template). |
+| RQ-022 | functional | high | LLM prompt template selected by **Meeting.language** per BRQ-013 (amended 2026-08-14, DEC-003): `EN` selects the English template; every other value (`RU`, `AUTO`) selects the Russian template. The protocol is therefore in Russian by default, regardless of the language spoken in the recording. `Transcript.language` MUST NOT influence selection. There is NO fallback mapping an unresolved language onto EN — the former `AUTO -> EN` fallback produced English protocols for Russian meetings and is prohibited. RQ-023 section validation MUST use the same language value passed to the provider, so a wrong-language response fails loudly instead of being persisted. Template version NOT persisted on job at MVP (single hard-coded template). |
 | RQ-023 | functional/validation | high | Persisted Protocol MUST contain Participants, Discussion Topics, Decisions, Action Items (BRQ-011). Missing section -> job FAILED. |
 | RQ-024 | functional | medium | Action items SHOULD include assignee/deadline when stated (BRQ-012). Best-effort by LLM. |
 | RQ-025 | functional | high | Initial Protocol on success: version=1, edit_count=0, generated_at=now. Meeting.status -> PROTOCOL_READY (BRQ-008/014/015). |
@@ -86,7 +86,7 @@ See `api-contract.md` for full request/response schemas and error codes.
 
 1. Worker dequeues; UPDATE ProtocolGenerationJob SET status='PROCESSING', started_at=now WHERE id=:id AND status='PENDING'.
 2. Load Meeting; load Transcript via meeting_id; read Meeting.language for prompt template selection.
-3. Select prompt template per Meeting.language (RU/EN); MVP uses a single hard-coded template version (not persisted on job).
+3. Select prompt template per Meeting.language: `EN` -> EN template, `RU` or `AUTO` -> RU template (BRQ-013 / DEC-003). The same value is carried into the RQ-023 section validation. MVP uses a single hard-coded template version (not persisted on job).
 4. Submit transcript + selected prompt to ILlmProvider.generate (TECH-011).
 5. Parse LLM response into Markdown.
 6. Validate four required sections are present: Participants, Discussion Topics, Decisions, Action Items (RQ-023). Missing -> FAILED path.
@@ -124,7 +124,7 @@ _Verbatim speaker-attributed transcript from ASR+diarization. 1:1 with Meeting._
 | `speaker_map` | JSON | yes | no | no | {"Speaker 1": "Ivan", "Speaker 2": null} per BRQ-021. Default `{}`. |
 | `segments_count` | Int | yes | no | **yes** | DERIVED: length(segments_blob). Not persisted. |
 | `speakers_count` | Int | yes | no | **yes** | DERIVED: distinct speaker count in segments_blob. Not persisted. |
-| `language` | Enum(MeetingLanguage) | yes | no | **yes** | DERIVED: canonical value lives on Meeting.language. Not persisted on Transcript. |
+| `language` | Enum(MeetingLanguage) | yes | no | no | PERSISTED in `transcripts.language` (RQ-018). Language of the recording per ASR; {RU, EN} or NULL. Read-only here — protocol template selection uses Meeting.language, not this (RQ-022). |
 | `created_at` | DateTime | no | yes | no | First-persisted time |
 | `updated_at` | DateTime | no | yes | no | Last write timestamp |
 

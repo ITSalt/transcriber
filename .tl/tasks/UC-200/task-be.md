@@ -40,7 +40,7 @@ Permissions (AUTHOR is the only human role; SYSTEM owns job lifecycles):
 | RQ-015 | functional | high | On ANY failure (storage fetch, audio extraction, ASR call, response parsing) -> job.status=FAILED with non-null error_reason; Meeting.status -> FAILED (BRQ-008/010). |
 | RQ-016 | functional | high | On successful completion of TranscriptionJob, auto-create exactly one ProtocolGenerationJob (status=QUEUED, transcript_id, prompt_template_version=current) per BRQ-007. |
 | RQ-017 | functional | high | Speaker name resolution MUST attempt to map anonymous diarization labels to real names via self-introductions / addressed names in the transcript. Confident matches substitute across full_text and populate speaker_map. Unresolved labels remain 'Speaker N' (BRQ-021). |
-| RQ-018 | functional | high | Language: if Meeting.language is null, ASR detects and writes Transcript.language; Meeting.language stays null. If set, it is passed as hint and Transcript.language SHOULD match (BRQ-005). |
+| RQ-018 | functional | high | Language: Meeting.language is the author's document-language choice and MUST NEVER be overwritten by detection (BRQ-005). When it is AUTO, no hint is sent to the ASR and the detected language is persisted as Transcript.language while Meeting.language stays AUTO. When it is RU or EN, that value is sent as a hint and persisted as Transcript.language. Transcript.language is persisted in `transcripts.language`, constrained to {RU, EN}, and is NULL when the provider reported neither — never silently coerced. It records the recording; it is NOT a control input for protocol generation (see UC-300 RQ-022). |
 | NFR-002 | nfr/performance | high | Async job-based execution; no UI blocking. |
 | NFR-003 | nfr/performance | medium | No processing-time SLA at MVP. |
 | NFR-004 | nfr/integration | high | RU + EN throughout. |
@@ -120,7 +120,7 @@ _Verbatim speaker-attributed transcript from ASR+diarization. 1:1 with Meeting._
 | `full_text` | String | no | no | Markdown/text with per-segment speaker labels + minute:second timestamps |
 | `segments_count` | Int | no | no | Total speaker-attributed segments |
 | `speakers_count` | Int | no | no | Distinct speakers detected |
-| `language` | Enum(MeetingLanguage) | no | no | Detected or confirmed language (RU/EN) |
+| `language` | Enum(MeetingLanguage) | yes | no | PERSISTED in `transcripts.language`. ASR-detected (or confirmed-hint) language of the recording; {RU, EN} only, NULL when the provider reported neither, never AUTO. Does NOT drive protocol template selection (BRQ-013). |
 | `speaker_map` | JSON | yes | no | {"Speaker 1": "Ivan", "Speaker 2": null} per BRQ-021 |
 | `created_at` | DateTime | no | yes | First-persisted time |
 

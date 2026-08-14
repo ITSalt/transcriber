@@ -20,6 +20,37 @@
     "_fr001_plan_note": "FR-001 planned 2026-05-26T10:46:57Z: +UC-004 (BE+FE w13), +TECH-025/TECH-026 (w11), UC-200-BE/UC-300-BE re-planned (w12). 3 new waves (11-13).",
     "_fr001_conductor_sync": "2026-05-26: synced status.json to live graph (source of truth). FR-001 tasks TECH-025/026, UC-200-BE, UC-300-BE, UC-004-BE -> terminal/approved; UC-004 verification=verified-pending (FE E2E nav-actions deferred). total_tasks 42->43 to match 43 graph Task nodes (P-S1). Closes Phase-4.5 P-S1 + P-S4 drift."
   },
+  "phases": {
+    "spec": {
+      "status": "done",
+      "kind": "l2-spec-update",
+      "decision": "DEC-003",
+      "affected_docs": [
+        ".tl/tasks/UC-200/task-be.md",
+        ".tl/tasks/UC-200/acceptance.md",
+        ".tl/tasks/UC-200/test-spec.md",
+        ".tl/tasks/UC-300/task-be.md",
+        ".tl/tasks/UC-300/acceptance.md",
+        ".tl/tasks/UC-300/test-spec.md",
+        ".tl/tasks/UC-300/review-be.md"
+      ],
+      "graph_nodes": [
+        "BRQ-013",
+        "DEC-003",
+        "Transcript-A06",
+        "Meeting-A03",
+        "ENUM-MeetingLanguage-V03",
+        "RQ-012",
+        "RQ-018",
+        "RQ-022",
+        "UC-200-AS08",
+        "UC-300-AS02",
+        "UC-300-AS03"
+      ],
+      "ts": "2026-08-14T00:00:00Z",
+      "note": "Protocol-language fix (DEC-003). Spec committed before any code-fix commit per the spec-first prerequisite."
+    }
+  },
   "updated_by_W1_reconciliation": "2026-05-22T11:45:00Z",
   "W1_reconciliation_artifact": ".tl/reconciliation/2026-05-22-W1.json",
   "waves": {
