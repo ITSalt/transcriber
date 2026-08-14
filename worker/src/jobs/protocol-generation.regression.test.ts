@@ -8,10 +8,10 @@
  * - Single `callLog: string[]` that records ALL side-effects in chronological order.
  * - Prisma $transaction interceptor captures AND executes the callback, then marks
  *   "TX_COMMITTED" in the log.
- * - FR-001 retry semantics (RC-UC-300):
- *     T6a: transient LLM error (429/5xx) + attempts remaining → re-throw, NO FAILED write.
+ * - FR-001 retry semantics (RC-UC-300, revised by DEC-001):
+ *     T6a: transient LLM error (404/408/429/5xx) + attempts remaining → re-throw, NO FAILED write.
  *     T6b: transient LLM error on FINAL attempt → FAILED written.
- *     T6c: permanent LLM error (401/400/404) → FAILED written immediately.
+ *     T6c: permanent LLM error (400/401/402/413) → FAILED written immediately.
  *     T6d: attemptCount mirrors job.attemptsMade + 1 on FAILED write (TECH-026).
  *     T6e: non-KieAiLlmError (e.g. missing section) → permanent → FAILED immediately.
  *
