@@ -7,7 +7,11 @@ commit: pending
 reviewed: 2026-05-18
 reviewer: nacl-tl-review (strategist)
 blockers: []
-prior_blockers_resolved: [M-1, M-2]
+prior_blockers_resolved: [M-1, M-2, m-1, m-4]
+reconciled: 2026-05-22 (nacl-tl-reconcile UC-200)
+reconcile_artifact: .tl/changelog.md#2026-05-22-uc-200-reconcile
+independent_regression_test: worker/src/jobs/transcription.regression.test.ts (14 tests, mutation-verified)
+e2e_coverage: LIVE_PROVIDER_SMOKE (qa-evidence/2026-05-22-live-provider-smoke.yaml) + PROD_GOLDEN_PATH (meeting 494e8e69 on transcriber.itsalt.ru, 2026-05-22). Local Playwright suite: NO_INFRA (no playwright.config or .spec.ts files exist).
 ---
 
 # Re-Review: UC-200 BE — Transcription Worker Pipeline

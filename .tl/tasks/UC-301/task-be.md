@@ -89,13 +89,15 @@ _Persisted Markdown protocol with four required sections (BRQ-011). 1:1 with Mee
 ## Enumerations
 
 #### `MeetingStatus`
+- `CREATED` — Meeting row exists; upload not yet started
 - `UPLOADING` — File upload in progress
+- `UPLOADED` — Upload finalized; TranscriptionJob not yet enqueued
 - `TRANSCRIBING` — Transcription queued or running
-- `TRANSCRIPT_READY` — Transcript persisted; protocol not yet started or running
-- `PROTOCOL_GENERATING` — Protocol-gen job queued or running
+- `TRANSCRIBED` — Transcript persisted; protocol not yet started or running
+- `GENERATING_PROTOCOL` — Protocol-gen job queued or running
 - `PROTOCOL_READY` — Protocol persisted; no manual edits yet
 - `EDITED` — Protocol manually edited at least once
-- `FAILED` — Non-recoverable pipeline error (terminal, BRQ-009)
+- `ERROR` — Non-recoverable pipeline error (terminal, BRQ-009)
 
 
 ## Definition of done

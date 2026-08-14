@@ -39,7 +39,7 @@ Permissions (AUTHOR is the only human role; SYSTEM owns job lifecycles):
 | RQ-008 | functional/validation | high | Reject size_bytes > 524,288,000 (500 MB) BEFORE any storage upload begins. |
 | RQ-009 | functional/validation | high | Accept exactly {video/mp4, video/x-matroska, video/quicktime}; reject others with clear user-facing error. |
 | RQ-010 | functional/validation | high | Verify container integrity at upload acceptance (probe header / short sample). Corrupt files rejected before Recording is persisted (BRQ-003). |
-| RQ-011 | functional | high | On successful upload completion, atomically: (1) finalize Recording metadata; (2) transition Meeting.status UPLOADING -> TRANSCRIBING (BRQ-008); (3) create exactly one TranscriptionJob with status=QUEUED per Recording (BRQ-006). |
+| RQ-011 | functional | high | On successful upload completion, atomically: (1) finalize Recording metadata; (2) transition Meeting.status UPLOADING -> TRANSCRIBING (BRQ-008); (3) create exactly one TranscriptionJob with status=PENDING per Recording (BRQ-006). |
 | RQ-012 | functional | high | Language selector accepts RU, EN, or blank. Blank -> Meeting.language stays null; ASR auto-detects per BRQ-005. |
 | RQ-013 | functional | medium | Meeting.title defaults to Recording.filename (without extension) when AUTHOR leaves the field blank. |
 | NFR-001 | nfr/performance | high | Upload pipeline accepts up to 500 MB via chunked transfer without timeout. |
@@ -62,7 +62,7 @@ See `api-contract.md` for full request/response schemas and error codes.
 1. On TUS pre-create: validate size <= 500 MB (RQ-008); validate mime in {video/mp4, video/x-matroska, video/quicktime} (RQ-009). Reject pre-bytes with 4xx + error code.
 2. Accept chunked PATCH bytes; stream directly to S3 (TECH-007/008).
 3. On TUS upload-finish: probeContainer via ffprobe (RQ-010). On failure -> delete partial object + return 422.
-4. In a single DB transaction: insert Meeting(status=UPLOADING, language=hint|null, title=hint|filename-no-ext per RQ-013), insert Recording(filename, size_bytes, mime_type, storage_path), enqueue TranscriptionJob(status=QUEUED, recording_id, meeting_id), transition Meeting.status -> TRANSCRIBING (RQ-011).
+4. In a single DB transaction: insert Meeting(status=UPLOADING, language=hint|null, title=hint|filename-no-ext per RQ-013), insert Recording(filename, size_bytes, mime_type, storage_uri), enqueue TranscriptionJob(status=PENDING, meeting_id), transition Meeting.status -> TRANSCRIBING (RQ-011). Recording is reached via meeting_id at worker pickup; TranscriptionJob has no recording_id column.
 5. Return {meeting_id} so client can redirect to UC-002.
 
 ## Domain context (embedded — do NOT requery Neo4j)
@@ -94,28 +94,29 @@ _Uploaded video metadata; physical bytes in EXT-04 Object Storage (s3://)._
 | `uploaded_at` | DateTime | no | yes | Upload-completed timestamp; immutable |
 
 ### Entity: TranscriptionJob
-_Async job tracking ASR+diarization for a Recording._  
+_Async job tracking ASR+diarization for a Meeting. 1:1 with Meeting; Recording reached via meeting_id._  
 
 | Attribute | Type | Nullable | Internal | Description |
 |-----------|------|----------|----------|-------------|
 | `id` | UUID | no | yes | Surrogate PK |
-| `meeting_id` | Reference->Meeting | no | yes | FK to Meeting |
-| `recording_id` | Reference->Recording | no | yes | FK to Recording (1:1 per BRQ-006) |
-| `status` | Enum(JobStatus) | no | yes | QUEUED->IN_PROGRESS->{COMPLETED\|FAILED}; terminal immutable (BRQ-009) |
+| `meeting_id` | Reference->Meeting | no | yes | FK to Meeting (unique; 1:1 per BRQ-006) |
+| `status` | Enum(JobStatus) | no | yes | PENDING->PROCESSING->{DONE\|FAILED}; terminal immutable (BRQ-009) |
 | `started_at` | DateTime | yes | yes | Worker pickup time |
-| `completed_at` | DateTime | yes | yes | Terminal state time |
-| `error_reason` | String | yes | yes | Non-null when status=FAILED (BRQ-010) |
+| `finished_at` | DateTime | yes | yes | Terminal state time (DONE or FAILED) |
+| `error_msg` | String | yes | yes | Non-null when status=FAILED (BRQ-010) |
 
 ## Enumerations
 
 #### `MeetingStatus`
+- `CREATED` — Meeting row exists; upload not yet started
 - `UPLOADING` — File upload in progress
+- `UPLOADED` — Upload finalized; TranscriptionJob not yet enqueued
 - `TRANSCRIBING` — Transcription queued or running
-- `TRANSCRIPT_READY` — Transcript persisted; protocol not yet started or running
-- `PROTOCOL_GENERATING` — Protocol-gen job queued or running
+- `TRANSCRIBED` — Transcript persisted; protocol not yet started or running
+- `GENERATING_PROTOCOL` — Protocol-gen job queued or running
 - `PROTOCOL_READY` — Protocol persisted; no manual edits yet
 - `EDITED` — Protocol manually edited at least once
-- `FAILED` — Non-recoverable pipeline error (terminal, BRQ-009)
+- `ERROR` — Non-recoverable pipeline error (terminal, BRQ-009)
 
 #### `MeetingLanguage`
 - `RU` — Russian
