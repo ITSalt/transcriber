@@ -299,7 +299,7 @@ describe('T01 (RQ-021) — ProtocolGenerationJob lifecycle: PENDING → PROCESSI
 
 // ─── T02 (RQ-022) — Prompt template selected by language ─────────────────────
 
-describe('T02 (RQ-022) — LLM prompt template selected by Transcript language', () => {
+describe('T02 (RQ-022) — LLM prompt template selected by Meeting.language', () => {
   it('calls LLM with language=EN for EN meeting', async () => {
     mockPrisma.protocolGenerationJob.findUnique.mockResolvedValue(BASE_PG_JOB as any)
     mockPrisma.protocolGenerationJob.updateMany.mockResolvedValue({ count: 1 })
@@ -338,7 +338,11 @@ describe('T02 (RQ-022) — LLM prompt template selected by Transcript language',
     )
   })
 
-  it('falls back to EN when meeting language is AUTO', async () => {
+  // NOTE: this replaces a test that asserted `AUTO` falls back to EN. That test
+  // encoded the 2026-08-14 production defect (Russian meetings on the default AUTO
+  // received English protocols) as if it were the contract. Per BRQ-013 / DEC-003,
+  // AUTO now resolves to RU. Do not reintroduce an EN-fallback assertion.
+  it('calls LLM with language=RU when meeting language is AUTO (DEC-003)', async () => {
     const autoJob = {
       ...BASE_PG_JOB,
       meeting: { ...BASE_PG_JOB.meeting, language: 'AUTO' as const },
@@ -349,13 +353,13 @@ describe('T02 (RQ-022) — LLM prompt template selected by Transcript language',
     setupSuccessfulTransaction()
     ;(publishMeetingEvent as MockedFunction<typeof publishMeetingEvent>).mockResolvedValue(undefined)
 
-    const mockLlm = makeMockLlm()
+    const mockLlm = makeMockLlm({ ...MOCK_LLM_RESULT, text: VALID_RU_MARKDOWN })
     await processProtocolGenerationJob(makeJob('bq-7', JOB_ID) as any, makeLogger(), {
       llm: mockLlm,
     })
 
     expect(mockLlm.generate).toHaveBeenCalledWith(
-      expect.objectContaining({ language: 'EN' }),
+      expect.objectContaining({ language: 'RU' }),
     )
   })
 

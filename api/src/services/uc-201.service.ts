@@ -107,8 +107,11 @@ export async function getTranscript(meetingId: string): Promise<TranscriptRespon
       full_text: t.rawText ?? '',
       segments_count: segmentsCount,
       speakers_count: speakersCount,
-      // language: from Meeting (Transcript has no own language field in Prisma schema)
-      language: meeting.language,
+      // RQ-018: the transcript's own ASR-detected language is the canonical value here.
+      // Falls back to Meeting.language for rows written before the column existed (those
+      // are backfilled only where the author declared a language; AUTO rows stay NULL and
+      // correctly surface as "Авто", since the detection was never recorded).
+      language: t.language ?? meeting.language,
       speaker_map: speakerMap,
       created_at: t.createdAt.toISOString(),
     }

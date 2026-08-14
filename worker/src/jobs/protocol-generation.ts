@@ -26,6 +26,7 @@ import { LLM_MODEL_DEFAULT } from '@transcrib/shared'
 import { KieAiLlmProvider, isTransientLlmError } from '../llm/kieai.js'
 import { publishMeetingEvent } from '../lib/publisher.js'
 import { prisma } from '../lib/prisma.js'
+import { resolveProtocolLanguage } from '../lib/language.js'
 
 // ─── Retry configuration (RC-UC-300 FR-001) ──────────────────────────────────
 /** Maximum BullMQ attempts for a protocol generation job. Must match queues.ts defaultJobOptions. */
@@ -46,7 +47,7 @@ const REQUIRED_SECTIONS: Record<'RU' | 'EN', string[]> = {
 // ─── Prompt template version ──────────────────────────────────────────────────
 
 /** RQ-022: prompt_template_version recorded on job for audit trail. */
-export const PROTOCOL_PROMPT_TEMPLATE_VERSION = '1.0.0'
+export const PROTOCOL_PROMPT_TEMPLATE_VERSION = '1.1.0'
 
 // ─── Section validation ───────────────────────────────────────────────────────
 
@@ -144,9 +145,15 @@ export async function processProtocolGenerationJob(
     }
 
     // ── Step 2: Determine language for prompt selection ──────────────────────
-    // RQ-022: language determined from Meeting.language; fall back to EN
-    const rawLang = meeting.language
-    const language: 'RU' | 'EN' = rawLang === 'RU' ? 'RU' : 'EN'
+    // RQ-022 / BRQ-013 (DEC-003): Russian by default; English only when the author
+    // explicitly selected EN. The transcript's own language is NOT consulted — see
+    // resolveProtocolLanguage() for why that separation matters.
+    //
+    // INVARIANT: this single `language` value MUST be the one passed to BOTH
+    // llm.generate() and validateProtocolSections(). If they ever diverge, a
+    // wrong-language response validates against its own headings and persists
+    // silently — which is precisely how the 2026-08-14 defect went unnoticed.
+    const language = resolveProtocolLanguage(meeting.language)
 
     // ── Step 3: Build prompt from transcript text ────────────────────────────
     // RQ-022: full transcript text passed as user prompt; system prompt (template) chosen by language

@@ -139,6 +139,47 @@ describe('UC-201-BE — GET /api/meetings/:id/transcript', () => {
     })
   })
 
+  // ─── T02b: RQ-018 — language comes from the Transcript, not the Meeting ──────
+
+  it('T02b — reports the ASR-detected transcript language for an AUTO meeting', async () => {
+    /*
+     * Before the 2026-08-14 fix this endpoint returned `meeting.language`, so a
+     * Russian recording uploaded on the default AUTO surfaced in the transcript
+     * view as "Авто" rather than "Русский".
+     */
+    mockFindUnique.mockResolvedValue(
+      makeDbMeeting({
+        language: 'AUTO',
+        transcript: makeDbTranscript({ language: 'RU' }),
+      }),
+    )
+
+    const res = await app.inject({
+      method: 'GET',
+      url: `/api/meetings/${MEETING_UUID}/transcript`,
+    })
+
+    expect(res.statusCode).toBe(200)
+    expect(res.json<{ language: string }>().language).toBe('RU')
+  })
+
+  it('T02b — falls back to Meeting.language for pre-migration rows with no detected language', async () => {
+    mockFindUnique.mockResolvedValue(
+      makeDbMeeting({
+        language: 'AUTO',
+        transcript: makeDbTranscript({ language: null }),
+      }),
+    )
+
+    const res = await app.inject({
+      method: 'GET',
+      url: `/api/meetings/${MEETING_UUID}/transcript`,
+    })
+
+    expect(res.statusCode).toBe(200)
+    expect(res.json<{ language: string }>().language).toBe('AUTO')
+  })
+
   // ─── T03: 404 when meeting not found ─────────────────────────────────────────
 
   it('T03 — 404 TRANSCRIPT_NOT_FOUND when meeting does not exist', async () => {
