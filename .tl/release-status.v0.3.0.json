@@ -1,0 +1,86 @@
+{
+  "started": "2026-05-26T12:00:00Z",
+  "intake": "FR-001",
+  "prs": [
+    {
+      "number": 5,
+      "title": "FR-001: Worker job retry resilience (retry-with-backoff + user retry action)",
+      "status": "pending"
+    }
+  ],
+  "merge": {
+    "status": "done",
+    "merged_count": 1,
+    "total": 1,
+    "commit": "86c5834",
+    "method": "squash"
+  },
+  "ci": {
+    "status": "done",
+    "run_id": 26455409300,
+    "conclusion": "success"
+  },
+  "health": {
+    "status": "done",
+    "endpoint": "/api/health",
+    "url": "https://transcriber.itsalt.ru/api/health",
+    "code": 200,
+    "note": "HEALTH_ONLY; PROD_GOLDEN_PATH for UC-004 deferred under exception"
+  },
+  "version": {
+    "status": "done",
+    "bump": "minor",
+    "value": "v0.3.0",
+    "previous": "v0.2.0"
+  },
+  "tag": {
+    "status": "pending"
+  },
+  "graph": {
+    "status": "done",
+    "version": "v0.3.0",
+    "stamped": "FeatureRequest FR-001",
+    "baseline": {
+      "nodes": 541,
+      "captured": "2026-05-26",
+      "note": "live capture; pre-flight diff at Step 7 matched (no drift)"
+    }
+  },
+  "release": {
+    "status": "pending"
+  },
+  "yougile": {
+    "status": "skipped",
+    "reason": "no YouGile configured"
+  },
+  "exceptions": [
+    {
+      "exception_id": "EXC-2026-05-26-uc004-qa-deferred",
+      "affected_gates": [
+        "upstream-qa-unverified",
+        "missing-prod-golden-path",
+        "nav-actions-no-natural-entrypoint-evidence"
+      ],
+      "expiry": "2026-06-09T23:59:59Z",
+      "followup_task": "run /nacl-tl-qa UC-004 on production after deploy"
+    }
+  ],
+  "_note": "FR-001 release. Overrides prior v0.2.0 status for this release run.",
+  "gates": {
+    "gate1_upstream_sync": "PASS",
+    "gate2_upstream_qa": "PASS (exception EXC-2026-05-26-uc004-qa-deferred for UC-004)",
+    "gate3_graph_stale": "PASS (baseline 541 captured this run)",
+    "gate4_sa_validate": "PASS (0 CRITICAL after fixing 6 pre-existing findings)",
+    "gate5_prod_golden_path": "PASS (UC-200/300 W7 evidence; UC-004 via exception)",
+    "gate6_pr_ci": "PASS (PR #5, CI green)"
+  },
+  "deploy": {
+    "status": "done",
+    "run_id": 26455409466,
+    "conclusion": "success",
+    "migrations_applied": [
+      "20260526120000_add_attempt_count",
+      "20260526130000_rename_meeting_status_error_to_failed"
+    ]
+  }
+}

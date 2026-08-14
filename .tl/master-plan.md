@@ -28,11 +28,16 @@
 | UC-100 | Upload meeting video | mod-ingest | 1 | 2 | TECH-003/005/007/008 |
 | UC-200 | Transcription pipeline (worker) | mod-transcription | 2 | — | UC-100-BE, TECH-006/009/010/012 |
 | UC-201 | View and download transcript | mod-transcription | 3 | 4 | UC-200-BE |
-| UC-300 | Protocol generation (worker) | mod-protocol | 3 | — | UC-200-BE, TECH-011 |
+| UC-300 | Protocol generation (worker) | mod-protocol | 3 → **12** | — | UC-200-BE, TECH-011, TECH-026 |
 | UC-301 | Review and edit protocol | mod-protocol | 4 | 5 | UC-300-BE |
 | UC-302 | Export protocol to PDF | mod-protocol | 5 | — | UC-301-BE, TECH-014 |
 
 UC-200 and UC-300 are SYSTEM-actor worker UCs (no FE). UC-302 has no dedicated FE — UI hooks live in UC-002-FE and UC-301-FE forms.
+
+> The BE-wave column records the ORIGINAL wave-0..5 plan. UC-200-BE and UC-300-BE were
+> re-waved to **12** by the FR-001 re-plan (2026-05-26, `wave-12` = "FR-001: worker
+> failure-path refinements"); the graph `Task.wave` is authoritative. UC-300-BE was
+> regenerated again on 2026-08-13 (DEC-001) at the same wave 12.
 
 ### TECH tasks
 

@@ -1,7 +1,7 @@
 # UC-300 — API Contract
 
 **UC:** Generate protocol pipeline  
-**BE:** `UC-300-BE` · **FE:** `UC-300-FE`
+**BE:** `UC-300-BE` · **FE:** none (`UC-300.has_ui = false`, actor SYSTEM)
 
 > SOURCE OF TRUTH for BE/FE interface. Both agents consume this file.
 
@@ -41,7 +41,22 @@ All errors are `AppError` (see TECH-005). Stable codes returned in body `{code, 
 
 | HTTP | Code | When |
 |------|------|------|
-_Worker UC — failures are written to ProtocolGenerationJob.error_reason (RQ-026), not HTTP. See system steps ALT path._
+_Worker UC — failures are written to `ProtocolGenerationJob.error_msg` (RQ-026), not returned over HTTP. See the ALT failure path in `task-be.md`._
+
+### Upstream provider status handling (kie.ai — DEC-001)
+
+Not an HTTP contract of this UC, but the contract this UC **consumes**. The
+adapter classifies on the **effective status** — `body.code` when an HTTP 200
+body carries a numeric `code != 200`, else the HTTP status:
+
+| Effective status | Class | Job outcome |
+|---|---|---|
+| 404, 408, 429, 5xx; network/transport | TRANSIENT | Re-throw, no DB write, BullMQ retries (up to 3) |
+| 400, 401, 402, 413, other unlisted 4xx | PERMANENT | `FAILED` + `error_msg` immediately |
+| local parse / empty completion / missing section | PERMANENT | `FAILED` + `error_msg` immediately |
+
+Default endpoint is exactly `https://api.kie.ai/claude/v1/messages`. Full wire
+detail: `.tl/external-contracts/kie-anthropic.md` §5.1 and §8.
 
 ## Authentication
 

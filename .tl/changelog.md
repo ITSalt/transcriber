@@ -1,5 +1,101 @@
 # Changelog — .tl/
 
+## [GRAPH] 2026-08-14 — closure of the 39 sa-validate CRITICAL findings (release gate 4)
+
+Remediation done to unblock the release of PR #6. Both clusters predated PR #6; neither was
+a regression. **No signed exception was used** — the provenance runbook explicitly warns that
+an exception against `sa-validate-critical` would also mask real L1–L7 criticals.
+
+### L9.1 — FeatureRequest FR-001 had no `IMPLEMENTS` → `:Decision` (1 CRITICAL)
+
+Closed per `nacl-tl-core/references/provenance-gap-closure.md` **Step 2 (backfill)**, not Step 3
+(grandfathering): FR-001 has a non-empty `description`, a readable `markdown_path`, and PR #5, so
+the rationale was **recoverable** — and the runbook is explicit that grandfathering a recoverable
+FR is dishonest debt-hiding.
+
+- Created `Decision DEC-002` "Worker Job Retry Resilience", `status='accepted'`, `level='feature'`,
+  `created_at` inherited from FR-001 (2026-05-26), `source='FR-001 (backfilled from markdown)'`,
+  `backfilled=true`.
+- `rationale` and `context` are quoted from the project's own recorded text — the FR markdown's
+  `## Feature Description` and its `Source:` metadata line. Nothing invented.
+- Wired `(FR-001)-[:IMPLEMENTS]->(DEC-002)` plus `JUSTIFIES` with roles: UC-004 `creates`,
+  UC-200 `shapes`, UC-300 `shapes` (role derived from each `INCLUDES_UC.kind`).
+
+> **Rejected as factually false:** linking `FR-001 -[:IMPLEMENTS]-> DEC-001`. DEC-001 was created
+> 2026-08-13, two and a half months *after* FR-001 shipped in v0.3.0 — that edge would have
+> asserted a feature implements a decision made long after it. An earlier draft of the release
+> report recommended exactly this; it was wrong and was caught before any write.
+
+### L3.7 — no `REALIZED_BY` anchors anywhere in the graph (38 CRITICAL)
+
+The relationship type did not exist in the graph at all, and **no skill in the family authors it**
+— only `nacl-sa-validate` reads it. So this was an unadopted invariant (consistent with the
+recorded graph-infra version drift), not corrupted data.
+
+Adopted it properly: 48 `REALIZED_BY` edges from all 38 must-anchor Requirements to the artifact
+that realizes each, following the L3.7b class contract — `functional`/`behavioral` → `ActivityStep`,
+`validation` → `FormField`, `interface` → `Form`. Edges carry `anchor_kind`, `authored_by`,
+`authored_at`. Requirements realized in more than one place got more than one anchor (e.g. RQ-007 →
+`UC-003-AS02` confirmation + `UC-003-AS04` cascade).
+
+Known residue, deliberately left honest:
+
+- **RQ-023 → `UC-300-AS07`** raises one L3.7b WARNING. RQ-023 is class `validation`, whose contract
+  target is a `FormField`, but UC-300 is `has_ui=false` and owns no Form — so no valid FormField
+  target exists. `UC-300-AS07` ("Worker validates that all four required sections are present") is
+  the literal validating step. The class taxonomy assumes UI-bound validation; a worker-side content
+  validation has no seat in it. Anchoring truthfully and taking the WARNING beats re-typing the
+  requirement to silence the check.
+- **L3.8 activates.** It is opt-in on the existence of any `Requirement-[:REALIZED_BY]->(:ActivityStep)`,
+  so authoring anchors necessarily switches on reverse-coverage reporting for System-actor steps with
+  no realizing requirement. These are WARNINGs, not CRITICALs, and represent genuine authoring debt
+  that was previously invisible.
+
+### ADR-012 — `type` case normalization
+
+`type: 'ADR'` → `'adr'`, matching ADR-001..011. The L3.7 reserved-type filter is case-sensitive, so
+the uppercase value escaped exemption only incidentally; it would have started firing a spurious
+CRITICAL the moment anyone set `rq_type` on the node. Also means `nacl-sa-finalize`'s ADR reader
+now sees all twelve ADRs rather than eleven.
+
+### Graph delta (for gate 3 auditability)
+
+`542 → 543` nodes, `967 → 1019` rels. Fully itemized: +1 `Decision`, +48 `REALIZED_BY`,
++1 `IMPLEMENTS`, +3 `JUSTIFIES` = +52. Zero unexplained drift. Both the pre- and
+post-remediation live captures are recorded in `.tl/release-status.json`.
+
+## [PLAN] 2026-08-13 — nacl-tl-plan: incremental re-plan of UC-300 (DEC-001 staleness)
+
+Incremental re-plan (not `--overwrite`). Stale set = **UC-300** only, detected by Signal 2
+(`UC-300-BE.review_status='stale'`, `stale_origin=DEC-001`). Run to clear the
+`stale-downstream` release gate blocking PR #6.
+
+- **Shipped-stale policy applied:** `UC-300-BE` is `status=done`, so dev state was PRESERVED
+  (status, all `phase_*`, `commit=b0f8779`, `verification_evidence`). No task was reopened.
+- **Delta carrier:** commit `9841404` (PR #6) — the code half of the same L2 fix already
+  implements DEC-001, so no new task was needed and no operator reopen was required.
+- **Files regenerated:** `task-be.md` (delta section + embedded RC-UC-300 + frontmatter wave
+  3→12, `TECH-026` added to `depends_on`), `acceptance.md`, `test-spec.md`, `impl-brief.md`,
+  `api-contract.md`. The latter three still described the **pre-FR-001** "any failure → FAILED"
+  contract.
+- **Graph:** `planned_from_version=1` stamped; `review_status`/`stale_*` removed from
+  `UC-300-BE` and `UC-300`. L8 verified clear (0 stale nodes, 0 version-drift rows).
+- **External Contracts Gate (Step 1.6):** vacuously passed — the graph holds **zero**
+  `ExternalContract` nodes, so the gate had nothing to check even though kie.ai is a live
+  provider dependency. See findings below.
+- **Status:** PASS
+
+### Findings raised, not fixed (need `/nacl-tl-fix`)
+
+1. `RQ-021` + `UC-300-AS01/AS07/AS08` + `UC-300.acceptance_criteria` use `QUEUED/IN_PROGRESS/
+   COMPLETED`; Prisma has `PENDING/PROCESSING/DONE/FAILED`.
+2. `RC-UC-300.durable_state_machine` still says `Meeting.status … | ERROR`; `ERROR` was renamed
+   `FAILED` by v0.3.0 migration `20260526130000_rename_meeting_status_error_to_failed`.
+3. `RQ-022` + `UC-300-AS03` claim the prompt template version is "recorded on the job";
+   `PROTOCOL_PROMPT_TEMPLATE_VERSION` is a module constant and no such column exists.
+4. `.tl/external-contracts/kie-anthropic.md` exists on disk but has no `ExternalContract` node
+   and no `REQUIRES_EXTERNAL` edge from UC-300 — the W6 gate is inert for this project.
+
 ## [2026-08-13] nacl-tl-fix: kie.ai transience classified by effective status — DEC-001
 
 L2 fix for "kie.ai HTTP 404 bricks a meeting on attempt 1, and provider errors delivered inside
