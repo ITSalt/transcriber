@@ -302,4 +302,37 @@ describe('DeepgramAsrProvider', () => {
       expect(result.speakers).toHaveLength(0);
     });
   });
+
+  // ── Request timeout ────────────────────────────────────────────────────────
+  //
+  // @deepgram/sdk@5 defaults `timeoutInSeconds` to 60 for transcribeFile:
+  //   media/client/Client.mjs:241
+  //   timeoutMs: (requestOptions?.timeoutInSeconds
+  //               ?? this._options?.timeoutInSeconds ?? 60) * 1000
+  // The AbortController is armed BEFORE fetch and cleared only after the fetch
+  // promise settles, so those 60 seconds cover uploading the WAV body AND
+  // Deepgram's entire processing time. Production's longest recording (4429 s of
+  // audio -> ~142 MB WAV) fits with only a few seconds of headroom; the next
+  // longer meeting aborts mid-flight.
+  describe('request timeout', () => {
+    /* MUTATION PROOF: drop the `requestOptions` argument in
+     * deepgram-adapter.ts -> transcribeFile is called with 2 args -> the third
+     * element is undefined -> RED. That is the pre-fix state. */
+    it('passes an explicit timeout instead of inheriting the SDK 60s default', async () => {
+      const provider = new DeepgramAsrProvider('test-api-key');
+      const mock = getTranscribeFileMock();
+      mock.mockResolvedValueOnce({ request_id: 'timeout-probe' });
+
+      await provider.transcribe({ audio: Buffer.from('fake'), languageHint: 'en' });
+
+      const call = mock.mock.calls[0] as unknown[];
+      const requestOptions = call[2] as { timeoutInSeconds?: number } | undefined;
+
+      expect(requestOptions).toBeDefined();
+      expect(requestOptions?.timeoutInSeconds).toBeGreaterThan(60);
+      // Must stay under Deepgram's own 600 s sync-processing cap so we surface a
+      // clean client-side abort rather than waiting for their 504.
+      expect(requestOptions?.timeoutInSeconds).toBeLessThan(600);
+    });
+  });
 });

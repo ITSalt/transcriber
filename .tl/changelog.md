@@ -1,5 +1,32 @@
 # Changelog — .tl/
 
+## [2026-08-15] nacl-tl-fix: Deepgram calls inherited the SDK's 60-second default timeout
+
+- **Level:** L1 (code-only). Found while sizing the upload-limit feature, not in
+  the original brief — it silently caps how long a recording may be.
+- **Defect:** `worker/src/asr/deepgram-adapter.ts` passed no `requestOptions`,
+  and the `DeepgramClient` was constructed with `{ apiKey }` only. The SDK
+  resolves `timeoutMs` as
+  `(requestOptions?.timeoutInSeconds ?? this._options?.timeoutInSeconds ?? 60) * 1000`
+  (`@deepgram/sdk@5.2.0`, `listen/.../media/client/Client.mjs:241`), so the
+  effective budget was **60 seconds** — and because the AbortController is armed
+  before `fetch` and cleared only after it settles, those 60 s cover **uploading
+  the audio body AND Deepgram's entire processing time**, not just connect.
+- **Why it mattered:** production's longest recording (4429 s of audio → ~142 MB
+  of 16 kHz mono WAV) completes inside that window with only seconds of headroom.
+  The next longer meeting would abort mid-flight with a raw `AbortError` — which,
+  per F-005, is not classified as transient, so it would have failed permanently
+  on the first attempt. The nominal 1 GiB upload cap was never actually reachable.
+- **Fix:** `requestOptions: { timeoutInSeconds: 570 }`. 570 s sits just under
+  Deepgram's own 600 s sync-processing cap, so an over-long job surfaces a clean
+  client-side abort instead of waiting for their 504.
+- **Test:** `worker/src/asr/deepgram-adapter.test.ts` → `request timeout`
+  asserts the third argument carries a timeout `> 60` and `< 600`. Mutation
+  proof executed: with the fix stashed the suite goes 1 failed / 10 passed, with
+  it restored 11 passed.
+- **Verified:** lint 0 errors; typecheck clean; worker 220 (baseline 219 + 1),
+  shared 75, api 209 (+7 skipped), web 150.
+
 ## [2026-08-15] nacl-tl-fix: F-004 — API-enqueued jobs had no retry policy, stranding meetings
 
 - **Level:** L1 (code-only) — spec already described the correct behaviour

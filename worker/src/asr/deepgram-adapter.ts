@@ -68,6 +68,24 @@ function resolveLanguage(hint: string | null): {
   return { language: mapped };
 }
 
+// ─── Request timeout ──────────────────────────────────────────────────────────
+
+/**
+ * Per-request timeout for the pre-recorded transcription call, in seconds.
+ *
+ * `@deepgram/sdk@5` defaults `timeoutInSeconds` to **60** for `transcribeFile`
+ * (`media/client/Client.mjs:241`), and its AbortController is armed before
+ * `fetch` and cleared only after the fetch promise settles — so that budget
+ * covers uploading the audio body AND Deepgram's entire processing time.
+ * Production's longest recording (4429 s of audio → ~142 MB of 16 kHz mono WAV)
+ * fits with only a few seconds of headroom; the next longer meeting would abort
+ * mid-flight with a raw `AbortError`.
+ *
+ * 570 s sits just under Deepgram's own 600 s sync-processing cap, so we surface
+ * a clean client-side abort instead of waiting on their 504.
+ */
+const REQUEST_TIMEOUT_SECONDS = 570;
+
 // ─── Helper: normalize StorageStream → Buffer ─────────────────────────────────
 
 async function toBuffer(audio: Uint8Array | AsyncIterable<Uint8Array>): Promise<Buffer> {
@@ -127,6 +145,7 @@ export class DeepgramAsrProvider implements IAsrProvider {
         ...languageParams,
         ...diarizationParams,
       },
+      { timeoutInSeconds: REQUEST_TIMEOUT_SECONDS },
     );
 
     return mapResponse(body as unknown as ListenV1Response | { request_id?: string }, languageHint);
