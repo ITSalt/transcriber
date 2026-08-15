@@ -1,5 +1,44 @@
 # Changelog — .tl/
 
+## [FEATURE] 2026-08-15 — FR-002 / DEC-004: honest upload limit (1.5 GiB + 4h gate)
+
+- **Skill:** `/nacl-sa-feature`. Spec-only; code follows separately.
+- **Asked for 8 GB, specified 1.5 GiB — deliberately.** Measurement showed the
+  pipeline could not honour the **1 GiB it already advertised**, so raising the
+  constant alone would have turned an honest client-side rejection into a
+  mid-pipeline failure. Real ceiling was ~400–600 MB, bound by the Deepgram 60 s
+  default timeout (fixed in `53bd404`) and a triple in-RAM audio copy.
+- **Three premises in the original brief were disproved by measurement:** VPS disk
+  is irrelevant (storage is external S3; bytes never touch the API host), the proxy
+  is Caddy with `max_size 0` and is bypassed anyway, and the provider caps only bind
+  near ~5 GB. 8 GB needs Deepgram async callback mode — a redesign (~12–18 days),
+  itself gated on an unverified assumption that Deepgram can fetch presigned URLs
+  from `s3.cloud.ru`.
+- **The duration gate is the real constraint.** `RQ-039` (new): reject recordings
+  longer than 14,400 s. Bytes are a poor proxy — 1.5 GiB is 5.5 h at the 656 kbps
+  seen in production but only 71 min at 1080p/3 Mbps. `ffprobe` already runs at
+  finalization and its `durationSec` was being **discarded**.
+- **At 4 h every constraint has headroom:** FLAC payload ~253 MB (13% of Deepgram's
+  2 GB cap), peak worker RSS ~570–820 MB (under the 1024M pm2 cap — no pm2 change,
+  which matters on a VPS shared with four other products), Deepgram processing
+  ~144 s of a 570 s budget, Russian protocol ~132K of a 200K context.
+- **The graph contradicted itself before this.** Ten nodes carried a size limit and
+  disagreed: six still said 500 MB (`NFR-001`, `BRQ-001`, `Recording-A04`, `BP-001`,
+  `BP-001-S03`, `EXT-04`), four said 1 GiB (`RQ-008`, `BR-102`,
+  `FORM-MeetingUpload-F02`, `UC-100-AS04`). The `RQ-008` vs `NFR-001` contradiction
+  pre-dated this feature and is closed here. `GLO-025`, `DFL-001` and
+  `UC-100.user_story` still said "300-500 MB"; `NFR-003` now names the 4 h bound.
+- **Infrastructure verified before specifying:** prod `ffmpeg 6.1.1` carries both
+  `flac` and `libopus`, so FLAC extraction has no blocker.
+- **Graph:** `FR-002` + `DEC-004` written with `IMPLEMENTS` / `JUSTIFIES` /
+  `INCLUDES_UC` / `AFFECTS_MODULE` / `AFFECTS_ENTITY`. `UC-100.spec_version` 2 → 3.
+  9 Tasks stamped stale (`stale_origin='FR-002'`) — UC-100 plus its transitive
+  `DEPENDS_ON` downstream. Cleared by `/nacl-tl-plan --feature FR-002`.
+- **Pre-existing finding, not fixed:** L3.7b ×3 — `RQ-008/009/010` each carry a
+  correct `FormField` anchor **plus** an extra `ActivityStep` anchor that trips the
+  target-label check. Deleting a real traceability edge to satisfy a WARNING-level
+  lint would lose information.
+
 ## [2026-08-15] nacl-tl-fix: F-005 (partial) — Deepgram errors were never classified
 
 - **Level:** L1 (code-only). **F-005 stays OPEN** — only its deliverable 3, the
