@@ -56,8 +56,14 @@ export function extractAudio(input: string | Readable): Readable {
     .noVideo()
     .audioChannels(1)
     .audioFrequency(16000)
-    .audioCodec('pcm_s16le')
-    .format('wav')
+    // FLAC instead of pcm_s16le (DEC-004): lossless, so word-error rate is
+    // unchanged, but roughly 45% smaller on speech. That is what keeps a 4-hour
+    // recording inside both the worker's memory budget and Deepgram's 2 GB
+    // payload cap — 16 kHz mono PCM is a flat 32 kB/s, i.e. ~461 MB at the
+    // RQ-039 ceiling, versus ~253 MB here. Verified present on the production
+    // ffmpeg 6.1.1 build before this change was specified.
+    .audioCodec('flac')
+    .format('flac')
     .on('error', (err: Error) => {
       // Forward ffmpeg process errors to the output stream so the awaiting
       // consumer sees them. Without this, fluent-ffmpeg emits 'error' on the

@@ -167,7 +167,14 @@ const REQUEST_TIMEOUT_SECONDS = 570;
 
 async function toBuffer(audio: Uint8Array | AsyncIterable<Uint8Array>): Promise<Buffer> {
   if (audio instanceof Uint8Array) {
-    return Buffer.from(audio);
+    // DEC-004: reuse the caller's memory instead of copying it. `Buffer.from(buf)`
+    // COPIES, and the audio is already fully materialised upstream, so this was a
+    // second full-size allocation for no benefit — material against the worker's
+    // 1024M cap once recordings run to hours. `Buffer.from(view.buffer, ...)`
+    // wraps the same bytes without allocating.
+    return Buffer.isBuffer(audio)
+      ? audio
+      : Buffer.from(audio.buffer, audio.byteOffset, audio.byteLength);
   }
   const chunks: Buffer[] = [];
   for await (const chunk of audio) {

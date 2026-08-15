@@ -110,11 +110,26 @@ vi.mock('../storage/s3-adapter.js', () => ({
 
 // ─── Mock fluent-ffmpeg (probeContainer uses dynamic import) ─────────────────
 
+// The real ffprobe callback is (err, data); `data.format.duration` is what the
+// RQ-039 duration gate reads, so the mock must supply it.
 vi.mock('fluent-ffmpeg', () => ({
   default: {
-    ffprobe: vi.fn((_path: string, cb: (err: Error | null) => void) => cb(null)),
+    ffprobe: vi.fn(
+      (_path: string, cb: (err: Error | null, data?: unknown) => void) =>
+        cb(null, { format: { duration: 3600 } }),
+    ),
   },
 }))
+
+/** Point the ffprobe mock at a specific duration for one call. */
+async function stubProbeDuration(durationSec: number): Promise<void> {
+  const ffmpeg = await import('fluent-ffmpeg')
+  vi.mocked(
+    (ffmpeg.default as unknown as {
+      ffprobe: (p: string, cb: (err: Error | null, data?: unknown) => void) => void
+    }).ffprobe,
+  ).mockImplementationOnce((_p, cb) => cb(null, { format: { duration: durationSec } }))
+}
 
 // ─── App import after mocks ───────────────────────────────────────────────────
 
@@ -215,25 +230,78 @@ describe('Upload — POST /api/uploads/complete', () => {
 
   // ─── T01: RQ-008 — size too large ──────────────────────────────────────────
 
-  it('T01 — RQ-008: rejects size_bytes > 1 GiB with 400 VALIDATION_ERROR', async () => {
+  it('T01 — RQ-008: rejects size_bytes > 1.5 GiB with 400 VALIDATION_ERROR', async () => {
     const res = await app.inject({
       method: 'POST',
       url: '/api/uploads/complete',
-      payload: happyBody({ size_bytes: 1_073_741_825 }),
+      payload: happyBody({ size_bytes: 1_610_612_737 }),
     })
 
     // size_bytes > max is caught by Zod schema validation (400)
     expect(res.statusCode).toBe(400)
   })
 
-  it('T07 — NFR-001: accepts exactly 1,073,741,824 bytes (1 GiB boundary)', async () => {
+  it('T07 — NFR-001: accepts exactly 1,610,612,736 bytes (1.5 GiB boundary)', async () => {
     const res = await app.inject({
       method: 'POST',
       url: '/api/uploads/complete',
-      payload: happyBody({ size_bytes: 1_073_741_824 }),
+      payload: happyBody({ size_bytes: 1_610_612_736 }),
     })
 
     expect(res.statusCode).toBe(200)
+  })
+
+  // ─── RQ-039 — recording-duration gate (DEC-004) ────────────────────────────
+  //
+  // Duration, not byte size, is what bounds the processing pipeline: peak worker
+  // memory, the Deepgram request budget and the LLM context all scale with it.
+  // ffprobe already ran here and its duration was being DISCARDED.
+
+  /* MUTATION PROOF: delete the MAX_UPLOAD_DURATION_SEC check in
+   * uc-100.service.ts -> a 5-hour recording is accepted with 200 -> RED. */
+  it('T12 — RQ-039: rejects a recording longer than 4 h with 422', async () => {
+    await stubProbeDuration(14_401)
+
+    const res = await app.inject({
+      method: 'POST',
+      url: '/api/uploads/complete',
+      payload: happyBody(),
+    })
+
+    expect(res.statusCode).toBe(422)
+    expect(res.json().error?.code ?? res.json().code).toBe('RECORDING_TOO_LONG')
+  })
+
+  /* MUTATION PROOF: use `>=` instead of `>` in the gate -> the exact boundary is
+   * rejected -> RED. */
+  it('T13 — RQ-039: accepts exactly 14,400 s (4 h boundary)', async () => {
+    await stubProbeDuration(14_400)
+
+    const res = await app.inject({
+      method: 'POST',
+      url: '/api/uploads/complete',
+      payload: happyBody(),
+    })
+
+    expect(res.statusCode).toBe(200)
+  })
+
+  /* MUTATION PROOF: keep discarding the probed duration (return a bare boolean)
+   * -> durationSec is absent from the Recording create -> RED. */
+  it('T14 — RQ-039: persists the probed duration on Recording', async () => {
+    await stubProbeDuration(1234)
+
+    await app.inject({
+      method: 'POST',
+      url: '/api/uploads/complete',
+      payload: happyBody(),
+    })
+
+    expect(mockRecordingCreate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({ durationSec: 1234 }),
+      }),
+    )
   })
 
   // ─── T02: RQ-009 — MIME validation ──────────────────────────────────────────

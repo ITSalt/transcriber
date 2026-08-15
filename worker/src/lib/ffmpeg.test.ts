@@ -159,19 +159,27 @@ describe('extractAudio', () => {
     expect((builder['audioFrequency'] as Mock)).toHaveBeenCalledWith(16000)
   })
 
-  it('uses wav output format', () => {
+  // DEC-004: FLAC replaced pcm_s16le. Lossless, so WER is unchanged, but ~45%
+  // smaller on speech — which is what keeps a 4-hour recording (RQ-039) inside
+  // both the worker's memory budget and Deepgram's 2 GB payload cap. Verified
+  // present on the production ffmpeg 6.1.1 build before the switch.
+  /* MUTATION PROOF: revert to .audioCodec('pcm_s16le').format('wav') -> RED. */
+  it('uses FLAC output format', () => {
     const input = makeReadable()
     extractAudio(input)
 
     const builder = (ffmpegLib as unknown as Mock).mock.results[0]?.value as Record<string, Mock>
-    // Either .format('wav') or .audioCodec('pcm_s16le') indicates WAV pipeline
-    const formatCalled = (builder['format'] as Mock | undefined)?.mock?.calls?.some(
-      (args: unknown[]) => args[0] === 'wav',
-    )
-    const codecCalled = (builder['audioCodec'] as Mock | undefined)?.mock?.calls?.some(
-      (args: unknown[]) => (args[0] as string)?.startsWith('pcm'),
-    )
-    expect(formatCalled || codecCalled).toBe(true)
+    expect(builder['audioCodec']).toHaveBeenCalledWith('flac')
+    expect(builder['format']).toHaveBeenCalledWith('flac')
+  })
+
+  it('still downmixes to 16 kHz mono regardless of codec', () => {
+    const input = makeReadable()
+    extractAudio(input)
+
+    const builder = (ffmpegLib as unknown as Mock).mock.results[0]?.value as Record<string, Mock>
+    expect(builder['audioChannels']).toHaveBeenCalledWith(1)
+    expect(builder['audioFrequency']).toHaveBeenCalledWith(16000)
   })
 })
 

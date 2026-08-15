@@ -242,7 +242,7 @@ export async function processTranscriptionJob(
     // worker memory (a 500 MB upload would have OOM'd the VM previously).
     const storage = createStorage()
     const key = storage.storageUriToKey(recording.storageUri)
-    const recordingUrl = await storage.getPresignedDownloadUrl(key, 1800)
+    const recordingUrl = await storage.getPresignedDownloadUrl(key, 7200)
 
     // ── Step 3: Extract WAV audio via ffmpeg (TECH-009) ───────────────────
     // RQ-015: ffmpeg error → FAILED

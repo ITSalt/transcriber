@@ -1,5 +1,43 @@
 # Changelog — .tl/
 
+## [2026-08-15] FR-002 implementation — 1.5 GiB cap + 4h duration gate (code)
+
+Follows the spec commit `abd8335`. Code only.
+
+- **`MAX_UPLOAD_BYTES` 1 GiB → 1.5 GiB**, new **`MAX_UPLOAD_DURATION_SEC` = 14 400**
+  in `shared/src/api/uc100.ts`.
+- **`probeContainer` now returns `{ valid, durationSec }`** instead of a bare
+  boolean. ffprobe already ran at finalization and the duration was **discarded**,
+  while `recordings.duration_sec` has existed in the schema the whole time to hold
+  it. `RQ-039` rejects >4 h with `422 RECORDING_TOO_LONG` **before** the job is
+  enqueued, and the measured value is now persisted.
+- **FLAC replaces `pcm_s16le`** in `worker/src/lib/ffmpeg.ts`. Lossless, so WER is
+  unchanged, but ~45% smaller on speech: ~253 MB at the 4 h ceiling versus ~461 MB
+  for flat 32 kB/s PCM. Verified on prod (`ffmpeg 6.1.1` has `flac` and `libopus`)
+  **before** the change was specified.
+- **One full-size audio copy removed** — `toBuffer` did `Buffer.from(buf)`, which
+  copies. Now returns the Buffer as-is, or wraps the same bytes without allocating.
+- **Presign validity extended:** part URLs 1 h → **6 h** (all parts are signed up
+  front, so the *last* part's URL expired that long after `/init` regardless of when
+  the browser reached it — at 1 h a 1.5 GiB upload failed for any uplink under
+  ~4 Mbps); worker read-presign 1800 s → **7200 s**.
+- **`web` stopped re-declaring the limits** and imports `MAX_UPLOAD_BYTES` /
+  `ACCEPTED_UPLOAD_MIME_TYPES` from `@transcrib/shared` — closing the copy-paste
+  logged at `.tl/release-status.json:124`.
+- **i18n:** size/duration strings updated in both locales, plus a new
+  `upload.errorRecordingTooLong`. The dead `upload.supported` key that still claimed
+  "до 10 ГБ" and listed rejected audio MIME types is corrected.
+- **Tests:** new `T12`–`T14` in `uc-100.test.ts` (duration rejection, exact-boundary
+  acceptance, duration persistence — T12/T14 RED before the fix), a rewritten ffmpeg
+  codec test with a mutation proof, shared boundary + literal-value tests. Renamed
+  the new API tests to T12–T14 after finding the file already had a `T09`/`T10`.
+- **Not done — carried as follow-up:** per-part retry with backoff and the
+  `/api/uploads/abort` call on failure in `web/src/routes/upload/index.tsx`. Without
+  it an aborted upload leaves **billable orphaned multipart parts** in the bucket.
+  Registered as `F-006`.
+- **Verified:** lint 0 errors; typecheck clean; shared 77, worker 235,
+  api 212 (+7 skipped), web 150.
+
 ## [FEATURE] 2026-08-15 — FR-002 / DEC-004: honest upload limit (1.5 GiB + 4h gate)
 
 - **Skill:** `/nacl-sa-feature`. Spec-only; code follows separately.
