@@ -1,5 +1,36 @@
 # Changelog — .tl/
 
+## [2026-08-15] nacl-tl-fix: upload form's language field lied about what it controls
+
+- **Level:** L2 (spec-sync) — spec committed first in `3087a35`, code follows here
+- **Status:** done
+- **Defect:** after DEC-003 the `Язык` field changed meaning. It now selects the
+  language of the **generated protocol** (BRQ-013), and a blank value no longer
+  means "we'll detect it" — it means `Meeting.language = AUTO`, which yields a
+  **Russian** protocol. The UI still said "Language (leave blank for auto-detect)"
+  and offered an "Auto-detect" option, so an author who wanted an English protocol
+  had no way to learn that only an explicit `EN` selection produces one (RQ-012).
+- **Spec (committed first, `3087a35`):** `FORM-MeetingUpload-F03.label` and
+  `UC-100-AS02` corrected in the graph; `UC-100.spec_version` 1 → 2.
+- **Code:** `web/src/i18n/{ru,en}.json` — `upload.fieldLanguage`,
+  `upload.fieldLanguagePlaceholder`, `upload.languageAuto`. The FE label mirrors
+  the graph label verbatim, so the string is traceable to the spec node.
+- **Tests:** `web/src/routes/upload/index.test.tsx` — CT02 and the RU-i18n case
+  updated, new **CT02b** asserts the blank state advertises Russian and that
+  "Auto-detect" appears nowhere. All three were RED before the i18n change.
+  CT02b asserts on the **closed** Select trigger deliberately: Radix Select cannot
+  be opened under jsdom (`target.hasPointerCapture is not a function`), so driving
+  the dropdown would fail for environment reasons rather than on the claim.
+- **`transcript.languageAUTO` deliberately NOT removed.** Verified against
+  production: 3 of 24 transcripts have `transcripts.language IS NULL` (21 RU,
+  0 EN), and `api/src/services/uc-201.service.ts:114` falls back to
+  `meeting.language`, which returns `AUTO` for exactly those rows. The label is
+  live and `api/src/routes/uc-201.test.ts:144-180` covers the path.
+- **Not touched:** `upload.supported` (still claims "до 10 ГБ" and lists MP3/WAV/M4A
+  the whitelist rejects) — dead key, belongs to the pending upload-limit feature.
+- **Verified:** lint 0 errors; typecheck clean; shared 75, worker 209,
+  api 205 (+7 skipped), web 150 (baseline 149 + CT02b).
+
 ## [PLAN] 2026-08-15 — incremental re-plan clearing the DEC-003 stale set
 
 - **Skill:** `/nacl-tl-plan` (incremental, Step 1.5b — **no** `--overwrite`)

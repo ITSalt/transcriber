@@ -111,12 +111,36 @@ describe("UploadPage", () => {
   });
 
   // CT02 — language field
+  // DEC-003 / RQ-012: the label must state that this choice drives the PROTOCOL's
+  // language and that blank yields Russian — not "auto-detect". Mirrors the
+  // graph label on FORM-MeetingUpload-F03 verbatim.
+  /* MUTATION PROOF: restore upload.fieldLanguage to
+   * "Language (leave blank for auto-detect)" in web/src/i18n/en.json →
+   * getByText below throws → RED. That is the pre-fix state. */
   it("CT02: renders language field with correct label", () => {
     renderUpload();
     expect(
-      screen.getByText("Language (leave blank for auto-detect)"),
+      screen.getByText("Protocol language (blank = Russian, speech auto-detected)"),
     ).toBeInTheDocument();
     expect(screen.getByTestId("upload-select-language")).toBeInTheDocument();
+  });
+
+  // DEC-003 regression: with nothing selected the trigger shows the placeholder,
+  // which must state that the default outcome is a RUSSIAN protocol (BRQ-013) —
+  // not "auto-detect". EN is the only route to an English protocol (RQ-012).
+  //
+  // Asserted on the CLOSED trigger deliberately: Radix Select cannot be opened
+  // under jsdom (`target.hasPointerCapture is not a function`), so driving the
+  // dropdown would fail for environment reasons rather than on the claim.
+  /* MUTATION PROOF: restore upload.fieldLanguagePlaceholder / upload.languageAuto
+   * to "Auto-detect" in web/src/i18n/en.json → the "Auto-detect" assertion below
+   * turns RED. That is the pre-fix state. */
+  it("CT02b: blank language states Russian is the default, not auto-detect", () => {
+    renderUpload();
+    expect(screen.getByTestId("upload-select-language")).toHaveTextContent(
+      "Russian (default)",
+    );
+    expect(screen.queryByText("Auto-detect")).not.toBeInTheDocument();
   });
 
   // CT03 — title field
@@ -255,7 +279,9 @@ describe("UploadPage", () => {
       screen.getByText("Видеофайл (MP4 / MKV / MOV / WEBM, макс. 1 ГБ)"),
     ).toBeInTheDocument();
     expect(
-      screen.getByText("Язык (оставьте пустым для автоопределения)"),
+      screen.getByText(
+        "Язык протокола (пусто — русский, речь распознаётся автоматически)",
+      ),
     ).toBeInTheDocument();
     expect(
       screen.getByText("Название встречи (по умолчанию — имя файла)"),
