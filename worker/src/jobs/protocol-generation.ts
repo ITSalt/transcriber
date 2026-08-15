@@ -21,7 +21,7 @@ import type { Logger } from 'pino'
 
 import type { ProtocolGenerationJobPayload } from '@transcrib/shared'
 import type { ILlmProvider, LlmModel } from '@transcrib/shared'
-import { LLM_MODEL_DEFAULT } from '@transcrib/shared'
+import { LLM_MODEL_DEFAULT, JOB_RETRY_ATTEMPTS } from '@transcrib/shared'
 
 import { KieAiLlmProvider, isTransientLlmError } from '../llm/kieai.js'
 import { publishMeetingEvent } from '../lib/publisher.js'
@@ -29,8 +29,29 @@ import { prisma } from '../lib/prisma.js'
 import { resolveProtocolLanguage } from '../lib/language.js'
 
 // ─── Retry configuration (RC-UC-300 FR-001) ──────────────────────────────────
-/** Maximum BullMQ attempts for a protocol generation job. Must match queues.ts defaultJobOptions. */
-const MAX_ATTEMPTS = 3
+/**
+ * Fallback attempt budget, used only when a job carries no `opts` (test fixtures;
+ * a real BullMQ Job always does). The authoritative budget is whatever the
+ * PRODUCER stamped on the job — see `resolveMaxAttempts` below (F-004).
+ */
+const MAX_ATTEMPTS = JOB_RETRY_ATTEMPTS
+
+/**
+ * F-004: the retry budget is read from the job, never from a local constant.
+ *
+ * BullMQ's own decision is `attemptsMade + 1 < opts.attempts`
+ * (`Job.shouldRetryJob`), so mirroring it here makes the worker's FAILED-write
+ * decision provably agree with whether BullMQ will actually re-run the job.
+ *
+ * `??` is load-bearing and must NOT become `||`: a producer with no
+ * `defaultJobOptions` yields `opts.attempts === 0` (the BullMQ `Job` constructor
+ * default), and `||` would silently rewrite that to 3 — stranding the meeting in
+ * a non-terminal state with no retry left, which is exactly the F-004 symptom.
+ * The fallback fires only when `opts` is absent entirely.
+ */
+function resolveMaxAttempts(job: { opts?: { attempts?: number } }): number {
+  return job.opts?.attempts ?? MAX_ATTEMPTS
+}
 
 // ─── Required section headers ─────────────────────────────────────────────────
 
@@ -234,7 +255,7 @@ export async function processProtocolGenerationJob(
     const attemptsMade: number = typeof job.attemptsMade === 'number'
       ? job.attemptsMade
       : 0
-    const isFinalAttempt = attemptsMade >= MAX_ATTEMPTS - 1
+    const isFinalAttempt = attemptsMade >= resolveMaxAttempts(job) - 1
 
     // Determine if this is a transient error we should let BullMQ retry.
     // isTransientLlmError returns true only for KieAiLlmError with isTransient=true.

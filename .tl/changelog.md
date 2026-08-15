@@ -1,5 +1,58 @@
 # Changelog — .tl/
 
+## [2026-08-15] nacl-tl-fix: F-004 — API-enqueued jobs had no retry policy, stranding meetings
+
+- **Level:** L1 (code-only) — spec already described the correct behaviour
+  (FR-001 / `RQ-026` / `RC-UC-300`: 3 attempts + exponential backoff); the code
+  did not conform. **F-004 → closed.**
+- **Two defects, one root cause.**
+  1. *Producer side.* `api/src/queue.ts` built both Queues without
+     `defaultJobOptions`. BullMQ bakes job options from the **producing** Queue
+     at `add()` time, so API-enqueued jobs carried **`attempts: 0`** — the
+     `Job` constructor's default, not 1 — and `Job.shouldRetryJob`
+     (`attemptsMade + 1 < opts.attempts`) never fired. The worker's own
+     `attempts: 3` could not compensate.
+  2. *Consumer side.* Both pipelines computed `isFinalAttempt` from a
+     module-local `MAX_ATTEMPTS = 3` instead of the job's real budget. At
+     `attemptsMade = 0` that yields `0 >= 2` = false, so a transient error took
+     the retry branch and re-threw **without writing FAILED** — while BullMQ had
+     no attempt left. The meeting hung in `GENERATING_PROTOCOL` / `TRANSCRIBING`
+     forever, job row stuck at `PROCESSING`, no SSE, no user-visible error.
+     Fixing only (1) would have left this landmine for any future producer.
+- **Fix:** new `shared/src/queue/job-options.ts` holds `QueueName`,
+  `JOB_RETRY_ATTEMPTS` and `JOB_RETRY_OPTIONS`; `api/src/queue.ts` and
+  `worker/src/queues.ts` both consume it. Declared with a **local structural
+  interface, no `bullmq` import** — `web/` consumes `@transcrib/shared`, whose
+  only runtime dep is zod. Both workers now derive the budget via
+  `job.opts?.attempts ?? JOB_RETRY_ATTEMPTS`; **`??` is load-bearing** — `||`
+  would rewrite the real `0` to 3 and preserve the hang.
+- **`queue.add` arity deliberately unchanged.** Configuring via the constructor
+  achieves the identical Redis-level result; a third argument would have broken
+  four exact-arity assertions in `uc-100.test.ts` / `uc-004.test.ts`. Those four
+  stayed green untouched — that is the proof.
+- **Tests:** `api/src/queue.regression.test.ts` (F004a–d, incl. an arity guard
+  and a drift lock against the shared constant), `REGR-P5` a–d and `REGR-T7` a–d
+  in the worker regression suites, `worker/src/queues.regression.test.ts`
+  (drift lock; honestly labelled — the worker side was already correct).
+  P5a/b/d and T7a/b/d were RED before the fix; P5c/T7c are green both sides and
+  guard the DEC-001 invariant that a genuine retry must NOT write FAILED.
+  The pre-existing P4/T6 suites were left untouched and stayed green, proving
+  the `opts`-absent fallback is behaviour-identical.
+- **Acceptance evidence** (F-004 `task.md:55-57` demands more than an exit code):
+  live enqueue through `api/src/queue.ts` against a real Redis, then read the
+  persisted job back — both queues returned
+  `attempts=3, backoff={type:'exponential',delay:5000}`.
+- **Caveats retired:** the APPLICABILITY / known-gap blocks in
+  `UC-300/{task-be,acceptance,impl-brief}.md` and
+  `.tl/external-contracts/kie-anthropic.md` §8 all claimed the retry policy was
+  inert on the API paths. All four updated; `F-004/task.md` status → closed.
+- **Deploy order:** worker before API. The worker change degrades honestly
+  regardless of producer config and drains jobs already sitting in Redis with
+  `attempts: 0`.
+- **Still open:** **F-005** (Deepgram error classification) — untouched here.
+- **Verified:** lint 0 errors; typecheck clean; shared 75, worker 219
+  (baseline 209 + 10), api 209 (+7 skipped; baseline 205 + 4), web 150.
+
 ## [2026-08-15] nacl-tl-fix: upload form's language field lied about what it controls
 
 - **Level:** L2 (spec-sync) — spec committed first in `3087a35`, code follows here

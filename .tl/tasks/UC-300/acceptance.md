@@ -32,14 +32,24 @@
 - **NFR-006** — Markdown canonical; PDF transient (re-rendered).
 - **NFR-008** — Failures surfaced; terminal immutable.
 
-## Applicability limit (F-004)
+## Applicability (F-004 — CLOSED 2026-08-15)
 
-The retry criteria above are observable **only** on the worker-enqueued path
-(`worker/src/queues.ts`, `attempts=3`). `api/src/queue.ts` enqueues without
-`defaultJobOptions`, so on the UC-100 upload path and the UC-004 retry button
-BullMQ's default `attempts=1` applies and a transient error fails on the first
-attempt. Do not write an acceptance test that asserts retry on those paths until
-F-004 lands.
+The retry criteria above now hold on **every** path. `api/src/queue.ts` sets
+`defaultJobOptions: JOB_RETRY_OPTIONS` on both producers, so the UC-100 upload
+path and the UC-004 retry button enqueue with `attempts=3` + exponential backoff
+exactly like the worker-enqueued path.
+
+Verified at the acceptance level required by F-004 (`task.md:55-57`): a live
+enqueue through `api/src/queue.ts` against a real Redis, then reading the
+persisted job back — both queues returned
+`attempts=3, backoff={type:'exponential',delay:5000}`.
+
+The worker no longer trusts a local constant either: `isFinalAttempt` derives
+from `job.opts.attempts`, mirroring BullMQ's own `attemptsMade + 1 < attempts`.
+A job enqueued by a producer that forgot the policy now fails **honestly** on
+its single attempt (job FAILED + Meeting FAILED + SSE) instead of stranding the
+meeting in a non-terminal state. Acceptance tests asserting retry on those paths
+are now legitimate.
 
 ## Sign-off
 

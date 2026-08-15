@@ -146,10 +146,16 @@ function makeJob(
   bullId: string,
   jobId: string,
   attemptsMade = 0,
+  opts?: { attempts?: number },
 ): Job<{ transcription_job_id: string }> {
-  return { id: bullId, data: { transcription_job_id: jobId }, attemptsMade } as unknown as Job<{
-    transcription_job_id: string
-  }>
+  return {
+    id: bullId,
+    data: { transcription_job_id: jobId },
+    attemptsMade,
+    // Omit the key entirely when no opts are given, so pre-existing 3-arg call
+    // sites keep exercising the `job.opts === undefined` fallback path.
+    ...(opts ? { opts } : {}),
+  } as unknown as Job<{ transcription_job_id: string }>
 }
 
 function makeLogger() {
@@ -999,5 +1005,95 @@ describe('REGR-T6 — FR-001 transient-retry semantics (RC-UC-200)', () => {
     // Storage error is permanent — must write FAILED immediately
     expect(failJobArgs).toBeDefined()
     expect(failJobArgs.data.status).toBe('FAILED')
+  })
+
+  // ── REGR-T7 — F-004: producer-declared retry budget is authoritative ────────
+  //
+  // Structural mirror of REGR-P5 on the transcription pipeline. With the API
+  // enqueuing at `attempts: 0` (no defaultJobOptions), a transient ASR error
+  // re-throws without writing FAILED while BullMQ has no retry left — the
+  // meeting is stranded in TRANSCRIBING forever.
+
+  function captureTxFailWrite() {
+    let failJobArgs: any
+    fp.$transaction.mockImplementation(async (cb: any) => {
+      const txProxy = {
+        transcriptionJob: {
+          updateMany: vi.fn().mockImplementation(async (args: any) => {
+            failJobArgs = args
+            return { count: 1 }
+          }),
+          findUnique: vi.fn().mockResolvedValue({ meetingId: MTG }),
+        },
+        meeting: { updateMany: vi.fn().mockResolvedValue({ count: 1 }) },
+      }
+      await cb(txProxy)
+      return undefined
+    })
+    return () => failJobArgs
+  }
+
+  /* MUTATION PROOF: restore `const MAX_ATTEMPTS = 3` +
+   * `attemptsMade >= MAX_ATTEMPTS - 1` -> isFinalAttempt false at attemptsMade=0
+   * -> re-throw with no $transaction -> `toBeDefined()` RED. Pre-fix state. */
+  it('T7a: attempts=1 + transient ASR error → writes FAILED on the only attempt', async () => {
+    const transientErr = new DeepgramAsrError('rate limited', null, /* isTransient= */ true)
+    wireUpToAsrThrow(transientErr)
+    const getFail = captureTxFailWrite()
+    // NOTE: deliberately no `mockResolvedValueOnce` chain here. These tests are
+    // RED before the fix, so a queued "once" would go unconsumed and leak into
+    // the next test. The txProxy's own findUnique supplies meetingId.
+
+    const job = makeJob('r-30', TXJOB, /* attemptsMade= */ 0, { attempts: 1 })
+
+    await expect(processTranscriptionJob(job as any, makeLogger())).rejects.toThrow('rate limited')
+
+    expect(getFail()).toBeDefined()
+    expect(getFail().data.status).toBe('FAILED')
+    expect(getFail().data.attemptCount).toBe(1)
+  })
+
+  /* MUTATION PROOF: `||` instead of `??` -> `0 || 3` -> 3 -> no FAILED -> RED.
+   * attempts=0 is the literal shape BullMQ stamps with no defaultJobOptions. */
+  it('T7b: attempts=0 (BullMQ default when producer sets nothing) → writes FAILED', async () => {
+    const transientErr = new DeepgramAsrError('gateway busy', null, /* isTransient= */ true)
+    wireUpToAsrThrow(transientErr)
+    const getFail = captureTxFailWrite()
+    // NOTE: deliberately no `mockResolvedValueOnce` chain here. These tests are
+    // RED before the fix, so a queued "once" would go unconsumed and leak into
+    // the next test. The txProxy's own findUnique supplies meetingId.
+
+    const job = makeJob('r-31', TXJOB, /* attemptsMade= */ 0, { attempts: 0 })
+
+    await expect(processTranscriptionJob(job as any, makeLogger())).rejects.toThrow('gateway busy')
+
+    expect(getFail()).toBeDefined()
+    expect(getFail().data.status).toBe('FAILED')
+  })
+
+  /* MUTATION PROOF: hard-code maxAttempts = 1 -> FAILED written -> RED.
+   * Guards the FR-001 transient-retry invariant. Green before and after. */
+  it('T7c: attempts=3 + transient on first try → re-throws WITHOUT writing FAILED', async () => {
+    const transientErr = new DeepgramAsrError('rate limited', null, /* isTransient= */ true)
+    wireUpToAsrThrow(transientErr)
+
+    const job = makeJob('r-32', TXJOB, /* attemptsMade= */ 0, { attempts: 3 })
+
+    await expect(processTranscriptionJob(job as any, makeLogger())).rejects.toThrow('rate limited')
+
+    expect(fp.$transaction).not.toHaveBeenCalled()
+  })
+
+  /* MUTATION PROOF: any re-hardcoding to 3 -> `3 >= 2` -> FAILED -> RED.
+   * Proves the budget is genuinely read, not coincidentally equal to 3. */
+  it('T7d: attempts=5 + transient at attemptsMade=3 → budget not exhausted, no FAILED', async () => {
+    const transientErr = new DeepgramAsrError('rate limited', null, /* isTransient= */ true)
+    wireUpToAsrThrow(transientErr)
+
+    const job = makeJob('r-33', TXJOB, /* attemptsMade= */ 3, { attempts: 5 })
+
+    await expect(processTranscriptionJob(job as any, makeLogger())).rejects.toThrow('rate limited')
+
+    expect(fp.$transaction).not.toHaveBeenCalled()
   })
 })

@@ -32,12 +32,11 @@ Unchanged by DEC-001: the FR-001 rule that a transient error with attempts
 remaining re-throws **without** writing `FAILED`. `protocol-generation.ts` was
 correctly left untouched — it already routes on `isTransientLlmError()`.
 
-**Not covered by this task (known gap).** `api/src/queue.ts` builds its Queues
-without `defaultJobOptions`, so BullMQ's default `attempts=1` makes this whole
-retry policy inert on the UC-100 upload path and the UC-004 "Повторить
-обработку" button. Only the worker-enqueued protocol job
-(`worker/src/queues.ts`, `attempts=3`) exercises it. Tracked as **F-004**;
-Deepgram parity as **F-005**.
+**F-004 closed 2026-08-15 (was: not covered by this task).** `api/src/queue.ts`
+now sets `defaultJobOptions: JOB_RETRY_OPTIONS` on both producers, so the retry
+policy applies on the UC-100 upload path and the UC-004 "Повторить обработку"
+button as well as the worker-enqueued job. The policy and queue names are shared
+via `shared/src/queue/job-options.ts`. Deepgram parity remains open as **F-005**.
 
 ## User story
 
@@ -248,13 +247,14 @@ must NOT treat a non-final state as terminal. `FAILED` (and
 `Meeting.status=FAILED`) is written ONLY on a PERMANENT error or on the final
 exhausted attempt. `attempt_count` mirrors BullMQ `attemptsMade`.
 
-**Applicability.** Observable only where the enqueued BullMQ job carries
-`attempts>1`. The automatic path qualifies (`worker/src/jobs/transcription.ts`
-enqueues via `createQueues()`, `attempts=3` + exponential backoff). The UC-004
-manual-retry path does NOT: `api/src/queue.ts` builds its Queue without
-`defaultJobOptions`, so those jobs get the BullMQ default `attempts=1` and a
-transient error still fails them on the first attempt. Known gap, deliberately
-out of scope for DEC-001; tracked as **F-004**.
+**Applicability (F-004 closed 2026-08-15).** Observable on every path. Both the
+automatic path (`worker/src/jobs/transcription.ts` → `createQueues()`) and the
+API-enqueued paths (UC-100 upload, UC-004 manual retry) now construct their
+Queues with `defaultJobOptions: JOB_RETRY_OPTIONS` from `@transcrib/shared`, so
+all jobs carry `attempts=3` + exponential backoff. Additionally the worker
+derives `isFinalAttempt` from `job.opts.attempts` rather than a local constant,
+so a producer that omits the policy degrades to an honest FAILED instead of
+stranding the meeting in `GENERATING_PROTOCOL`.
 
 ## Spec divergences (graph vs shipped code — read before trusting an RQ verbatim)
 

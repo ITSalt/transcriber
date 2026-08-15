@@ -158,13 +158,13 @@ permanent 404 (a misconfigured base URL, as in `1f025b7`) still terminates in
 FAILED once the 3 attempts are exhausted, so the reversal costs at most 2 extra
 attempts + ~15s of backoff and buys survival of every routing blip.
 
-> **Scope caveat.** This retry policy only takes effect where the BullMQ job was
-> enqueued with `attempts > 1`. The automatic path qualifies
-> (`worker/src/jobs/transcription.ts` → `createQueues()`, attempts=3). The UC-004
-> manual-retry path does **not**: `api/src/queue.ts` builds its `Queue` without
-> `defaultJobOptions`, so those jobs run with the BullMQ default `attempts=1`.
-> Known gap, out of scope for `DEC-001` — follow-up
-> [`F-004`](../tasks/F-004/task.md).
+> **Scope (F-004 closed 2026-08-15).** This retry policy takes effect on every
+> path. Both the automatic path (`worker/src/jobs/transcription.ts` →
+> `createQueues()`) and the API-enqueued paths (UC-100 upload, UC-004
+> manual-retry) construct their Queues with
+> `defaultJobOptions: JOB_RETRY_OPTIONS` from `@transcrib/shared`, so all jobs
+> carry `attempts=3` + exponential backoff. Verified by reading the persisted
+> `job.opts` back out of Redis after a live enqueue.
 
 ## 9. Model namespace / catalog
 

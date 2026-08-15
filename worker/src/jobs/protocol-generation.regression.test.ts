@@ -126,11 +126,15 @@ function makeJob(
   bullId: string,
   jobId: string,
   attemptsMade = 0,
+  opts?: { attempts?: number },
 ): Job<{ protocol_generation_job_id: string }> {
   return {
     id: bullId,
     data: { protocol_generation_job_id: jobId },
     attemptsMade,
+    // Omit the key entirely when no opts are given, so pre-existing 3-arg call
+    // sites keep exercising the `job.opts === undefined` fallback path.
+    ...(opts ? { opts } : {}),
   } as unknown as Job<{ protocol_generation_job_id: string }>
 }
 
@@ -570,6 +574,131 @@ describe('REGR-P4 — FR-001 transient-retry semantics (RC-UC-300)', () => {
     ).rejects.toThrow('internal server error')
 
     // NO FAILED write — BullMQ will retry
+    expect(fp.$transaction).not.toHaveBeenCalled()
+  })
+})
+
+/**
+ * REGR-P5 — F-004: the PRODUCER-declared retry budget is authoritative.
+ *
+ * The worker must derive `isFinalAttempt` from `job.opts.attempts`, not from a
+ * module-local MAX_ATTEMPTS constant. Otherwise a producer that enqueued without
+ * `defaultJobOptions` (the API path, F-004) produces jobs with `opts.attempts = 0`
+ * while the worker still believes it has 3 tries: the transient branch re-throws
+ * WITHOUT writing FAILED, BullMQ has no attempt left, and the meeting is stranded
+ * in GENERATING_PROTOCOL forever with the job row stuck at PROCESSING.
+ * That is the production symptom this suite pins.
+ */
+describe('REGR-P5 — F-004: producer-declared retry budget is authoritative', () => {
+  function captureFailWrite() {
+    let failJobArgs: any
+    fp.$transaction.mockImplementation(async (cb: any) => {
+      const txProxy = {
+        protocolGenerationJob: {
+          updateMany: vi.fn().mockImplementation(async (args: any) => {
+            failJobArgs = args
+            return { count: 1 }
+          }),
+          findUnique: vi.fn().mockResolvedValue({ meetingId: MTG }),
+        },
+        meeting: { updateMany: vi.fn().mockResolvedValue({ count: 1 }) },
+      }
+      await cb(txProxy)
+      return undefined
+    })
+    return () => failJobArgs
+  }
+
+  /* MUTATION PROOF: restore `const MAX_ATTEMPTS = 3` +
+   * `attemptsMade >= MAX_ATTEMPTS - 1` -> isFinalAttempt is false at
+   * attemptsMade=0 -> re-throw with no $transaction -> `toBeDefined()` RED.
+   * This is the pre-fix code, so the test is RED today. */
+  it('P5a: attempts=1 + transient error → writes FAILED on the only attempt', async () => {
+    const transientErr = new KieAiLlmError('rate limited', { status: 429, isTransient: true })
+    const mockLlm = { generate: vi.fn().mockRejectedValue(transientErr) }
+
+    fp.protocolGenerationJob.findUnique.mockResolvedValue(BASE_PG_JOB as any)
+    fp.protocolGenerationJob.updateMany.mockResolvedValue({ count: 1 })
+    ;(publishMeetingEvent as MockedFunction<AnyFn>).mockResolvedValue(undefined)
+    const getFail = captureFailWrite()
+
+    const job = makeJob('rp-13', PGJOB, /* attemptsMade= */ 0, { attempts: 1 })
+
+    await expect(
+      processProtocolGenerationJob(job as any, makeLogger(), { llm: mockLlm }),
+    ).rejects.toThrow('rate limited')
+
+    expect(getFail()).toBeDefined()
+    expect(getFail().data.status).toBe('FAILED')
+    expect(getFail().data.attemptCount).toBe(1)
+    // The user-visible half of the symptom: the meeting must leave
+    // GENERATING_PROTOCOL rather than hanging there forever.
+    expect(publishMeetingEvent as MockedFunction<AnyFn>).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({ status: 'FAILED' }),
+      MTG,
+    )
+  })
+
+  /* MUTATION PROOF: write the derivation with `||` instead of `??` ->
+   * `0 || 3` collapses to 3 -> re-throw, no FAILED -> RED.
+   * `attempts: 0` is the LITERAL shape BullMQ's Job constructor stamps when the
+   * producing Queue has no defaultJobOptions, so this is the real F-004 case. */
+  it('P5b: attempts=0 (BullMQ default when producer sets nothing) → writes FAILED', async () => {
+    const transientErr = new KieAiLlmError('gateway busy', { status: 503, isTransient: true })
+    const mockLlm = { generate: vi.fn().mockRejectedValue(transientErr) }
+
+    fp.protocolGenerationJob.findUnique.mockResolvedValue(BASE_PG_JOB as any)
+    fp.protocolGenerationJob.updateMany.mockResolvedValue({ count: 1 })
+    ;(publishMeetingEvent as MockedFunction<AnyFn>).mockResolvedValue(undefined)
+    const getFail = captureFailWrite()
+
+    const job = makeJob('rp-14', PGJOB, /* attemptsMade= */ 0, { attempts: 0 })
+
+    await expect(
+      processProtocolGenerationJob(job as any, makeLogger(), { llm: mockLlm }),
+    ).rejects.toThrow('gateway busy')
+
+    expect(getFail()).toBeDefined()
+    expect(getFail().data.status).toBe('FAILED')
+  })
+
+  /* MUTATION PROOF: hard-code maxAttempts = 1 -> FAILED written -> RED.
+   * Guards against "fixing" F-004 by always writing FAILED, which would
+   * violate the DEC-001 transient-retry invariant. Green before and after. */
+  it('P5c: attempts=3 + transient on first try → still re-throws WITHOUT writing FAILED', async () => {
+    const transientErr = new KieAiLlmError('rate limited', { status: 429, isTransient: true })
+    const mockLlm = { generate: vi.fn().mockRejectedValue(transientErr) }
+
+    fp.protocolGenerationJob.findUnique.mockResolvedValue(BASE_PG_JOB as any)
+    fp.protocolGenerationJob.updateMany.mockResolvedValue({ count: 1 })
+    ;(publishMeetingEvent as MockedFunction<AnyFn>).mockResolvedValue(undefined)
+
+    const job = makeJob('rp-15', PGJOB, /* attemptsMade= */ 0, { attempts: 3 })
+
+    await expect(
+      processProtocolGenerationJob(job as any, makeLogger(), { llm: mockLlm }),
+    ).rejects.toThrow('rate limited')
+
+    expect(fp.$transaction).not.toHaveBeenCalled()
+  })
+
+  /* MUTATION PROOF: any re-hardcoding to 3 -> `3 >= 2` -> FAILED written -> RED.
+   * Proves the budget is genuinely READ rather than coincidentally equal to 3. */
+  it('P5d: attempts=5 + transient at attemptsMade=3 → budget not exhausted, no FAILED', async () => {
+    const transientErr = new KieAiLlmError('rate limited', { status: 429, isTransient: true })
+    const mockLlm = { generate: vi.fn().mockRejectedValue(transientErr) }
+
+    fp.protocolGenerationJob.findUnique.mockResolvedValue(BASE_PG_JOB as any)
+    fp.protocolGenerationJob.updateMany.mockResolvedValue({ count: 1 })
+    ;(publishMeetingEvent as MockedFunction<AnyFn>).mockResolvedValue(undefined)
+
+    const job = makeJob('rp-16', PGJOB, /* attemptsMade= */ 3, { attempts: 5 })
+
+    await expect(
+      processProtocolGenerationJob(job as any, makeLogger(), { llm: mockLlm }),
+    ).rejects.toThrow('rate limited')
+
     expect(fp.$transaction).not.toHaveBeenCalled()
   })
 })

@@ -1,7 +1,7 @@
 # F-004 — API-side BullMQ producer enqueues with `attempts=1`, so no retry policy applies
 
 **Type:** follow-up (spun out of `/nacl-tl-fix` DEC-001, 2026-08-13)
-**Status:** open
+**Status:** closed (2026-08-15)
 **Created:** 2026-08-13
 **Owner:** backend lead
 **Related:** `DEC-001`, `RC-UC-200`, `RC-UC-300`, `RC-UC-004`, `UC-004`, `UC-100`, FR-001

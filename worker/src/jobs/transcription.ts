@@ -25,6 +25,7 @@ import type { Readable } from 'node:stream'
 import type { TranscriptionJobPayload, ProtocolGenerationJobPayload } from '@transcrib/shared'
 import type { AsrResult, AsrSegment } from '@transcrib/shared'
 import type { IAsrProvider } from '@transcrib/shared'
+import { JOB_RETRY_ATTEMPTS } from '@transcrib/shared'
 
 import { extractAudio } from '../lib/ffmpeg.js'
 import { DeepgramAsrProvider, isTransientAsrError } from '../asr/deepgram-adapter.js'
@@ -35,8 +36,27 @@ import { normalizeLanguageTag } from '../lib/language.js'
 import { createQueues, QueueName } from '../queues.js'
 
 // ─── Retry configuration (RC-UC-200 FR-001) ──────────────────────────────────
-/** Maximum BullMQ attempts for a transcription job. Must match job-processor.ts defaultJobOptions. */
-const MAX_ATTEMPTS = 3
+/**
+ * Fallback attempt budget, used only when a job carries no `opts` (test fixtures;
+ * a real BullMQ Job always does). The authoritative budget is whatever the
+ * PRODUCER stamped on the job — see `resolveMaxAttempts` below (F-004).
+ *
+ * (The previous comment here pointed at `job-processor.ts` as the source of
+ * `defaultJobOptions`; that file has never had any — it only builds Workers.)
+ */
+const MAX_ATTEMPTS = JOB_RETRY_ATTEMPTS
+
+/**
+ * F-004: the retry budget is read from the job, never from a local constant.
+ * Mirrors BullMQ's own `attemptsMade + 1 < opts.attempts` decision.
+ *
+ * `??` is load-bearing and must NOT become `||`: a producer with no
+ * `defaultJobOptions` yields `opts.attempts === 0`, and `||` would rewrite that
+ * to 3 — stranding the meeting in TRANSCRIBING with no retry left.
+ */
+function resolveMaxAttempts(job: { opts?: { attempts?: number } }): number {
+  return job.opts?.attempts ?? MAX_ATTEMPTS
+}
 
 // ─── Speaker name resolution (RQ-017) ────────────────────────────────────────
 
@@ -334,7 +354,7 @@ export async function processTranscriptionJob(
     const attemptsMade: number = typeof job.attemptsMade === 'number'
       ? job.attemptsMade
       : 0
-    const isFinalAttempt = attemptsMade >= MAX_ATTEMPTS - 1
+    const isFinalAttempt = attemptsMade >= resolveMaxAttempts(job) - 1
 
     // Determine if this is a transient error we should let BullMQ retry.
     // isTransientAsrError returns true only for DeepgramAsrError with isTransient=true.
