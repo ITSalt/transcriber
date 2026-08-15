@@ -17,6 +17,23 @@ import { processProtocolGenerationJob as runProtocolPipeline } from './jobs/prot
 export const CONCURRENCY = 1
 
 /**
+ * How long a worker holds a job's lock before BullMQ considers it stalled, in ms.
+ *
+ * Previously unset, i.e. BullMQ's 30 s default with a heartbeat every 15 s. Both
+ * pipelines make long synchronous-looking provider calls (ffmpeg extraction into
+ * a single Buffer, then a Deepgram request now budgeted at 570 s), and any stretch
+ * that blocks the event loop past the renewal window makes BullMQ re-deliver the
+ * job as stalled. That is not merely wasteful: a re-delivered job re-runs the
+ * whole ASR/LLM call, so a false stall costs a duplicate provider charge.
+ *
+ * 60 s (renewed every 30 s) leaves generous headroom for a `Buffer.concat` of a
+ * few hundred MB while still detecting a genuinely dead worker quickly. Recovery
+ * of a real stall is safe now that both pipelines re-claim a PROCESSING row
+ * (RC-UC-200 / RC-UC-300 recovery_procedure).
+ */
+export const LOCK_DURATION_MS = 60_000
+
+/**
  * UC-200: Transcription pipeline handler.
  * Delegates to the real pipeline in jobs/transcription.ts.
  */
@@ -49,13 +66,13 @@ export function createWorkers(connection: ConnectionOptions, log: Logger): Worke
   const transcriptionWorker = new Worker<TranscriptionJobPayload>(
     QueueName.Transcription,
     (job) => processTranscriptionJob(job, log),
-    { connection, concurrency: CONCURRENCY },
+    { connection, concurrency: CONCURRENCY, lockDuration: LOCK_DURATION_MS },
   )
 
   const protocolWorker = new Worker<ProtocolGenerationJobPayload>(
     QueueName.Protocol,
     (job) => processProtocolJob(job, log),
-    { connection, concurrency: CONCURRENCY },
+    { connection, concurrency: CONCURRENCY, lockDuration: LOCK_DURATION_MS },
   )
 
   transcriptionWorker.on('failed', (job, err) => {

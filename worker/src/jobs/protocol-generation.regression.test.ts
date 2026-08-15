@@ -206,11 +206,17 @@ beforeEach(() => {
 // ─────────────────────────────────────────────────────────────────────────────
 
 describe('REGR-P1 — Optimistic PENDING→PROCESSING lock', () => {
-  it('updateMany WHERE clause includes exactly status=PENDING (RQ-021)', async () => {
+  it('updateMany WHERE clause is scoped to non-terminal statuses (RQ-021)', async () => {
     /*
      * MUTATION PROOF:
-     *   If production code removes `status: 'PENDING'` from the WHERE clause,
-     *   the captured `where` object will lack the status field and this assertion turns RED.
+     *   If production code drops the `status` filter from the WHERE clause, the
+     *   captured `where` becomes `{ id: PGJOB }` and this assertion turns RED — a
+     *   DONE/FAILED row would then be re-openable, breaking BRQ-009.
+     *
+     * The filter is `{ in: ['PENDING','PROCESSING'] }`, not bare 'PENDING':
+     * RC-UC-300.recovery_procedure requires a crashed worker's job to be picked
+     * up. Terminal states never reach this line (the DONE/FAILED guard returns
+     * earlier), so RQ-021's lifecycle and immutability guarantees hold.
      */
     wireHappyPath()
 
@@ -218,25 +224,32 @@ describe('REGR-P1 — Optimistic PENDING→PROCESSING lock', () => {
 
     const firstUpdateManyCall = fp.protocolGenerationJob.updateMany.mock.calls[0]
     expect(firstUpdateManyCall).toBeDefined()
-    const arg = firstUpdateManyCall[0] as { where: { id: string; status: string }; data: any }
+    const arg = firstUpdateManyCall[0] as { where: { id: string; status: unknown }; data: any }
 
-    expect(arg.where).toEqual({ id: PGJOB, status: 'PENDING' })
+    expect(arg.where).toEqual({ id: PGJOB, status: { in: ['PENDING', 'PROCESSING'] } })
     expect(arg.data).toMatchObject({ status: 'PROCESSING' })
   })
 
-  it('second invocation with updateMany count=0 is a no-op: $transaction never called (BRQ-009 double-pickup)', async () => {
+  it('unclaimable job does not run the pipeline — and fails loudly (BRQ-009 double-pickup)', async () => {
     /*
      * MUTATION PROOF:
-     *   If the guard `if (updated.count === 0) return` is removed,
-     *   $transaction will be called even when another worker claimed the job.
+     *   If the `updated.count === 0` guard is removed, the LLM is invoked on an
+     *   unclaimable row and the `not.toHaveBeenCalled()` assertion turns RED.
+     *
+     * The guard now THROWS rather than returning: returning ACKed the job to
+     * BullMQ while the meeting stayed in GENERATING_PROTOCOL forever.
      */
+    const mockLlm = { generate: vi.fn() }
     fp.protocolGenerationJob.findUnique.mockResolvedValue(BASE_PG_JOB as any)
     fp.protocolGenerationJob.updateMany.mockResolvedValue({ count: 0 })
     ;(publishMeetingEvent as MockedFunction<AnyFn>).mockResolvedValue(undefined)
 
-    await processProtocolGenerationJob(makeJob('rp-2', PGJOB) as any, makeLogger())
+    await expect(
+      processProtocolGenerationJob(makeJob('rp-2', PGJOB) as any, makeLogger(), { llm: mockLlm }),
+    ).rejects.toThrow(/could not be claimed/i)
 
-    expect(fp.$transaction).not.toHaveBeenCalled()
+    // The work itself MUST NOT have run.
+    expect(mockLlm.generate).not.toHaveBeenCalled()
   })
 })
 
@@ -575,6 +588,55 @@ describe('REGR-P4 — FR-001 transient-retry semantics (RC-UC-300)', () => {
 
     // NO FAILED write — BullMQ will retry
     expect(fp.$transaction).not.toHaveBeenCalled()
+  })
+})
+
+/**
+ * REGR-P6 — stalled-job recovery must not silently succeed.
+ *
+ * RC-UC-300.recovery_procedure (graph, approved): "Process crash: BullMQ lock
+ * expires; another worker picks up."
+ *
+ * The code claimed only `status: 'PENDING'`. The DONE/FAILED idempotency guard
+ * runs BEFORE the claim, so a zero-count claim could only mean PROCESSING — a
+ * re-delivered job whose previous holder died. The handler logged a warning and
+ * `return`ed SUCCESSFULLY, so BullMQ dropped the job while the row stayed
+ * PROCESSING and the meeting stayed GENERATING_PROTOCOL forever.
+ */
+describe('REGR-P6 — stalled-job recovery must not silently succeed', () => {
+  it('P6a: claims from PENDING *or* PROCESSING so a stalled job resumes (RC-UC-300)', async () => {
+    /* MUTATION PROOF: restore `where: { id, status: 'PENDING' }` -> RED. */
+    const mockLlm = { generate: vi.fn().mockRejectedValue(new Error('stop here')) }
+    fp.protocolGenerationJob.findUnique.mockResolvedValue(BASE_PG_JOB as any)
+    fp.protocolGenerationJob.updateMany.mockResolvedValue({ count: 1 })
+    ;(publishMeetingEvent as MockedFunction<AnyFn>).mockResolvedValue(undefined)
+
+    const job = makeJob('rp-20', PGJOB, 0, { attempts: 3 })
+    await processProtocolGenerationJob(job as any, makeLogger(), { llm: mockLlm }).catch(
+      () => undefined,
+    )
+
+    expect(fp.protocolGenerationJob.updateMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({
+          status: { in: ['PENDING', 'PROCESSING'] },
+        }),
+      }),
+    )
+  })
+
+  it('P6b: a claim that matches nothing throws instead of returning success', async () => {
+    /* MUTATION PROOF: restore the `return` on `updated.count === 0` -> the call
+     * resolves instead of rejecting -> RED. */
+    const mockLlm = { generate: vi.fn() }
+    fp.protocolGenerationJob.findUnique.mockResolvedValue(BASE_PG_JOB as any)
+    fp.protocolGenerationJob.updateMany.mockResolvedValue({ count: 0 })
+
+    const job = makeJob('rp-21', PGJOB, 0, { attempts: 3 })
+
+    await expect(
+      processProtocolGenerationJob(job as any, makeLogger(), { llm: mockLlm }),
+    ).rejects.toThrow(/could not be claimed/i)
   })
 })
 

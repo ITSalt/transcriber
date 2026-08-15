@@ -154,15 +154,24 @@ export async function processProtocolGenerationJob(
 
     // ── Step 1b: Mark IN_PROGRESS (optimistic concurrency guard) ────────────
     // RQ-021: only transition from PENDING, prevents double-processing (BRQ-009)
+    // PROCESSING is also claimable: RC-UC-300.recovery_procedure requires that
+    // after a process crash "another worker picks up". BullMQ only re-delivers
+    // once the lock has expired and worker concurrency is 1, so a PROCESSING row
+    // here means the previous holder died. Terminal states cannot reach this
+    // line — the BRQ-009 guard above returns early on DONE/FAILED — so widening
+    // the filter does not weaken terminal immutability.
     const updated = await prisma.protocolGenerationJob.updateMany({
-      where: { id: protocol_generation_job_id, status: 'PENDING' },
+      where: { id: protocol_generation_job_id, status: { in: ['PENDING', 'PROCESSING'] } },
       data: { status: 'PROCESSING', startedAt: new Date() },
     })
 
     if (updated.count === 0) {
-      // Another worker picked it up
-      log.warn({ protocol_generation_job_id }, 'ProtocolGenerationJob already claimed — skipping')
-      return
+      // Genuinely anomalous. Throwing routes it through the normal
+      // retry/failure path; returning would ACK the job while the meeting stayed
+      // in GENERATING_PROTOCOL forever.
+      throw new Error(
+        `ProtocolGenerationJob ${protocol_generation_job_id} could not be claimed (row vanished or is terminal)`,
+      )
     }
 
     // ── Step 2: Determine language for prompt selection ──────────────────────

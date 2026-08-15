@@ -211,17 +211,29 @@ export async function processTranscriptionJob(
       throw new Error(`Meeting ${meeting.id} has no Recording`)
     }
 
-    // ── Step 1b: Mark PROCESSING (optimistic concurrency guard) ─────────────
-    // RQ-014: only transition from PENDING, prevents double-processing
+    // ── Step 1b: Claim the job (optimistic concurrency guard) ───────────────
+    // RQ-014: PENDING -> PROCESSING. PROCESSING is also claimable, because
+    // RC-UC-200.recovery_procedure requires that after a process crash "another
+    // worker (or same worker after restart) picks up the job from PROCESSING and
+    // re-runs". BullMQ only re-delivers once the lock has expired, and worker
+    // concurrency is 1, so a PROCESSING row here means the previous holder died —
+    // not that a live worker owns it. Terminal states cannot reach this line:
+    // the BRQ-009 idempotency guard above returns early on DONE/FAILED, so
+    // widening the filter does not weaken terminal immutability.
     const updated = await prisma.transcriptionJob.updateMany({
-      where: { id: transcription_job_id, status: 'PENDING' },
+      where: { id: transcription_job_id, status: { in: ['PENDING', 'PROCESSING'] } },
       data: { status: 'PROCESSING', startedAt: new Date() },
     })
 
     if (updated.count === 0) {
-      // Another worker picked it up
-      log.warn({ transcription_job_id }, 'Job already claimed by another worker — skipping')
-      return
+      // Genuinely anomalous: the row was DONE/FAILED (impossible — guarded
+      // above) or deleted between the two queries. Throwing routes it through
+      // the normal retry/failure path, which writes FAILED on the final attempt.
+      // Returning here would ACK the job to BullMQ while the row stayed
+      // PROCESSING and the meeting stayed TRANSCRIBING forever — silently.
+      throw new Error(
+        `TranscriptionJob ${transcription_job_id} could not be claimed (row vanished or is terminal)`,
+      )
     }
 
     // ── Step 2: Generate a short-lived HTTPS URL for ffmpeg ─────────────────

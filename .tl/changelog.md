@@ -1,5 +1,45 @@
 # Changelog — .tl/
 
+## [2026-08-15] nacl-tl-fix: a re-delivered job ACKed itself and stranded the meeting
+
+- **Level:** L1 (code-only). **Classification corrected during the fix** — this
+  was planned as L2 on the assumption that recovery behaviour was unspecified.
+  It is not: `RC-UC-200.recovery_procedure` already reads *"After process crash:
+  BullMQ lock expires; another worker (or same worker after restart) **picks up
+  the job from PROCESSING and re-runs**"*, and `RC-UC-300` says the same. The
+  spec was right; the code contradicted it. No graph change was needed.
+- **Defect:** both pipelines claimed with `where: { id, status: 'PENDING' }`.
+  The BRQ-009 terminal guard runs *before* the claim, so a zero-count claim could
+  only mean the row was `PROCESSING` — a job BullMQ re-delivered after its lock
+  expired, i.e. whose previous holder died. The handler logged a warning and
+  **returned successfully**: BullMQ treated the job as done and dropped it, the
+  row stayed `PROCESSING`, and the meeting stayed `TRANSCRIBING` /
+  `GENERATING_PROTOCOL` **forever** — no FAILED row, no SSE event, no error the
+  user could see. Every `max_memory_restart` and every deploy could trigger it.
+- **Fix:** claim from `{ in: ['PENDING','PROCESSING'] }`, honouring the recovery
+  contract. Terminal immutability is untouched — DONE/FAILED never reach that
+  line. A genuinely unclaimable row (deleted, or terminal) now **throws** instead
+  of returning, routing it through the normal retry/failure path that writes
+  FAILED on the final attempt.
+- **`lockDuration` pinned at 60 s** (was unset → BullMQ's 30 s default). Both
+  pipelines make long provider calls, and a false stall does not merely waste
+  time — the re-delivered job re-runs the whole ASR/LLM call, i.e. a duplicate
+  provider charge. Recovering from a real stall is safe now that a PROCESSING row
+  is re-claimable.
+- **RQ-014 / RQ-021 re-read before changing the filter.** They mandate the
+  lifecycle and terminal immutability only; "claimable solely from PENDING" was a
+  code comment's interpretation that a test title had promoted to a requirement.
+  Both requirements still hold.
+- **Tests:** new `REGR-P6` a–b and `REGR-T8` a–b (RED before the fix). Six
+  pre-existing tests encoded the old behaviour and were updated. One of them,
+  `REGR-T5` *"PROCESSING job … is NOT skipped — pipeline continues"*, **asserted
+  the opposite of its own title**: it mocked `count=0` with the comment
+  "because it uses WHERE status='PENDING'" and then asserted the pipeline never
+  ran — pinning the bug while claiming to guard against it. Rewritten to match
+  its stated intent.
+- **Verified:** lint 0 errors; typecheck clean; worker 224 (baseline 220 + 4),
+  shared 75, api 209 (+7 skipped), web 150.
+
 ## [2026-08-15] nacl-tl-fix: Deepgram calls inherited the SDK's 60-second default timeout
 
 - **Level:** L1 (code-only). Found while sizing the upload-limit feature, not in
