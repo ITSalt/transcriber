@@ -5,7 +5,8 @@ type: uc-be
 uc: UC-200
 module: mod-transcription
 actor: SYSTEM
-wave: 2
+wave: 12
+planned_from_version: 1
 priority: high
 depends_on: ['UC-100-BE', 'TECH-006', 'TECH-009', 'TECH-010', 'TECH-012']
 blocks: []

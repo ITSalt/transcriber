@@ -1,9 +1,65 @@
 # Changelog — .tl/
 
+## [PLAN] 2026-08-15 — incremental re-plan clearing the DEC-003 stale set
+
+- **Skill:** `/nacl-tl-plan` (incremental, Step 1.5b — **no** `--overwrite`)
+- **Stale set:** `UC-100-BE`, `UC-100-FE`, `UC-200-BE`, `UC-201-BE`, `UC-201-FE`,
+  `UC-300-BE` — all detected by Signal 2 (`review_status='stale'`,
+  `stale_origin='DEC-003'`); `UC-300` additionally by Signal 1
+  (`spec_version 2 > planned_from_version 1`).
+- **Shipped-stale policy applied to all six** — every one had `status='done'`, so
+  `status`, all `phase_*`, `commit` and `verification_evidence` were **preserved**;
+  only the task files were regenerated and `planned_from_version` stamped. Waves
+  were read from the graph and re-linked as no-ops (1, 2, 12, 3, 4, 12) — the
+  deterministic wave planner was deliberately **not** invoked, since shipped tasks
+  are no longer execution units.
+- **Delta carried by:** `1e91f68` (PR #7) for the DEC-003 language semantics; the
+  i18n strings remain open as the Task-3 code fix.
+- **External Contracts Gate (Step 1.6):** passed vacuously — no
+  `REQUIRES_EXTERNAL` / `DEPENDS_ON_EXTERNAL` edges and no `ExternalContract`
+  nodes exist. *Finding:* the five contract files authored by gap-closure W3
+  (`deepgram`, `kie-anthropic`, `s3-multipart-presigned`, `sse`, `puppeteer-pdf`)
+  are on disk but were never modelled as graph nodes, so the gate currently has
+  nothing to enforce. Registered as follow-up debt.
+- **Spec corrections made first** (the re-plan would otherwise have baked stale values):
+  - `FORM-MeetingUpload-F03.label` — "Language (leave blank for auto-detect)" →
+    **"Protocol language (blank = Russian, speech auto-detected)"**. The field
+    selects the *protocol's* language (BRQ-013), not merely an ASR hint; blank
+    means AUTO → Russian, and EN is the only route to an English protocol
+    (RQ-012). `drift_corrected_note` records the provenance.
+  - `UC-100-AS02` — still read "blank = auto-detect"; restated to the DEC-003
+    semantics. **Residual DEC-003 drift the original fix missed.**
+  - `ENUM-VideoMimeType` — `video/webm` added (`V04`). The enum contradicted
+    `RQ-009`, `BR-101`, `FORM-MeetingUpload-F02` and the shipped
+    `ACCEPTED_UPLOAD_MIME_TYPES`; it was the only lagging artifact.
+  - `UC-100.spec_version` 1 → 2. Note: the `detail` command does not bump
+    `spec_version` (unlike `slices`/`errors`/`resilience`, which all do in their
+    Phase 4.1) — bumped explicitly to keep drift detection honest.
+- **Files regenerated:** `UC-100/{task-be,task-fe,acceptance}.md`,
+  `UC-201/task-be.md`. Beyond the language delta these carried substantial
+  **pre-existing** drift, now corrected: size cap 500 MB → 1 GiB; MIME set 3 → 4;
+  `MeetingLanguage` missing `AUTO`; `RQ-037` (speaker-count hint) absent entirely;
+  and a TUS endpoint table (`POST /api/uploads`, `PATCH /api/uploads/:id`,
+  `POST /api/uploads/:id/finalize`) that **never shipped** — replaced with the real
+  presigned-multipart contract (`/init`, direct-to-S3 PUT, `/complete`, `/abort`).
+- **Frontmatter fix:** `UC-200/task-be.md` said `wave: 2`; the graph says **12**
+  (re-waved by the FR-001 re-plan). Graph is authoritative — file corrected.
+- **Verified:** `MATCH (n) WHERE coalesce(n.review_status,'current')<>'current'`
+  → empty; version-drift query → empty; all six tasks still `status='done'` with
+  commits intact (`6d3fa21`, `b0f8779`).
+- **Deliberately NOT touched** (pre-existing, needs its own decision):
+  `ENUM-JobStatus` (`QUEUED/IN_PROGRESS/COMPLETED` vs Prisma
+  `PENDING/PROCESSING/DONE/FAILED`) and `ENUM-MeetingStatus`
+  (`TRANSCRIPT_READY/PROTOCOL_GENERATING` vs Prisma
+  `TRANSCRIBED/GENERATING_PROTOCOL`); `NFR-001` (500 MB) contradicting `RQ-008`
+  (1 GiB) — both are rewritten by the pending upload-limit feature. Each
+  regenerated file carries an explicit graph-debt note rather than silently
+  quoting a value the schema contradicts.
+
 ## [2026-08-14] nacl-tl-fix: Russian transcript produced an English protocol
 
 - **Level:** L2 (spec-sync)
-- **Status:** spec-update committed; code fix pending (Phase B)
+- **Status:** spec-update committed (`241970f` lineage); **code fix landed in `1e91f68` (PR #7)** — this line previously read "code fix pending (Phase B)" and was stale
 - **Spec-first verdict:** PASS — this spec-update commit precedes any code-fix commit
 - **Root cause:** `Meeting.language` defaults to `AUTO`, and
   `worker/src/jobs/protocol-generation.ts:149` collapsed it with

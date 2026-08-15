@@ -9,7 +9,7 @@ wave: 12
 priority: high
 depends_on: ['UC-200-BE', 'TECH-011', 'TECH-026']
 blocks: []
-planned_from_version: 1
+planned_from_version: 2
 ---
 
 # UC-300-BE — Generate protocol pipeline (worker)

@@ -1,7 +1,7 @@
 {
   "project": "Transcrib",
   "created": "2026-05-18",
-  "updated": "2026-08-13",
+  "updated": "2026-08-15",
   "source": "nacl-tl-plan",
   "summary": {
     "total_uc": 10,
@@ -49,6 +49,49 @@
       ],
       "ts": "2026-08-14T00:00:00Z",
       "note": "Protocol-language fix (DEC-003). Spec committed before any code-fix commit per the spec-first prerequisite."
+    },
+    "plan": {
+      "status": "done",
+      "kind": "incremental-replan",
+      "skill": "nacl-tl-plan",
+      "origin": "DEC-003",
+      "ts": "2026-08-15T00:00:00Z",
+      "stale_set": [
+        "UC-100-BE",
+        "UC-100-FE",
+        "UC-200-BE",
+        "UC-201-BE",
+        "UC-201-FE",
+        "UC-300-BE"
+      ],
+      "policy": "shipped-stale: all six were status=done, so status/phase_*/commit/verification_evidence preserved; files regenerated and planned_from_version stamped",
+      "planned_from_version": {
+        "UC-100-BE": 2,
+        "UC-100-FE": 2,
+        "UC-200-BE": 1,
+        "UC-201-BE": 1,
+        "UC-201-FE": 1,
+        "UC-300-BE": 2
+      },
+      "delta_carried_by": "1e91f68 (PR #7); i18n strings remain open as the Task-3 code fix",
+      "files_regenerated": [
+        ".tl/tasks/UC-100/task-be.md",
+        ".tl/tasks/UC-100/task-fe.md",
+        ".tl/tasks/UC-100/acceptance.md",
+        ".tl/tasks/UC-201/task-be.md"
+      ],
+      "graph_nodes": [
+        "FORM-MeetingUpload-F03",
+        "UC-100-AS02",
+        "ENUM-VideoMimeType-V04",
+        "UC-100"
+      ],
+      "spec_version_bumps": {
+        "UC-100": "1 -> 2"
+      },
+      "external_contracts_gate": "passed vacuously - no REQUIRES_EXTERNAL/DEPENDS_ON_EXTERNAL edges and no ExternalContract nodes exist; the five W3 contract files on disk were never modelled as graph nodes (follow-up debt)",
+      "verified": "review_status query empty; version-drift query empty; all six tasks still status=done with commits intact",
+      "not_touched": "ENUM-JobStatus and ENUM-MeetingStatus vocabulary drift vs Prisma; NFR-001 (500 MB) contradicting RQ-008 (1 GiB) - both deferred to the upload-limit feature"
     }
   },
   "updated_by_W1_reconciliation": "2026-05-22T11:45:00Z",
