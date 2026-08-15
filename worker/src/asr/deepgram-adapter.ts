@@ -41,9 +41,86 @@ export class DeepgramAsrError extends Error {
   }
 }
 
-/** Returns true if the error should be retried (transient Deepgram 429/5xx). RC-UC-200 FR-001. */
+/** Returns true if the error should be retried. RC-UC-200 FR-001 / RQ-015. */
 export function isTransientAsrError(err: unknown): boolean {
   return err instanceof DeepgramAsrError && err.isTransient;
+}
+
+/**
+ * Is this HTTP status worth retrying? (F-005, probe-independent half.)
+ *
+ * NOTE the deliberate asymmetry with `isTransientStatus` in the kie.ai adapter,
+ * which also treats **404** as transient. That conclusion is provider-specific
+ * and must NOT be copied here: kie.ai carries the model id in the request body,
+ * so a 404 there can only be a gateway routing blip, whereas Deepgram carries
+ * the model in a query parameter — a Deepgram 404 may legitimately mean "unknown
+ * model". Flipping it requires the live probes in F-005 plus a decision record.
+ */
+export function isTransientAsrStatus(status: number): boolean {
+  return status === 408 || status === 429 || status >= 500;
+}
+
+/** Transport-level failure codes that are always worth retrying. */
+const TRANSPORT_ERROR_CODES = new Set([
+  'ECONNRESET',
+  'ECONNREFUSED',
+  'ETIMEDOUT',
+  'EPIPE',
+  'EAI_AGAIN',
+  'ENOTFOUND',
+  'UND_ERR_SOCKET',
+  'UND_ERR_CONNECT_TIMEOUT',
+]);
+
+/** Error names the SDK/runtime uses for an aborted or timed-out request. */
+const TIMEOUT_ERROR_NAMES = new Set(['DeepgramTimeoutError', 'AbortError', 'TimeoutError']);
+
+/**
+ * Classify a thrown SDK error into our transport-independent taxonomy.
+ *
+ * Matched structurally rather than via `instanceof DeepgramError`: the SDK's
+ * error classes are not part of its stable surface, and binding to them would
+ * also force every test that mocks `@deepgram/sdk` to re-export them.
+ */
+function classifyAsrError(err: unknown): { message: string; isTransient: boolean } {
+  const e = (err ?? {}) as {
+    name?: unknown;
+    message?: unknown;
+    statusCode?: unknown;
+    status?: unknown;
+    code?: unknown;
+    cause?: { code?: unknown };
+  };
+
+  const message = typeof e.message === 'string' && e.message ? e.message : String(err);
+
+  if (typeof e.name === 'string' && TIMEOUT_ERROR_NAMES.has(e.name)) {
+    return { message, isTransient: true };
+  }
+
+  const status = typeof e.statusCode === 'number' ? e.statusCode
+    : typeof e.status === 'number' ? e.status
+    : undefined;
+
+  if (typeof status === 'number') {
+    return { message, isTransient: isTransientAsrStatus(status) };
+  }
+
+  // No status at all → the request never produced an HTTP response. Undici
+  // surfaces these as a TypeError('fetch failed') whose `cause` carries the
+  // syscall code.
+  const code = typeof e.code === 'string' ? e.code
+    : typeof e.cause?.code === 'string' ? e.cause.code
+    : undefined;
+  if (code && TRANSPORT_ERROR_CODES.has(code)) {
+    return { message, isTransient: true };
+  }
+  if (err instanceof TypeError && /fetch failed|network|socket/i.test(message)) {
+    return { message, isTransient: true };
+  }
+
+  // Anything else is a local/programming error — permanent.
+  return { message, isTransient: false };
 }
 
 // ─── Helper: map language hint → Deepgram language param ─────────────────────
@@ -134,21 +211,32 @@ export class DeepgramAsrProvider implements IAsrProvider {
 
     // HttpResponsePromise<MediaTranscribeResponse> extends Promise<MediaTranscribeResponse>
     // — await yields the body directly (no .body wrapper needed).
-    const body = await this.client.listen.v1.media.transcribeFile(
-      buffer,
-      {
-        model: 'nova-3',
-        diarize: true,
-        smart_format: true,
-        utterances: true,
-        punctuate: true,
-        ...languageParams,
-        ...diarizationParams,
-      },
-      { timeoutInSeconds: REQUEST_TIMEOUT_SECONDS },
-    );
+    //
+    // F-005: every failure must leave here as a DeepgramAsrError carrying an
+    // explicit transience verdict. Without this catch the raw SDK error escaped,
+    // `isTransientAsrError` returned false for it, and the RQ-015 / RC-UC-200
+    // FR-001 retry policy was dead code on the ASR branch.
+    let body: unknown;
+    try {
+      body = await this.client.listen.v1.media.transcribeFile(
+        buffer,
+        {
+          model: 'nova-3',
+          diarize: true,
+          smart_format: true,
+          utterances: true,
+          punctuate: true,
+          ...languageParams,
+          ...diarizationParams,
+        },
+        { timeoutInSeconds: REQUEST_TIMEOUT_SECONDS },
+      );
+    } catch (err) {
+      const { message, isTransient } = classifyAsrError(err);
+      throw new DeepgramAsrError(`Deepgram ASR request failed: ${message}`, err, isTransient);
+    }
 
-    return mapResponse(body as unknown as ListenV1Response | { request_id?: string }, languageHint);
+    return mapResponse(body as ListenV1Response | { request_id?: string }, languageHint);
   }
 }
 

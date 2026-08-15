@@ -1,5 +1,44 @@
 # Changelog — .tl/
 
+## [2026-08-15] nacl-tl-fix: F-005 (partial) — Deepgram errors were never classified
+
+- **Level:** L1 (code-only). **F-005 stays OPEN** — only its deliverable 3, the
+  explicitly probe-independent minimum, is done.
+- **Defect, and it was worse than F-005 described.** F-005 was filed about a
+  *narrow* transience formula on the ASR branch. In fact the formula was never
+  reachable: `new DeepgramAsrError` was constructed exactly **once** in
+  production code — for a missing API key — and `transcribe()` had **no
+  try/catch at all**. A 429 or a 5xx propagated as a raw SDK error,
+  `isTransientAsrError` returned false for it, and the entire RQ-015 /
+  RC-UC-200 FR-001 retry design was **dead code** on the ASR branch.
+- **Fix:** `transcribe()` wraps the SDK call and converts every failure into a
+  `DeepgramAsrError` carrying an explicit verdict. `isTransientAsrStatus()`
+  treats **408 / 429 / 5xx** as transient; 400 / 401 / 402 / 413 and other 4xx
+  stay permanent. The request-timeout abort and transport failures with no HTTP
+  response (`ECONNRESET`, `ETIMEDOUT`, undici's `TypeError('fetch failed')`, …)
+  are transient — which matters now that the timeout is pinned at 570 s: an
+  over-long recording aborts, and that abort must be retriable rather than
+  bricking the meeting.
+- **Matched structurally**, not via `instanceof DeepgramError`: the SDK's error
+  classes are not a stable surface, and binding to them would force every test
+  that mocks `@deepgram/sdk` to re-export them.
+- **404 deliberately left PERMANENT.** F-005's non-goal forbids copying the
+  kie.ai conclusion across: kie.ai carries the model id in the request body, so a
+  404 there can only be a routing blip, whereas Deepgram carries the model in a
+  **query parameter** — its 404 may genuinely mean "unknown model". A regression
+  test pins the current verdict so flipping it must be deliberate, evidence-led
+  and accompanied by a decision record. In-HTTP-200-envelope errors are likewise
+  untouched (no evidence Deepgram does that).
+- **Still required to close F-005:** live probes against `api.deepgram.com`
+  (invalid key, unknown model, unrouted path, oversized payload), then a `DEC-`
+  updating `RC-UC-200` + `RQ-015` + the Deepgram external contract. Not done
+  here — probes cost real provider calls and were not authorised.
+- **Tests:** 10 cases in `deepgram-adapter.test.ts`. Mutation proof executed:
+  with the adapter stashed the suite is 10 failed / 11 passed; restored, 21
+  passed.
+- **Verified:** lint 0 errors; typecheck clean; worker 234 (baseline 224 + 10),
+  shared 75, api 209 (+7 skipped), web 150.
+
 ## [2026-08-15] nacl-tl-fix: a re-delivered job ACKed itself and stranded the meeting
 
 - **Level:** L1 (code-only). **Classification corrected during the fix** — this

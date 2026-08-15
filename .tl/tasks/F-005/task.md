@@ -1,7 +1,7 @@
 # F-005 — Deepgram ASR branch carries the same narrow transience formula as the pre-DEC-001 LLM branch
 
 **Type:** follow-up (spun out of `/nacl-tl-fix` DEC-001, 2026-08-13)
-**Status:** open
+**Status:** open (deliverable 3 landed 2026-08-15; deliverables 1-2 still require live probes)
 **Created:** 2026-08-13
 **Owner:** backend lead
 **Related:** `DEC-001`, `RC-UC-200`, `RQ-015`, `UC-200`, `worker/src/asr/deepgram-adapter.ts`
@@ -43,6 +43,37 @@ Those two are transient under any provider, independent of questions 1–2.
    `RQ-015` + `.tl/external-contracts/deepgram-*.md` §8, then the code change.
 3. At minimum — and independent of the probes — reclassify `408` and
    network/transport failures as transient on the ASR branch.
+
+## Progress — 2026-08-15
+
+**Deliverable 3 is DONE** (the probe-independent minimum):
+
+- `transcribe()` now has a try/catch. Before this, `new DeepgramAsrError` was
+  constructed exactly once in production code — for a missing API key — so a
+  429 or a 5xx propagated as a raw SDK error, `isTransientAsrError` returned
+  false for it, and the whole RQ-015 / RC-UC-200 FR-001 retry policy was **dead
+  code** on the ASR branch. That was strictly worse than the narrow formula this
+  task was filed about.
+- `isTransientAsrStatus()` classifies **408 / 429 / 5xx** as transient; 400 /
+  401 / 402 / 413 and other 4xx stay permanent.
+- The request-timeout abort (`DeepgramTimeoutError` / `AbortError`) and
+  transport failures with no HTTP response (`ECONNRESET`, `ECONNREFUSED`,
+  `ETIMEDOUT`, `EAI_AGAIN`, undici's `TypeError('fetch failed')`, …) are
+  transient. This matters more since the request timeout was pinned at 570 s:
+  an over-long recording now aborts, and that abort must be retriable rather
+  than bricking the meeting.
+- Errors are matched **structurally**, not via `instanceof DeepgramError` — the
+  SDK's error classes are not a stable surface, and binding to them would force
+  every test that mocks `@deepgram/sdk` to re-export them.
+- Tests: `deepgram-adapter.test.ts` → `error classification (F-005,
+  probe-independent half)`, 10 cases. Mutation proof executed: with the adapter
+  stashed the suite goes 10 failed / 11 passed; restored, 21 passed.
+
+**Deliverables 1-2 remain OPEN.** `404` is still classified **permanent**, and
+there is still no handling of an error inside an HTTP 200 envelope. Both need
+the live probes below; a regression test (`404 stays PERMANENT pending live
+probes`) pins the current verdict so that flipping it is a deliberate act
+accompanied by evidence and a decision record.
 
 ## Non-goal
 
