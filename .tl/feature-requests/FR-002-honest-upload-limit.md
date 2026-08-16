@@ -49,8 +49,8 @@ At the 4-hour gate, every constraint has headroom:
 
 | Constraint | At 4 h | Margin |
 |---|---|---|
-| FLAC payload | ~253 MB | 13% of Deepgram's 2 GB cap |
-| Peak worker RSS | ~570–820 MB | under the 1024M pm2 cap — **no pm2 change needed** |
+| FLAC payload | **182 MB** (measured) | 9% of Deepgram's 2 GB cap |
+| Peak worker RSS | **~594 MB** (measured) | under the 1024M pm2 cap — **no pm2 change needed** |
 | Deepgram processing | ~144 s | far under the 570 s budget |
 | Russian protocol context | ~132K tokens | under the 200K window |
 
@@ -111,11 +111,33 @@ encoders, so FLAC extraction has no infrastructure blocker.
 Part size (10 MiB) and Cloud.ru limits (5 TB object, 10 000 parts, 5 GB per part) need
 no change — 1.5 GiB is 154 parts.
 
-## Verification required before shipping
+## Verification — DONE 2026-08-16 (measured, not estimated)
 
-- Real upload at the new ceiling, with peak worker RSS sampled (`pm2 describe
-  transcrib-worker`) against the predicted ~570–820 MB.
-- WER comparison FLAC vs WAV on a real recording before treating the codec swap as safe.
+Run on production hardware against a real 693 s recording, with no provider calls
+and no writes to the production database.
+
+- **FLAC is lossless — proved bitwise.** Decoding our FLAC back to raw PCM is
+  byte-identical (`cmp`) to the `pcm_s16le` output, so the codec swap cannot move
+  word-error rate. No Deepgram call was needed to establish this.
+- **Compression:** 13.1 kB/s versus 32 kB/s for PCM — **59% smaller**, better than
+  the 45% originally assumed. A 4 h recording is a **182 MB** payload.
+- **Peak worker RSS: ~594 MB** against the 1024M pm2 cap (baseline 45 → chunks 230
+  → concat 412 → undici body copy 594). The removed `Buffer.from` copy accounts for
+  exactly 182 MB of headroom; with it the peak was 776 MB.
+- **`-sample_fmt s16` proved essential, and was missing in the first
+  implementation.** `pcm_s16le` pinned the bit depth implicitly; `flac` does not,
+  and Opus sources decode to float, so ffmpeg silently emitted **24-bit** FLAC:
+  a 355 MB payload and a measured **1113 MB peak RSS — over the pm2 cap**. That
+  would have OOM-restarted the worker on every 4 h job, and the stall-recovery fix
+  would then have re-run it, burning Deepgram spend each time. Fixed and pinned by
+  a test.
+
+### Still open
+
+- **Does Deepgram accept our FLAC container?** One ~30 s API call settles it;
+  not run, as it spends from the production Deepgram account.
+- Full end-to-end at the ceiling. Confirms only what the above already measures
+  piecewise, and costs real provider calls plus ~30–40 min of the single worker.
 
 ## Decisions
 

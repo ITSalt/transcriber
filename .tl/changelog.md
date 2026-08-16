@@ -1,5 +1,42 @@
 # Changelog — .tl/
 
+## [2026-08-16] Pre-ship verification of DEC-004 — and a defect it caught
+
+Ran the two checks FR-002 listed as required before shipping. Both were done on
+production hardware against a real 693 s recording, with **no provider calls and no
+writes to the production database**.
+
+- **FLAC losslessness — proved bitwise, no API call needed.** I had written this up
+  as "compare WER on a real recording", which measures the wrong thing: FLAC is
+  lossless by definition, so the decoded PCM is bit-identical and WER cannot move.
+  The correct test is `cmp` on the decoded output — and it passes. The only part
+  that genuinely needs Deepgram is "does their decoder accept our container", which
+  is one ~30 s call, still unrun.
+- **Peak worker RSS: ~594 MB** against the 1024M pm2 cap (baseline 45 → chunk
+  accumulation 230 → `Buffer.concat` 412 → undici body copy 594). The `Buffer.from`
+  copy removed by DEC-004 accounts for exactly 182 MB of that headroom; with it the
+  peak was 776 MB.
+- **Compression is better than assumed:** 13.1 kB/s versus 32 kB/s for PCM — **59%
+  smaller**, not the ~45% written into the original commit. A 4 h recording is a
+  **182 MB** payload, 9% of Deepgram's 2 GB cap. All the ~253 MB / ~570–820 MB
+  estimates in `DEC-004`, `FR-002` and the code comments are replaced by these
+  measured values.
+
+**Defect found and fixed: `-sample_fmt s16` was missing.** `pcm_s16le` pinned the
+bit depth implicitly; `flac` does not, and Opus sources decode to float — so the
+version shipped in `0a08182` silently emitted **24-bit** FLAC. Measured on the same
+recording: a **355 MB** payload and a **1113 MB peak RSS — over the pm2 cap**. That
+would have OOM-restarted the worker on every 4 h job; and because the stall-recovery
+fix (`052bec1`) now correctly re-claims a PROCESSING row, the worker would have
+re-run it, burning Deepgram spend on each attempt before the retry budget ran out.
+
+The two interact: neither fix is dangerous alone, but shipping the recovery fix on
+top of an OOM-looping extraction is worse than either. Pinned by a mutation-proofed
+test so the option cannot be dropped again.
+
+- **Verified:** lint 0 errors; typecheck clean; shared 77, worker 236 (+1),
+  api 212 (+7 skipped), web 150.
+
 ## [2026-08-15] FR-002 implementation — 1.5 GiB cap + 4h duration gate (code)
 
 Follows the spec commit `abd8335`. Code only.

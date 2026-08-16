@@ -57,12 +57,20 @@ export function extractAudio(input: string | Readable): Readable {
     .audioChannels(1)
     .audioFrequency(16000)
     // FLAC instead of pcm_s16le (DEC-004): lossless, so word-error rate is
-    // unchanged, but roughly 45% smaller on speech. That is what keeps a 4-hour
-    // recording inside both the worker's memory budget and Deepgram's 2 GB
-    // payload cap — 16 kHz mono PCM is a flat 32 kB/s, i.e. ~461 MB at the
-    // RQ-039 ceiling, versus ~253 MB here. Verified present on the production
-    // ffmpeg 6.1.1 build before this change was specified.
+    // unchanged (verified bitwise: decoding our FLAC back to raw PCM is
+    // byte-identical to the pcm_s16le output), but ~59% smaller on real speech.
+    // That is what keeps a 4-hour recording inside both the worker's memory
+    // budget and Deepgram's 2 GB payload cap: 16 kHz mono s16 PCM is a flat
+    // 32 kB/s, i.e. ~461 MB at the RQ-039 ceiling, versus ~189 MB here
+    // (measured 13.1 kB/s on a real 693 s production recording).
+    //
+    // `-sample_fmt s16` is REQUIRED, not cosmetic. `pcm_s16le` used to pin the
+    // bit depth implicitly; `flac` does not. Opus and AAC sources decode to
+    // float, so ffmpeg silently promotes the FLAC output to 24-bit — measured
+    // 17.7 MB instead of 9.1 MB for the same recording, i.e. nearly double the
+    // payload and the peak worker RSS, for samples the ASR cannot use.
     .audioCodec('flac')
+    .outputOptions(['-sample_fmt', 's16'])
     .format('flac')
     .on('error', (err: Error) => {
       // Forward ffmpeg process errors to the output stream so the awaiting
