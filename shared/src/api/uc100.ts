@@ -5,9 +5,27 @@ import { MeetingLanguage, VideoMimeType } from '../enums.js';
 
 // ── Limits and accepted formats ────────────────────────────────────────────────
 // Centralised so api/, worker/, web/ all agree without copy-pasting magic
-// numbers. RQ-008 originally pinned this to 500 MB; bumped to 1 GiB after we
-// started receiving full-meeting WebM recordings.
-export const MAX_UPLOAD_BYTES = 1_073_741_824; // 1 GiB
+// numbers. RQ-008 originally pinned this to 500 MB, then 1 GiB, then 1.5 GiB by
+// DEC-004, and 2.5 GiB by DEC-005.
+//
+// This cap protects upload and storage only. What protects the PIPELINE is
+// MAX_UPLOAD_DURATION_SEC below — every measured constraint (worker memory, ASR
+// budget, LLM context) scales with duration, not with file size, so raising this
+// admits higher-bitrate recordings of the same maximum length rather than longer
+// ones. At the 4 h ceiling this allows up to ~1.5 Mbps; 1.5 GiB allowed ~0.9.
+export const MAX_UPLOAD_BYTES = 2_684_354_560; // 2.5 GiB (RQ-008)
+
+/**
+ * Maximum accepted recording duration, in seconds (RQ-039, DEC-004).
+ *
+ * The byte cap protects upload and storage; THIS is what protects the processing
+ * pipeline — peak worker memory, the Deepgram request budget and the LLM context
+ * for the protocol all scale with duration, not with file size. Bytes are a poor
+ * proxy: 1.5 GiB is ~5.5 h at the 656 kbps observed in production but only ~71
+ * minutes at 1080p/3 Mbps, so for typical meeting bitrates this gate binds first.
+ */
+export const MAX_UPLOAD_DURATION_SEC = 14_400; // 4 hours (RQ-039)
+
 export const ACCEPTED_UPLOAD_MIME_TYPES = [
   'video/mp4',
   'video/x-matroska',
@@ -17,9 +35,9 @@ export const ACCEPTED_UPLOAD_MIME_TYPES = [
 export const AcceptedUploadMime = z.enum(ACCEPTED_UPLOAD_MIME_TYPES);
 export type AcceptedUploadMime = z.infer<typeof AcceptedUploadMime>;
 
-// TUS metadata header (Base64 KV pairs):
-//   filename, mime_type, size_bytes, title?, language?
-// Server validates per RQ-008/009/010 at pre-create.
+// Upload transport is direct S3 presigned multipart (ADR-012, which supersedes
+// ADR-005's TUS): POST /api/uploads/init -> browser PUTs parts straight to object
+// storage -> POST /api/uploads/complete. Server validates RQ-008/009/010/039.
 
 export const UploadFinalizeResponse = z.object({
   meeting_id: z.string().uuid(),
@@ -27,7 +45,8 @@ export const UploadFinalizeResponse = z.object({
 });
 export type UploadFinalizeResponse = z.infer<typeof UploadFinalizeResponse>;
 
-// Used as request shape for client-side validation BEFORE TUS create.
+// TUS-era leftover: referenced only by shared/src/api/api.test.ts, not by any
+// production code path. The live shapes are UploadInitRequest / UploadCompleteRequest.
 export const UploadCreateRequest = z.object({
   filename: z.string().min(1),
   size_bytes: z.number().int().positive().max(MAX_UPLOAD_BYTES), // RQ-008

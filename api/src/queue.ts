@@ -10,13 +10,19 @@
  */
 import { Queue } from 'bullmq'
 import type { TranscriptionJobPayload, ProtocolGenerationJobPayload } from '@transcrib/shared'
+import { JOB_RETRY_OPTIONS, QueueName } from '@transcrib/shared'
 import { config } from './config.js'
 
-/** Canonical BullMQ queue name for transcription jobs (mirrors worker/src/queues.ts) */
-const TRANSCRIPTION_QUEUE_NAME = 'transcriptionJob'
-
-/** Canonical BullMQ queue name for protocol generation jobs (mirrors worker/src/queues.ts) */
-const PROTOCOL_GENERATION_QUEUE_NAME = 'protocolGenerationJob'
+/**
+ * F-004: BullMQ bakes job options from the PRODUCING Queue at `add()` time, so
+ * every producer must carry the retry policy. Without `defaultJobOptions` these
+ * queues stamped `attempts: 0` onto every job, `Job.shouldRetryJob` never fired,
+ * and the FR-001 retry policy was inert on the UC-100 upload and UC-004 retry
+ * paths — the worker's own config could not compensate.
+ *
+ * Queue names and the policy now come from `@transcrib/shared` so api/ and
+ * worker/ cannot drift again (api/ must not import worker/).
+ */
 
 /** @internal Exported for unit testing only */
 export function parseRedisUrl(redisUrl: string): { host: string; port: number; password?: string; db?: number } {
@@ -48,7 +54,10 @@ export async function addTranscriptionJob(
   payload: TranscriptionJobPayload,
 ): Promise<void> {
   const connection = parseRedisUrl(config.REDIS_URL)
-  const queue = new Queue(TRANSCRIPTION_QUEUE_NAME, { connection })
+  const queue = new Queue(QueueName.Transcription, {
+    connection,
+    defaultJobOptions: JOB_RETRY_OPTIONS,
+  })
   try {
     await queue.add('transcribe', payload)
   } finally {
@@ -66,7 +75,10 @@ export async function enqueueProtocolGenerationJob(
   payload: ProtocolGenerationJobPayload,
 ): Promise<void> {
   const connection = parseRedisUrl(config.REDIS_URL)
-  const queue = new Queue(PROTOCOL_GENERATION_QUEUE_NAME, { connection })
+  const queue = new Queue(QueueName.Protocol, {
+    connection,
+    defaultJobOptions: JOB_RETRY_OPTIONS,
+  })
   try {
     await queue.add('generateProtocol', payload)
   } finally {

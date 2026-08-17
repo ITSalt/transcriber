@@ -7,14 +7,14 @@
  *   ProtocolGenerationJobPayload — shared/src/api/uc300.ts
  */
 import { Queue, type ConnectionOptions } from 'bullmq'
+import { JOB_RETRY_OPTIONS, QueueName } from '@transcrib/shared'
 
-/** Canonical BullMQ queue names — used by both producer (api/) and consumer (worker/) */
-export const QueueName = {
-  Transcription: 'transcriptionJob',
-  Protocol: 'protocolGenerationJob',
-} as const
-
-export type QueueName = (typeof QueueName)[keyof typeof QueueName]
+/**
+ * Canonical BullMQ queue names now live in `@transcrib/shared` so the api/ and
+ * worker/ producers cannot drift (F-004). Re-exported here to keep the existing
+ * `from './queues.js'` import sites untouched.
+ */
+export { QueueName } from '@transcrib/shared'
 
 /**
  * Creates BullMQ Queue instances connected to the provided Redis URL.
@@ -34,17 +34,11 @@ export function createQueues(
   return {
     [QueueName.Transcription]: new Queue(QueueName.Transcription, {
       connection,
-      defaultJobOptions: {
-        attempts: 3,
-        backoff: { type: 'exponential', delay: 5000 },
-      },
+      defaultJobOptions: JOB_RETRY_OPTIONS,
     }),
     [QueueName.Protocol]: new Queue(QueueName.Protocol, {
       connection,
-      defaultJobOptions: {
-        attempts: 3,
-        backoff: { type: 'exponential', delay: 5000 },
-      },
+      defaultJobOptions: JOB_RETRY_OPTIONS,
     }),
   }
 }

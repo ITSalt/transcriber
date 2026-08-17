@@ -1,9 +1,469 @@
 # Changelog — .tl/
 
+## [2026-08-17] DEC-005 — upload byte cap 1.5 GiB → 2.5 GiB (duration gate untouched)
+
+Requested by the product owner after DEC-004 shipped. Spec and code in one branch;
+graph written before the code, as usual.
+
+**Why this was cheap, and why it is safe.** The byte cap is not what protects the
+pipeline — RQ-039's 4 h duration gate is, and it is **unchanged**. Every constraint
+measured for DEC-004 scales with duration, not file size, so none of them move:
+FLAC payload stays 182 MB, peak worker RSS stays ~594 MB against the 1024M pm2 cap,
+ASR round-trip stays ~47 s against a 570 s budget, protocol input stays ~50K tokens
+against a 200K window. The pipeline never sees more than 4 h of audio regardless of
+how large the container is.
+
+What the larger cap actually buys is **higher-bitrate** recordings of the same
+maximum length: up to ~1.5 Mbps at the full 4 h, where 1.5 GiB allowed only
+~0.9 Mbps — i.e. ordinary 1080p screen capture, which is presumably the point.
+
+**The one cost that does scale with bytes was measured, not assumed:** the worker
+reads the source from object storage at **17 MB/s** (measured prod → s3.cloud.ru),
+so 2.5 GiB reads in **~2.6 minutes**, against a 2 h presigned-read window. The event
+loop stays free throughout — ffmpeg is a child process, so the BullMQ lock heartbeat
+keeps renewing under the 60 s `lockDuration`. Multipart goes to 256 of 10,000
+allowed parts. Client upload is the real user-visible cost: **~36 min on a 10 Mbit/s
+uplink**, inside the 6 h presign window DEC-004 set.
+
+- **Graph:** `DEC-005` written and linked; `RQ-008`, `NFR-001`, `BRQ-001`, `BR-102`,
+  `Recording-A04`, `UC-100-AS04`, `FORM-MeetingUpload-F02`, `BP-001`, `BP-001-S03`,
+  `GLO-025`, `DFL-001`, `UC-100.user_story` all swept to 2.5 GiB.
+  `UC-100.spec_version` 3 → 4. DEC-004 is **not** superseded — its duration-gate
+  half still stands; DEC-005 revises only the byte cap.
+- **Code:** `MAX_UPLOAD_BYTES = 2_684_354_560`, boundary tests, i18n in both locales.
+- **Verified:** lint 0 errors; typecheck clean; shared 77, worker 236,
+  api 212 (+7 skipped), web 150.
+
+## [2026-08-17] ASR timing measured at three durations — 4h gate is servable
+
+Authorised follow-up to yesterday's 30 s probe, which had left the time budget
+for RQ-039's 4 h ceiling unproven. Measured on the production host against real
+audio; **no writes to the production database**.
+
+| audio | payload | round-trip | realtime |
+|---|---|---|---|
+| 30 s | 0.4 MB | 2.4 s | 12.5× |
+| 693 s | 8.7 MB | 4.3 s | 161× |
+| **7200 s (2 h)** | **89.8 MB** | **24.4 s** | **295×** |
+
+All three returned a correct `metadata.duration` (30 / 693.3735 / 7200), so each
+container was genuinely parsed — including the 2 h, 90 MB payload.
+
+**Linear fit: t = 2.16 s fixed + 3.09 ms per audio-second.** It predicts 2.25 s at
+30 s against 2.4 s measured, so the model holds across two orders of magnitude.
+
+- **4 h → ~47 s round-trip, roughly 12× under the 570 s client timeout.** The
+  timeout would not bind until ~51 h of audio; Deepgram's 600 s synchronous cap
+  not until ~54 h.
+- **Yesterday's alarm was mine, and it was wrong.** "12.5× realtime, the 4 h gate
+  may not be servable" came from a 30 s sample where fixed per-request overhead
+  dominates. It was flagged as uncertain in both directions rather than asserted,
+  and it resolved favourably. The `K≈100×` originally written into DEC-004 was
+  likewise never measured; both are now superseded by the fit.
+- **LLM input measured too:** 62,410 chars at 2 h → ~125K chars / **~50K tokens**
+  at 4 h, well inside the 200K context. The earlier ~132K-token figure in DEC-004
+  and FR-002 was an over-estimate.
+
+Note the deployed `worker/dist` still carries the **old 60 s** SDK timeout — the
+570 s fix is committed but not released. These probes called the SDK directly with
+a raised timeout so they measured Deepgram, not the un-deployed defect.
+
+**Remaining untested leg:** kie.ai protocol generation on a 4 h transcript. Every
+other stage — extraction, memory, ASR round-trip, LLM input size — is now measured
+independently.
+
+## [2026-08-17] Deepgram FLAC probe — accepted, but it surfaced a timing risk
+
+One authorised 30 s call through the real deployed adapter (not curl), on audio
+produced by the exact new production command.
+
+- **Deepgram accepts the 16-bit FLAC container.** `metadata.duration` returned
+  exactly 30, so the container was genuinely parsed rather than guessed; language
+  auto-detect returned `ru`; diarization and utterances produced 12 segments.
+  This closes the last open question on the DEC-004 codec swap.
+- Recorded against **F-005** too, but it does not advance that task: F-005 needs
+  *error-path* probes (unknown model, unrouted path, oversized payload), and this
+  was a happy-path call.
+
+**⚠ New risk, and it is the most consequential thing left.** The call took
+**2.4 s for 30 s of audio — ~12.5× realtime**. Fitting a 4 h recording inside the
+570 s client timeout needs **≥ 25.3×**, and Deepgram's own 600 s synchronous cap
+needs **≥ 24×**. A 30 s sample is dominated by fixed per-request overhead, so
+12.5× is a floor rather than the steady-state rate — but the **K≈100× assumed in
+DEC-004 was never measured either**, so the honest position is that the figure is
+unknown in both directions. One data point cannot separate fixed from variable
+cost: assuming 1.0 s fixed extrapolates to **673 s (over budget)**, assuming 2.0 s
+fixed gives 194 s (comfortable).
+
+The byte and memory analysis for the 4 h gate stands unchanged. The **time**
+budget does not — RQ-039's 4 h ceiling should be treated as unproven until a
+second measurement at a longer duration settles the two-point fit. The same 693 s
+production recording costs ≈ $0.05 and would be decisive.
+
+## [2026-08-16] Pre-ship verification of DEC-004 — and a defect it caught
+
+Ran the two checks FR-002 listed as required before shipping. Both were done on
+production hardware against a real 693 s recording, with **no provider calls and no
+writes to the production database**.
+
+- **FLAC losslessness — proved bitwise, no API call needed.** I had written this up
+  as "compare WER on a real recording", which measures the wrong thing: FLAC is
+  lossless by definition, so the decoded PCM is bit-identical and WER cannot move.
+  The correct test is `cmp` on the decoded output — and it passes. The only part
+  that genuinely needs Deepgram is "does their decoder accept our container", which
+  is one ~30 s call, still unrun.
+- **Peak worker RSS: ~594 MB** against the 1024M pm2 cap (baseline 45 → chunk
+  accumulation 230 → `Buffer.concat` 412 → undici body copy 594). The `Buffer.from`
+  copy removed by DEC-004 accounts for exactly 182 MB of that headroom; with it the
+  peak was 776 MB.
+- **Compression is better than assumed:** 13.1 kB/s versus 32 kB/s for PCM — **59%
+  smaller**, not the ~45% written into the original commit. A 4 h recording is a
+  **182 MB** payload, 9% of Deepgram's 2 GB cap. All the ~253 MB / ~570–820 MB
+  estimates in `DEC-004`, `FR-002` and the code comments are replaced by these
+  measured values.
+
+**Defect found and fixed: `-sample_fmt s16` was missing.** `pcm_s16le` pinned the
+bit depth implicitly; `flac` does not, and Opus sources decode to float — so the
+version shipped in `0a08182` silently emitted **24-bit** FLAC. Measured on the same
+recording: a **355 MB** payload and a **1113 MB peak RSS — over the pm2 cap**. That
+would have OOM-restarted the worker on every 4 h job; and because the stall-recovery
+fix (`052bec1`) now correctly re-claims a PROCESSING row, the worker would have
+re-run it, burning Deepgram spend on each attempt before the retry budget ran out.
+
+The two interact: neither fix is dangerous alone, but shipping the recovery fix on
+top of an OOM-looping extraction is worse than either. Pinned by a mutation-proofed
+test so the option cannot be dropped again.
+
+- **Verified:** lint 0 errors; typecheck clean; shared 77, worker 236 (+1),
+  api 212 (+7 skipped), web 150.
+
+## [2026-08-15] FR-002 implementation — 1.5 GiB cap + 4h duration gate (code)
+
+Follows the spec commit `abd8335`. Code only.
+
+- **`MAX_UPLOAD_BYTES` 1 GiB → 1.5 GiB**, new **`MAX_UPLOAD_DURATION_SEC` = 14 400**
+  in `shared/src/api/uc100.ts`.
+- **`probeContainer` now returns `{ valid, durationSec }`** instead of a bare
+  boolean. ffprobe already ran at finalization and the duration was **discarded**,
+  while `recordings.duration_sec` has existed in the schema the whole time to hold
+  it. `RQ-039` rejects >4 h with `422 RECORDING_TOO_LONG` **before** the job is
+  enqueued, and the measured value is now persisted.
+- **FLAC replaces `pcm_s16le`** in `worker/src/lib/ffmpeg.ts`. Lossless, so WER is
+  unchanged, but ~45% smaller on speech: ~253 MB at the 4 h ceiling versus ~461 MB
+  for flat 32 kB/s PCM. Verified on prod (`ffmpeg 6.1.1` has `flac` and `libopus`)
+  **before** the change was specified.
+- **One full-size audio copy removed** — `toBuffer` did `Buffer.from(buf)`, which
+  copies. Now returns the Buffer as-is, or wraps the same bytes without allocating.
+- **Presign validity extended:** part URLs 1 h → **6 h** (all parts are signed up
+  front, so the *last* part's URL expired that long after `/init` regardless of when
+  the browser reached it — at 1 h a 1.5 GiB upload failed for any uplink under
+  ~4 Mbps); worker read-presign 1800 s → **7200 s**.
+- **`web` stopped re-declaring the limits** and imports `MAX_UPLOAD_BYTES` /
+  `ACCEPTED_UPLOAD_MIME_TYPES` from `@transcrib/shared` — closing the copy-paste
+  logged at `.tl/release-status.json:124`.
+- **i18n:** size/duration strings updated in both locales, plus a new
+  `upload.errorRecordingTooLong`. The dead `upload.supported` key that still claimed
+  "до 10 ГБ" and listed rejected audio MIME types is corrected.
+- **Tests:** new `T12`–`T14` in `uc-100.test.ts` (duration rejection, exact-boundary
+  acceptance, duration persistence — T12/T14 RED before the fix), a rewritten ffmpeg
+  codec test with a mutation proof, shared boundary + literal-value tests. Renamed
+  the new API tests to T12–T14 after finding the file already had a `T09`/`T10`.
+- **Not done — carried as follow-up:** per-part retry with backoff and the
+  `/api/uploads/abort` call on failure in `web/src/routes/upload/index.tsx`. Without
+  it an aborted upload leaves **billable orphaned multipart parts** in the bucket.
+  Registered as `F-006`.
+- **Verified:** lint 0 errors; typecheck clean; shared 77, worker 235,
+  api 212 (+7 skipped), web 150.
+
+## [FEATURE] 2026-08-15 — FR-002 / DEC-004: honest upload limit (1.5 GiB + 4h gate)
+
+- **Skill:** `/nacl-sa-feature`. Spec-only; code follows separately.
+- **Asked for 8 GB, specified 1.5 GiB — deliberately.** Measurement showed the
+  pipeline could not honour the **1 GiB it already advertised**, so raising the
+  constant alone would have turned an honest client-side rejection into a
+  mid-pipeline failure. Real ceiling was ~400–600 MB, bound by the Deepgram 60 s
+  default timeout (fixed in `53bd404`) and a triple in-RAM audio copy.
+- **Three premises in the original brief were disproved by measurement:** VPS disk
+  is irrelevant (storage is external S3; bytes never touch the API host), the proxy
+  is Caddy with `max_size 0` and is bypassed anyway, and the provider caps only bind
+  near ~5 GB. 8 GB needs Deepgram async callback mode — a redesign (~12–18 days),
+  itself gated on an unverified assumption that Deepgram can fetch presigned URLs
+  from `s3.cloud.ru`.
+- **The duration gate is the real constraint.** `RQ-039` (new): reject recordings
+  longer than 14,400 s. Bytes are a poor proxy — 1.5 GiB is 5.5 h at the 656 kbps
+  seen in production but only 71 min at 1080p/3 Mbps. `ffprobe` already runs at
+  finalization and its `durationSec` was being **discarded**.
+- **At 4 h every constraint has headroom:** FLAC payload ~253 MB (13% of Deepgram's
+  2 GB cap), peak worker RSS ~570–820 MB (under the 1024M pm2 cap — no pm2 change,
+  which matters on a VPS shared with four other products), Deepgram processing
+  ~144 s of a 570 s budget, Russian protocol ~132K of a 200K context.
+- **The graph contradicted itself before this.** Ten nodes carried a size limit and
+  disagreed: six still said 500 MB (`NFR-001`, `BRQ-001`, `Recording-A04`, `BP-001`,
+  `BP-001-S03`, `EXT-04`), four said 1 GiB (`RQ-008`, `BR-102`,
+  `FORM-MeetingUpload-F02`, `UC-100-AS04`). The `RQ-008` vs `NFR-001` contradiction
+  pre-dated this feature and is closed here. `GLO-025`, `DFL-001` and
+  `UC-100.user_story` still said "300-500 MB"; `NFR-003` now names the 4 h bound.
+- **Infrastructure verified before specifying:** prod `ffmpeg 6.1.1` carries both
+  `flac` and `libopus`, so FLAC extraction has no blocker.
+- **Graph:** `FR-002` + `DEC-004` written with `IMPLEMENTS` / `JUSTIFIES` /
+  `INCLUDES_UC` / `AFFECTS_MODULE` / `AFFECTS_ENTITY`. `UC-100.spec_version` 2 → 3.
+  9 Tasks stamped stale (`stale_origin='FR-002'`) — UC-100 plus its transitive
+  `DEPENDS_ON` downstream. Cleared by `/nacl-tl-plan --feature FR-002`.
+- **Pre-existing finding, not fixed:** L3.7b ×3 — `RQ-008/009/010` each carry a
+  correct `FormField` anchor **plus** an extra `ActivityStep` anchor that trips the
+  target-label check. Deleting a real traceability edge to satisfy a WARNING-level
+  lint would lose information.
+
+## [2026-08-15] nacl-tl-fix: F-005 (partial) — Deepgram errors were never classified
+
+- **Level:** L1 (code-only). **F-005 stays OPEN** — only its deliverable 3, the
+  explicitly probe-independent minimum, is done.
+- **Defect, and it was worse than F-005 described.** F-005 was filed about a
+  *narrow* transience formula on the ASR branch. In fact the formula was never
+  reachable: `new DeepgramAsrError` was constructed exactly **once** in
+  production code — for a missing API key — and `transcribe()` had **no
+  try/catch at all**. A 429 or a 5xx propagated as a raw SDK error,
+  `isTransientAsrError` returned false for it, and the entire RQ-015 /
+  RC-UC-200 FR-001 retry design was **dead code** on the ASR branch.
+- **Fix:** `transcribe()` wraps the SDK call and converts every failure into a
+  `DeepgramAsrError` carrying an explicit verdict. `isTransientAsrStatus()`
+  treats **408 / 429 / 5xx** as transient; 400 / 401 / 402 / 413 and other 4xx
+  stay permanent. The request-timeout abort and transport failures with no HTTP
+  response (`ECONNRESET`, `ETIMEDOUT`, undici's `TypeError('fetch failed')`, …)
+  are transient — which matters now that the timeout is pinned at 570 s: an
+  over-long recording aborts, and that abort must be retriable rather than
+  bricking the meeting.
+- **Matched structurally**, not via `instanceof DeepgramError`: the SDK's error
+  classes are not a stable surface, and binding to them would force every test
+  that mocks `@deepgram/sdk` to re-export them.
+- **404 deliberately left PERMANENT.** F-005's non-goal forbids copying the
+  kie.ai conclusion across: kie.ai carries the model id in the request body, so a
+  404 there can only be a routing blip, whereas Deepgram carries the model in a
+  **query parameter** — its 404 may genuinely mean "unknown model". A regression
+  test pins the current verdict so flipping it must be deliberate, evidence-led
+  and accompanied by a decision record. In-HTTP-200-envelope errors are likewise
+  untouched (no evidence Deepgram does that).
+- **Still required to close F-005:** live probes against `api.deepgram.com`
+  (invalid key, unknown model, unrouted path, oversized payload), then a `DEC-`
+  updating `RC-UC-200` + `RQ-015` + the Deepgram external contract. Not done
+  here — probes cost real provider calls and were not authorised.
+- **Tests:** 10 cases in `deepgram-adapter.test.ts`. Mutation proof executed:
+  with the adapter stashed the suite is 10 failed / 11 passed; restored, 21
+  passed.
+- **Verified:** lint 0 errors; typecheck clean; worker 234 (baseline 224 + 10),
+  shared 75, api 209 (+7 skipped), web 150.
+
+## [2026-08-15] nacl-tl-fix: a re-delivered job ACKed itself and stranded the meeting
+
+- **Level:** L1 (code-only). **Classification corrected during the fix** — this
+  was planned as L2 on the assumption that recovery behaviour was unspecified.
+  It is not: `RC-UC-200.recovery_procedure` already reads *"After process crash:
+  BullMQ lock expires; another worker (or same worker after restart) **picks up
+  the job from PROCESSING and re-runs**"*, and `RC-UC-300` says the same. The
+  spec was right; the code contradicted it. No graph change was needed.
+- **Defect:** both pipelines claimed with `where: { id, status: 'PENDING' }`.
+  The BRQ-009 terminal guard runs *before* the claim, so a zero-count claim could
+  only mean the row was `PROCESSING` — a job BullMQ re-delivered after its lock
+  expired, i.e. whose previous holder died. The handler logged a warning and
+  **returned successfully**: BullMQ treated the job as done and dropped it, the
+  row stayed `PROCESSING`, and the meeting stayed `TRANSCRIBING` /
+  `GENERATING_PROTOCOL` **forever** — no FAILED row, no SSE event, no error the
+  user could see. Every `max_memory_restart` and every deploy could trigger it.
+- **Fix:** claim from `{ in: ['PENDING','PROCESSING'] }`, honouring the recovery
+  contract. Terminal immutability is untouched — DONE/FAILED never reach that
+  line. A genuinely unclaimable row (deleted, or terminal) now **throws** instead
+  of returning, routing it through the normal retry/failure path that writes
+  FAILED on the final attempt.
+- **`lockDuration` pinned at 60 s** (was unset → BullMQ's 30 s default). Both
+  pipelines make long provider calls, and a false stall does not merely waste
+  time — the re-delivered job re-runs the whole ASR/LLM call, i.e. a duplicate
+  provider charge. Recovering from a real stall is safe now that a PROCESSING row
+  is re-claimable.
+- **RQ-014 / RQ-021 re-read before changing the filter.** They mandate the
+  lifecycle and terminal immutability only; "claimable solely from PENDING" was a
+  code comment's interpretation that a test title had promoted to a requirement.
+  Both requirements still hold.
+- **Tests:** new `REGR-P6` a–b and `REGR-T8` a–b (RED before the fix). Six
+  pre-existing tests encoded the old behaviour and were updated. One of them,
+  `REGR-T5` *"PROCESSING job … is NOT skipped — pipeline continues"*, **asserted
+  the opposite of its own title**: it mocked `count=0` with the comment
+  "because it uses WHERE status='PENDING'" and then asserted the pipeline never
+  ran — pinning the bug while claiming to guard against it. Rewritten to match
+  its stated intent.
+- **Verified:** lint 0 errors; typecheck clean; worker 224 (baseline 220 + 4),
+  shared 75, api 209 (+7 skipped), web 150.
+
+## [2026-08-15] nacl-tl-fix: Deepgram calls inherited the SDK's 60-second default timeout
+
+- **Level:** L1 (code-only). Found while sizing the upload-limit feature, not in
+  the original brief — it silently caps how long a recording may be.
+- **Defect:** `worker/src/asr/deepgram-adapter.ts` passed no `requestOptions`,
+  and the `DeepgramClient` was constructed with `{ apiKey }` only. The SDK
+  resolves `timeoutMs` as
+  `(requestOptions?.timeoutInSeconds ?? this._options?.timeoutInSeconds ?? 60) * 1000`
+  (`@deepgram/sdk@5.2.0`, `listen/.../media/client/Client.mjs:241`), so the
+  effective budget was **60 seconds** — and because the AbortController is armed
+  before `fetch` and cleared only after it settles, those 60 s cover **uploading
+  the audio body AND Deepgram's entire processing time**, not just connect.
+- **Why it mattered:** production's longest recording (4429 s of audio → ~142 MB
+  of 16 kHz mono WAV) completes inside that window with only seconds of headroom.
+  The next longer meeting would abort mid-flight with a raw `AbortError` — which,
+  per F-005, is not classified as transient, so it would have failed permanently
+  on the first attempt. The nominal 1 GiB upload cap was never actually reachable.
+- **Fix:** `requestOptions: { timeoutInSeconds: 570 }`. 570 s sits just under
+  Deepgram's own 600 s sync-processing cap, so an over-long job surfaces a clean
+  client-side abort instead of waiting for their 504.
+- **Test:** `worker/src/asr/deepgram-adapter.test.ts` → `request timeout`
+  asserts the third argument carries a timeout `> 60` and `< 600`. Mutation
+  proof executed: with the fix stashed the suite goes 1 failed / 10 passed, with
+  it restored 11 passed.
+- **Verified:** lint 0 errors; typecheck clean; worker 220 (baseline 219 + 1),
+  shared 75, api 209 (+7 skipped), web 150.
+
+## [2026-08-15] nacl-tl-fix: F-004 — API-enqueued jobs had no retry policy, stranding meetings
+
+- **Level:** L1 (code-only) — spec already described the correct behaviour
+  (FR-001 / `RQ-026` / `RC-UC-300`: 3 attempts + exponential backoff); the code
+  did not conform. **F-004 → closed.**
+- **Two defects, one root cause.**
+  1. *Producer side.* `api/src/queue.ts` built both Queues without
+     `defaultJobOptions`. BullMQ bakes job options from the **producing** Queue
+     at `add()` time, so API-enqueued jobs carried **`attempts: 0`** — the
+     `Job` constructor's default, not 1 — and `Job.shouldRetryJob`
+     (`attemptsMade + 1 < opts.attempts`) never fired. The worker's own
+     `attempts: 3` could not compensate.
+  2. *Consumer side.* Both pipelines computed `isFinalAttempt` from a
+     module-local `MAX_ATTEMPTS = 3` instead of the job's real budget. At
+     `attemptsMade = 0` that yields `0 >= 2` = false, so a transient error took
+     the retry branch and re-threw **without writing FAILED** — while BullMQ had
+     no attempt left. The meeting hung in `GENERATING_PROTOCOL` / `TRANSCRIBING`
+     forever, job row stuck at `PROCESSING`, no SSE, no user-visible error.
+     Fixing only (1) would have left this landmine for any future producer.
+- **Fix:** new `shared/src/queue/job-options.ts` holds `QueueName`,
+  `JOB_RETRY_ATTEMPTS` and `JOB_RETRY_OPTIONS`; `api/src/queue.ts` and
+  `worker/src/queues.ts` both consume it. Declared with a **local structural
+  interface, no `bullmq` import** — `web/` consumes `@transcrib/shared`, whose
+  only runtime dep is zod. Both workers now derive the budget via
+  `job.opts?.attempts ?? JOB_RETRY_ATTEMPTS`; **`??` is load-bearing** — `||`
+  would rewrite the real `0` to 3 and preserve the hang.
+- **`queue.add` arity deliberately unchanged.** Configuring via the constructor
+  achieves the identical Redis-level result; a third argument would have broken
+  four exact-arity assertions in `uc-100.test.ts` / `uc-004.test.ts`. Those four
+  stayed green untouched — that is the proof.
+- **Tests:** `api/src/queue.regression.test.ts` (F004a–d, incl. an arity guard
+  and a drift lock against the shared constant), `REGR-P5` a–d and `REGR-T7` a–d
+  in the worker regression suites, `worker/src/queues.regression.test.ts`
+  (drift lock; honestly labelled — the worker side was already correct).
+  P5a/b/d and T7a/b/d were RED before the fix; P5c/T7c are green both sides and
+  guard the DEC-001 invariant that a genuine retry must NOT write FAILED.
+  The pre-existing P4/T6 suites were left untouched and stayed green, proving
+  the `opts`-absent fallback is behaviour-identical.
+- **Acceptance evidence** (F-004 `task.md:55-57` demands more than an exit code):
+  live enqueue through `api/src/queue.ts` against a real Redis, then read the
+  persisted job back — both queues returned
+  `attempts=3, backoff={type:'exponential',delay:5000}`.
+- **Caveats retired:** the APPLICABILITY / known-gap blocks in
+  `UC-300/{task-be,acceptance,impl-brief}.md` and
+  `.tl/external-contracts/kie-anthropic.md` §8 all claimed the retry policy was
+  inert on the API paths. All four updated; `F-004/task.md` status → closed.
+- **Deploy order:** worker before API. The worker change degrades honestly
+  regardless of producer config and drains jobs already sitting in Redis with
+  `attempts: 0`.
+- **Still open:** **F-005** (Deepgram error classification) — untouched here.
+- **Verified:** lint 0 errors; typecheck clean; shared 75, worker 219
+  (baseline 209 + 10), api 209 (+7 skipped; baseline 205 + 4), web 150.
+
+## [2026-08-15] nacl-tl-fix: upload form's language field lied about what it controls
+
+- **Level:** L2 (spec-sync) — spec committed first in `3087a35`, code follows here
+- **Status:** done
+- **Defect:** after DEC-003 the `Язык` field changed meaning. It now selects the
+  language of the **generated protocol** (BRQ-013), and a blank value no longer
+  means "we'll detect it" — it means `Meeting.language = AUTO`, which yields a
+  **Russian** protocol. The UI still said "Language (leave blank for auto-detect)"
+  and offered an "Auto-detect" option, so an author who wanted an English protocol
+  had no way to learn that only an explicit `EN` selection produces one (RQ-012).
+- **Spec (committed first, `3087a35`):** `FORM-MeetingUpload-F03.label` and
+  `UC-100-AS02` corrected in the graph; `UC-100.spec_version` 1 → 2.
+- **Code:** `web/src/i18n/{ru,en}.json` — `upload.fieldLanguage`,
+  `upload.fieldLanguagePlaceholder`, `upload.languageAuto`. The FE label mirrors
+  the graph label verbatim, so the string is traceable to the spec node.
+- **Tests:** `web/src/routes/upload/index.test.tsx` — CT02 and the RU-i18n case
+  updated, new **CT02b** asserts the blank state advertises Russian and that
+  "Auto-detect" appears nowhere. All three were RED before the i18n change.
+  CT02b asserts on the **closed** Select trigger deliberately: Radix Select cannot
+  be opened under jsdom (`target.hasPointerCapture is not a function`), so driving
+  the dropdown would fail for environment reasons rather than on the claim.
+- **`transcript.languageAUTO` deliberately NOT removed.** Verified against
+  production: 3 of 24 transcripts have `transcripts.language IS NULL` (21 RU,
+  0 EN), and `api/src/services/uc-201.service.ts:114` falls back to
+  `meeting.language`, which returns `AUTO` for exactly those rows. The label is
+  live and `api/src/routes/uc-201.test.ts:144-180` covers the path.
+- **Not touched:** `upload.supported` (still claims "до 10 ГБ" and lists MP3/WAV/M4A
+  the whitelist rejects) — dead key, belongs to the pending upload-limit feature.
+- **Verified:** lint 0 errors; typecheck clean; shared 75, worker 209,
+  api 205 (+7 skipped), web 150 (baseline 149 + CT02b).
+
+## [PLAN] 2026-08-15 — incremental re-plan clearing the DEC-003 stale set
+
+- **Skill:** `/nacl-tl-plan` (incremental, Step 1.5b — **no** `--overwrite`)
+- **Stale set:** `UC-100-BE`, `UC-100-FE`, `UC-200-BE`, `UC-201-BE`, `UC-201-FE`,
+  `UC-300-BE` — all detected by Signal 2 (`review_status='stale'`,
+  `stale_origin='DEC-003'`); `UC-300` additionally by Signal 1
+  (`spec_version 2 > planned_from_version 1`).
+- **Shipped-stale policy applied to all six** — every one had `status='done'`, so
+  `status`, all `phase_*`, `commit` and `verification_evidence` were **preserved**;
+  only the task files were regenerated and `planned_from_version` stamped. Waves
+  were read from the graph and re-linked as no-ops (1, 2, 12, 3, 4, 12) — the
+  deterministic wave planner was deliberately **not** invoked, since shipped tasks
+  are no longer execution units.
+- **Delta carried by:** `1e91f68` (PR #7) for the DEC-003 language semantics; the
+  i18n strings remain open as the Task-3 code fix.
+- **External Contracts Gate (Step 1.6):** passed vacuously — no
+  `REQUIRES_EXTERNAL` / `DEPENDS_ON_EXTERNAL` edges and no `ExternalContract`
+  nodes exist. *Finding:* the five contract files authored by gap-closure W3
+  (`deepgram`, `kie-anthropic`, `s3-multipart-presigned`, `sse`, `puppeteer-pdf`)
+  are on disk but were never modelled as graph nodes, so the gate currently has
+  nothing to enforce. Registered as follow-up debt.
+- **Spec corrections made first** (the re-plan would otherwise have baked stale values):
+  - `FORM-MeetingUpload-F03.label` — "Language (leave blank for auto-detect)" →
+    **"Protocol language (blank = Russian, speech auto-detected)"**. The field
+    selects the *protocol's* language (BRQ-013), not merely an ASR hint; blank
+    means AUTO → Russian, and EN is the only route to an English protocol
+    (RQ-012). `drift_corrected_note` records the provenance.
+  - `UC-100-AS02` — still read "blank = auto-detect"; restated to the DEC-003
+    semantics. **Residual DEC-003 drift the original fix missed.**
+  - `ENUM-VideoMimeType` — `video/webm` added (`V04`). The enum contradicted
+    `RQ-009`, `BR-101`, `FORM-MeetingUpload-F02` and the shipped
+    `ACCEPTED_UPLOAD_MIME_TYPES`; it was the only lagging artifact.
+  - `UC-100.spec_version` 1 → 2. Note: the `detail` command does not bump
+    `spec_version` (unlike `slices`/`errors`/`resilience`, which all do in their
+    Phase 4.1) — bumped explicitly to keep drift detection honest.
+- **Files regenerated:** `UC-100/{task-be,task-fe,acceptance}.md`,
+  `UC-201/task-be.md`. Beyond the language delta these carried substantial
+  **pre-existing** drift, now corrected: size cap 500 MB → 1 GiB; MIME set 3 → 4;
+  `MeetingLanguage` missing `AUTO`; `RQ-037` (speaker-count hint) absent entirely;
+  and a TUS endpoint table (`POST /api/uploads`, `PATCH /api/uploads/:id`,
+  `POST /api/uploads/:id/finalize`) that **never shipped** — replaced with the real
+  presigned-multipart contract (`/init`, direct-to-S3 PUT, `/complete`, `/abort`).
+- **Frontmatter fix:** `UC-200/task-be.md` said `wave: 2`; the graph says **12**
+  (re-waved by the FR-001 re-plan). Graph is authoritative — file corrected.
+- **Verified:** `MATCH (n) WHERE coalesce(n.review_status,'current')<>'current'`
+  → empty; version-drift query → empty; all six tasks still `status='done'` with
+  commits intact (`6d3fa21`, `b0f8779`).
+- **Deliberately NOT touched** (pre-existing, needs its own decision):
+  `ENUM-JobStatus` (`QUEUED/IN_PROGRESS/COMPLETED` vs Prisma
+  `PENDING/PROCESSING/DONE/FAILED`) and `ENUM-MeetingStatus`
+  (`TRANSCRIPT_READY/PROTOCOL_GENERATING` vs Prisma
+  `TRANSCRIBED/GENERATING_PROTOCOL`); `NFR-001` (500 MB) contradicting `RQ-008`
+  (1 GiB) — both are rewritten by the pending upload-limit feature. Each
+  regenerated file carries an explicit graph-debt note rather than silently
+  quoting a value the schema contradicts.
+
 ## [2026-08-14] nacl-tl-fix: Russian transcript produced an English protocol
 
 - **Level:** L2 (spec-sync)
-- **Status:** spec-update committed; code fix pending (Phase B)
+- **Status:** spec-update committed (`241970f` lineage); **code fix landed in `1e91f68` (PR #7)** — this line previously read "code fix pending (Phase B)" and was stale
 - **Spec-first verdict:** PASS — this spec-update commit precedes any code-fix commit
 - **Root cause:** `Meeting.language` defaults to `AUTO`, and
   `worker/src/jobs/protocol-generation.ts:149` collapsed it with

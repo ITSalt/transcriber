@@ -227,10 +227,11 @@ describe('T01 (RQ-014) — Happy path: PENDING → PROCESSING → DONE', () => {
 
     await processTranscriptionJob(job as any, log)
 
-    // Called updateMany to mark PROCESSING
+    // Called updateMany to claim the job. PROCESSING is claimable too, so a
+    // crashed worker's job is picked up and re-run (RC-UC-200.recovery_procedure).
     expect(mockPrisma.transcriptionJob.updateMany).toHaveBeenCalledWith(
       expect.objectContaining({
-        where: { id: JOB_ID, status: 'PENDING' },
+        where: { id: JOB_ID, status: { in: ['PENDING', 'PROCESSING'] } },
         data: expect.objectContaining({ status: 'PROCESSING' }),
       }),
     )
@@ -251,14 +252,18 @@ describe('T01 (RQ-014) — Happy path: PENDING → PROCESSING → DONE', () => {
     expect(mockPrisma.$transaction).not.toHaveBeenCalled()
   })
 
-  it('skips if another worker claimed job (updateMany count=0)', async () => {
+  // An unclaimable row now FAILS LOUDLY instead of ACKing the job. Returning
+  // success here left the row PROCESSING and the meeting TRANSCRIBING forever.
+  // A crashed worker's PROCESSING row is claimable per RC-UC-200, so count=0
+  // means the row is gone or terminal — genuinely anomalous.
+  it('throws if the job row cannot be claimed (updateMany count=0)', async () => {
     mockPrisma.transcriptionJob.findUnique.mockResolvedValue(BASE_TX_JOB as any)
     mockPrisma.transcriptionJob.updateMany.mockResolvedValue({ count: 0 })
     const log = makeLogger()
 
-    await processTranscriptionJob(makeJob('bullmq-3', JOB_ID) as any, log)
-
-    expect(mockPrisma.$transaction).not.toHaveBeenCalled()
+    await expect(
+      processTranscriptionJob(makeJob('bullmq-3', JOB_ID) as any, log),
+    ).rejects.toThrow(/could not be claimed/i)
   })
 })
 

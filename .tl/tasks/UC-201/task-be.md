@@ -6,6 +6,7 @@ uc: UC-201
 module: mod-transcription
 actor: AUTHOR
 wave: 3
+planned_from_version: 1
 priority: high
 depends_on: ['UC-200-BE']
 blocks: ['UC-201-FE']
@@ -63,7 +64,7 @@ _Root aggregate per meeting. Owns Recording/Transcript/Protocol refs and tracks 
 |-----------|------|----------|----------|-------------|
 | `id` | UUID | no | yes | Surrogate PK |
 | `title` | String | yes | no | Optional user-readable title; defaults to filename |
-| `language` | Enum(MeetingLanguage) | yes | no | RU/EN or null pending auto-detect (BRQ-005) |
+| `language` | Enum(MeetingLanguage) | **no** | no | The author's DOCUMENT-language choice. NOT NULL, defaults to `AUTO`. Drives protocol template selection (BRQ-013): `EN` → English protocol; `RU` or `AUTO` → Russian protocol. MUST NEVER be overwritten by detection (BRQ-005). |
 | `status` | Enum(MeetingStatus) | no | no | Pipeline-mirror status (BRQ-008); drives UI gating |
 | `uploaded_at` | DateTime | no | yes | Upload init timestamp; immutable |
 | `updated_at` | DateTime | no | yes | Last status transition or protocol edit; used for catalog sort |
@@ -78,15 +79,22 @@ _Verbatim speaker-attributed transcript from ASR+diarization. 1:1 with Meeting._
 | `full_text` | String | no | no | Markdown/text with per-segment speaker labels + minute:second timestamps |
 | `segments_count` | Int | no | no | Total speaker-attributed segments |
 | `speakers_count` | Int | no | no | Distinct speakers detected |
-| `language` | Enum(MeetingLanguage) | no | no | Detected or confirmed language (RU/EN) |
+| `language` | Enum(MeetingLanguage) | **yes** | no | The ASR-detected language of the recording, persisted in `transcripts.language` (RQ-018). Constrained to {`RU`,`EN`} — **never `AUTO`**. NULL when the provider reported a language outside that set (or none at all); not coerced to a default. A record of the recording, **not** a control input for protocol generation. |
 | `speaker_map` | JSON | yes | no | {"Speaker 1": "Ivan", "Speaker 2": null} per BRQ-021 |
 | `created_at` | DateTime | no | yes | First-persisted time |
 
 ## Enumerations
 
 #### `MeetingLanguage`
-- `RU` — Russian
-- `EN` — English
+- `RU` — Russian. ASR language hint + Russian prompt template.
+- `EN` — English. ASR language hint + English prompt template.
+- `AUTO` — Author declared no document language. Protocol is generated in **Russian** (BRQ-013); ASR auto-detects (BRQ-005) and the result is recorded on `Transcript.language`. Legal on `Meeting.language` only — **never** on `Transcript.language`.
+
+> **UI note (UC-201).** `GET /api/meetings/:id/transcript` returns
+> `language: transcript.language ?? meeting.language`. For the 3 historical
+> production transcripts whose column is NULL, that fallback yields `AUTO`, so
+> the transcript view must still render an `AUTO` label. Do not retire the
+> `transcript.languageAUTO` string until that path is removed.
 
 
 ## Definition of done

@@ -3,7 +3,12 @@ import { MeetingListItem, MeetingListResponse } from './uc001.js';
 import { MeetingDetailResponse, MeetingStatusEvent } from './uc002.js';
 import { MeetingDeletedEvent, PingEvent, SseEvent, meetingChannel } from './sse-events.js';
 import { MeetingDeleteResponse } from './uc003.js';
-import { UploadCreateRequest, UploadFinalizeResponse } from './uc100.js';
+import {
+  UploadCreateRequest,
+  UploadFinalizeResponse,
+  MAX_UPLOAD_BYTES,
+  MAX_UPLOAD_DURATION_SEC,
+} from './uc100.js';
 import { TranscriptionJobPayload, TranscriptionResult } from './uc200.js';
 import { TranscriptResponse } from './uc201.js';
 import { ProtocolGenerationJobPayload } from './uc300.js';
@@ -145,8 +150,23 @@ describe('UploadCreateRequest', () => {
     ).toMatchObject({ title: 'Meeting', language: 'RU' });
   });
 
-  it('rejects size_bytes > 1 GiB', () => {
-    expect(() => UploadCreateRequest.parse({ ...valid, size_bytes: 1_073_741_825 })).toThrow();
+  it('rejects size_bytes > MAX_UPLOAD_BYTES', () => {
+    expect(() =>
+      UploadCreateRequest.parse({ ...valid, size_bytes: MAX_UPLOAD_BYTES + 1 }),
+    ).toThrow();
+  });
+
+  it('accepts size_bytes exactly at MAX_UPLOAD_BYTES (2.5 GiB boundary, RQ-008)', () => {
+    expect(() =>
+      UploadCreateRequest.parse({ ...valid, size_bytes: MAX_UPLOAD_BYTES }),
+    ).not.toThrow();
+  });
+
+  // Pins the value itself, so a change to the cap is a deliberate edit here too
+  // rather than something a relative assertion would silently absorb.
+  it('MAX_UPLOAD_BYTES is 2.5 GiB and MAX_UPLOAD_DURATION_SEC is 4 h (DEC-005)', () => {
+    expect(MAX_UPLOAD_BYTES).toBe(2_684_354_560);
+    expect(MAX_UPLOAD_DURATION_SEC).toBe(14_400);
   });
 
   it('rejects empty filename', () => {

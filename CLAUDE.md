@@ -11,7 +11,7 @@
   - **DB/ORM:** PostgreSQL 16 + Prisma (JSONB for transcript segments)
   - **Queue:** BullMQ + Redis 7 (separate worker process)
   - **Object storage:** MinIO (S3-compatible, swap to AWS S3/R2 via env)
-  - **Upload:** TUS protocol (`@tus/server` + `tus-js-client`)
+  - **Upload:** direct S3 presigned multipart (ADR-012, supersedes ADR-005's TUS). `POST /api/uploads/init` → browser PUTs parts straight to object storage → `POST /api/uploads/complete`. Bytes never traverse the API host. **Not TUS** — `@tus/server` / `tus-js-client` are in no `package.json`. Contract: `.tl/external-contracts/s3-multipart-presigned.md`
   - **Audio:** ffmpeg via `fluent-ffmpeg`
   - **ASR:** Deepgram Nova-3 (RU+EN + diarization), behind `IAsrProvider`
   - **LLM:** kie.ai — Claude Sonnet 4.6 (default) / GPT-5.4, behind `ILlmProvider`, user-switchable per meeting

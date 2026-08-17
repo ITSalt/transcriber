@@ -35,7 +35,11 @@ vi.mock('@deepgram/sdk', () => {
 // ─── Import module under test AFTER mock ─────────────────────────────────────
 
 import { DeepgramClient } from '@deepgram/sdk';
-import { DeepgramAsrProvider, DeepgramAsrError } from './deepgram-adapter.js';
+import {
+  DeepgramAsrProvider,
+  DeepgramAsrError,
+  isTransientAsrError,
+} from './deepgram-adapter.js';
 
 // ─── Test helpers ─────────────────────────────────────────────────────────────
 
@@ -300,6 +304,129 @@ describe('DeepgramAsrProvider', () => {
 
       expect(result.segments).toHaveLength(0);
       expect(result.speakers).toHaveLength(0);
+    });
+  });
+
+  // ── F-005 — error classification ───────────────────────────────────────────
+  //
+  // Before this, `new DeepgramAsrError` was constructed exactly ONCE in
+  // production code — for a missing API key. `transcribe()` had no try/catch, so
+  // a 429 or a 5xx propagated as a raw SDK error, `isTransientAsrError` returned
+  // false for it, and the entire RQ-015 / RC-UC-200 FR-001 retry design was dead
+  // code on the ASR branch.
+  //
+  // SCOPE: this covers only the half of F-005 that is provider-independent —
+  // 408, 429, 5xx, timeouts and transport failures. 404 and in-HTTP-200-envelope
+  // classification are deliberately NOT touched: F-005's non-goal forbids
+  // copying the kie.ai conclusion across without live probes, because Deepgram
+  // carries the model in a query parameter (so its 404 may genuinely mean
+  // "unknown model") whereas kie.ai carries it in the body.
+  describe('error classification (F-005, probe-independent half)', () => {
+    function rejectWith(err: unknown) {
+      // Construct the provider FIRST — getTranscribeFileMock() reads the mock off
+      // the DeepgramClient constructor's recorded result.
+      const provider = new DeepgramAsrProvider('test-api-key');
+      getTranscribeFileMock().mockRejectedValueOnce(err);
+      return provider;
+    }
+
+    async function classify(err: unknown): Promise<{ wrapped: boolean; transient: boolean }> {
+      const provider = rejectWith(err);
+      try {
+        await provider.transcribe({ audio: Buffer.from('x'), languageHint: 'en' });
+        throw new Error('expected transcribe() to reject');
+      } catch (caught) {
+        return {
+          wrapped: caught instanceof DeepgramAsrError,
+          transient: isTransientAsrError(caught),
+        };
+      }
+    }
+
+    /* MUTATION PROOF for every case below: remove the try/catch around
+     * transcribeFile in deepgram-adapter.ts -> the raw SDK error propagates,
+     * `wrapped` is false and `transient` is false -> RED. */
+
+    it.each([
+      ['429 rate limit', 429],
+      ['408 request timeout', 408],
+      ['500 internal', 500],
+      ['503 unavailable', 503],
+    ])('classifies %s as transient', async (_label, statusCode) => {
+      const res = await classify(Object.assign(new Error('dg'), { statusCode }));
+      expect(res.wrapped).toBe(true);
+      expect(res.transient).toBe(true);
+    });
+
+    it.each([
+      ['401 unauthorized', 401],
+      ['400 bad request', 400],
+      ['413 payload too large', 413],
+    ])('classifies %s as permanent', async (_label, statusCode) => {
+      const res = await classify(Object.assign(new Error('dg'), { statusCode }));
+      expect(res.wrapped).toBe(true);
+      expect(res.transient).toBe(false);
+    });
+
+    it('classifies the request-timeout abort as transient', async () => {
+      // The 570s budget firing is a transport-level failure, not a rejection of
+      // the request; retrying is correct.
+      const err = Object.assign(new Error('Timeout exceeded'), {
+        name: 'DeepgramTimeoutError',
+      });
+      const res = await classify(err);
+      expect(res.wrapped).toBe(true);
+      expect(res.transient).toBe(true);
+    });
+
+    it('classifies a transport failure (no statusCode) as transient', async () => {
+      const res = await classify(Object.assign(new TypeError('fetch failed'), {
+        cause: Object.assign(new Error('connect ECONNRESET'), { code: 'ECONNRESET' }),
+      }));
+      expect(res.wrapped).toBe(true);
+      expect(res.transient).toBe(true);
+    });
+
+    it('404 stays PERMANENT pending live probes (F-005 non-goal)', async () => {
+      /* Deliberate: kie.ai's "404 is transient" rationale does NOT transfer —
+       * Deepgram puts the model in a query parameter, so a 404 may legitimately
+       * mean "unknown model". Flipping this requires probe evidence + a DEC. */
+      const res = await classify(Object.assign(new Error('dg'), { statusCode: 404 }));
+      expect(res.wrapped).toBe(true);
+      expect(res.transient).toBe(false);
+    });
+  });
+
+  // ── Request timeout ────────────────────────────────────────────────────────
+  //
+  // @deepgram/sdk@5 defaults `timeoutInSeconds` to 60 for transcribeFile:
+  //   media/client/Client.mjs:241
+  //   timeoutMs: (requestOptions?.timeoutInSeconds
+  //               ?? this._options?.timeoutInSeconds ?? 60) * 1000
+  // The AbortController is armed BEFORE fetch and cleared only after the fetch
+  // promise settles, so those 60 seconds cover uploading the WAV body AND
+  // Deepgram's entire processing time. Production's longest recording (4429 s of
+  // audio -> ~142 MB WAV) fits with only a few seconds of headroom; the next
+  // longer meeting aborts mid-flight.
+  describe('request timeout', () => {
+    /* MUTATION PROOF: drop the `requestOptions` argument in
+     * deepgram-adapter.ts -> transcribeFile is called with 2 args -> the third
+     * element is undefined -> RED. That is the pre-fix state. */
+    it('passes an explicit timeout instead of inheriting the SDK 60s default', async () => {
+      const provider = new DeepgramAsrProvider('test-api-key');
+      const mock = getTranscribeFileMock();
+      mock.mockResolvedValueOnce({ request_id: 'timeout-probe' });
+
+      await provider.transcribe({ audio: Buffer.from('fake'), languageHint: 'en' });
+
+      const call = mock.mock.calls[0] as unknown[];
+      const requestOptions = call[2] as { timeoutInSeconds?: number } | undefined;
+
+      expect(requestOptions).toBeDefined();
+      expect(requestOptions?.timeoutInSeconds).toBeGreaterThan(60);
+      // Must stay under Deepgram's own 600 s sync-processing cap so we surface a
+      // clean client-side abort rather than waiting for their 504.
+      expect(requestOptions?.timeoutInSeconds).toBeLessThan(600);
     });
   });
 });

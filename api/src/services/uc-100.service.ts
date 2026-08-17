@@ -22,6 +22,7 @@ import { AppError } from '../plugins/errors.js'
 import { addTranscriptionJob } from '../queue.js'
 import { S3StorageProvider, s3ConfigFromEnv } from '../storage/s3-adapter.js'
 import type { UploadFinalizeResponse } from '@transcrib/shared'
+import { MAX_UPLOAD_DURATION_SEC } from '@transcrib/shared'
 
 /** Input gathered after S3 multipart upload is complete */
 export interface FinalizeUploadInput {
@@ -75,12 +76,31 @@ const LANGUAGE_TO_PRISMA: Record<string, string> = {
  *
  * RQ-010: Verify container integrity at upload acceptance.
  */
-export async function probeContainer(input: string): Promise<boolean> {
+export interface ProbeResult {
+  valid: boolean
+  /** Container duration in seconds; null when ffprobe reported none. */
+  durationSec: number | null
+}
+
+/**
+ * RQ-010 (integrity) + RQ-039 (duration gate).
+ *
+ * Returns the probed duration alongside validity. It used to return a bare
+ * boolean and throw the duration away — while RQ-039 needs exactly that number,
+ * and `Recording.duration_sec` has always existed in the schema to hold it.
+ */
+export async function probeContainer(input: string): Promise<ProbeResult> {
   // Dynamic import to allow mocking in tests
   const ffmpeg = await import('fluent-ffmpeg')
-  return new Promise<boolean>((resolve) => {
-    ffmpeg.default.ffprobe(input, (err) => {
-      resolve(!err)
+  return new Promise<ProbeResult>((resolve) => {
+    ffmpeg.default.ffprobe(input, (err, data) => {
+      if (err) {
+        resolve({ valid: false, durationSec: null })
+        return
+      }
+      const raw = (data as { format?: { duration?: unknown } } | undefined)?.format?.duration
+      const durationSec = typeof raw === 'number' && Number.isFinite(raw) ? raw : null
+      resolve({ valid: true, durationSec })
     })
   })
 }
@@ -122,13 +142,30 @@ export async function finalizeUpload(
 
   // RQ-010: probe container integrity (unless explicitly skipped in tests)
   // ffprobe cannot parse s3:// URIs — generate a short-lived presigned HTTPS URL.
-  // ffprobe uses HTTP Range requests, so it does not download the entire 500 MB file.
+  // ffprobe uses HTTP Range requests, so it does not download the whole file.
+  let durationSec: number | null = null
   if (!skipProbe) {
     const s3 = new S3StorageProvider(s3ConfigFromEnv())
     const probeUrl = await s3.getPresignedDownloadUrl(s3Key, 600)
-    const valid = await probeContainer(probeUrl)
+    const { valid, durationSec: probed } = await probeContainer(probeUrl)
+    durationSec = probed
     if (!valid) {
       throw new AppError('CONTAINER_INVALID', 422, 'Uploaded file failed container integrity check (ffprobe)')
+    }
+
+    // RQ-039 (DEC-004): duration, not byte size, is what bounds the processing
+    // pipeline — peak worker memory, the Deepgram request budget and the LLM
+    // context for the protocol all scale with it. Bytes are a poor proxy: the
+    // same 1.5 GiB is ~5.5 h at 656 kbps but ~71 min at 1080p/3 Mbps. Reject
+    // here, before the job is enqueued, so the author gets an inline error
+    // instead of a mid-pipeline failure hours later.
+    if (durationSec !== null && durationSec > MAX_UPLOAD_DURATION_SEC) {
+      const hours = (MAX_UPLOAD_DURATION_SEC / 3600).toFixed(0)
+      throw new AppError(
+        'RECORDING_TOO_LONG',
+        422,
+        `Recording is ${Math.round(durationSec)}s long; the maximum is ${MAX_UPLOAD_DURATION_SEC}s (${hours} hours)`,
+      )
     }
   }
 
@@ -173,6 +210,9 @@ export async function finalizeUpload(
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           mimeType: prismaMime as any,
           sizeBytes: BigInt(sizeBytes),
+          // RQ-039: persist what ffprobe measured. The column has always existed;
+          // the value was previously discarded.
+          durationSec,
         },
       })
 

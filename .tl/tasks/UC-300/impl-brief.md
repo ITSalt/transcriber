@@ -44,9 +44,13 @@ way. All provider knowledge stays in the adapter:
 - Terminal-state writes (`DONE`/`FAILED`) require a `WHERE status='PROCESSING'` guard (BRQ-009).
 - The failure column is `error_msg`; several RQ descriptions still word it `error_reason`.
 
-## Known gap — F-004 (do not "fix" silently here)
+## F-004 — CLOSED 2026-08-15
 
-`api/src/queue.ts` builds its Queues without `defaultJobOptions`, so BullMQ's
-default `attempts=1` applies on the UC-100 upload path and the UC-004 retry
-button — this retry policy is **inert** there. Only `worker/src/queues.ts`
-(`attempts=3` + exponential backoff) exercises it. Deepgram parity is F-005.
+`api/src/queue.ts` now sets `defaultJobOptions: JOB_RETRY_OPTIONS` on both
+producers, so the retry policy applies on the UC-100 upload path and the UC-004
+retry button too. The policy and the queue names live in
+`shared/src/queue/job-options.ts` so api/ and worker/ cannot drift again.
+
+Both worker pipelines derive `isFinalAttempt` from `job.opts.attempts` rather
+than a local `MAX_ATTEMPTS`, so a misconfigured producer degrades to an honest
+FAILED instead of stranding the meeting. Deepgram parity is still **F-005**.

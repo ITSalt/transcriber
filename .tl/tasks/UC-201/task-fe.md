@@ -6,6 +6,7 @@ uc: UC-201
 module: mod-transcription
 actor: AUTHOR
 wave: 4
+planned_from_version: 1
 priority: high
 depends_on: ['UC-201-BE', 'TECH-013']
 blocks: []

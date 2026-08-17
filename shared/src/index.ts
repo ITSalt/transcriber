@@ -7,3 +7,4 @@ export * from './api/index.js';
 export * from './storage/IStorage.js';
 export * from './asr/index.js';
 export * from './llm/index.js';
+export * from './queue/index.js';

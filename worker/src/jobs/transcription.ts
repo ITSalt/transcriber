@@ -25,6 +25,7 @@ import type { Readable } from 'node:stream'
 import type { TranscriptionJobPayload, ProtocolGenerationJobPayload } from '@transcrib/shared'
 import type { AsrResult, AsrSegment } from '@transcrib/shared'
 import type { IAsrProvider } from '@transcrib/shared'
+import { JOB_RETRY_ATTEMPTS } from '@transcrib/shared'
 
 import { extractAudio } from '../lib/ffmpeg.js'
 import { DeepgramAsrProvider, isTransientAsrError } from '../asr/deepgram-adapter.js'
@@ -35,8 +36,27 @@ import { normalizeLanguageTag } from '../lib/language.js'
 import { createQueues, QueueName } from '../queues.js'
 
 // ─── Retry configuration (RC-UC-200 FR-001) ──────────────────────────────────
-/** Maximum BullMQ attempts for a transcription job. Must match job-processor.ts defaultJobOptions. */
-const MAX_ATTEMPTS = 3
+/**
+ * Fallback attempt budget, used only when a job carries no `opts` (test fixtures;
+ * a real BullMQ Job always does). The authoritative budget is whatever the
+ * PRODUCER stamped on the job — see `resolveMaxAttempts` below (F-004).
+ *
+ * (The previous comment here pointed at `job-processor.ts` as the source of
+ * `defaultJobOptions`; that file has never had any — it only builds Workers.)
+ */
+const MAX_ATTEMPTS = JOB_RETRY_ATTEMPTS
+
+/**
+ * F-004: the retry budget is read from the job, never from a local constant.
+ * Mirrors BullMQ's own `attemptsMade + 1 < opts.attempts` decision.
+ *
+ * `??` is load-bearing and must NOT become `||`: a producer with no
+ * `defaultJobOptions` yields `opts.attempts === 0`, and `||` would rewrite that
+ * to 3 — stranding the meeting in TRANSCRIBING with no retry left.
+ */
+function resolveMaxAttempts(job: { opts?: { attempts?: number } }): number {
+  return job.opts?.attempts ?? MAX_ATTEMPTS
+}
 
 // ─── Speaker name resolution (RQ-017) ────────────────────────────────────────
 
@@ -191,17 +211,29 @@ export async function processTranscriptionJob(
       throw new Error(`Meeting ${meeting.id} has no Recording`)
     }
 
-    // ── Step 1b: Mark PROCESSING (optimistic concurrency guard) ─────────────
-    // RQ-014: only transition from PENDING, prevents double-processing
+    // ── Step 1b: Claim the job (optimistic concurrency guard) ───────────────
+    // RQ-014: PENDING -> PROCESSING. PROCESSING is also claimable, because
+    // RC-UC-200.recovery_procedure requires that after a process crash "another
+    // worker (or same worker after restart) picks up the job from PROCESSING and
+    // re-runs". BullMQ only re-delivers once the lock has expired, and worker
+    // concurrency is 1, so a PROCESSING row here means the previous holder died —
+    // not that a live worker owns it. Terminal states cannot reach this line:
+    // the BRQ-009 idempotency guard above returns early on DONE/FAILED, so
+    // widening the filter does not weaken terminal immutability.
     const updated = await prisma.transcriptionJob.updateMany({
-      where: { id: transcription_job_id, status: 'PENDING' },
+      where: { id: transcription_job_id, status: { in: ['PENDING', 'PROCESSING'] } },
       data: { status: 'PROCESSING', startedAt: new Date() },
     })
 
     if (updated.count === 0) {
-      // Another worker picked it up
-      log.warn({ transcription_job_id }, 'Job already claimed by another worker — skipping')
-      return
+      // Genuinely anomalous: the row was DONE/FAILED (impossible — guarded
+      // above) or deleted between the two queries. Throwing routes it through
+      // the normal retry/failure path, which writes FAILED on the final attempt.
+      // Returning here would ACK the job to BullMQ while the row stayed
+      // PROCESSING and the meeting stayed TRANSCRIBING forever — silently.
+      throw new Error(
+        `TranscriptionJob ${transcription_job_id} could not be claimed (row vanished or is terminal)`,
+      )
     }
 
     // ── Step 2: Generate a short-lived HTTPS URL for ffmpeg ─────────────────
@@ -210,7 +242,7 @@ export async function processTranscriptionJob(
     // worker memory (a 500 MB upload would have OOM'd the VM previously).
     const storage = createStorage()
     const key = storage.storageUriToKey(recording.storageUri)
-    const recordingUrl = await storage.getPresignedDownloadUrl(key, 1800)
+    const recordingUrl = await storage.getPresignedDownloadUrl(key, 7200)
 
     // ── Step 3: Extract WAV audio via ffmpeg (TECH-009) ───────────────────
     // RQ-015: ffmpeg error → FAILED
@@ -334,7 +366,7 @@ export async function processTranscriptionJob(
     const attemptsMade: number = typeof job.attemptsMade === 'number'
       ? job.attemptsMade
       : 0
-    const isFinalAttempt = attemptsMade >= MAX_ATTEMPTS - 1
+    const isFinalAttempt = attemptsMade >= resolveMaxAttempts(job) - 1
 
     // Determine if this is a transient error we should let BullMQ retry.
     // isTransientAsrError returns true only for DeepgramAsrError with isTransient=true.

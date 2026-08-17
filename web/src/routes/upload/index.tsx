@@ -2,7 +2,12 @@ import { useState, useRef } from "react";
 import { useNavigate } from "react-router";
 import { useTranslation } from "react-i18next";
 import { apiPost } from "@/lib/api";
-import { UploadFinalizeResponse, UploadInitResponse } from "@transcrib/shared";
+import {
+  UploadFinalizeResponse,
+  UploadInitResponse,
+  MAX_UPLOAD_BYTES,
+  ACCEPTED_UPLOAD_MIME_TYPES,
+} from "@transcrib/shared";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
@@ -14,14 +19,11 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
-const MAX_SIZE_BYTES = 1_073_741_824; // 1 GiB (RQ-008)
-
-const ACCEPTED_MIME_TYPES = [
-  "video/mp4",
-  "video/x-matroska",
-  "video/quicktime",
-  "video/webm",
-];
+// Both limits come from @transcrib/shared so the client and the server cannot
+// disagree. These were previously re-declared here — the exact copy-paste the
+// shared constants exist to prevent (logged in .tl/release-status.json).
+const MAX_SIZE_BYTES = MAX_UPLOAD_BYTES; // RQ-008
+const ACCEPTED_MIME_TYPES: readonly string[] = ACCEPTED_UPLOAD_MIME_TYPES;
 
 const CONCURRENCY = 4; // parallel S3 part uploads
 

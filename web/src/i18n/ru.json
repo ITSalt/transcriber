@@ -133,14 +133,14 @@
     "dragDrop": "Перетащите видео или аудио файл сюда",
     "or": "или",
     "browse": "Выбрать файл",
-    "supported": "Поддерживаются: MP4, MKV, MOV, MP3, WAV, M4A (до 10 ГБ)",
+    "supported": "Поддерживаются: MP4, MKV, MOV, WEBM (до 2,5 ГБ, до 4 часов)",
     "heading": "Загрузить видео встречи",
-    "fieldFile": "Видеофайл (MP4 / MKV / MOV / WEBM, макс. 1 ГБ)",
+    "fieldFile": "Видеофайл (MP4 / MKV / MOV / WEBM, макс. 2,5 ГБ, макс. 4 ч)",
     "fieldTitle": "Название встречи (по умолчанию — имя файла)",
     "fieldTitlePlaceholder": "Введите название встречи",
-    "fieldLanguage": "Язык (оставьте пустым для автоопределения)",
-    "fieldLanguagePlaceholder": "Автоопределение",
-    "languageAuto": "Автоопределение",
+    "fieldLanguage": "Язык протокола (пусто — русский, речь распознаётся автоматически)",
+    "fieldLanguagePlaceholder": "Русский (по умолчанию)",
+    "languageAuto": "Русский (по умолчанию)",
     "languageRu": "Русский (RU)",
     "languageEn": "Английский (EN)",
     "fieldSpeakerCount": "Количество спикеров (опционально)",
@@ -148,7 +148,8 @@
     "fieldSpeakerCountHint": "Укажите точное число говорящих, если оно известно — улучшит разделение по голосам.",
     "errorSpeakerCountRange": "Количество спикеров должно быть от 1 до 10.",
     "finalizing": "Завершение загрузки…",
-    "errorFileTooLarge": "Файл превышает 1 ГБ. Выберите файл меньшего размера.",
-    "errorUnsupportedMime": "Неподдерживаемый формат. Загрузите файл MP4, MKV, MOV или WEBM."
+    "errorFileTooLarge": "Файл превышает 2,5 ГБ. Выберите файл меньшего размера.",
+    "errorUnsupportedMime": "Неподдерживаемый формат. Загрузите файл MP4, MKV, MOV или WEBM.",
+    "errorRecordingTooLong": "Запись длиннее 4 часов. Разделите её на части и загрузите отдельно."
   }
 }

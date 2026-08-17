@@ -15,7 +15,11 @@ import { S3StorageProvider, s3ConfigFromEnv } from '../storage/s3-adapter.js'
 import { AppError } from '../plugins/errors.js'
 
 const PART_SIZE = 10 * 1024 * 1024 // 10 MB (S3 minimum for non-last parts is 5 MB)
-const PRESIGN_EXPIRES_SEC = 3600   // 1 hour
+// DEC-004: every part URL is signed up front, so the LAST part's URL expires
+// this long after /init regardless of when the browser reaches it. At 1 hour a
+// 1.5 GiB upload failed for any uplink under ~4 Mbps; 6 hours covers a slow
+// consumer connection with margin.
+const PRESIGN_EXPIRES_SEC = 21600  // 6 hours
 
 const EXT_MAP: Record<string, string> = {
   'video/mp4': 'mp4',

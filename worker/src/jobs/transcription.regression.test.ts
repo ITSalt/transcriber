@@ -146,10 +146,16 @@ function makeJob(
   bullId: string,
   jobId: string,
   attemptsMade = 0,
+  opts?: { attempts?: number },
 ): Job<{ transcription_job_id: string }> {
-  return { id: bullId, data: { transcription_job_id: jobId }, attemptsMade } as unknown as Job<{
-    transcription_job_id: string
-  }>
+  return {
+    id: bullId,
+    data: { transcription_job_id: jobId },
+    attemptsMade,
+    // Omit the key entirely when no opts are given, so pre-existing 3-arg call
+    // sites keep exercising the `job.opts === undefined` fallback path.
+    ...(opts ? { opts } : {}),
+  } as unknown as Job<{ transcription_job_id: string }>
 }
 
 function makeLogger() {
@@ -260,37 +266,46 @@ beforeEach(() => {
 // ─────────────────────────────────────────────────────────────────────────────
 
 describe('REGR-T1 — Optimistic PENDING→PROCESSING lock', () => {
-  it('updateMany WHERE clause includes exactly status=PENDING (RQ-014)', async () => {
+  it('updateMany WHERE clause is scoped to non-terminal statuses (RQ-014)', async () => {
     /*
      * MUTATION PROOF:
-     *   If the production code removes `status: 'PENDING'` from the WHERE clause,
-     *   the captured `where` object will be `{ id: TXJOB }` without the status field,
-     *   and the deep-equal assertion below turns RED.
+     *   If the production code drops the `status` filter from the WHERE clause,
+     *   the captured `where` becomes `{ id: TXJOB }` and the deep-equal assertion
+     *   below turns RED — a DONE/FAILED row would then be re-openable, breaking
+     *   BRQ-009 terminal immutability.
+     *
+     * The filter is `{ in: ['PENDING','PROCESSING'] }`, not bare 'PENDING':
+     * RC-UC-200.recovery_procedure requires a crashed worker's PROCESSING job to
+     * be picked up and re-run. Terminal states never reach this line (the
+     * DONE/FAILED guard returns earlier), so the widened filter keeps RQ-014's
+     * lifecycle and immutability guarantees intact.
      */
     wireHappyPath()
 
     await processTranscriptionJob(makeJob('r-1', TXJOB) as any, makeLogger())
 
-    // First updateMany call is the PENDING→PROCESSING optimistic lock.
     const firstUpdateManyCall = fp.transcriptionJob.updateMany.mock.calls[0]
     expect(firstUpdateManyCall).toBeDefined()
-    const arg = firstUpdateManyCall[0] as { where: { id: string; status: string }; data: any }
+    const arg = firstUpdateManyCall[0] as { where: { id: string; status: unknown }; data: any }
 
-    // The WHERE must contain both the job id AND status='PENDING'.
-    // Any mutation that removes the status field from WHERE will break this assertion.
-    expect(arg.where).toEqual({ id: TXJOB, status: 'PENDING' })
+    expect(arg.where).toEqual({ id: TXJOB, status: { in: ['PENDING', 'PROCESSING'] } })
     expect(arg.data).toMatchObject({ status: 'PROCESSING' })
   })
 
-  it('second invocation with updateMany count=0 is a no-op: $transaction never called (BRQ-009 double-pickup)', async () => {
+  it('unclaimable job does not run the pipeline — and fails loudly (BRQ-009 double-pickup)', async () => {
     /*
      * MUTATION PROOF:
-     *   If the guard `if (updated.count === 0) return` is removed, the pipeline
-     *   will proceed to $transaction even when another worker claimed the job,
-     *   and `expect(fp.$transaction).not.toHaveBeenCalled()` turns RED.
+     *   If the `updated.count === 0` guard is removed, the pipeline proceeds to
+     *   $transaction on an unclaimable row and
+     *   `expect(fp.$transaction).not.toHaveBeenCalled()` turns RED.
+     *
+     * The guard now THROWS rather than returning. Returning ACKed the job to
+     * BullMQ while the row stayed PROCESSING and the meeting stayed TRANSCRIBING
+     * forever — the silent-stranding bug. Throwing routes it through the normal
+     * retry/failure path, which writes FAILED on the final attempt.
      */
     fp.transcriptionJob.findUnique.mockResolvedValue(BASE_JOB as any)
-    // Simulate: first worker already transitioned — count is 0 for this invocation.
+    // Row is neither PENDING nor PROCESSING (deleted, or terminal) — unclaimable.
     fp.transcriptionJob.updateMany.mockResolvedValue({ count: 0 })
     const storage = {
       storageUriToKey: vi.fn(),
@@ -299,10 +314,12 @@ describe('REGR-T1 — Optimistic PENDING→PROCESSING lock', () => {
     ;(createStorage as MockedFunction<AnyFn>).mockReturnValue(storage as any)
     ;(publishMeetingEvent as MockedFunction<AnyFn>).mockResolvedValue(undefined)
 
-    await processTranscriptionJob(makeJob('r-2', TXJOB) as any, makeLogger())
+    await expect(
+      processTranscriptionJob(makeJob('r-2', TXJOB) as any, makeLogger()),
+    ).rejects.toThrow(/could not be claimed/i)
 
-    // $transaction MUST NOT have been called — the pipeline stopped at count=0 guard.
-    expect(fp.$transaction).not.toHaveBeenCalled()
+    // The work itself MUST NOT have run — no storage access, no ASR call.
+    expect(storage.getPresignedDownloadUrl).not.toHaveBeenCalled()
     // Also: storage was fetched but ASR was never reached — key signal.
     expect(fp.protocolGenerationJob.create).not.toHaveBeenCalled()
   })
@@ -756,20 +773,30 @@ describe('REGR-T5 — Terminal-state immutability (BRQ-009): DONE and FAILED job
      * this test turns RED.
      */
     // Job is PROCESSING when we load it (e.g. a previous worker crashed mid-flight
-    // and BullMQ re-delivered).  Pipeline should continue and re-attempt.
+    // and BullMQ re-delivered). Pipeline should continue and re-attempt.
+    //
+    // NOTE: this body previously asserted the OPPOSITE of the title — it mocked
+    // count=0 with the comment "because it uses WHERE status='PENDING'" and then
+    // asserted `$transaction` never ran, i.e. it pinned the silent-skip bug while
+    // claiming to guard against it. The claim now includes PROCESSING
+    // (RC-UC-200.recovery_procedure), so the stalled job is genuinely re-claimed
+    // and the pipeline proceeds — which is what the title always promised.
+    wireHappyPath()
     const processingJob = { ...BASE_JOB, status: 'PROCESSING' as const }
     fp.transcriptionJob.findUnique.mockResolvedValue(processingJob as any)
-    // updateMany returns count=0 because it uses WHERE status='PENDING' and status is PROCESSING
-    fp.transcriptionJob.updateMany.mockResolvedValue({ count: 0 })
+    fp.transcriptionJob.updateMany.mockResolvedValue({ count: 1 })
     ;(publishMeetingEvent as MockedFunction<AnyFn>).mockResolvedValue(undefined)
 
-    // Not a no-op — it will call updateMany (and get count=0, then return early)
     await processTranscriptionJob(makeJob('r-14', TXJOB) as any, makeLogger())
 
-    // updateMany was attempted (the terminal guard did NOT short-circuit it)
-    expect(fp.transcriptionJob.updateMany).toHaveBeenCalledOnce()
-    // But $transaction never ran because count=0
-    expect(fp.$transaction).not.toHaveBeenCalled()
+    // The terminal guard did NOT short-circuit, and the claim covered PROCESSING
+    expect(fp.transcriptionJob.updateMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({ status: { in: ['PENDING', 'PROCESSING'] } }),
+      }),
+    )
+    // Re-claimed successfully -> the pipeline ran through to the write transaction
+    expect(fp.$transaction).toHaveBeenCalled()
   })
 })
 
@@ -999,5 +1026,139 @@ describe('REGR-T6 — FR-001 transient-retry semantics (RC-UC-200)', () => {
     // Storage error is permanent — must write FAILED immediately
     expect(failJobArgs).toBeDefined()
     expect(failJobArgs.data.status).toBe('FAILED')
+  })
+
+  // ── REGR-T8 — stalled-job recovery must not silently succeed ───────────────
+  //
+  // RC-UC-200.recovery_procedure (graph, approved): "After process crash: BullMQ
+  // lock expires; another worker (or same worker after restart) picks up the job
+  // from PROCESSING and re-runs."
+  //
+  // The code claimed only `status: 'PENDING'`. The DONE/FAILED idempotency guard
+  // runs BEFORE the claim, so a zero-count claim could only mean PROCESSING — a
+  // re-delivered job whose previous holder died. The handler logged a warning and
+  // `return`ed SUCCESSFULLY: BullMQ dropped the job, the row stayed PROCESSING,
+  // the meeting stayed TRANSCRIBING forever, with no FAILED row and no SSE event.
+  // Every pm2 max_memory_restart and every deploy could trigger it.
+
+  it('T8a: claims from PENDING *or* PROCESSING so a stalled job resumes (RC-UC-200)', async () => {
+    /* MUTATION PROOF: restore `where: { id, status: 'PENDING' }` ->
+     * the objectContaining match on the status filter fails -> RED. */
+    wireUpToAsrThrow(new DeepgramAsrError('stop here', null, /* isTransient= */ false))
+
+    const job = makeJob('r-40', TXJOB, 0, { attempts: 3 })
+    await processTranscriptionJob(job as any, makeLogger()).catch(() => undefined)
+
+    expect(fp.transcriptionJob.updateMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({
+          status: { in: ['PENDING', 'PROCESSING'] },
+        }),
+      }),
+    )
+  })
+
+  it('T8b: a claim that matches nothing throws instead of returning success', async () => {
+    /* MUTATION PROOF: restore the `return` on `updated.count === 0` ->
+     * the call resolves instead of rejecting -> RED. Returning success is what
+     * stranded the meeting. */
+    fp.transcriptionJob.findUnique.mockResolvedValue(BASE_JOB as any)
+    fp.transcriptionJob.updateMany.mockResolvedValue({ count: 0 })
+
+    const job = makeJob('r-41', TXJOB, 0, { attempts: 3 })
+
+    await expect(processTranscriptionJob(job as any, makeLogger())).rejects.toThrow(
+      /could not be claimed/i,
+    )
+  })
+
+  // ── REGR-T7 — F-004: producer-declared retry budget is authoritative ────────
+  //
+  // Structural mirror of REGR-P5 on the transcription pipeline. With the API
+  // enqueuing at `attempts: 0` (no defaultJobOptions), a transient ASR error
+  // re-throws without writing FAILED while BullMQ has no retry left — the
+  // meeting is stranded in TRANSCRIBING forever.
+
+  function captureTxFailWrite() {
+    let failJobArgs: any
+    fp.$transaction.mockImplementation(async (cb: any) => {
+      const txProxy = {
+        transcriptionJob: {
+          updateMany: vi.fn().mockImplementation(async (args: any) => {
+            failJobArgs = args
+            return { count: 1 }
+          }),
+          findUnique: vi.fn().mockResolvedValue({ meetingId: MTG }),
+        },
+        meeting: { updateMany: vi.fn().mockResolvedValue({ count: 1 }) },
+      }
+      await cb(txProxy)
+      return undefined
+    })
+    return () => failJobArgs
+  }
+
+  /* MUTATION PROOF: restore `const MAX_ATTEMPTS = 3` +
+   * `attemptsMade >= MAX_ATTEMPTS - 1` -> isFinalAttempt false at attemptsMade=0
+   * -> re-throw with no $transaction -> `toBeDefined()` RED. Pre-fix state. */
+  it('T7a: attempts=1 + transient ASR error → writes FAILED on the only attempt', async () => {
+    const transientErr = new DeepgramAsrError('rate limited', null, /* isTransient= */ true)
+    wireUpToAsrThrow(transientErr)
+    const getFail = captureTxFailWrite()
+    // NOTE: deliberately no `mockResolvedValueOnce` chain here. These tests are
+    // RED before the fix, so a queued "once" would go unconsumed and leak into
+    // the next test. The txProxy's own findUnique supplies meetingId.
+
+    const job = makeJob('r-30', TXJOB, /* attemptsMade= */ 0, { attempts: 1 })
+
+    await expect(processTranscriptionJob(job as any, makeLogger())).rejects.toThrow('rate limited')
+
+    expect(getFail()).toBeDefined()
+    expect(getFail().data.status).toBe('FAILED')
+    expect(getFail().data.attemptCount).toBe(1)
+  })
+
+  /* MUTATION PROOF: `||` instead of `??` -> `0 || 3` -> 3 -> no FAILED -> RED.
+   * attempts=0 is the literal shape BullMQ stamps with no defaultJobOptions. */
+  it('T7b: attempts=0 (BullMQ default when producer sets nothing) → writes FAILED', async () => {
+    const transientErr = new DeepgramAsrError('gateway busy', null, /* isTransient= */ true)
+    wireUpToAsrThrow(transientErr)
+    const getFail = captureTxFailWrite()
+    // NOTE: deliberately no `mockResolvedValueOnce` chain here. These tests are
+    // RED before the fix, so a queued "once" would go unconsumed and leak into
+    // the next test. The txProxy's own findUnique supplies meetingId.
+
+    const job = makeJob('r-31', TXJOB, /* attemptsMade= */ 0, { attempts: 0 })
+
+    await expect(processTranscriptionJob(job as any, makeLogger())).rejects.toThrow('gateway busy')
+
+    expect(getFail()).toBeDefined()
+    expect(getFail().data.status).toBe('FAILED')
+  })
+
+  /* MUTATION PROOF: hard-code maxAttempts = 1 -> FAILED written -> RED.
+   * Guards the FR-001 transient-retry invariant. Green before and after. */
+  it('T7c: attempts=3 + transient on first try → re-throws WITHOUT writing FAILED', async () => {
+    const transientErr = new DeepgramAsrError('rate limited', null, /* isTransient= */ true)
+    wireUpToAsrThrow(transientErr)
+
+    const job = makeJob('r-32', TXJOB, /* attemptsMade= */ 0, { attempts: 3 })
+
+    await expect(processTranscriptionJob(job as any, makeLogger())).rejects.toThrow('rate limited')
+
+    expect(fp.$transaction).not.toHaveBeenCalled()
+  })
+
+  /* MUTATION PROOF: any re-hardcoding to 3 -> `3 >= 2` -> FAILED -> RED.
+   * Proves the budget is genuinely read, not coincidentally equal to 3. */
+  it('T7d: attempts=5 + transient at attemptsMade=3 → budget not exhausted, no FAILED', async () => {
+    const transientErr = new DeepgramAsrError('rate limited', null, /* isTransient= */ true)
+    wireUpToAsrThrow(transientErr)
+
+    const job = makeJob('r-33', TXJOB, /* attemptsMade= */ 3, { attempts: 5 })
+
+    await expect(processTranscriptionJob(job as any, makeLogger())).rejects.toThrow('rate limited')
+
+    expect(fp.$transaction).not.toHaveBeenCalled()
   })
 })

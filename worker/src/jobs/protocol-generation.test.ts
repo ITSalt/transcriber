@@ -245,10 +245,11 @@ describe('T01 (RQ-021) — ProtocolGenerationJob lifecycle: PENDING → PROCESSI
       llm: mockLlm,
     })
 
-    // Step 1b: claimed PROCESSING
+    // Step 1b: claimed PROCESSING. PROCESSING is claimable too, so a crashed
+    // worker's job is picked up and re-run (RC-UC-300.recovery_procedure).
     expect(mockPrisma.protocolGenerationJob.updateMany).toHaveBeenCalledWith(
       expect.objectContaining({
-        where: { id: JOB_ID, status: 'PENDING' },
+        where: { id: JOB_ID, status: { in: ['PENDING', 'PROCESSING'] } },
         data: expect.objectContaining({ status: 'PROCESSING' }),
       }),
     )
@@ -283,17 +284,21 @@ describe('T01 (RQ-021) — ProtocolGenerationJob lifecycle: PENDING → PROCESSI
     expect(mockPrisma.$transaction).not.toHaveBeenCalled()
   })
 
-  it('skips if another worker claimed job (updateMany count=0)', async () => {
+  // An unclaimable row now FAILS LOUDLY instead of ACKing the job. Returning
+  // success here left the meeting in GENERATING_PROTOCOL forever. A crashed
+  // worker's PROCESSING row is claimable per RC-UC-300, so count=0 means the
+  // row is gone or terminal — genuinely anomalous.
+  it('throws if the job row cannot be claimed (updateMany count=0)', async () => {
     mockPrisma.protocolGenerationJob.findUnique.mockResolvedValue(BASE_PG_JOB as any)
     mockPrisma.protocolGenerationJob.updateMany.mockResolvedValue({ count: 0 })
 
-
     const log = makeLogger()
-    await processProtocolGenerationJob(makeJob('bq-4', JOB_ID) as any, log, {
-      llm: makeMockLlm(),
-    })
 
-    expect(mockPrisma.$transaction).not.toHaveBeenCalled()
+    await expect(
+      processProtocolGenerationJob(makeJob('bq-4', JOB_ID) as any, log, {
+        llm: makeMockLlm(),
+      }),
+    ).rejects.toThrow(/could not be claimed/i)
   })
 })
 

@@ -25,6 +25,7 @@ vi.mock('fluent-ffmpeg', () => {
     chain('audioFrequency')
     chain('noVideo')
     chain('audioCodec')
+    chain('outputOptions')
     chain('format')
 
     // pipe() returns a PassThrough; optionally emits error
@@ -113,6 +114,7 @@ describe('extractAudio', () => {
       chain('audioFrequency')
       chain('noVideo')
       chain('audioCodec')
+      chain('outputOptions')
       chain('format')
       chain('on')
 
@@ -159,19 +161,41 @@ describe('extractAudio', () => {
     expect((builder['audioFrequency'] as Mock)).toHaveBeenCalledWith(16000)
   })
 
-  it('uses wav output format', () => {
+  // DEC-004: FLAC replaced pcm_s16le. Losslessness verified bitwise on a real
+  // production recording — decoding our FLAC back to raw PCM is byte-identical
+  // to the pcm_s16le output — so WER is provably unaffected. ~59% smaller on
+  // real speech (13.1 vs 32 kB/s), which is what keeps a 4-hour recording
+  // (RQ-039) inside both the worker's memory budget and Deepgram's 2 GB cap.
+  /* MUTATION PROOF: revert to .audioCodec('pcm_s16le').format('wav') -> RED. */
+  it('uses FLAC output format', () => {
     const input = makeReadable()
     extractAudio(input)
 
     const builder = (ffmpegLib as unknown as Mock).mock.results[0]?.value as Record<string, Mock>
-    // Either .format('wav') or .audioCodec('pcm_s16le') indicates WAV pipeline
-    const formatCalled = (builder['format'] as Mock | undefined)?.mock?.calls?.some(
-      (args: unknown[]) => args[0] === 'wav',
-    )
-    const codecCalled = (builder['audioCodec'] as Mock | undefined)?.mock?.calls?.some(
-      (args: unknown[]) => (args[0] as string)?.startsWith('pcm'),
-    )
-    expect(formatCalled || codecCalled).toBe(true)
+    expect(builder['audioCodec']).toHaveBeenCalledWith('flac')
+    expect(builder['format']).toHaveBeenCalledWith('flac')
+  })
+
+  // `pcm_s16le` used to pin the bit depth implicitly; `flac` does not. Opus and
+  // AAC sources decode to float, so without this ffmpeg silently emits 24-bit
+  // FLAC — measured 17.7 MB vs 9.1 MB on the same real recording, i.e. nearly
+  // double the payload and peak worker RSS for samples the ASR cannot use.
+  /* MUTATION PROOF: drop the .outputOptions(['-sample_fmt','s16']) call -> RED. */
+  it('pins 16-bit samples so FLAC does not silently widen to 24-bit', () => {
+    const input = makeReadable()
+    extractAudio(input)
+
+    const builder = (ffmpegLib as unknown as Mock).mock.results[0]?.value as Record<string, Mock>
+    expect(builder['outputOptions']).toHaveBeenCalledWith(['-sample_fmt', 's16'])
+  })
+
+  it('still downmixes to 16 kHz mono regardless of codec', () => {
+    const input = makeReadable()
+    extractAudio(input)
+
+    const builder = (ffmpegLib as unknown as Mock).mock.results[0]?.value as Record<string, Mock>
+    expect(builder['audioChannels']).toHaveBeenCalledWith(1)
+    expect(builder['audioFrequency']).toHaveBeenCalledWith(16000)
   })
 })
 
