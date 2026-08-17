@@ -51,8 +51,8 @@ At the 4-hour gate, every constraint has headroom:
 |---|---|---|
 | FLAC payload | **182 MB** (measured) | 9% of Deepgram's 2 GB cap |
 | Peak worker RSS | **~594 MB** (measured) | under the 1024M pm2 cap — **no pm2 change needed** |
-| Deepgram processing | ~144 s | far under the 570 s budget |
-| Russian protocol context | ~132K tokens | under the 200K window |
+| ASR round-trip | **~47 s** (measured fit) | **12× under** the 570 s budget |
+| Russian protocol context | **~50K tokens** (measured) | well under the 200K window |
 
 Leaving `max_memory_restart` alone matters: the VPS is shared with four other
 products on 7.8 GB of RAM.
@@ -137,22 +137,35 @@ and no writes to the production database.
   exactly 30 (container parsed, not guessed), language auto-detect returned `ru`,
   diarization and utterances produced 12 segments.
 
-### Still open — and one new risk the probe surfaced
+### Timing — RESOLVED 2026-08-17, the 4 h gate is comfortably servable
 
-- **⚠ The realtime factor is unverified, and the 4 h gate may not be servable.**
-  The probe took **2.4 s round-trip for 30 s of audio (~12.5× realtime)**. Fitting
-  4 h in the 570 s client timeout needs **≥ 25.3×**; Deepgram's own 600 s
-  synchronous cap needs **≥ 24×**. A 30 s sample is dominated by fixed per-request
-  overhead, so 12.5× is a floor, not the steady-state rate — but the K≈100×
-  assumed in DEC-004 was never measured either. One data point cannot separate
-  fixed from variable cost: at 1.0 s fixed the extrapolation is **673 s (over
-  budget)**, at 2.0 s fixed it is 194 s (fine).
-  **Resolve with a second measurement** at a longer duration — the same 693 s
-  production recording costs ≈ $0.05 and makes the two-point fit decisive. Until
-  then, treat 4 h as unproven: the byte and memory analysis holds, but the
-  *time* budget does not yet.
-- Full end-to-end at the ceiling. Would settle the above as a side effect, but
-  costs a full 4 h of Deepgram plus kie.ai and occupies the single worker.
+Measured at three durations rather than assumed. All three returned a correct
+`metadata.duration`, so each container was genuinely parsed.
+
+| audio | payload | round-trip | realtime |
+|---|---|---|---|
+| 30 s | 0.4 MB | 2.4 s | 12.5× |
+| 693 s | 8.7 MB | 4.3 s | 161× |
+| **7200 s (2 h)** | **89.8 MB** | **24.4 s** | **295×** |
+
+Linear fit: **t = 2.16 s fixed + 3.09 ms per audio-second** (predicts 2.25 s at
+30 s versus 2.4 s measured — consistent across two orders of magnitude).
+
+- **4 h → ~47 s round-trip**, roughly **12× under** the 570 s client timeout.
+- The timeout would not bind until **~51 h** of audio; Deepgram's own 600 s
+  synchronous cap not until ~54 h.
+- The earlier "12.5× realtime, may not be servable" alarm was an artefact of the
+  30 s probe, where fixed per-request overhead dominates. It was raised as
+  uncertain in both directions, and the uncertainty resolved favourably.
+- **Protocol-generation input measured:** 62,410 chars at 2 h → ~125K chars /
+  **~50K tokens** at 4 h, well inside the 200K context. The earlier ~132K-token
+  figure was an over-estimate.
+
+### Still open
+
+- Full end-to-end at the ceiling — the one leg never exercised is **kie.ai
+  protocol generation on a 4 h transcript**. Every other stage is now measured
+  independently (extraction, memory, ASR round-trip, LLM input size).
 
 ## Decisions
 

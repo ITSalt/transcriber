@@ -1,5 +1,43 @@
 # Changelog — .tl/
 
+## [2026-08-17] ASR timing measured at three durations — 4h gate is servable
+
+Authorised follow-up to yesterday's 30 s probe, which had left the time budget
+for RQ-039's 4 h ceiling unproven. Measured on the production host against real
+audio; **no writes to the production database**.
+
+| audio | payload | round-trip | realtime |
+|---|---|---|---|
+| 30 s | 0.4 MB | 2.4 s | 12.5× |
+| 693 s | 8.7 MB | 4.3 s | 161× |
+| **7200 s (2 h)** | **89.8 MB** | **24.4 s** | **295×** |
+
+All three returned a correct `metadata.duration` (30 / 693.3735 / 7200), so each
+container was genuinely parsed — including the 2 h, 90 MB payload.
+
+**Linear fit: t = 2.16 s fixed + 3.09 ms per audio-second.** It predicts 2.25 s at
+30 s against 2.4 s measured, so the model holds across two orders of magnitude.
+
+- **4 h → ~47 s round-trip, roughly 12× under the 570 s client timeout.** The
+  timeout would not bind until ~51 h of audio; Deepgram's 600 s synchronous cap
+  not until ~54 h.
+- **Yesterday's alarm was mine, and it was wrong.** "12.5× realtime, the 4 h gate
+  may not be servable" came from a 30 s sample where fixed per-request overhead
+  dominates. It was flagged as uncertain in both directions rather than asserted,
+  and it resolved favourably. The `K≈100×` originally written into DEC-004 was
+  likewise never measured; both are now superseded by the fit.
+- **LLM input measured too:** 62,410 chars at 2 h → ~125K chars / **~50K tokens**
+  at 4 h, well inside the 200K context. The earlier ~132K-token figure in DEC-004
+  and FR-002 was an over-estimate.
+
+Note the deployed `worker/dist` still carries the **old 60 s** SDK timeout — the
+570 s fix is committed but not released. These probes called the SDK directly with
+a raised timeout so they measured Deepgram, not the un-deployed defect.
+
+**Remaining untested leg:** kie.ai protocol generation on a 4 h transcript. Every
+other stage — extraction, memory, ASR round-trip, LLM input size — is now measured
+independently.
+
 ## [2026-08-17] Deepgram FLAC probe — accepted, but it surfaced a timing risk
 
 One authorised 30 s call through the real deployed adapter (not curl), on audio
