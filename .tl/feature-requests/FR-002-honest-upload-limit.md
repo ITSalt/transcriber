@@ -1,4 +1,13 @@
-# Feature Request: FR-002 — Honest upload limit (1.5 GiB + 4h duration gate)
+# Feature Request: FR-002 — Honest upload limit (2.5 GiB + 4h duration gate)
+
+> **Amended 2026-08-17 by DEC-005:** byte cap raised 1.5 GiB → **2.5 GiB** at the
+> product owner's request. The **4 h duration gate is unchanged**, and that is why
+> the amendment is cheap: every measured constraint below scales with *duration*,
+> not with file size, so none of the numbers in this document move. The larger cap
+> admits **higher-bitrate** recordings of the same maximum length — up to ~1.5 Mbps
+> at the full 4 h, where 1.5 GiB allowed only ~0.9 Mbps, i.e. ordinary 1080p screen
+> capture. Sections below that still read "1.5 GiB" describe the original DEC-004
+> sizing and are retained as the record of how the ceiling was established.
 
 ## Metadata
 
@@ -98,7 +107,7 @@ encoders, so FLAC extraction has no infrastructure blocker.
 
 | Change | Where |
 |---|---|
-| `MAX_UPLOAD_BYTES = 1_610_612_736` | `shared/src/api/uc100.ts:10` |
+| `MAX_UPLOAD_BYTES = 2_684_354_560` (2.5 GiB, DEC-005) | `shared/src/api/uc100.ts:16` |
 | Import shared constants instead of re-declaring | `web/src/routes/upload/index.tsx:17` (`MAX_SIZE_BYTES`, `ACCEPTED_MIME_TYPES`) — a logged debt item |
 | Duration gate | `api/src/services/uc-100.service.ts` — `probeContainer` already runs and its `durationSec` is discarded |
 | FLAC instead of `pcm_s16le` | `worker/src/lib/ffmpeg.ts:56-60` |

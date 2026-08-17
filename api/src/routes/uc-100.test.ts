@@ -230,22 +230,22 @@ describe('Upload — POST /api/uploads/complete', () => {
 
   // ─── T01: RQ-008 — size too large ──────────────────────────────────────────
 
-  it('T01 — RQ-008: rejects size_bytes > 1.5 GiB with 400 VALIDATION_ERROR', async () => {
+  it('T01 — RQ-008: rejects size_bytes > 2.5 GiB with 400 VALIDATION_ERROR', async () => {
     const res = await app.inject({
       method: 'POST',
       url: '/api/uploads/complete',
-      payload: happyBody({ size_bytes: 1_610_612_737 }),
+      payload: happyBody({ size_bytes: 2_684_354_561 }),
     })
 
     // size_bytes > max is caught by Zod schema validation (400)
     expect(res.statusCode).toBe(400)
   })
 
-  it('T07 — NFR-001: accepts exactly 1,610,612,736 bytes (1.5 GiB boundary)', async () => {
+  it('T07 — NFR-001: accepts exactly 2,684,354,560 bytes (2.5 GiB boundary)', async () => {
     const res = await app.inject({
       method: 'POST',
       url: '/api/uploads/complete',
-      payload: happyBody({ size_bytes: 1_610_612_736 }),
+      payload: happyBody({ size_bytes: 2_684_354_560 }),
     })
 
     expect(res.statusCode).toBe(200)

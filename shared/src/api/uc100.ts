@@ -5,9 +5,15 @@ import { MeetingLanguage, VideoMimeType } from '../enums.js';
 
 // ── Limits and accepted formats ────────────────────────────────────────────────
 // Centralised so api/, worker/, web/ all agree without copy-pasting magic
-// numbers. RQ-008 originally pinned this to 500 MB, then 1 GiB, and 1.5 GiB by
-// DEC-004 / FR-002.
-export const MAX_UPLOAD_BYTES = 1_610_612_736; // 1.5 GiB (RQ-008)
+// numbers. RQ-008 originally pinned this to 500 MB, then 1 GiB, then 1.5 GiB by
+// DEC-004, and 2.5 GiB by DEC-005.
+//
+// This cap protects upload and storage only. What protects the PIPELINE is
+// MAX_UPLOAD_DURATION_SEC below — every measured constraint (worker memory, ASR
+// budget, LLM context) scales with duration, not with file size, so raising this
+// admits higher-bitrate recordings of the same maximum length rather than longer
+// ones. At the 4 h ceiling this allows up to ~1.5 Mbps; 1.5 GiB allowed ~0.9.
+export const MAX_UPLOAD_BYTES = 2_684_354_560; // 2.5 GiB (RQ-008)
 
 /**
  * Maximum accepted recording duration, in seconds (RQ-039, DEC-004).

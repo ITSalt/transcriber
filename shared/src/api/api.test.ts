@@ -156,7 +156,7 @@ describe('UploadCreateRequest', () => {
     ).toThrow();
   });
 
-  it('accepts size_bytes exactly at MAX_UPLOAD_BYTES (1.5 GiB boundary, RQ-008)', () => {
+  it('accepts size_bytes exactly at MAX_UPLOAD_BYTES (2.5 GiB boundary, RQ-008)', () => {
     expect(() =>
       UploadCreateRequest.parse({ ...valid, size_bytes: MAX_UPLOAD_BYTES }),
     ).not.toThrow();
@@ -164,8 +164,8 @@ describe('UploadCreateRequest', () => {
 
   // Pins the value itself, so a change to the cap is a deliberate edit here too
   // rather than something a relative assertion would silently absorb.
-  it('MAX_UPLOAD_BYTES is 1.5 GiB and MAX_UPLOAD_DURATION_SEC is 4 h (DEC-004)', () => {
-    expect(MAX_UPLOAD_BYTES).toBe(1_610_612_736);
+  it('MAX_UPLOAD_BYTES is 2.5 GiB and MAX_UPLOAD_DURATION_SEC is 4 h (DEC-005)', () => {
+    expect(MAX_UPLOAD_BYTES).toBe(2_684_354_560);
     expect(MAX_UPLOAD_DURATION_SEC).toBe(14_400);
   });
 

@@ -1,5 +1,39 @@
 # Changelog — .tl/
 
+## [2026-08-17] DEC-005 — upload byte cap 1.5 GiB → 2.5 GiB (duration gate untouched)
+
+Requested by the product owner after DEC-004 shipped. Spec and code in one branch;
+graph written before the code, as usual.
+
+**Why this was cheap, and why it is safe.** The byte cap is not what protects the
+pipeline — RQ-039's 4 h duration gate is, and it is **unchanged**. Every constraint
+measured for DEC-004 scales with duration, not file size, so none of them move:
+FLAC payload stays 182 MB, peak worker RSS stays ~594 MB against the 1024M pm2 cap,
+ASR round-trip stays ~47 s against a 570 s budget, protocol input stays ~50K tokens
+against a 200K window. The pipeline never sees more than 4 h of audio regardless of
+how large the container is.
+
+What the larger cap actually buys is **higher-bitrate** recordings of the same
+maximum length: up to ~1.5 Mbps at the full 4 h, where 1.5 GiB allowed only
+~0.9 Mbps — i.e. ordinary 1080p screen capture, which is presumably the point.
+
+**The one cost that does scale with bytes was measured, not assumed:** the worker
+reads the source from object storage at **17 MB/s** (measured prod → s3.cloud.ru),
+so 2.5 GiB reads in **~2.6 minutes**, against a 2 h presigned-read window. The event
+loop stays free throughout — ffmpeg is a child process, so the BullMQ lock heartbeat
+keeps renewing under the 60 s `lockDuration`. Multipart goes to 256 of 10,000
+allowed parts. Client upload is the real user-visible cost: **~36 min on a 10 Mbit/s
+uplink**, inside the 6 h presign window DEC-004 set.
+
+- **Graph:** `DEC-005` written and linked; `RQ-008`, `NFR-001`, `BRQ-001`, `BR-102`,
+  `Recording-A04`, `UC-100-AS04`, `FORM-MeetingUpload-F02`, `BP-001`, `BP-001-S03`,
+  `GLO-025`, `DFL-001`, `UC-100.user_story` all swept to 2.5 GiB.
+  `UC-100.spec_version` 3 → 4. DEC-004 is **not** superseded — its duration-gate
+  half still stands; DEC-005 revises only the byte cap.
+- **Code:** `MAX_UPLOAD_BYTES = 2_684_354_560`, boundary tests, i18n in both locales.
+- **Verified:** lint 0 errors; typecheck clean; shared 77, worker 236,
+  api 212 (+7 skipped), web 150.
+
 ## [2026-08-17] ASR timing measured at three durations — 4h gate is servable
 
 Authorised follow-up to yesterday's 30 s probe, which had left the time budget
