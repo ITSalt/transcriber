@@ -1,7 +1,7 @@
 {
   "project": "Transcrib",
   "created": "2026-05-18",
-  "updated": "2026-08-15",
+  "updated": "2026-08-17",
   "source": "nacl-tl-plan",
   "summary": {
     "total_uc": 10,
@@ -92,6 +92,36 @@
       "external_contracts_gate": "passed vacuously - no REQUIRES_EXTERNAL/DEPENDS_ON_EXTERNAL edges and no ExternalContract nodes exist; the five W3 contract files on disk were never modelled as graph nodes (follow-up debt)",
       "verified": "review_status query empty; version-drift query empty; all six tasks still status=done with commits intact",
       "not_touched": "ENUM-JobStatus and ENUM-MeetingStatus vocabulary drift vs Prisma; NFR-001 (500 MB) contradicting RQ-008 (1 GiB) - both deferred to the upload-limit feature"
+    },
+    "deploy": {
+      "status": "done",
+      "kind": "production-release",
+      "pr": 8,
+      "merge_commit": "0e58fc4",
+      "workflow_run": "32017076153",
+      "ts": "2026-08-17T09:52:00Z",
+      "verified_live": {
+        "MAX_UPLOAD_BYTES": 2684354560,
+        "MAX_UPLOAD_DURATION_SEC": 14400,
+        "duration_gate": "RECORDING_TOO_LONG present",
+        "codec": "flac + sample_fmt s16",
+        "deepgram_timeout_sec": 570,
+        "api_defaultJobOptions": true,
+        "claim_filter": "PENDING|PROCESSING",
+        "lockDuration_ms": 60000
+      },
+      "smoke": {
+        "/api/health": 200,
+        "/api/meetings": 200,
+        "cap_rejects_over_2.5GiB": 400,
+        "cap_accepts_1.61GB_(was_rejected_before)": 200
+      },
+      "pm2": {
+        "transcrib-api": "online restarts=0",
+        "transcrib-worker": "online restarts=0"
+      },
+      "note": "Probe multipart upload created during the live cap check was aborted (204); meetings/recordings still 25/25, nothing persisted.",
+      "known_victims": "3 protocol_generation_jobs stuck in PROCESSING for 76/75/6 days with attempt_count=0 — F-004 casualties. They do not self-heal (their BullMQ jobs are long gone); the UC-004 retry button now works and can recover them."
     }
   },
   "updated_by_W1_reconciliation": "2026-05-22T11:45:00Z",

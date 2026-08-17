@@ -1,5 +1,33 @@
 # Changelog — .tl/
 
+## [RELEASE] 2026-08-17 — PR #8 merged and deployed to production
+
+Merge `0e58fc4`, deploy run `32017076153`, 44 s. CI green (1 m 11 s).
+
+**Verified live on prod, not inferred from the build log:** `MAX_UPLOAD_BYTES =
+2_684_354_560`; `RECORDING_TOO_LONG` gate present; `audioCodec('flac')` **with
+`sample_fmt s16`**; `REQUEST_TIMEOUT_SECONDS = 570`; `defaultJobOptions` on both
+API producers; claim filter widened to `PENDING|PROCESSING`; `lockDuration =
+60_000`. `/api/health` and `/api/meetings` both 200. Both pm2 processes online
+with **0 restarts**.
+
+**Functional smoke on the live API:** `size_bytes = 2,684,354,561` → **400**;
+`size_bytes = 1,610,612,737` (rejected by yesterday's cap, accepted by the new
+one) → **200** with 154 presigned parts. The multipart upload that probe created
+was **aborted** (204) — otherwise it would have been precisely the billable
+orphaned-parts leak tracked as F-006. `meetings`/`recordings` still 25/25;
+nothing persisted.
+
+**Pre-deploy safety check:** no job was in flight. The worker was idle with 0
+restarts, and the 3 protocol jobs sitting in `PROCESSING` turned out to be **76,
+75 and 6 days old** with `attempt_count=0` and `error_msg=null` — living F-004
+casualties, not active work. They do **not** self-heal, because their BullMQ jobs
+are long gone; but the UC-004 "Повторить обработку" button now carries a real
+retry policy and can recover them.
+
+No Prisma migration ran — `recordings.duration_sec` already existed; its value
+was simply being discarded.
+
 ## [2026-08-17] DEC-005 — upload byte cap 1.5 GiB → 2.5 GiB (duration gate untouched)
 
 Requested by the product owner after DEC-004 shipped. Spec and code in one branch;
