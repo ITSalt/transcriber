@@ -1,5 +1,33 @@
 # Changelog — .tl/
 
+## [2026-08-17] Deepgram FLAC probe — accepted, but it surfaced a timing risk
+
+One authorised 30 s call through the real deployed adapter (not curl), on audio
+produced by the exact new production command.
+
+- **Deepgram accepts the 16-bit FLAC container.** `metadata.duration` returned
+  exactly 30, so the container was genuinely parsed rather than guessed; language
+  auto-detect returned `ru`; diarization and utterances produced 12 segments.
+  This closes the last open question on the DEC-004 codec swap.
+- Recorded against **F-005** too, but it does not advance that task: F-005 needs
+  *error-path* probes (unknown model, unrouted path, oversized payload), and this
+  was a happy-path call.
+
+**⚠ New risk, and it is the most consequential thing left.** The call took
+**2.4 s for 30 s of audio — ~12.5× realtime**. Fitting a 4 h recording inside the
+570 s client timeout needs **≥ 25.3×**, and Deepgram's own 600 s synchronous cap
+needs **≥ 24×**. A 30 s sample is dominated by fixed per-request overhead, so
+12.5× is a floor rather than the steady-state rate — but the **K≈100× assumed in
+DEC-004 was never measured either**, so the honest position is that the figure is
+unknown in both directions. One data point cannot separate fixed from variable
+cost: assuming 1.0 s fixed extrapolates to **673 s (over budget)**, assuming 2.0 s
+fixed gives 194 s (comfortable).
+
+The byte and memory analysis for the 4 h gate stands unchanged. The **time**
+budget does not — RQ-039's 4 h ceiling should be treated as unproven until a
+second measurement at a longer duration settles the two-point fit. The same 693 s
+production recording costs ≈ $0.05 and would be decisive.
+
 ## [2026-08-16] Pre-ship verification of DEC-004 — and a defect it caught
 
 Ran the two checks FR-002 listed as required before shipping. Both were done on

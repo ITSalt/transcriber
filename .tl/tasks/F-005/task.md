@@ -69,6 +69,13 @@ Those two are transient under any provider, independent of questions 1–2.
   probe-independent half)`, 10 cases. Mutation proof executed: with the adapter
   stashed the suite goes 10 failed / 11 passed; restored, 21 passed.
 
+**Live probe run 2026-08-17 (30 s of real audio, authorised):** Deepgram
+**accepts our 16-bit FLAC container**. `metadata.duration` came back exactly 30
+(so the container was parsed, not guessed), language auto-detection returned `ru`,
+and diarization + utterances produced 12 segments. This closes the "does the
+provider accept the DEC-004 codec" question, but answers neither of the two
+questions below — those need error-path probes, not a happy-path one.
+
 **Deliverables 1-2 remain OPEN.** `404` is still classified **permanent**, and
 there is still no handling of an error inside an HTTP 200 envelope. Both need
 the live probes below; a regression test (`404 stays PERMANENT pending live

@@ -132,12 +132,27 @@ and no writes to the production database.
   would then have re-run it, burning Deepgram spend each time. Fixed and pinned by
   a test.
 
-### Still open
+- **Deepgram accepts the 16-bit FLAC container — verified 2026-08-17** by one
+  authorised 30 s call through the real adapter. `metadata.duration` returned
+  exactly 30 (container parsed, not guessed), language auto-detect returned `ru`,
+  diarization and utterances produced 12 segments.
 
-- **Does Deepgram accept our FLAC container?** One ~30 s API call settles it;
-  not run, as it spends from the production Deepgram account.
-- Full end-to-end at the ceiling. Confirms only what the above already measures
-  piecewise, and costs real provider calls plus ~30–40 min of the single worker.
+### Still open — and one new risk the probe surfaced
+
+- **⚠ The realtime factor is unverified, and the 4 h gate may not be servable.**
+  The probe took **2.4 s round-trip for 30 s of audio (~12.5× realtime)**. Fitting
+  4 h in the 570 s client timeout needs **≥ 25.3×**; Deepgram's own 600 s
+  synchronous cap needs **≥ 24×**. A 30 s sample is dominated by fixed per-request
+  overhead, so 12.5× is a floor, not the steady-state rate — but the K≈100×
+  assumed in DEC-004 was never measured either. One data point cannot separate
+  fixed from variable cost: at 1.0 s fixed the extrapolation is **673 s (over
+  budget)**, at 2.0 s fixed it is 194 s (fine).
+  **Resolve with a second measurement** at a longer duration — the same 693 s
+  production recording costs ≈ $0.05 and makes the two-point fit decisive. Until
+  then, treat 4 h as unproven: the byte and memory analysis holds, but the
+  *time* budget does not yet.
+- Full end-to-end at the ceiling. Would settle the above as a side effect, but
+  costs a full 4 h of Deepgram plus kie.ai and occupies the single worker.
 
 ## Decisions
 
