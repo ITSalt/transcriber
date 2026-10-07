@@ -32,7 +32,7 @@ CANCELLED (причина).
 | [WP-FRONTEND-05](work-packages/WP-FRONTEND-05-project-memory-ui.md) | frontend | Реестр задач и решений проекта, очередь подтверждений | CANCELLED (заменён WP-WEB-MEMORY-01 (D-15)) | product-frontend | — | 2026-10-07 |
 | [WP-BACKEND-05](work-packages/WP-BACKEND-05-neo4j-prod.md) | backend | Neo4j для памяти проекта: сервис, лимиты памяти, бэкап, CI | CANCELLED (заменён WP-INFRA-01 и WP-WORKER-MEMORY-01 (D-15)) | product-backend | — | 2026-10-07 |
 | [WP-BACKEND-06](work-packages/WP-BACKEND-06-contract.md) | backend | Контракт программы: схема БД, контракты shared, зависимости | PROD | product-backend | https://github.com/ITSalt/transcriber/pull/12 (accepted 3fa3500f47) | 2026-10-07 |
-| [WP-WORKER-01](work-packages/WP-WORKER-01-context-asr-llm.md) | worker | Контекст встречи в Deepgram и в промпт протокола, метаданные генерации | REVISE | product-worker | https://github.com/ITSalt/transcriber/pull/17 | 2026-10-07 |
+| [WP-WORKER-01](work-packages/WP-WORKER-01-context-asr-llm.md) | worker | Контекст встречи в Deepgram и в промпт протокола, метаданные генерации | ACCEPTED | product-worker | https://github.com/ITSalt/transcriber/pull/17 (accepted 830af93698) | 2026-10-07 |
 | [WP-WORKER-02](work-packages/WP-WORKER-02-project-memory.md) | worker | Память проекта в Neo4j: извлечение, сопоставление, сводка | CANCELLED (создан в неверном потоке; заменён WP-WORKER-MEMORY-01 (D-15)) | product-worker | — | 2026-10-07 |
 | [WP-INFRA-01](work-packages/WP-INFRA-01-neo4j.md) | infra | Neo4j памяти проекта: сервис, лимиты, бэкап, CI, шаг деплоя | PROD | product-infra | https://github.com/ITSalt/transcriber/pull/10 (accepted 0e7ebe85d3) | 2026-10-07 |
 | [WP-WEB-PROJECTS-01](work-packages/WP-WEB-PROJECTS-01-projects-context.md) | web-projects | Проекты и форма контекста перед распознаванием | IN_PROGRESS | product-web-projects | — | 2026-10-07 |
@@ -41,7 +41,7 @@ CANCELLED (причина).
 | [WP-API-PROJECTS-01](work-packages/WP-API-PROJECTS-01-projects-context.md) | api-projects | API проектов и контекста встречи, запуск распознавания | READY | product-api-projects | — | 2026-10-07 |
 | [WP-API-FEEDBACK-01](work-packages/WP-API-FEEDBACK-01-feedback.md) | api-feedback | API версий протокола и обратной связи, разбор docx | READY | product-api-feedback | — | 2026-10-07 |
 | [WP-API-MEMORY-01](work-packages/WP-API-MEMORY-01-registry.md) | api-memory | API памяти проекта: задачи, решения, подтверждения | READY | product-api-memory | — | 2026-10-07 |
-| [WP-WORKER-MEMORY-01](work-packages/WP-WORKER-MEMORY-01-pipeline.md) | worker-memory | Память проекта в Neo4j: слой графа, извлечение, сопоставление, сводка | REVISE | product-worker-memory | https://github.com/ITSalt/transcriber/pull/16 | 2026-10-07 |
+| [WP-WORKER-MEMORY-01](work-packages/WP-WORKER-MEMORY-01-pipeline.md) | worker-memory | Память проекта в Neo4j: слой графа, извлечение, сопоставление, сводка | REVIEW | product-worker-memory | https://github.com/ITSalt/transcriber/pull/16 | 2026-10-07 |
 | [WP-INFRA-02](work-packages/WP-INFRA-02-deploy-migrate-first.md) | infra | Порядок деплоя: миграции Postgres до сборки и замены dist | PROD | product-infra | https://github.com/ITSalt/transcriber/pull/11 (accepted 6694e5e172) | 2026-10-07 |
 
 ## Ждёт владельца
@@ -113,6 +113,7 @@ R-n — действие: точная команда одной строкой 
 | 4 | transcriber | WP-BACKEND-06 | https://github.com/ITSalt/transcriber/pull/12 | — | merged |
 | 5 | transcriber | WP-FRONTEND-02 | https://github.com/ITSalt/transcriber/pull/13 | — | queued |
 | 6 | transcriber | WP-WEB-MEMORY-01 | https://github.com/ITSalt/transcriber/pull/14 | WP-FRONTEND-02 | queued |
+| 7 | transcriber | WP-WORKER-01 | https://github.com/ITSalt/transcriber/pull/17 | WP-WEB-MEMORY-01 | queued |
 
 ## Журнал
 
@@ -121,6 +122,11 @@ R-n — действие: точная команда одной строкой 
 <!-- orch:journal -->
 | Дата | WP | Событие | Подтверждение |
 |------|----|---------|---------------|
+| 2026-10-07 22:19Z | WP-WORKER-MEMORY-01 | WP-WORKER-MEMORY-01: REVISE -> REVIEW | b6561a5cf7; report reports/wp-worker-memory-01-review-20261007-r2.md |
+| 2026-10-07 22:19Z | WP-WORKER-01 | WP-WORKER-01 queued for merge (sequential) | https://github.com/ITSalt/transcriber/pull/17 |
+| 2026-10-07 22:19Z | WP-WORKER-01 | WP-WORKER-01: accepted at 830af93698b27ef103f40983dd437fd14b2b0444 | report reports/wp-worker-01-review-20261007-r2.md |
+| 2026-10-07 22:19Z | WP-WORKER-01 | WP-WORKER-01: REVIEW -> ACCEPTED | 830af93698; reports/wp-worker-01-review-20261007-r2.md |
+| 2026-10-07 22:19Z | WP-WORKER-01 | WP-WORKER-01: REVISE -> REVIEW | 830af93698; report reports/wp-worker-01-review-20261007-r2.md |
 | 2026-10-07 22:17Z | WP-BACKEND-01 | WP-BACKEND-01: UNLOCK graph — отложенная запись выполнена (UC-400-BE done, wave-15 done, FR-003 dev-complete) | сообщение product-backend |
 | 2026-10-07 22:17Z | WP-BACKEND-01 | lock transcriber:graph released | orch.py lock |
 | 2026-10-07 22:17Z | WP-BACKEND-01 | lock transcriber:graph acquired | отложенная запись UC-400-BE done / wave-15 / FR-003 dev-complete |
