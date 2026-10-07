@@ -22,7 +22,7 @@ CANCELLED (причина).
 | WP | Модуль | Название | Статус | Сессия | PR | Обновлено |
 |----|--------|----------|--------|--------|----|-----------|
 | [WP-BACKEND-01](work-packages/WP-BACKEND-01-auth-workspaces.md) | backend | Вход по PIN, рабочие пространства и изоляция данных (API+worker) | READY | product-backend | — | 2026-10-07 |
-| [WP-FRONTEND-01](work-packages/WP-FRONTEND-01-design-system.md) | frontend | Дизайн-система ITSALT и каркас приложения | DISPATCHING | product-frontend | — | 2026-10-07 |
+| [WP-FRONTEND-01](work-packages/WP-FRONTEND-01-design-system.md) | frontend | Дизайн-система ITSALT и каркас приложения | IN_PROGRESS | product-frontend | — | 2026-10-07 |
 | [WP-FRONTEND-02](work-packages/WP-FRONTEND-02-login-tasks.md) | frontend | Экран входа, переключатель пространств, список задач | READY | product-frontend | — | 2026-10-07 |
 | [WP-BACKEND-02](work-packages/WP-BACKEND-02-projects-context.md) | backend | Проекты и контекст встречи: в распознавание и в протокол | CANCELLED (заменён WP-API-PROJECTS-01 (D-15, поток api-projects)) | product-backend | — | 2026-10-07 |
 | [WP-FRONTEND-03](work-packages/WP-FRONTEND-03-projects-context-ui.md) | frontend | Проекты и форма контекста перед распознаванием | CANCELLED (заменён WP-WEB-PROJECTS-01 (D-15)) | product-frontend | — | 2026-10-07 |
@@ -111,6 +111,8 @@ R-n — действие: точная команда одной строкой 
 <!-- orch:journal -->
 | Дата | WP | Событие | Подтверждение |
 |------|----|---------|---------------|
+| 2026-10-07 17:02Z | WP-FRONTEND-01 | WP-FRONTEND-01: QUESTION (instructions sync) — ANSWER D-17 вариант (a); ждём READY | SendMessage 21ca74d7; PR #9 |
+| 2026-10-07 17:02Z | WP-FRONTEND-01 | WP-FRONTEND-01: DISPATCHING -> IN_PROGRESS | gh pr view 9: PR #9 feature/wp-frontend-01-design-system открыт сессией product-frontend, sha c8de8c2; QUESTION про instructions sync — ANSWER по D-17 (a) |
 | 2026-10-07 16:55Z | — | Дефект плагина не записан: orch.py report --check отказывает «name from orch.yaml (6 characters)» даже с однострочным логом без имён — утечку находит в собственных собранных фактах; запись bugs/PLUGIN-BUG-n отложена (два кандидата: стартовый промпт требует instructions sync вопреки концепции §2; report --check не проходит собственную анонимизацию) | orch.py report --check --log <1 строка> 2026-10-07: nothing was written |
 | 2026-10-07 16:55Z | — | R-3 opened for owner | work-packages/WP-INFRA-01-neo4j.md |
 | 2026-10-07 16:55Z | — | R-2 closed | ssh 2026-10-07: docker system df — images 2.82 GB, containers 348 MB, volumes 804 MB, reclaimable 0; journald 2.0 GB; du: /var 9.7G (/var/lib 7.1G, /var/log 2.5G), /opt 4.4G (transcrib 604M, procontent 1.4G, learn 1.2G, atech 381M, google 405M), /home 3.0G (/home/deploy 2.9G), /usr 4.2G |
