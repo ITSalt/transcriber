@@ -42,7 +42,7 @@ CANCELLED (причина).
 | [WP-API-FEEDBACK-01](work-packages/WP-API-FEEDBACK-01-feedback.md) | api-feedback | API версий протокола и обратной связи, разбор docx | READY | product-api-feedback | — | 2026-10-07 |
 | [WP-API-MEMORY-01](work-packages/WP-API-MEMORY-01-registry.md) | api-memory | API памяти проекта: задачи, решения, подтверждения | READY | product-api-memory | — | 2026-10-07 |
 | [WP-WORKER-MEMORY-01](work-packages/WP-WORKER-MEMORY-01-pipeline.md) | worker-memory | Память проекта в Neo4j: слой графа, извлечение, сопоставление, сводка | READY | product-worker-memory | — | 2026-10-07 |
-| [WP-INFRA-02](work-packages/WP-INFRA-02-deploy-migrate-first.md) | infra | Порядок деплоя: миграции Postgres до сборки и замены dist | ACCEPTED | product-infra | https://github.com/ITSalt/transcriber/pull/11 (accepted 6694e5e172) | 2026-10-07 |
+| [WP-INFRA-02](work-packages/WP-INFRA-02-deploy-migrate-first.md) | infra | Порядок деплоя: миграции Postgres до сборки и замены dist | MERGED | product-infra | https://github.com/ITSalt/transcriber/pull/11 (accepted 6694e5e172) | 2026-10-07 |
 
 ## Ждёт владельца
 
@@ -97,7 +97,6 @@ R-n — действие: точная команда одной строкой 
 | transcriber:worker/package.json | transcriber | WP-BACKEND-06 | 2026-10-07 16:48Z | — | narrowed from **/package.json: the package edits only the workspace manifests |
 | transcriber:web/package.json | transcriber | WP-BACKEND-06 | 2026-10-07 16:48Z | — | narrowed from **/package.json: the package edits only the workspace manifests |
 | transcriber:shared/package.json | transcriber | WP-BACKEND-06 | 2026-10-07 16:48Z | — | narrowed from **/package.json: the package edits only the workspace manifests |
-| transcriber:graph | transcriber | WP-BACKEND-06 | 2026-10-07 18:15Z | — | LOCK message: TECH-027 in_progress -> done + commit sha |
 
 ## Очередь слияний
 
@@ -109,7 +108,7 @@ R-n — действие: точная команда одной строкой 
 |---|-------------|----|----|--------------|--------|
 | 1 | transcriber | WP-FRONTEND-01 | https://github.com/ITSalt/transcriber/pull/9 | — | merged |
 | 2 | transcriber | WP-INFRA-01 | https://github.com/ITSalt/transcriber/pull/10 | WP-FRONTEND-01 | merged |
-| 3 | transcriber | WP-INFRA-02 | https://github.com/ITSalt/transcriber/pull/11 | — | queued |
+| 3 | transcriber | WP-INFRA-02 | https://github.com/ITSalt/transcriber/pull/11 | — | merged |
 
 ## Журнал
 
@@ -118,6 +117,10 @@ R-n — действие: точная команда одной строкой 
 <!-- orch:journal -->
 | Дата | WP | Событие | Подтверждение |
 |------|----|---------|---------------|
+| 2026-10-07 18:17Z | WP-BACKEND-06 | WP-BACKEND-06: UNLOCK graph (TECH-027 done, commit 389ac5d) | сообщение product-backend |
+| 2026-10-07 18:17Z | WP-BACKEND-06 | lock transcriber:graph released | orch.py lock |
+| 2026-10-07 18:15Z | WP-INFRA-02 | WP-INFRA-02 merged in the merge queue | orch.py deliver: b8040ccb2d |
+| 2026-10-07 18:15Z | WP-INFRA-02 | WP-INFRA-02: ACCEPTED -> MERGED | gh pr merge --squash: b8040ccb2d (https://github.com/ITSalt/transcriber/pull/11) |
 | 2026-10-07 18:15Z | WP-BACKEND-06 | WP-BACKEND-06: LOCK graph выдан повторно (TECH-027 → done, внутреннее ревью APPROVED) | сообщение product-backend; orch.py lock acquire graph |
 | 2026-10-07 18:15Z | WP-BACKEND-06 | lock transcriber:graph acquired | LOCK message: TECH-027 in_progress -> done + commit sha |
 | 2026-10-07 18:14Z | WP-INFRA-02 | WP-INFRA-02 queued for merge (sequential) | https://github.com/ITSalt/transcriber/pull/11 |
