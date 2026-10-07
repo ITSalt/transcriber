@@ -22,7 +22,7 @@ CANCELLED (причина).
 | WP | Модуль | Название | Статус | Сессия | PR | Обновлено |
 |----|--------|----------|--------|--------|----|-----------|
 | [WP-BACKEND-01](work-packages/WP-BACKEND-01-auth-workspaces.md) | backend | Вход по PIN, рабочие пространства и изоляция данных (API+worker) | READY | product-backend | — | 2026-10-07 |
-| [WP-FRONTEND-01](work-packages/WP-FRONTEND-01-design-system.md) | frontend | Дизайн-система ITSALT и каркас приложения | MERGED | product-frontend | https://github.com/ITSalt/transcriber/pull/9 (accepted 364b6b9fb8) | 2026-10-07 |
+| [WP-FRONTEND-01](work-packages/WP-FRONTEND-01-design-system.md) | frontend | Дизайн-система ITSALT и каркас приложения | VERIFIED_TEST | product-frontend | https://github.com/ITSalt/transcriber/pull/9 (accepted 364b6b9fb8) | 2026-10-07 |
 | [WP-FRONTEND-02](work-packages/WP-FRONTEND-02-login-tasks.md) | frontend | Экран входа, переключатель пространств, список задач | READY | product-frontend | — | 2026-10-07 |
 | [WP-BACKEND-02](work-packages/WP-BACKEND-02-projects-context.md) | backend | Проекты и контекст встречи: в распознавание и в протокол | CANCELLED (заменён WP-API-PROJECTS-01 (D-15, поток api-projects)) | product-backend | — | 2026-10-07 |
 | [WP-FRONTEND-03](work-packages/WP-FRONTEND-03-projects-context-ui.md) | frontend | Проекты и форма контекста перед распознаванием | CANCELLED (заменён WP-WEB-PROJECTS-01 (D-15)) | product-frontend | — | 2026-10-07 |
@@ -115,6 +115,7 @@ R-n — действие: точная команда одной строкой 
 <!-- orch:journal -->
 | Дата | WP | Событие | Подтверждение |
 |------|----|---------|---------------|
+| 2026-10-07 17:38Z | WP-FRONTEND-01 | WP-FRONTEND-01: MERGED -> VERIFIED_TEST | verify --env test e31feb393f: reports/verify-WP-FRONTEND-01-test-20261007.md |
 | 2026-10-07 17:36Z | WP-BACKEND-06 | WP-BACKEND-06: UNLOCK graph — сессия сообщает: ADR-013, FR-003..006, DEC-006..009, модули, сущности, enum, UC-400..605, TECH-027 записаны в граф | сообщение product-backend; проверка ADR-013 read-cypher ниже |
 | 2026-10-07 17:36Z | WP-BACKEND-06 | lock transcriber:graph released | orch.py lock |
 | 2026-10-07 17:36Z | WP-FRONTEND-01 | WP-FRONTEND-01 merged in the merge queue; released transcriber:web/src/App.tsx, transcriber:web/src/i18n/** | orch.py deliver: e31feb393f |
