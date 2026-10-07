@@ -22,7 +22,7 @@ CANCELLED (причина).
 | WP | Модуль | Название | Статус | Сессия | PR | Обновлено |
 |----|--------|----------|--------|--------|----|-----------|
 | [WP-BACKEND-01](work-packages/WP-BACKEND-01-auth-workspaces.md) | backend | Вход по PIN, рабочие пространства и изоляция данных (API+worker) | READY | product-backend | — | 2026-10-07 |
-| [WP-FRONTEND-01](work-packages/WP-FRONTEND-01-design-system.md) | frontend | Дизайн-система ITSALT и каркас приложения | REVISE | product-frontend | https://github.com/ITSalt/transcriber/pull/9 | 2026-10-07 |
+| [WP-FRONTEND-01](work-packages/WP-FRONTEND-01-design-system.md) | frontend | Дизайн-система ITSALT и каркас приложения | ACCEPTED | product-frontend | https://github.com/ITSalt/transcriber/pull/9 (accepted 364b6b9fb8) | 2026-10-07 |
 | [WP-FRONTEND-02](work-packages/WP-FRONTEND-02-login-tasks.md) | frontend | Экран входа, переключатель пространств, список задач | READY | product-frontend | — | 2026-10-07 |
 | [WP-BACKEND-02](work-packages/WP-BACKEND-02-projects-context.md) | backend | Проекты и контекст встречи: в распознавание и в протокол | CANCELLED (заменён WP-API-PROJECTS-01 (D-15, поток api-projects)) | product-backend | — | 2026-10-07 |
 | [WP-FRONTEND-03](work-packages/WP-FRONTEND-03-projects-context-ui.md) | frontend | Проекты и форма контекста перед распознаванием | CANCELLED (заменён WP-WEB-PROJECTS-01 (D-15)) | product-frontend | — | 2026-10-07 |
@@ -108,6 +108,7 @@ R-n — действие: точная команда одной строкой 
 <!-- orch:merge -->
 | # | Репозиторий | WP | PR | Rebase после | Статус |
 |---|-------------|----|----|--------------|--------|
+| 1 | transcriber | WP-FRONTEND-01 | https://github.com/ITSalt/transcriber/pull/9 | — | queued |
 
 ## Журнал
 
@@ -116,6 +117,11 @@ R-n — действие: точная команда одной строкой 
 <!-- orch:journal -->
 | Дата | WP | Событие | Подтверждение |
 |------|----|---------|---------------|
+| 2026-10-07 17:25Z | WP-FRONTEND-01 | WP-FRONTEND-01 queued for merge (sequential) | https://github.com/ITSalt/transcriber/pull/9 |
+| 2026-10-07 17:25Z | WP-FRONTEND-01 | WP-FRONTEND-01: accepted at 364b6b9fb88fa04d81e2708cbd292c860062affa | report reports/wp-frontend-01-review-20261007-r2.md |
+| 2026-10-07 17:25Z | WP-FRONTEND-01 | WP-FRONTEND-01: REVIEW -> ACCEPTED | 364b6b9fb8; reports/wp-frontend-01-review-20261007-r2.md |
+| 2026-10-07 17:23Z | WP-FRONTEND-01 | WP-FRONTEND-01: REVISE -> REVIEW | 364b6b9fb8; report reports/wp-frontend-01-review-20261007-r2.md |
+| 2026-10-07 17:20Z | WP-INFRA-01 | WP-INFRA-01: живая проверка в одноразовом клоне (278863f, docker via sg): memory-neo4j healthy через ~60 с; docker inspect Memory=1610612736, restart unless-stopped, порты 127.0.0.1:7475/7688; SHOW SETTINGS: heap 512/512 MiB, pagecache 256 MiB, transaction.total.max 256 MiB, -XX:+ExitOnOutOfMemoryError добавлен к server.jvm.additional; neo4j-backup.sh: дамп успешен, neo4j-<ts>.dump.gz записан; восстановление — повторный прогон с ожиданием готовности | tasks/b46og3s5u.output 2026-10-07 17:19Z |
 | 2026-10-07 17:18Z | — | R-7 opened for owner | reports/wp-infra-01-review-20261007.md |
 | 2026-10-07 17:18Z | — | P-13 opened for owner | reports/wp-infra-01-review-20261007.md |
 | 2026-10-07 17:17Z | — | R-4 closed | sg docker -c 'docker ps' под cloudpc 2026-10-07: список контейнеров без permission denied; docker compose 2.37.1 |
