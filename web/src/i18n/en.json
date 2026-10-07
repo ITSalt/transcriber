@@ -9,6 +9,10 @@
     "upload": "Upload",
     "back": "Back"
   },
+  "shell": {
+    "brand": "Transcrib",
+    "navLabel": "Main navigation"
+  },
   "nav": {
     "catalog": "Meetings",
     "upload": "Upload"

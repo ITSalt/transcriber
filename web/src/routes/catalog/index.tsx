@@ -53,7 +53,9 @@ export default function CatalogPage() {
       {isError && (
         <div data-testid="catalog-error">
           <p>{t("common.error")}</p>
-          <button onClick={() => refetch()}>{t("common.retry")}</button>
+          <Button variant="outline" onClick={() => refetch()}>
+            {t("common.retry")}
+          </Button>
         </div>
       )}
 
