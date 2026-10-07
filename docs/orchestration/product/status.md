@@ -118,6 +118,7 @@ R-n — действие: точная команда одной строкой 
 <!-- orch:journal -->
 | Дата | WP | Событие | Подтверждение |
 |------|----|---------|---------------|
+| 2026-10-07 18:44Z | WP-BACKEND-01 | Из ревью WP-BACKEND-06 (L1, L2) в WP-BACKEND-01 и WP-WORKER-01 вписаны обязательства: снятие DEFAULT/NOT NULL на meetings.workspace_id, сверка ProtocolVersion по FR-005:59-78, down.sql для своих миграций | reports/wp-backend-06-review-20261007.md; safe_edit WP-BACKEND-01, WP-WORKER-01 п. 8 |
 | 2026-10-07 18:44Z | WP-BACKEND-06 | WP-BACKEND-06: REVIEW -> REVISE | reports/wp-backend-06-review-20261007.md: 1 пункт — down.sql и правило восстановления для нетранзакционной миграции (условие merge по D-3); остальное принято, миграция и совместимость подтверждены на postgres:16 |
 | 2026-10-07 18:25Z | WP-BACKEND-06 | WP-BACKEND-06: READY 8de4cd4, PR #12 (40 файлов, +3810/−44; миграция 20261007120000_program_product_schema); review-start: 3 файла вне путей (api/src/features/index.ts — разрешён шапкой пакета; worker/src/job-processor.modules.test.ts; worker/tsconfig.json); ревьюер запущен; R-8 бэкап БД (блокирует доставку) | orch.py review-start; gh pr view 12; CI 37666044596 pass |
 | 2026-10-07 18:25Z | — | R-8 opened for owner | work-packages/WP-BACKEND-06-contract.md |
