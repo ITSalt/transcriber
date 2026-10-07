@@ -125,6 +125,45 @@ export async function register(ctx) {
     expect(await getProjectMemoryProvider().getPromptMemory('p', 'w')).toBeNull()
   })
 
+  it('a failed module still gets its registered shutdown hooks run once (e.g. close the driver it opened)', async () => {
+    const base = moduleDir('memory', `
+export async function register(ctx) {
+  globalThis.__cleanupRuns = 0
+  ctx.onShutdown(() => { globalThis.__cleanupRuns += 1 })
+  throw new Error('schema check failed')
+}
+`, 'index.js')
+    const loaded = await loadWorkerModules(connection, log, { baseDir: base })
+    expect(loaded.failed).toEqual(['memory'])
+    expect(loaded.shutdownHooks).toHaveLength(0)
+    expect((globalThis as Record<string, unknown>)['__cleanupRuns']).toBe(1)
+  })
+
+  it('a register() that hangs is timed out and rolled back; its late calls are refused or released', async () => {
+    // The module blocks on a gate the test opens only AFTER the loader gave up — no timing races.
+    const g = globalThis as Record<string, unknown>
+    let openGate!: () => void
+    g['__gate'] = new Promise<void>((r) => { openGate = r })
+    const finished = new Promise<void>((r) => { g['__lateDone'] = r })
+    const base = moduleDir('memory', `
+export async function register(ctx) {
+  await globalThis.__gate
+  ctx.setProjectMemoryProvider({ getPromptMemory: async () => 'too late' })
+  ctx.addWorker({ close: async () => { globalThis.__lateWorkerClosed = true } })
+  ctx.onShutdown(() => { globalThis.__lateHookRan = true })
+  globalThis.__lateDone()
+}
+`, 'index.js')
+    const loaded = await loadWorkerModules(connection, log, { baseDir: base, timeoutMs: 50 })
+    expect(loaded).toMatchObject({ names: [], failed: ['memory'], workers: [], shutdownHooks: [] })
+    openGate()
+    await finished
+    await new Promise((r) => setTimeout(r, 0))
+    expect(await getProjectMemoryProvider().getPromptMemory('p', 'w')).toBeNull()
+    expect(g['__lateWorkerClosed']).toBe(true)
+    expect(g['__lateHookRan']).toBe(true)
+  })
+
   it('a module that fails to import is skipped', async () => {
     const base = moduleDir('memory', 'import "definitely-not-a-package-xyz"; export function register() {}', 'index.js')
     expect((await loadWorkerModules(connection, log, { baseDir: base })).failed).toEqual(['memory'])

@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "build": "rimraf dist tsconfig.tsbuildinfo && tsc --build && node -e \"require('fs').cpSync('src/llm/prompts', 'dist/llm/prompts', { recursive: true })\"",
+    "build": "rimraf dist/memory tsconfig.tsbuildinfo && tsc --build && node -e \"require('fs').cpSync('src/llm/prompts', 'dist/llm/prompts', { recursive: true })\"",
     "dev": "tsc --build --watch",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",

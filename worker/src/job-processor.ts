@@ -113,6 +113,13 @@ export function createWorkers(connection: ConnectionOptions, log: Logger): Worke
 
 export const WORKER_MODULES = ['memory'] as const
 
+/**
+ * A module's import + register() must finish within this time. Modules load BEFORE the
+ * core workers start, so a register() that hangs (e.g. waiting on an unreachable Neo4j)
+ * must not keep transcription and protocols from running (ADR-013).
+ */
+export const MODULE_REGISTER_TIMEOUT_MS = 15_000
+
 export interface ProtocolJobCompletedEvent {
   /** ProtocolGenerationJob.id — resolve meeting / project / workspace from it */
   protocolGenerationJobId: string
@@ -193,19 +200,27 @@ export interface LoadedWorkerModules {
  * module's provider is in place before the first job is taken.
  *
  * A module is optional by design (ADR-013: nothing else depends on project memory), so a
- * module whose import or register() fails is logged and rolled back — its workers closed,
- * its listeners removed, the previous ProjectMemoryProvider restored, its shutdown hooks
- * dropped — and the worker process keeps serving transcription and protocols.
+ * module whose import or register() fails or exceeds the timeout is logged and rolled
+ * back — its workers closed, its listeners removed, the previous ProjectMemoryProvider
+ * restored, the shutdown hooks it registered run once — and the worker process keeps
+ * serving transcription and protocols.
  *
  * @param baseDir directory that holds the module folders (default: this file's directory)
  */
 export async function loadWorkerModules(
   connection: ConnectionOptions,
   log: Logger,
-  options: { baseDir?: string; modules?: readonly string[]; events?: WorkerEventBus } = {},
+  options: {
+    baseDir?: string
+    modules?: readonly string[]
+    events?: WorkerEventBus
+    /** max time for one module's import + register(); default MODULE_REGISTER_TIMEOUT_MS */
+    timeoutMs?: number
+  } = {},
 ): Promise<LoadedWorkerModules> {
   const baseDir = options.baseDir ?? fileURLToPath(new URL('.', import.meta.url))
   const bus = options.events ?? workerEvents
+  const timeoutMs = options.timeoutMs ?? MODULE_REGISTER_TIMEOUT_MS
   const loaded: LoadedWorkerModules = { names: [], failed: [], workers: [], shutdownHooks: [] }
 
   for (const name of options.modules ?? WORKER_MODULES) {
@@ -216,7 +231,11 @@ export async function loadWorkerModules(
     const hooks: Array<() => Promise<void> | void> = []
     const unsubscribe: Array<() => void> = []
     const providerBefore = getProjectMemoryProvider()
-    try {
+    // After a rollback the module may still be running (a register() that timed out):
+    // from then on its ctx calls are refused, and late workers are closed at once.
+    let rolledBack = false
+
+    const register = async (): Promise<void> => {
       const mod = (await import(pathToFileURL(file).href)) as {
         register?: (ctx: WorkerModuleContext) => Promise<void> | void
       }
@@ -228,25 +247,65 @@ export async function loadWorkerModules(
         log: log.child({ module: name }),
         events: {
           on: (event, listener) => {
+            if (rolledBack) return
             unsubscribe.push(() => bus.off(event, listener))
             bus.on(event, listener)
           },
         },
-        addWorker: (w) => workers.push(w),
-        onShutdown: (hook) => hooks.push(hook),
+        addWorker: (w) => {
+          if (rolledBack) {
+            void w.close().catch(() => undefined)
+            return
+          }
+          workers.push(w)
+        },
+        onShutdown: (hook) => {
+          if (!rolledBack) {
+            hooks.push(hook)
+            return
+          }
+          // registered after a timeout rollback: release it now, like a late worker
+          void Promise.resolve()
+            .then(hook)
+            .catch((err: unknown) => log.error({ err, module: name }, 'late worker module cleanup failed'))
+        },
         setProjectMemoryProvider: (p) => {
-          setProjectMemoryProvider(p)
+          if (!rolledBack) setProjectMemoryProvider(p)
         },
       })
+    }
+
+    let timer: ReturnType<typeof setTimeout> | undefined
+    try {
+      await Promise.race([
+        register(),
+        new Promise<never>((_, reject) => {
+          timer = setTimeout(
+            () => reject(new Error(`worker module "${name}": register() did not finish within ${timeoutMs} ms`)),
+            timeoutMs,
+          )
+        }),
+      ])
       loaded.names.push(name)
       loaded.workers.push(...workers)
       loaded.shutdownHooks.push(...hooks)
     } catch (err) {
-      log.error({ err, module: name }, 'worker module failed to load — skipped, core pipelines continue')
+      rolledBack = true
+      log.error({ err, module: name }, 'worker module failed to load — rolled back and skipped, core pipelines continue')
       for (const off of unsubscribe) off()
       setProjectMemoryProvider(providerBefore)
       await Promise.allSettled(workers.map((w) => w.close()))
+      // release what the module already opened (e.g. a Neo4j driver), best effort
+      for (const hook of hooks) {
+        try {
+          await hook()
+        } catch (hookErr) {
+          log.error({ err: hookErr, module: name }, 'worker module cleanup after a failed load failed')
+        }
+      }
       loaded.failed.push(name)
+    } finally {
+      clearTimeout(timer)
     }
   }
   return loaded
