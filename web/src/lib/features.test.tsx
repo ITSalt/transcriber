@@ -25,10 +25,10 @@ function renderAt(path: string, registry = featureRegistry) {
 
 describe("feature auto-registration (D-15)", () => {
   it("picks up features/*/index.ts through the glob (shell feature)", () => {
-    expect(featureRegistry.navItems.map((n) => n.to)).toEqual([
-      "/catalog",
-      "/upload",
-    ]);
+    // Contains, not equals: other features add their own items (D-15).
+    expect(featureRegistry.navItems.map((n) => n.to)).toEqual(
+      expect.arrayContaining(["/catalog", "/upload"]),
+    );
   });
 
   it("a temporary feature contributes route, nav item and slot without touching App.tsx", () => {
@@ -56,7 +56,8 @@ describe("feature auto-registration (D-15)", () => {
   });
 
   it("renders existing pages inside AppShell with an empty header.right slot", () => {
-    renderAt("/catalog");
+    // Explicit registry: independent of which features exist globally.
+    renderAt("/catalog", collectFeatures({}));
     const shell = screen.getByTestId("app-shell");
     expect(shell).toContainElement(screen.getByTestId("catalog-page"));
     expect(screen.getByTestId("slot-header-right")).toBeEmptyDOMElement();

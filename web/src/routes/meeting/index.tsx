@@ -4,6 +4,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { apiGet } from "@/lib/api";
 import { MeetingDetailResponse } from "@transcrib/shared";
+import { Button } from "@/components/ui/button";
 import { SlotOutlet } from "@/components/layout/slot";
 import { MetadataCard } from "./components/MetadataCard";
 import { StatusSection } from "./components/StatusSection";
@@ -58,7 +59,9 @@ export default function MeetingDetailPage() {
       {isError && (
         <div data-testid="meeting-detail-error">
           <p>{t("common.error")}</p>
-          <button onClick={() => refetch()}>{t("common.retry")}</button>
+          <Button variant="outline" onClick={() => refetch()}>
+            {t("common.retry")}
+          </Button>
         </div>
       )}
 
