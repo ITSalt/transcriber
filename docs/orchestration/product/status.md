@@ -22,7 +22,7 @@ CANCELLED (причина).
 | WP | Модуль | Название | Статус | Сессия | PR | Обновлено |
 |----|--------|----------|--------|--------|----|-----------|
 | [WP-BACKEND-01](work-packages/WP-BACKEND-01-auth-workspaces.md) | backend | Вход по PIN, рабочие пространства и изоляция данных (API+worker) | READY | product-backend | — | 2026-10-07 |
-| [WP-FRONTEND-01](work-packages/WP-FRONTEND-01-design-system.md) | frontend | Дизайн-система ITSALT и каркас приложения | IN_PROGRESS | product-frontend | — | 2026-10-07 |
+| [WP-FRONTEND-01](work-packages/WP-FRONTEND-01-design-system.md) | frontend | Дизайн-система ITSALT и каркас приложения | REVIEW | product-frontend | https://github.com/ITSalt/transcriber/pull/9 | 2026-10-07 |
 | [WP-FRONTEND-02](work-packages/WP-FRONTEND-02-login-tasks.md) | frontend | Экран входа, переключатель пространств, список задач | READY | product-frontend | — | 2026-10-07 |
 | [WP-BACKEND-02](work-packages/WP-BACKEND-02-projects-context.md) | backend | Проекты и контекст встречи: в распознавание и в протокол | CANCELLED (заменён WP-API-PROJECTS-01 (D-15, поток api-projects)) | product-backend | — | 2026-10-07 |
 | [WP-FRONTEND-03](work-packages/WP-FRONTEND-03-projects-context-ui.md) | frontend | Проекты и форма контекста перед распознаванием | CANCELLED (заменён WP-WEB-PROJECTS-01 (D-15)) | product-frontend | — | 2026-10-07 |
@@ -34,7 +34,7 @@ CANCELLED (причина).
 | [WP-BACKEND-06](work-packages/WP-BACKEND-06-contract.md) | backend | Контракт программы: схема БД, контракты shared, зависимости | IN_PROGRESS | product-backend | — | 2026-10-07 |
 | [WP-WORKER-01](work-packages/WP-WORKER-01-context-asr-llm.md) | worker | Контекст встречи в Deepgram и в промпт протокола, метаданные генерации | READY | product-worker | — | 2026-10-07 |
 | [WP-WORKER-02](work-packages/WP-WORKER-02-project-memory.md) | worker | Память проекта в Neo4j: извлечение, сопоставление, сводка | CANCELLED (создан в неверном потоке; заменён WP-WORKER-MEMORY-01 (D-15)) | product-worker | — | 2026-10-07 |
-| [WP-INFRA-01](work-packages/WP-INFRA-01-neo4j.md) | infra | Neo4j памяти проекта: сервис, лимиты, бэкап, CI, шаг деплоя | IN_PROGRESS | product-infra | — | 2026-10-07 |
+| [WP-INFRA-01](work-packages/WP-INFRA-01-neo4j.md) | infra | Neo4j памяти проекта: сервис, лимиты, бэкап, CI, шаг деплоя | REVIEW | product-infra | https://github.com/ITSalt/transcriber/pull/10 | 2026-10-07 |
 | [WP-WEB-PROJECTS-01](work-packages/WP-WEB-PROJECTS-01-projects-context.md) | web-projects | Проекты и форма контекста перед распознаванием | READY | product-web-projects | — | 2026-10-07 |
 | [WP-WEB-FEEDBACK-01](work-packages/WP-WEB-FEEDBACK-01-feedback.md) | web-feedback | Режим обратной связи по протоколу | READY | product-web-feedback | — | 2026-10-07 |
 | [WP-WEB-MEMORY-01](work-packages/WP-WEB-MEMORY-01-registry.md) | web-memory | Реестр задач и решений проекта, очередь подтверждений | READY | product-web-memory | — | 2026-10-07 |
@@ -111,6 +111,8 @@ R-n — действие: точная команда одной строкой 
 <!-- orch:journal -->
 | Дата | WP | Событие | Подтверждение |
 |------|----|---------|---------------|
+| 2026-10-07 17:04Z | WP-INFRA-01 | WP-INFRA-01: IN_PROGRESS -> REVIEW | 278863f54e; report reports/wp-infra-01-review-20261007.md |
+| 2026-10-07 17:03Z | WP-FRONTEND-01 | WP-FRONTEND-01: IN_PROGRESS -> REVIEW | c8de8c2e8c; report reports/wp-frontend-01-review-20261007.md |
 | 2026-10-07 17:02Z | WP-FRONTEND-01 | WP-FRONTEND-01: QUESTION (instructions sync) — ANSWER D-17 вариант (a); ждём READY | SendMessage 21ca74d7; PR #9 |
 | 2026-10-07 17:02Z | WP-FRONTEND-01 | WP-FRONTEND-01: DISPATCHING -> IN_PROGRESS | gh pr view 9: PR #9 feature/wp-frontend-01-design-system открыт сессией product-frontend, sha c8de8c2; QUESTION про instructions sync — ANSWER по D-17 (a) |
 | 2026-10-07 16:55Z | — | Дефект плагина не записан: orch.py report --check отказывает «name from orch.yaml (6 characters)» даже с однострочным логом без имён — утечку находит в собственных собранных фактах; запись bugs/PLUGIN-BUG-n отложена (два кандидата: стартовый промпт требует instructions sync вопреки концепции §2; report --check не проходит собственную анонимизацию) | orch.py report --check --log <1 строка> 2026-10-07: nothing was written |
