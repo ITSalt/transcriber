@@ -42,7 +42,7 @@ CANCELLED (причина).
 | [WP-API-FEEDBACK-01](work-packages/WP-API-FEEDBACK-01-feedback.md) | api-feedback | API версий протокола и обратной связи, разбор docx | READY | product-api-feedback | — | 2026-10-07 |
 | [WP-API-MEMORY-01](work-packages/WP-API-MEMORY-01-registry.md) | api-memory | API памяти проекта: задачи, решения, подтверждения | READY | product-api-memory | — | 2026-10-07 |
 | [WP-WORKER-MEMORY-01](work-packages/WP-WORKER-MEMORY-01-pipeline.md) | worker-memory | Память проекта в Neo4j: слой графа, извлечение, сопоставление, сводка | READY | product-worker-memory | — | 2026-10-07 |
-| [WP-INFRA-02](work-packages/WP-INFRA-02-deploy-migrate-first.md) | infra | Порядок деплоя: миграции Postgres до сборки и замены dist | MERGED | product-infra | https://github.com/ITSalt/transcriber/pull/11 (accepted 6694e5e172) | 2026-10-07 |
+| [WP-INFRA-02](work-packages/WP-INFRA-02-deploy-migrate-first.md) | infra | Порядок деплоя: миграции Postgres до сборки и замены dist | PROD | product-infra | https://github.com/ITSalt/transcriber/pull/11 (accepted 6694e5e172) | 2026-10-07 |
 
 ## Ждёт владельца
 
@@ -117,6 +117,9 @@ R-n — действие: точная команда одной строкой 
 <!-- orch:journal -->
 | Дата | WP | Событие | Подтверждение |
 |------|----|---------|---------------|
+| 2026-10-07 18:19Z | WP-INFRA-02 | WP-INFRA-02: доставлен на прод — merge b8040ccb2d (squash), Deploy to Production success, verify --env prod PASS; в логе деплоя миграции (No pending migrations) раньше сборки shared | reports/verify-WP-INFRA-02-prod-20261007.md; gh run 37665495025 |
+| 2026-10-07 18:18Z | WP-INFRA-02 | WP-INFRA-02: VERIFIED_TEST -> PROD | verify --env prod b8040ccb2d: reports/verify-WP-INFRA-02-prod-20261007.md |
+| 2026-10-07 18:18Z | WP-INFRA-02 | WP-INFRA-02: MERGED -> VERIFIED_TEST | verify --env test b8040ccb2d: reports/verify-WP-INFRA-02-test-20261007.md |
 | 2026-10-07 18:17Z | WP-BACKEND-06 | WP-BACKEND-06: UNLOCK graph (TECH-027 done, commit 389ac5d) | сообщение product-backend |
 | 2026-10-07 18:17Z | WP-BACKEND-06 | lock transcriber:graph released | orch.py lock |
 | 2026-10-07 18:15Z | WP-INFRA-02 | WP-INFRA-02 merged in the merge queue | orch.py deliver: b8040ccb2d |
