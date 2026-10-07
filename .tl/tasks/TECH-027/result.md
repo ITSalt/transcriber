@@ -50,3 +50,11 @@
 ## Final review — APPROVED
 
 Third pass: R1–R4 verified fixed. Its two nits are applied: a shutdown hook registered after a timeout rollback is released immediately (like a late worker); the "hangs" test is driven by a gate the test opens itself, no wall-clock races. Gate: web `RQ-008` fails identically on untouched `origin/main` (2.5 GiB Blob allocation on this machine) — not caused by this branch.
+
+## REVISE 1 (orchestrator review, 2026-10-07) — reversible migration
+
+Finding: Prisma applies `migration.sql` non-transactionally; a mid-file failure leaves objects behind and `migrate resolve --rolled-back` + retry fails (`type "ParticipantSide" already exists`).
+
+- `api/prisma/migrations/20261007120000_program_product_schema/down.sql` — the reviewer's verified script, plus a guard: refuses atomically while a meeting is in `AWAITING_START`. One transaction, `IF EXISTS` everywhere, recreates `MeetingStatus` in its old form, deletes the migration's `_prisma_migrations` row.
+- `.tl/deploy-plan.md` §5 Rollback model — rule: on a failed/undone run of this migration, `psql -f down.sql` first, then `migrate deploy`; `pg_dump` restore only if `down.sql` fails.
+- `api/test/program-schema.down.db.test.ts` (3 tests, own throw-away databases): full apply → down → catalog identical to a reference DB built from the 5 earlier migrations, old meetings/protocols kept, idempotent second run, re-apply + `migrate diff` exit 0, backfills re-done; AWAITING_START guard leaves the schema untouched; partially applied + failed migration blocks `migrate deploy`, down unblocks it, re-apply succeeds. Mutations caught: no enum recreation (2 red), no `_prisma_migrations` delete (3 red).
