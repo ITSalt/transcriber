@@ -43,16 +43,33 @@ export const ProjectParticipant = z.object({
 });
 export type ProjectParticipant = z.infer<typeof ProjectParticipant>;
 
-export const ParticipantInput = z.object({
+// Field schemas WITHOUT defaults: the create schema adds defaults, the PATCH schema must
+// not (in Zod 4 an optional field still applies its inner default, so .partial() of a
+// defaulted schema would reset omitted fields on update).
+const participantFields = {
   name: shortText(PARTICIPANT_NAME_MAX),
-  aliases: z.array(shortText(PARTICIPANT_NAME_MAX)).max(PARTICIPANT_ALIASES_MAX).default([]),
-  role: shortText(PARTICIPANT_NAME_MAX).nullable().optional(),
-  organization: shortText(PARTICIPANT_NAME_MAX).nullable().optional(),
-  side: ParticipantSide.default('OTHER'),
+  aliases: z.array(shortText(PARTICIPANT_NAME_MAX)).max(PARTICIPANT_ALIASES_MAX),
+  role: shortText(PARTICIPANT_NAME_MAX).nullable(),
+  organization: shortText(PARTICIPANT_NAME_MAX).nullable(),
+  side: ParticipantSide,
+};
+
+const nonEmpty = (v: object) => Object.keys(v).length > 0;
+
+export const ParticipantInput = z.object({
+  ...participantFields,
+  aliases: participantFields.aliases.default([]),
+  role: participantFields.role.optional(),
+  organization: participantFields.organization.optional(),
+  side: participantFields.side.default('OTHER'),
 });
 export type ParticipantInput = z.input<typeof ParticipantInput>;
 
-export const ParticipantUpdate = ParticipantInput.partial();
+/** PATCH body: only the keys that were sent come out of parse(). */
+export const ParticipantUpdate = z
+  .object(participantFields)
+  .partial()
+  .refine(nonEmpty, { message: 'nothing to update' });
 export type ParticipantUpdate = z.input<typeof ParticipantUpdate>;
 
 export const GlossaryTerm = z.object({
@@ -65,15 +82,26 @@ export const GlossaryTerm = z.object({
 });
 export type GlossaryTerm = z.infer<typeof GlossaryTerm>;
 
-export const GlossaryTermInput = z.object({
+const glossaryFields = {
   term: shortText(GLOSSARY_TERM_MAX),
-  variants: z.array(shortText(GLOSSARY_TERM_MAX)).max(GLOSSARY_VARIANTS_MAX).default([]),
-  definition: shortText(GLOSSARY_DEFINITION_MAX).nullable().optional(),
-  asr_keyterm: z.boolean().default(false),
+  variants: z.array(shortText(GLOSSARY_TERM_MAX)).max(GLOSSARY_VARIANTS_MAX),
+  definition: shortText(GLOSSARY_DEFINITION_MAX).nullable(),
+  asr_keyterm: z.boolean(),
+};
+
+export const GlossaryTermInput = z.object({
+  ...glossaryFields,
+  variants: glossaryFields.variants.default([]),
+  definition: glossaryFields.definition.optional(),
+  asr_keyterm: glossaryFields.asr_keyterm.default(false),
 });
 export type GlossaryTermInput = z.input<typeof GlossaryTermInput>;
 
-export const GlossaryTermUpdate = GlossaryTermInput.partial();
+/** PATCH body: only the keys that were sent come out of parse(). */
+export const GlossaryTermUpdate = z
+  .object(glossaryFields)
+  .partial()
+  .refine(nonEmpty, { message: 'nothing to update' });
 export type GlossaryTermUpdate = z.input<typeof GlossaryTermUpdate>;
 
 export const ProjectSummary = z.object({
@@ -117,7 +145,7 @@ export const ProjectUpdateRequest = z
     description: shortText(PROJECT_DESCRIPTION_MAX).nullable(),
   })
   .partial()
-  .refine((v) => Object.keys(v).length > 0, { message: 'nothing to update' });
+  .refine(nonEmpty, { message: 'nothing to update' });
 export type ProjectUpdateRequest = z.infer<typeof ProjectUpdateRequest>;
 
 /** Current version of the newest protocol among the project's meetings. */

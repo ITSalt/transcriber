@@ -48,10 +48,40 @@ is bound to the version it was given on.
 
 ## Known transition gap
 
-The pre-program code keeps writing `Protocol` without versions until WP-WORKER-01 /
-WP-BACKEND-01 ship. Consumers must treat "Protocol without versions" as an implicit v1 or
-re-run the idempotent backfill (the `INSERT … ON CONFLICT DO NOTHING` block of migration
-`20261007120000_program_product_schema`) in their own migration.
+The pre-program code keeps running until WP-WORKER-01 / WP-BACKEND-01 ship, and it writes
+`Protocol` without versions in two ways: the worker creates new protocols, and the UC-301
+save path (`api/src/services/uc-301.service.ts`) overwrites `markdown_content` of protocols
+that already have a backfilled v1. Re-running the `ON CONFLICT DO NOTHING` backfill covers
+only the first case. **The first consumer migration that starts writing versions
+(WP-BACKEND-01 for USER_EDIT, WP-WORKER-01 for GENERATED — whichever merges first, the
+other re-runs it harmlessly) must reconcile both**, in this order, before its code ships:
+
+```sql
+-- 1. protocols with no version at all → v1 (same rule as the original backfill)
+INSERT INTO "protocol_versions" ("id", "meeting_id", "n", "kind", "markdown", "created_at")
+SELECT gen_random_uuid(), p."meeting_id", 1,
+       (CASE WHEN p."edit_count" > 0 THEN 'LEGACY' ELSE 'GENERATED' END)::"ProtocolVersionKind",
+       p."markdown_content", COALESCE(p."last_edited_at", p."generated_at")
+FROM "protocols" p
+ON CONFLICT ("meeting_id", "n") DO NOTHING;
+
+-- 2. protocols whose current text differs from their latest version → next LEGACY version
+INSERT INTO "protocol_versions" ("id", "meeting_id", "n", "kind", "markdown", "created_at")
+SELECT gen_random_uuid(), p."meeting_id", v."n" + 1, 'LEGACY'::"ProtocolVersionKind",
+       p."markdown_content", COALESCE(p."last_edited_at", p."updated_at")
+FROM "protocols" p
+JOIN LATERAL (
+  SELECT pv."n", pv."markdown" FROM "protocol_versions" pv
+  WHERE pv."meeting_id" = p."meeting_id" ORDER BY pv."n" DESC LIMIT 1
+) v ON true
+WHERE v."markdown" <> p."markdown_content"
+ON CONFLICT ("meeting_id", "n") DO NOTHING;
+```
+
+After that the invariant holds: the latest `ProtocolVersion.markdown` of every meeting
+equals `Protocol.markdown_content`, so feedback bound to `current_n` refers to the text the
+user sees. Until then, the API must compute `current_n` from the latest version only when
+its markdown matches `Protocol.markdown_content`.
 
 ## Decisions
 

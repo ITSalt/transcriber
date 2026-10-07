@@ -1,7 +1,8 @@
 /**
  * WP-BACKEND-06 AC-4 — a feature folder with routes.ts is registered without editing
- * server.ts. Covers the registry in isolation (temp dir) and through the real buildApp()
- * with a temporary folder inside api/src/features.
+ * server.ts. Covers the registry in isolation and through the real buildApp(), both with
+ * temporary feature roots under os.tmpdir() (never inside src/, which parallel test files
+ * that call buildApp() would see half-written).
  */
 import { describe, it, expect, vi, afterEach } from 'vitest'
 import { mkdtempSync, mkdirSync, writeFileSync, rmSync } from 'node:fs'

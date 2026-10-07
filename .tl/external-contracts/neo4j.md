@@ -23,7 +23,7 @@
 | Field | Value |
 |---|---|
 | **Base URL** | `bolt://` / `neo4j://` URI from `MEMORY_NEO4J_URI` (bound to localhost on the prod VM; WP-INFRA-01) |
-| **All endpoints** | Bolt sessions only, via `neo4j-driver` (dependency of `@transcrib/shared`, added by WP-BACKEND-06). No HTTP API is used. |
+| **All endpoints** | Bolt sessions only, via `neo4j-driver@^6` — a dependency of `@transcrib/worker`, `@transcrib/api` **and** `@transcrib/shared` (all added by WP-BACKEND-06; `.npmrc` has `shamefully-hoist=false`, so each package that imports the driver declares it). No HTTP API is used. |
 | **Discovery** | `static-catalog` |
 | **Versioning** | Neo4j 5.x server; driver `neo4j-driver@^6`. Schema (constraints/indexes) applied by the `graph:migrate` script of `worker/` (WP-WORKER-MEMORY-01). |
 
@@ -38,8 +38,18 @@
 
 ## 4. Request shape
 
-Only the access layer (`worker/src/graph`, WP-WORKER-MEMORY-01; the API reads through the
-same layer) talks to Neo4j. Hard rules for every query:
+Where the code lives (WP-WORKER-MEMORY-01 decides the internals):
+
+- **Shared queries** — `shared/src/memory/index.ts`, published as the separate entry point
+  `@transcrib/shared/memory` (`shared/package.json` `exports["./memory"]`, added by
+  WP-BACKEND-06). It is **never** re-exported from `shared/src/index.ts`, so the web bundle
+  never pulls `neo4j-driver`. Both api and worker import their Cypher and mappers from here.
+- **Worker side** — `worker/src/graph` (driver lifecycle, writes, outbox drain) and
+  `worker/src/memory` (pipeline, `register(ctx)`).
+- **API side** — `api/src/features/memory` (reads + confirm/reject/PATCH) with its own
+  driver instance from the same env.
+
+Hard rules for every query:
 
 | Rule | Value |
 |---|---|

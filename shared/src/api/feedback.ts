@@ -123,7 +123,9 @@ export function checkFeedbackSubmission(
   const dot = file.fileName.lastIndexOf('.');
   const ext = dot >= 0 ? file.fileName.slice(dot).toLowerCase() : '';
   const allowed = (FEEDBACK_FILE_TYPES[fields.kind] as Record<string, readonly string[]>)[ext];
-  if (!allowed || !allowed.includes(file.mime.toLowerCase())) return 'FEEDBACK_FILE_TYPE';
+  // `text/markdown; charset=utf-8` → `text/markdown`
+  const mime = file.mime.split(';')[0]!.trim().toLowerCase();
+  if (!allowed || !allowed.includes(mime)) return 'FEEDBACK_FILE_TYPE';
   return null;
 }
 

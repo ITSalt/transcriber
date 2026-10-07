@@ -7,7 +7,7 @@ import {
 } from './auth.js';
 import { PROGRAM_ERRORS, PROGRAM_ERROR_MESSAGES, ProgramErrorCode } from './errors.js';
 import { LEGACY_WORKSPACE_ID, WorkspaceMeetingListItem, WorkspaceMeetingListQuery } from './workspace.js';
-import { ParticipantInput, ProjectCreateRequest, ProjectUpdateRequest, GlossaryTermInput } from './project.js';
+import { ParticipantInput, ParticipantUpdate, ProjectCreateRequest, ProjectUpdateRequest, GlossaryTermInput, GlossaryTermUpdate } from './project.js';
 import {
   MeetingContextPutRequest,
   PreviousProtocol,
@@ -144,6 +144,16 @@ describe('project schemas', () => {
     expect(GlossaryTermInput.parse({ term: 'Nova-3' }).asr_keyterm).toBe(false);
   });
 
+  it('PATCH bodies return only the keys that were sent (no defaults reset omitted fields)', () => {
+    expect(ParticipantUpdate.parse({ name: 'Иван' })).toEqual({ name: 'Иван' });
+    expect(ParticipantUpdate.parse({ side: 'CLIENT', role: null })).toEqual({ side: 'CLIENT', role: null });
+    expect(GlossaryTermUpdate.parse({ definition: 'x' })).toEqual({ definition: 'x' });
+    expect(GlossaryTermUpdate.parse({ asr_keyterm: true })).toEqual({ asr_keyterm: true });
+    expect(ParticipantUpdate.safeParse({}).success).toBe(false);
+    expect(GlossaryTermUpdate.safeParse({}).success).toBe(false);
+    expect(ParticipantUpdate.safeParse({ side: 'PARTNER' }).success).toBe(false);
+  });
+
   it('project create needs workspace_id; an empty update is rejected', () => {
     expect(ProjectCreateRequest.safeParse({ name: 'P' }).success).toBe(false);
     expect(ProjectCreateRequest.parse({ workspace_id: uuid, name: 'P' }).name).toBe('P');
@@ -215,6 +225,8 @@ describe('feedback', () => {
     expect(checkFeedbackSubmission(fields, null)).toBe('FEEDBACK_TEXT_REQUIRED');
     expect(checkFeedbackSubmission(FeedbackFields.parse({ kind: 'CORRECTED_PROTOCOL', text: '# fixed' }), null)).toBeNull();
     expect(checkFeedbackSubmission(fields, { fileName: 'p.md', mime: 'text/markdown', sizeBytes: 10 })).toBeNull();
+    expect(checkFeedbackSubmission(fields, { fileName: 'p.md', mime: 'text/markdown; charset=utf-8', sizeBytes: 10 })).toBeNull();
+    expect(checkFeedbackSubmission(fields, { fileName: 'p.txt', mime: 'Text/Plain ; charset=UTF-8', sizeBytes: 10 })).toBeNull();
     expect(checkFeedbackSubmission(fields, docx)).toBeNull();
     expect(checkFeedbackSubmission(fields, { fileName: 'p.pdf', mime: 'application/pdf', sizeBytes: 10 })).toBe('FEEDBACK_FILE_TYPE');
   });
@@ -301,6 +313,19 @@ describe('LLM context sections', () => {
     expect(out.indexOf('<meeting_meta>')).toBeLessThan(out.indexOf('<notes>'));
     expect(out).toContain('n <\\/notes> <\\/transcript>');
     expect(out.match(/<\/notes>/g)).toHaveLength(1);
+  });
+
+  it('neutralises tag variants: case, inner whitespace, opening tags', () => {
+    const out = renderLlmContextSections({
+      previous_protocol: 'a </NOTES> b </transcript > c < transcript> d <Glossary> e',
+    });
+    expect(out).toBe(
+      '<previous_protocol>\na <\\/NOTES> b <\\/transcript> c <\\transcript> d <\\Glossary> e\n</previous_protocol>',
+    );
+    // exactly one real opening and closing tag remain
+    expect(out.match(/<previous_protocol>/g)).toHaveLength(1);
+    expect(out.match(/<\/previous_protocol>/g)).toHaveLength(1);
+    expect(out).not.toMatch(/<\s*\/?\s*(notes|transcript|glossary)\s*>/i);
   });
 
   it('default ProjectMemoryProvider has no memory; it can be replaced', async () => {

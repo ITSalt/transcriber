@@ -2,8 +2,9 @@
  * WP-BACKEND-06 AC-1 — program schema v1 on a migrated database.
  * Requires DATABASE_URL (CI applies `migrate deploy` first); skipped otherwise.
  *
- * Everything runs inside ONE interactive transaction that is rolled back at the end, so
- * the rows are invisible to (and safe from) prisma.smoke.test.ts running in parallel.
+ * Each case runs inside ONE interactive transaction that is rolled back at the end, and
+ * the migration's backfill SQL is narrowed to the case's own rows, so nothing here reads,
+ * locks or leaves rows that prisma.smoke.test.ts (running in parallel) works with.
  */
 import { describe, it, expect, beforeAll, afterAll } from 'vitest'
 import { readFileSync } from 'node:fs'
@@ -58,14 +59,22 @@ describe.skipIf(!DATABASE_URL)('program schema v1 (migration 20261007120000)', (
 
   it('backfill SQL is idempotent and maps editCount → LEGACY / GENERATED', async () => {
     const sql = readFileSync(MIGRATION, 'utf8')
-    const backfill = sql.slice(sql.indexOf('INSERT INTO "protocol_versions"'))
-    const wsUpdate = sql.slice(sql.indexOf('UPDATE "meetings"'), sql.indexOf('-- AddForeignKey'))
+    // The migration's own statements, narrowed to this test's rows: run unnarrowed they would
+    // scan (and FK-lock) rows prisma.smoke.test.ts commits in parallel on the same database.
+    const backfillSql = sql.slice(sql.indexOf('INSERT INTO "protocol_versions"'))
+    const wsUpdateSql = sql.slice(sql.indexOf('UPDATE "meetings"'), sql.indexOf('-- AddForeignKey'))
+    expect(backfillSql).toContain('FROM "protocols" p\n')
+    expect(wsUpdateSql).toContain('WHERE "workspace_id" IS NULL;')
+    const only = (ids: string[]) => ids.map((id) => `'${id}'::uuid`).join(', ')
     await inRollback(async (tx) => {
       const a = await tx.meeting.create({ data: { title: 'never edited' } })
       const b = await tx.meeting.create({ data: { title: 'edited' } })
       await tx.$executeRawUnsafe(`UPDATE meetings SET workspace_id = NULL WHERE id = $1::uuid`, b.id)
       await tx.protocol.create({ data: { meetingId: a.id, markdownContent: '# A' } })
       await tx.protocol.create({ data: { meetingId: b.id, markdownContent: '# B edited', editCount: 2, lastEditedAt: new Date('2026-09-03T10:00:00Z') } })
+      const ids = only([a.id, b.id])
+      const backfill = backfillSql.replace('FROM "protocols" p\n', `FROM "protocols" p WHERE p."meeting_id" IN (${ids})\n`)
+      const wsUpdate = wsUpdateSql.replace('WHERE "workspace_id" IS NULL;', `WHERE "workspace_id" IS NULL AND "id" IN (${ids});`)
       await tx.$executeRawUnsafe(wsUpdate)
       await tx.$executeRawUnsafe(backfill)
       await tx.$executeRawUnsafe(backfill) // second run must not duplicate or fail

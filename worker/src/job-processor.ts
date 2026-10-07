@@ -14,7 +14,7 @@ import { Worker, type Job, type ConnectionOptions } from 'bullmq'
 import type { Logger } from 'pino'
 import { QueueName } from './queues.js'
 import type { TranscriptionJobPayload, ProtocolGenerationJobPayload, ProjectMemoryProvider } from '@transcrib/shared'
-import { setProjectMemoryProvider } from '@transcrib/shared'
+import { getProjectMemoryProvider, setProjectMemoryProvider } from '@transcrib/shared'
 import { processTranscriptionJob as runTranscriptionPipeline } from './jobs/transcription.js'
 import { processProtocolGenerationJob as runProtocolPipeline } from './jobs/protocol-generation.js'
 
@@ -119,7 +119,11 @@ export interface ProtocolJobCompletedEvent {
 }
 
 export interface WorkerEvents {
-  /** A protocol-generation job finished without throwing (the protocol may be re-checked). */
+  /**
+   * A protocol-generation BullMQ job finished without throwing. It ALSO fires when the
+   * pipeline returned early on a job that was already DONE or FAILED, so listeners must
+   * check ProtocolGenerationJob.status === 'DONE' themselves before acting.
+   */
   protocolJobCompleted: ProtocolJobCompletedEvent
 }
 
@@ -141,6 +145,11 @@ export class WorkerEventBus {
     const list = this.listeners.get(event) ?? []
     list.push(listener as Listener<never>)
     this.listeners.set(event, list)
+  }
+
+  off<K extends keyof WorkerEvents>(event: K, listener: Listener<WorkerEvents[K]>): void {
+    const list = this.listeners.get(event) ?? []
+    this.listeners.set(event, list.filter((l) => l !== (listener as Listener<never>)))
   }
 
   emit<K extends keyof WorkerEvents>(event: K, payload: WorkerEvents[K]): void {
@@ -173,12 +182,21 @@ export interface WorkerModuleContext {
 
 export interface LoadedWorkerModules {
   names: string[]
+  /** modules that failed to load or register — skipped, the core pipelines run on */
+  failed: string[]
   workers: Worker[]
   shutdownHooks: Array<() => Promise<void> | void>
 }
 
 /**
- * Imports and registers every present worker module.
+ * Imports and registers every present worker module. Called BEFORE createWorkers(), so a
+ * module's provider is in place before the first job is taken.
+ *
+ * A module is optional by design (ADR-013: nothing else depends on project memory), so a
+ * module whose import or register() fails is logged and rolled back — its workers closed,
+ * its listeners removed, the previous ProjectMemoryProvider restored, its shutdown hooks
+ * dropped — and the worker process keeps serving transcription and protocols.
+ *
  * @param baseDir directory that holds the module folders (default: this file's directory)
  */
 export async function loadWorkerModules(
@@ -188,28 +206,80 @@ export async function loadWorkerModules(
 ): Promise<LoadedWorkerModules> {
   const baseDir = options.baseDir ?? fileURLToPath(new URL('.', import.meta.url))
   const bus = options.events ?? workerEvents
-  const loaded: LoadedWorkerModules = { names: [], workers: [], shutdownHooks: [] }
+  const loaded: LoadedWorkerModules = { names: [], failed: [], workers: [], shutdownHooks: [] }
 
   for (const name of options.modules ?? WORKER_MODULES) {
     const file = ['index.js', 'index.ts'].map((f) => join(baseDir, name, f)).find((p) => existsSync(p))
     if (!file) continue
-    const mod = (await import(pathToFileURL(file).href)) as {
-      register?: (ctx: WorkerModuleContext) => Promise<void> | void
+
+    const workers: Worker[] = []
+    const hooks: Array<() => Promise<void> | void> = []
+    const unsubscribe: Array<() => void> = []
+    const providerBefore = getProjectMemoryProvider()
+    try {
+      const mod = (await import(pathToFileURL(file).href)) as {
+        register?: (ctx: WorkerModuleContext) => Promise<void> | void
+      }
+      if (typeof mod.register !== 'function') {
+        throw new Error(`worker module "${name}": ${file} must export register(ctx)`)
+      }
+      await mod.register({
+        connection,
+        log: log.child({ module: name }),
+        events: {
+          on: (event, listener) => {
+            unsubscribe.push(() => bus.off(event, listener))
+            bus.on(event, listener)
+          },
+        },
+        addWorker: (w) => workers.push(w),
+        onShutdown: (hook) => hooks.push(hook),
+        setProjectMemoryProvider: (p) => {
+          setProjectMemoryProvider(p)
+        },
+      })
+      loaded.names.push(name)
+      loaded.workers.push(...workers)
+      loaded.shutdownHooks.push(...hooks)
+    } catch (err) {
+      log.error({ err, module: name }, 'worker module failed to load — skipped, core pipelines continue')
+      for (const off of unsubscribe) off()
+      setProjectMemoryProvider(providerBefore)
+      await Promise.allSettled(workers.map((w) => w.close()))
+      loaded.failed.push(name)
     }
-    if (typeof mod.register !== 'function') {
-      throw new Error(`worker module "${name}": ${file} must export register(ctx)`)
-    }
-    await mod.register({
-      connection,
-      log: log.child({ module: name }),
-      events: bus,
-      addWorker: (w) => loaded.workers.push(w),
-      onShutdown: (hook) => loaded.shutdownHooks.push(hook),
-      setProjectMemoryProvider: (p) => {
-        setProjectMemoryProvider(p)
-      },
-    })
-    loaded.names.push(name)
   }
   return loaded
+}
+
+/** Anything graceful shutdown can close (a BullMQ Worker or the module-cleanup step). */
+export interface Closeable {
+  close(): Promise<void>
+}
+
+/**
+ * What shutdown.ts must close, in a safe order: every worker (core + modules) first, then
+ * the module hooks (e.g. closing the Neo4j driver) — only after all in-flight jobs have
+ * finished, and before shutdown.ts disconnects Prisma. Worker.close() is idempotent, so
+ * the cleanup step may await the same workers shutdown.ts is closing.
+ */
+export function shutdownTargets(
+  workers: Closeable[],
+  hooks: Array<() => Promise<void> | void>,
+  log: Logger,
+): Closeable[] {
+  if (hooks.length === 0) return workers
+  const moduleCleanup: Closeable = {
+    close: async () => {
+      await Promise.all(workers.map((w) => w.close()))
+      for (const hook of hooks) {
+        try {
+          await hook()
+        } catch (err) {
+          log.error({ err }, 'worker module shutdown hook failed')
+        }
+      }
+    },
+  }
+  return [...workers, moduleCleanup]
 }

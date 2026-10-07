@@ -67,15 +67,21 @@ export function isLlmContextEmpty(context: LlmContextSections | undefined): bool
   return LLM_CONTEXT_SECTION_ORDER.every((k) => !context[k] || context[k]!.trim() === '');
 }
 
+/** Any opening or closing tag of a section name, tolerant to case and inner whitespace. */
+const SECTION_TAG = new RegExp(
+  `<\\s*(\\/?)\\s*(${[...LLM_CONTEXT_SECTION_ORDER, 'transcript'].join('|')})\\s*>`,
+  'gi',
+);
+
 /**
- * Wrap non-empty sections in tags, in canonical order. A closing tag of any section that
- * appears inside the text is neutralised as `<\/name>` so user text cannot end a section.
+ * Wrap non-empty sections in tags, in canonical order. Any section tag that appears inside
+ * the text (`</notes>`, `</NOTES >`, `<transcript>`, …) is neutralised as `<\/name>` /
+ * `<\name>` so user text can neither end a section nor fake a new one.
  */
 export function renderLlmContextSections(context: LlmContextSections | undefined): string {
   if (!context) return '';
-  const names = [...LLM_CONTEXT_SECTION_ORDER, 'transcript'];
   const escape = (text: string): string =>
-    names.reduce((acc, n) => acc.split(`</${n}>`).join(`<\\/${n}>`), text);
+    text.replace(SECTION_TAG, (_m, slash: string, name: string) => `<\\${slash}${name}>`);
   return LLM_CONTEXT_SECTION_ORDER.filter((k) => context[k] && context[k]!.trim() !== '')
     .map((k) => `<${k}>\n${escape(context[k]!.trim())}\n</${k}>`)
     .join('\n\n');

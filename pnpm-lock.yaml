@@ -89,6 +89,9 @@ importers:
       jszip:
         specifier: ^3.10.2
         version: 3.10.2
+      neo4j-driver:
+        specifier: ^6.2.0
+        version: 6.2.0
       pg:
         specifier: ^8.20.0
         version: 8.20.0
@@ -296,6 +299,9 @@ importers:
       ioredis:
         specifier: ^5.10.1
         version: 5.10.1
+      neo4j-driver:
+        specifier: ^6.2.0
+        version: 6.2.0
       pg:
         specifier: ^8.20.0
         version: 8.20.0
