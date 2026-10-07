@@ -80,7 +80,8 @@ export const TaskResolution = z.object({
     .partial()
     .nullish()
     .transform((c) => c ?? {}),
-  confidence: z.coerce.number().min(0).max(1),
+  /** missing / invalid → 0: the resolution is kept, but nothing in it is applied automatically */
+  confidence: z.coerce.number().min(0).max(1).catch(0),
   reason: optionalText,
 })
 export type TaskResolution = z.infer<typeof TaskResolution>

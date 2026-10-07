@@ -4,8 +4,8 @@
  * Every pollMs: up to batchSize pending rows, oldest first. A row is applied (idempotent
  * DETACH DELETE) and marked done; on failure attempts + 1 and last_error are stored and the
  * tick stops — later rows keep their order and everything is retried on the next tick, for
- * as long as Neo4j is down. A row whose op/payload does not parse is marked failed and
- * skipped so it never blocks the queue.
+ * as long as Neo4j is down. A row whose op/payload does not parse is closed with done_at
+ * and last_error "invalid outbox entry …" (visible, terminal) so it never blocks the queue.
  */
 import type { Logger } from 'pino'
 import { GraphOutboxEntry } from '@transcrib/shared'
@@ -21,6 +21,8 @@ export interface OutboxRepo {
   pending(limit: number): Promise<OutboxRow[]>
   markDone(id: string, at: Date): Promise<void>
   markFailed(id: string, error: string): Promise<void>
+  /** terminal: done_at set, last_error says why it was skipped — it never comes back */
+  markInvalid(id: string, error: string, at: Date): Promise<void>
 }
 
 export interface OutboxTickResult {
@@ -52,7 +54,7 @@ export class GraphOutboxConsumer {
       const parsed = GraphOutboxEntry.safeParse({ op: row.op, payload: row.payload })
       if (!parsed.success) {
         result.invalid++
-        await this.deps.repo.markFailed(row.id, `invalid outbox entry: ${parsed.error.message}`)
+        await this.deps.repo.markInvalid(row.id, `invalid outbox entry: ${parsed.error.message}`, (this.deps.now ?? (() => new Date()))())
         this.deps.log.error({ outboxId: row.id, op: row.op }, 'graph outbox: invalid entry skipped')
         continue
       }

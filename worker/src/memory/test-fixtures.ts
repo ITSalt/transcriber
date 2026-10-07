@@ -165,6 +165,12 @@ export function memoryRepo(rows: Array<Omit<OutboxRow, 'attempts'>>) {
       r.attempts++
       r.lastError = error
     },
+    markInvalid: async (id, error, at) => {
+      const r = state.find((x) => x.id === id)!
+      r.attempts++
+      r.lastError = error
+      r.doneAt = at
+    },
   }
   return { repo, state }
 }

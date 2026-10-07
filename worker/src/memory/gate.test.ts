@@ -37,7 +37,7 @@ const item = (id: string, over: Partial<ExtractedTask> = {}): VerifiedTaskItem =
     segment: 0,
     ...over,
   },
-  quote: { quote: `цитата ${id}`, startMs: 1000, endMs: 2000, speakerLabel: 'Speaker 1', segmentIndex: 0, match: 'exact' },
+  quote: { quote: `цитата ${id}`, startMs: 1000, endMs: 2000, speakerLabel: 'Speaker 1', segmentIndex: 0, match: 'exact', score: 1 },
 })
 
 const res = (r: Record<string, unknown>) => TaskResolution.parse({ confidence: 0.9, reason: 'r', ...r })
@@ -151,6 +151,23 @@ describe('memory gate (D-14)', () => {
     expect(plan.rejected[0]!.reason).toMatch(/T-99/)
   })
 
+  it('a change backed by a partly matching (fuzzy) quote, or without a confidence, is PENDING', () => {
+    const fuzzy = item('i1')
+    fuzzy.quote = { ...fuzzy.quote, match: 'fuzzy', score: 0.86 }
+    const plan = gate({
+      candidates: [candidate('T-1'), candidate('T-2')],
+      taskItems: [fuzzy, item('i2')],
+      taskResolutions: [
+        res({ item: 'i1', action: 'UPDATE', target_task_code: 'T-1', changes: { status: 'IN_PROGRESS' }, confidence: 0.99 }),
+        TaskResolution.parse({ item: 'i2', action: 'UPDATE', target_task_code: 'T-2', changes: { due_date: '2026-12-01' } }),
+      ],
+    })
+    expect(plan.taskUpdates.flatMap((u) => u.events.map((e) => [u.code, e.reviewState, e.confidence]))).toEqual([
+      ['T-1', 'PENDING', 0.99],
+      ['T-2', 'PENDING', 0],
+    ])
+  })
+
   it('a task the meeting does not mention gets nothing', () => {
     const plan = gate({ candidates: [candidate('T-1'), candidate('T-2')], taskItems: [item('i1')], taskResolutions: [res({ item: 'i1', action: 'CLOSE', target_task_code: 'T-1' })] })
     expect(plan.taskUpdates.map((u) => u.code)).toEqual(['T-1'])
@@ -162,8 +179,8 @@ describe('memory gate (D-14)', () => {
       taskItems: [item('i1')],
       taskResolutions: [res({ item: 'i1', action: 'NEW' })],
       decisionItems: [
-        { id: 'd1', decision: { text: 'Договор подряда', quote: 'q', segment: 0 }, quote: { quote: 'q1', startMs: 0, endMs: 1, speakerLabel: 'S', segmentIndex: 0, match: 'exact' } },
-        { id: 'd2', decision: { text: 'Повтор', quote: 'q', segment: 0 }, quote: { quote: 'q2', startMs: 0, endMs: 1, speakerLabel: 'S', segmentIndex: 0, match: 'exact' } },
+        { id: 'd1', decision: { text: 'Договор подряда', quote: 'q', segment: 0 }, quote: { quote: 'q1', startMs: 0, endMs: 1, speakerLabel: 'S', segmentIndex: 0, match: 'exact', score: 1 } },
+        { id: 'd2', decision: { text: 'Повтор', quote: 'q', segment: 0 }, quote: { quote: 'q2', startMs: 0, endMs: 1, speakerLabel: 'S', segmentIndex: 0, match: 'exact', score: 1 } },
       ],
       recentDecisions: [{ code: 'D-1', text: 'Агентский договор' }],
       decisionResolutions: [

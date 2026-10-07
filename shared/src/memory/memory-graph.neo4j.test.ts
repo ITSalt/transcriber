@@ -65,7 +65,7 @@ describe.skipIf(!URI)('memory graph on Neo4j', { timeout: 60_000 }, () => {
     kind,
   });
 
-  function meeting1Plan(): MeetingUpdatePlan {
+  function meeting1Plan(meetingId = m1, participantId = ivanov): MeetingUpdatePlan {
     const created = (field: 'title' | 'status' | 'assignee', newValue: string, extra = {}) => ({
       id: uuid(),
       field,
@@ -78,8 +78,8 @@ describe.skipIf(!URI)('memory graph on Neo4j', { timeout: 60_000 }, () => {
       ...extra,
     });
     return {
-      meeting: { id: m1, title: 'Встреча 1', occurredAt: '2026-10-01T10:00:00.000Z' },
-      participants: [{ id: ivanov, name: 'Иванов' }],
+      meeting: { id: meetingId, title: 'Встреча 1', occurredAt: '2026-10-01T10:00:00.000Z' },
+      participants: [{ id: participantId, name: 'Иванов' }],
       expected: { taskSeq: 0, decisionSeq: 0, meetingSeq: 0, memoryVersion: 0 },
       newTasks: [
         {
@@ -90,7 +90,7 @@ describe.skipIf(!URI)('memory graph on Neo4j', { timeout: 60_000 }, () => {
           events: [
             created('title', 'Отправить договор'),
             created('status', 'OPEN'),
-            created('assignee', 'Иванов', { newParticipantId: ivanov }),
+            created('assignee', 'Иванов', { newParticipantId: participantId }),
           ],
         },
         {
@@ -266,6 +266,53 @@ describe.skipIf(!URI)('memory graph on Neo4j', { timeout: 60_000 }, () => {
     // the older status event is superseded by the edit
     const creationStatus = detail.events.find((e) => e.field === 'status' && e.source === 'LLM')!;
     expect(creationStatus.superseded_at).not.toBeNull();
+    // a status set by a person dates from no meeting
+    const prompt = await getPromptMemoryData(graph, scope);
+    expect(prompt.openTasks.find((t) => t.code === 'T-2')).toMatchObject({ status: 'IN_PROGRESS', status_since_meeting_seq: null });
+  });
+
+  it('deleting the meeting that created a task mentioned later keeps the task intact; a late update of a deleted meeting/project is refused', async () => {
+    const s2: MemoryScope = { workspaceId: scope.workspaceId, projectId: uuid() };
+    const a = uuid();
+    const b = uuid();
+    const person = uuid();
+    await writeMeetingUpdate(graph, s2, meeting1Plan(a, person));
+    await writeMeetingUpdate(graph, s2, {
+      meeting: { id: b, title: 'Встреча 2', occurredAt: '2026-10-08T10:00:00.000Z' },
+      participants: [],
+      expected: { taskSeq: 2, decisionSeq: 1, meetingSeq: 1, memoryVersion: 1 },
+      newTasks: [],
+      taskUpdates: [
+        {
+          code: 'T-1',
+          mentions: [mention('договор отправил', 'STATUS_UPDATE')],
+          events: [{ id: uuid(), field: 'status', oldValue: 'OPEN', newValue: 'DONE', reviewState: 'PENDING', confidence: 0.9, reason: 'r', quote: 'договор отправил' }],
+        },
+      ],
+      newDecisions: [],
+      decisionMentions: [],
+      memory: { id: uuid(), summaryMd: 'v2' },
+      now: '2026-10-08T12:00:00.000Z',
+    });
+
+    const res = await deleteMeetingFromGraph(graph, s2, a);
+    expect(res).toMatchObject({ deletedTasks: 1, deletedDecisions: 1 }); // T-2 and D-1 lived only in meeting A
+    const t1 = (await getTaskDetail(graph, s2, 'T-1'))!;
+    expect(t1.task).toMatchObject({ title: 'Отправить договор', status: 'OPEN', assignee: { participant_id: person, name: 'Иванов' }, pending_count: 1 });
+    expect(t1.events.filter((e) => e.meeting_id === null).map((e) => [e.field, e.quote])).toEqual([
+      ['title', null],
+      ['status', null],
+      ['assignee', null],
+    ]);
+    expect(t1.mentions.map((m) => m.meeting_id)).toEqual([b]);
+
+    // the memory job of meeting A, still running when A was deleted, must not bring it back
+    const late = { ...meeting1Plan(a, person), expected: { taskSeq: 2, decisionSeq: 1, meetingSeq: 2, memoryVersion: 2 } };
+    expect(await writeMeetingUpdate(graph, s2, late)).toEqual({ status: 'DELETED' });
+    await deleteProjectFromGraph(graph, s2);
+    const afterProject = { ...meeting1Plan(uuid(), uuid()), expected: { taskSeq: 0, decisionSeq: 0, meetingSeq: 0, memoryVersion: 0 } };
+    expect(await writeMeetingUpdate(graph, s2, afterProject)).toEqual({ status: 'DELETED' });
+    expect(await listTasks(graph, s2)).toEqual([]);
   });
 
   it('deleting meeting 2 removes its events and re-folds T-1 back to OPEN; deleting meeting 1 removes what only it created', async () => {

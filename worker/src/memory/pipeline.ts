@@ -220,7 +220,12 @@ export async function runMemoryUpdate(deps: MemoryPipelineDeps, payload: Project
     4096,
   )
 
-  // 7. one transaction
+  // 7. one transaction — but first make sure the meeting was not deleted or moved while the
+  //    LLM steps ran (the write also refuses a meeting/project tombstoned by the outbox)
+  const still = await deps.loadMeeting(payload.meeting_id)
+  if (!still || still.projectId !== payload.project_id || still.workspaceId !== payload.workspace_id) {
+    return { status: 'SKIPPED', reason: 'meeting deleted or moved during the update' }
+  }
   const now = (deps.now ?? (() => new Date()))().toISOString()
   const result = await writeMeetingUpdate(deps.graph, scope, {
     meeting: { id: src.meetingId, title: src.title, occurredAt: src.occurredAt },
@@ -234,6 +239,7 @@ export async function runMemoryUpdate(deps: MemoryPipelineDeps, payload: Project
     now,
   })
   if (result.status === 'ALREADY_APPLIED') return result
+  if (result.status === 'DELETED') return { status: 'SKIPPED', reason: 'meeting or project deleted from memory' }
   const allEvents = [...gate.newTasks.flatMap((t) => t.events), ...gate.taskUpdates.flatMap((u) => u.events)]
   return {
     status: 'APPLIED',

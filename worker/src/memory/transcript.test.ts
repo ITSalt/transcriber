@@ -38,8 +38,24 @@ describe('memory transcript', () => {
   it('accepts a near-verbatim quote (fuzzy ≥ 85 % of words) and rejects an invented one', () => {
     const verify = createQuoteVerifier(segments)
     expect(verify('договор отправил вчера вечером ждём ответа сегодня утром', 1)).toBeNull() // 6/8 words < 0.85
-    expect(verify('отправил договор вчера вечером ждём ответа', 1)).toMatchObject({ match: 'fuzzy', segmentIndex: 1 })
+    // stored quote = the transcript's own words, never the LLM's rewording
+    expect(verify('отправил договор вчера вечером ждём ответа', 1)).toMatchObject({
+      match: 'fuzzy',
+      segmentIndex: 1,
+      score: 1,
+      quote: 'Договор отправил вчера вечером, ждём ответа.',
+    })
     expect(verify('Сидоров обещал закупить сервер до конца недели', 1)).toBeNull()
+  })
+
+  it('a fuzzy quote may not add a negation the transcript does not have', () => {
+    expect(verifyQuote('договор не отправил вчера вечером ждём ответа', segments, 1)).toBeNull()
+  })
+
+  it('exact matching respects word boundaries', () => {
+    const s2 = toMemorySegments([{ speaker: 'SPEAKER_0', start: 0, end: 1, text: 'Она договор отправила вчера.' }], {})
+    expect(verifyQuote('договор отправил', s2, 0)).toBeNull()
+    expect(verifyQuote('договор отправила', s2, 0)).toMatchObject({ match: 'exact' })
   })
 
   it('rejects too short quotes', () => {

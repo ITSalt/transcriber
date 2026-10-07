@@ -20,19 +20,27 @@ export interface MemorySegment {
 }
 
 export interface VerifiedQuote {
-  /** the quote as the LLM gave it (verbatim from the transcript) */
+  /**
+   * What is stored as the quote: the LLM's text for an exact match (same words as the
+   * transcript up to case and punctuation), the matched segments' own text for a fuzzy one
+   * — never words the transcript does not contain.
+   */
   quote: string
   startMs: number
   endMs: number
   speakerLabel: string
   segmentIndex: number
   match: 'exact' | 'fuzzy'
+  /** share of the quote's words found (1 for exact) */
+  score: number
 }
 
 export const FUZZY_QUOTE_THRESHOLD = 0.85
 const MIN_QUOTE_CHARS = 6
 const MIN_FUZZY_TOKENS = 4
 const MAX_WINDOW = 3
+/** a fuzzy quote may miss a word, but never one of these: "не отправил" ≠ "отправил" */
+const NEGATIONS = new Set(['не', 'ни', 'нет', 'no', 'not', 'never', 'без'])
 
 function speakerDisplay(label: string): string {
   const m = /SPEAKER_(\d+)/i.exec(label)
@@ -118,10 +126,11 @@ function result(
   first: number,
   last: number,
   match: VerifiedQuote['match'],
+  score: number,
 ): VerifiedQuote {
   const a = segments[first]!
   const b = segments[last]!
-  return { quote, startMs: a.startMs, endMs: b.endMs, speakerLabel: a.label, segmentIndex: first, match }
+  return { quote, startMs: a.startMs, endMs: b.endMs, speakerLabel: a.label, segmentIndex: first, match, score }
 }
 
 /**
@@ -138,14 +147,17 @@ export function verifyQuote(
   if (q.length < MIN_QUOTE_CHARS || segments.length === 0) return null
   const near = (i: number) => (hint == null ? i : Math.abs(i - hint))
 
-  // exact (normalised) — every occurrence, nearest to the hint
+  // exact (normalised, whole words) — every occurrence, nearest to the hint
+  const padded = ` ${index.text} `
+  const needle = ` ${q} `
   let best: { first: number; last: number } | null = null
-  for (let pos = index.text.indexOf(q); pos !== -1; pos = index.text.indexOf(q, pos + 1)) {
+  for (let p = padded.indexOf(needle); p !== -1; p = padded.indexOf(needle, p + 1)) {
+    const pos = p // padded offset p + 1 (space) = text offset p
     const first = segmentAt(index.offsets, pos)
     const last = segmentAt(index.offsets, pos + q.length - 1)
     if (!best || near(first) < near(best.first)) best = { first, last }
   }
-  if (best) return result(quote, segments, best.first, best.last, 'exact')
+  if (best) return result(quote, segments, best.first, best.last, 'exact', 1)
 
   // fuzzy — share of the quote's words inside a window of consecutive segments
   const qTokens = tokens(quote)
@@ -158,15 +170,19 @@ export function verifyQuote(
       for (const t of segTokens[first + w]!) bag.set(t, (bag.get(t) ?? 0) + 1)
       const left = new Map(bag)
       let hit = 0
+      let negationMissing = false
       for (const t of qTokens) {
         const c = left.get(t) ?? 0
         if (c > 0) {
           hit++
           left.set(t, c - 1)
+        } else if (NEGATIONS.has(t)) {
+          negationMissing = true
         }
       }
       const score = hit / qTokens.length
       if (
+        !negationMissing &&
         score >= FUZZY_QUOTE_THRESHOLD &&
         (!fuzzy || score > fuzzy.score || (score === fuzzy.score && near(first) < near(fuzzy.first)))
       ) {
@@ -175,7 +191,12 @@ export function verifyQuote(
       if (score === 1) break // a wider window cannot score higher
     }
   }
-  return fuzzy ? result(quote, segments, fuzzy.first, fuzzy.last, 'fuzzy') : null
+  if (!fuzzy) return null
+  const own = segments
+    .slice(fuzzy.first, fuzzy.last + 1)
+    .map((x) => x.text.trim())
+    .join(' ')
+  return result(own, segments, fuzzy.first, fuzzy.last, 'fuzzy', fuzzy.score)
 }
 
 /** Verifies many quotes against one index. */

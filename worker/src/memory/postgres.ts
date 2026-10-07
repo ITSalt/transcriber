@@ -86,5 +86,11 @@ export function createOutboxRepo(prisma: PrismaClient): OutboxRepo {
         data: { attempts: { increment: 1 }, lastError: error.slice(0, MAX_ERROR_LENGTH) },
       })
     },
+    async markInvalid(id: string, error: string, at: Date): Promise<void> {
+      await prisma.graphOutbox.update({
+        where: { id },
+        data: { attempts: { increment: 1 }, lastError: error.slice(0, MAX_ERROR_LENGTH), doneAt: at },
+      })
+    },
   }
 }

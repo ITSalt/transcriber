@@ -34,6 +34,7 @@ export const MEMORY_GRAPH_MIGRATIONS: readonly MemoryGraphMigration[] = [
       'CREATE CONSTRAINT memory_task_event_id IF NOT EXISTS FOR (n:TaskEvent) REQUIRE n.id IS UNIQUE',
       'CREATE CONSTRAINT memory_project_memory_id IF NOT EXISTS FOR (n:ProjectMemory) REQUIRE n.id IS UNIQUE',
       'CREATE CONSTRAINT memory_project_memory_version IF NOT EXISTS FOR (n:ProjectMemory) REQUIRE (n.projectId, n.version) IS UNIQUE',
+      'CREATE CONSTRAINT memory_tombstone_id IF NOT EXISTS FOR (n:Tombstone) REQUIRE n.id IS UNIQUE',
       'CREATE INDEX memory_task_scope IF NOT EXISTS FOR (n:Task) ON (n.workspaceId, n.projectId, n.status)',
       'CREATE INDEX memory_decision_scope IF NOT EXISTS FOR (n:Decision) ON (n.workspaceId, n.projectId)',
       'CREATE INDEX memory_task_event_scope IF NOT EXISTS FOR (n:TaskEvent) ON (n.workspaceId, n.projectId, n.reviewState)',

@@ -107,6 +107,8 @@ async function readState(tx: ScopedTx, meetingId: string): Promise<ProjectMemory
 
 export type MeetingUpdateResult =
   | { status: 'ALREADY_APPLIED' }
+  /** the meeting or its project was deleted from memory (tombstone) — nothing written */
+  | { status: 'DELETED' }
   | { status: 'APPLIED'; memoryVersion: number; meetingSeq: number; createdTasks: number; events: number; createdDecisions: number };
 
 export async function writeMeetingUpdate(
@@ -115,6 +117,13 @@ export async function writeMeetingUpdate(
   plan: MeetingUpdatePlan,
 ): Promise<MeetingUpdateResult> {
   return writeScoped(graph, scope, async (tx) => {
+    const tomb = await tx.run(
+      `OPTIONAL MATCH (x:Tombstone {workspaceId: $workspaceId, projectId: $projectId})
+       WHERE x.kind = 'PROJECT' OR (x.kind = 'MEETING' AND x.targetId = $meetingId)
+       RETURN count(x) > 0 AS deleted`,
+      { meetingId: plan.meeting.id },
+    );
+    if (tomb.records[0]?.get('deleted') === true) return { status: 'DELETED' } as const;
     const state = await readState(tx, plan.meeting.id);
     if (state.meetingAlreadyApplied) return { status: 'ALREADY_APPLIED' } as const;
     const { expected } = plan;
@@ -192,6 +201,8 @@ export async function writeMeetingUpdate(
       ...plan.taskUpdates.flatMap((u) => u.events.map((e) => ({ ...e, code: u.code }))),
     ].map((e, ordinal) => ({
       id: e.id,
+      // AUTO events of a task created by this meeting = its creation; they survive the meeting's deletion
+      creation: e.reviewState === 'AUTO' && plan.newTasks.some((t) => t.code === e.code),
       code: e.code,
       field: e.field,
       oldValue: e.oldValue,
@@ -210,6 +221,7 @@ export async function writeMeetingUpdate(
        UNWIND $events AS ev
        MATCH (t:Task {workspaceId: $workspaceId, projectId: $projectId, code: ev.code})
        CREATE (e:TaskEvent {id: ev.id, workspaceId: $workspaceId, projectId: $projectId, field: ev.field,
+                            creation: ev.creation,
                             oldValue: ev.oldValue, newValue: ev.newValue,
                             oldParticipantId: ev.oldParticipantId, newParticipantId: ev.newParticipantId,
                             validAt: $validAt, recordedAt: $now, appliedAt: ev.appliedAt,

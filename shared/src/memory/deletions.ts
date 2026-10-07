@@ -18,8 +18,10 @@ export interface MeetingDeletionResult {
 /**
  * Removes a meeting from the memory graph: the :Meeting projection and its mentions, its
  * TaskEvents, and the tasks / decisions that were created in it and mentioned nowhere
- * else. Surviving tasks touched by the meeting get their state re-folded from the
- * remaining events. Summary versions are kept (sourceMeetingId cleared).
+ * else. Surviving tasks keep their creation events (detached from the meeting, quote
+ * cleared) and get their state re-folded without the meeting's updates. Summary versions
+ * are kept (sourceMeetingId cleared) — the summary text is not rewritten. A tombstone
+ * blocks a late memory update of the deleted meeting.
  */
 export async function deleteMeetingFromGraph(
   graph: MemoryGraph,
@@ -69,6 +71,16 @@ export async function deleteMeetingFromGraph(
        RETURN DISTINCT t.code AS code`,
       { meetingId },
     );
+    // a surviving task keeps its creation events (title, initial status, …) — otherwise it
+    // would re-fold to an empty task; they are only detached from the deleted meeting
+    await tx.run(
+      `MATCH (e:TaskEvent {workspaceId: $workspaceId, projectId: $projectId, meetingId: $meetingId, creation: true})
+       SET e.meetingId = null, e.quote = null
+       WITH e
+       OPTIONAL MATCH (e)-[r:IN_MEETING]->()
+       DELETE r`,
+      { meetingId },
+    );
     const events = await tx.run(
       `MATCH (e:TaskEvent {workspaceId: $workspaceId, projectId: $projectId, meetingId: $meetingId})
        DETACH DELETE e
@@ -96,6 +108,13 @@ export async function deleteMeetingFromGraph(
        DETACH DELETE m`,
       { meetingId },
     );
+    // a memory update of this meeting still in flight must not bring it back (writeMeetingUpdate checks)
+    await tx.run(
+      `MERGE (x:Tombstone {id: 'MEETING:' + $meetingId})
+       ON CREATE SET x.kind = 'MEETING', x.targetId = $meetingId, x.workspaceId = $workspaceId,
+                     x.projectId = $projectId, x.deletedAt = $now`,
+      { meetingId, now },
+    );
 
     const recomputedTasks = touched.records.map((r) => String(r.get('code')));
     for (const code of recomputedTasks) await materializeTask(tx, code, now);
@@ -110,13 +129,26 @@ export async function deleteMeetingFromGraph(
   });
 }
 
-/** Removes every node of the project (any label) from the memory graph. */
-export async function deleteProjectFromGraph(graph: MemoryGraph, scope: MemoryScope): Promise<{ deletedNodes: number }> {
+/**
+ * Removes every node of the project (any label but :Tombstone) from the memory graph and
+ * leaves a project tombstone, so an update in flight cannot re-create the project.
+ */
+export async function deleteProjectFromGraph(
+  graph: MemoryGraph,
+  scope: MemoryScope,
+  now: string = new Date().toISOString(),
+): Promise<{ deletedNodes: number }> {
   return writeScoped(graph, scope, async (tx) => {
     const res = await tx.run(
-      `MATCH (n) WHERE n.workspaceId = $workspaceId AND n.projectId = $projectId
+      `MATCH (n) WHERE n.workspaceId = $workspaceId AND n.projectId = $projectId AND NOT n:Tombstone
        DETACH DELETE n
        RETURN count(n) AS n`,
+    );
+    await tx.run(
+      `MERGE (x:Tombstone {id: 'PROJECT:' + $projectId})
+       ON CREATE SET x.kind = 'PROJECT', x.targetId = $projectId, x.workspaceId = $workspaceId,
+                     x.projectId = $projectId, x.deletedAt = $now`,
+      { now },
     );
     return { deletedNodes: toNum(res.records[0]?.get('n')) ?? 0 };
   });

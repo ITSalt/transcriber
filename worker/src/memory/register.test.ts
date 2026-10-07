@@ -8,12 +8,14 @@ import type { PrismaClient } from '@prisma/client'
 import type { Job } from 'bullmq'
 
 const queues: Array<{ name: string; opts: unknown; add: ReturnType<typeof vi.fn>; close: ReturnType<typeof vi.fn> }> = []
+let previousJob: { isFailed: () => Promise<boolean>; remove: ReturnType<typeof vi.fn> } | null = null
 const workers: Array<{ name: string; processor: (job: unknown) => Promise<void>; opts: unknown; close: ReturnType<typeof vi.fn> }> = []
 
 vi.mock('bullmq', async (importOriginal) => {
   const real = await importOriginal<Record<string, unknown>>()
   class Queue {
     add = vi.fn(async () => undefined)
+    getJob = vi.fn(async (): Promise<unknown> => previousJob)
     close = vi.fn(async () => undefined)
     constructor(
       public name: string,
@@ -144,6 +146,24 @@ describe('memory module register(ctx)', () => {
       } else {
         expect(queues[0]!.add).not.toHaveBeenCalled()
       }
+      for (const h of c.hooks) await h()
+    }
+  })
+
+  it('a memory job that failed for good is removed, so the next protocol completion re-runs it', async () => {
+    const c = ctx()
+    await register(c.value, {
+      env: { MEMORY_NEO4J_URI: 'bolt://x:1', MEMORY_OUTBOX_POLL_MS: '60000' },
+      prisma: fakePrisma({ status: 'DONE', meeting: { id: MEETING, projectId: PROJECT, workspaceId: WS } }),
+      connect: fakeConnection().connect,
+    })
+    previousJob = { isFailed: async () => true, remove: vi.fn(async () => undefined) }
+    try {
+      c.bus.emit('protocolJobCompleted', { protocolGenerationJobId: 'pg-1' })
+      await vi.waitFor(() => expect(queues[0]!.add).toHaveBeenCalled())
+      expect(previousJob.remove).toHaveBeenCalled()
+    } finally {
+      previousJob = null
       for (const h of c.hooks) await h()
     }
   })

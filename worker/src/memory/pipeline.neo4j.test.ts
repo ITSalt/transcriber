@@ -156,6 +156,17 @@ describe.skipIf(!URI)('project memory pipeline on Neo4j', { timeout: 60_000 }, (
     expect(llmCalls.length).toBe(calls)
   })
 
+  it('a meeting deleted while the LLM steps run is not written back', async () => {
+    const m3 = { ...m1, meetingId: uuid(), title: 'Планёрка 3' }
+    let loads = 0
+    const out = await runMemoryUpdate(
+      { ...deps, loadMeeting: async () => (++loads === 1 ? m3 : null) },
+      payload(m3.meetingId),
+    )
+    expect(out).toEqual({ status: 'SKIPPED', reason: 'meeting deleted or moved during the update' })
+    expect((await getProjectMemory(graph, scope())).versions.map((v) => v.version)).toEqual([2, 1])
+  })
+
   it('a meeting that no longer belongs to the project is skipped', async () => {
     const other = { ...payload(m1.meetingId), project_id: uuid() }
     expect(await runMemoryUpdate(deps, other)).toMatchObject({ status: 'SKIPPED' })

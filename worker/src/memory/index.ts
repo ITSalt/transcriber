@@ -127,7 +127,12 @@ export async function register(ctx: WorkerModuleContext, overrides: MemoryModule
     ctx.events.on('protocolJobCompleted', async ({ protocolGenerationJobId }) => {
       const payload = await lookup(protocolGenerationJobId)
       if (!payload) return
-      await queue.add('update', payload, { jobId: memoryJobId(payload.meeting_id) })
+      const jobId = memoryJobId(payload.meeting_id)
+      // a job that failed for good keeps its id for 30 days and would swallow this add:
+      // drop it, so a protocol regeneration / retry re-runs the memory update
+      const previous = await queue.getJob(jobId)
+      if (previous && (await previous.isFailed())) await previous.remove()
+      await queue.add('update', payload, { jobId })
       log.info({ meetingId: payload.meeting_id }, 'project memory update queued')
     })
 

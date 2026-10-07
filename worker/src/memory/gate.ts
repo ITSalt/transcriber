@@ -11,7 +11,7 @@
  *             title, description, status → IN_PROGRESS / POSTPONED / OPEN, first assignee —
  *             when confidence ≥ threshold;
  *   PENDING — status → DONE / CANCELLED, merged_into, a different assignee replacing an
- *             existing one, anything below the threshold.
+ *             existing one, anything below the threshold or backed by a fuzzy (partial) quote.
  * Tasks the meeting does not mention get nothing.
  */
 import {
@@ -175,6 +175,8 @@ export function applyGate(input: GateInput): GatePlan {
     }
     resolved.add(r.item)
     const quote = item.quote
+    // a change backed by a quote that only partly matches the transcript is never automatic
+    const sure = confident(r.confidence) && quote.score >= 1
     const ev = (
       field: NewTaskEventInput['field'],
       oldValue: string | null,
@@ -238,7 +240,7 @@ export function applyGate(input: GateInput): GatePlan {
         reject(r.item, `status ${target.status} → ${to} is not allowed for ${target.code}`)
         return
       }
-      const auto = !forcePending && !CLOSING.includes(to) && confident(r.confidence)
+      const auto = !forcePending && !CLOSING.includes(to) && sure
       u.events.push(ev('status', target.status, to, auto ? 'AUTO' : 'PENDING'))
       plan.notes.push({ code: target.code, text: `${target.code} статус ${target.status} → ${to}`, pending: !auto })
       bump('STATUS_UPDATE')
@@ -266,7 +268,7 @@ export function applyGate(input: GateInput): GatePlan {
       if (c.assignee) {
         const next = person(c.assignee)
         if (!sameAssignee(target, next)) {
-          const auto = target.assigneeName === null && confident(r.confidence)
+          const auto = target.assigneeName === null && sure
           u.events.push(
             ev('assignee', target.assigneeName, next.name, auto ? 'AUTO' : 'PENDING', {
               oldParticipantId: target.assigneeParticipantId,
@@ -288,7 +290,7 @@ export function applyGate(input: GateInput): GatePlan {
       ]
       for (const [field, value, key] of simple) {
         if (!value || value === target[key]) continue
-        const auto = confident(r.confidence)
+        const auto = sure
         u.events.push(ev(field, (target[key] as string | null) ?? null, value, auto ? 'AUTO' : 'PENDING'))
         plan.notes.push({ code: target.code, text: `${target.code} ${field} → ${value}`, pending: !auto })
         if (field === 'due_date') bump('DUE_CHANGED')

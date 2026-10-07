@@ -53,6 +53,8 @@ describe('GraphOutboxConsumer', () => {
     const consumer = new GraphOutboxConsumer({ repo, apply: async () => undefined, log, pollMs: 1000 })
     expect(await consumer.tick()).toEqual({ done: 1, failed: 0, invalid: 1 })
     expect(state[0]!.lastError).toMatch(/invalid outbox entry/)
+    expect(state[0]!.doneAt).not.toBeNull() // terminal: never fetched again
+    expect(await consumer.tick()).toEqual({ done: 0, failed: 0, invalid: 0 })
   })
 
   it('start polls on its own and stop waits for the tick in progress', async () => {

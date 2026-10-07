@@ -235,9 +235,10 @@ export async function getPromptMemoryData(
        OPTIONAL MATCH (se:TaskEvent {workspaceId: $workspaceId, projectId: $projectId, field: 'status'})-[:OF_TASK]->(t)
        WHERE se.reviewState IN ['AUTO', 'CONFIRMED'] AND se.newValue = t.status
        WITH t, se ORDER BY se.appliedAt DESC, se.ordinal DESC
-       WITH t, head(collect(se.meetingId)) AS sinceMeetingId
+       // the latest applied status event decides; a USER edit (no meeting) → no "since meeting"
+       WITH t, head(collect(CASE WHEN se IS NULL THEN NULL ELSE {meetingId: se.meetingId} END)) AS latest
        OPTIONAL MATCH (sm:Meeting {workspaceId: $workspaceId, projectId: $projectId})
-       WHERE sm.id = coalesce(sinceMeetingId, t.createdInMeetingId)
+       WHERE sm.id = CASE WHEN latest IS NULL THEN t.createdInMeetingId ELSE latest.meetingId END
        RETURN ${TASK_RETURN}, sm.seq AS sinceSeq
        ORDER BY t.seq`,
       { open: [...OPEN_TASK_STATUSES] },
