@@ -40,7 +40,7 @@ const SIDE_LABEL: Record<Lang, Partial<Record<ParticipantSide, string>>> = {
 const LABEL = {
   RU: {
     title: 'Название',
-    date: 'Дата',
+    date: 'Дата загрузки записи',
     type: 'Тип встречи',
     goal: 'Цель',
     aka: 'также',
@@ -51,7 +51,7 @@ const LABEL = {
   },
   EN: {
     title: 'Title',
-    date: 'Date',
+    date: 'Recording uploaded',
     type: 'Meeting type',
     goal: 'Goal',
     aka: 'also',
@@ -85,6 +85,18 @@ function previousProtocolText(snapshot: MeetingContextSnapshot): string | null {
   return prev.text ?? null
 }
 
+/**
+ * Meeting.createdAt is when the recording was uploaded, not when the meeting happened, so
+ * it is labelled as such. Shown in Moscow time (the product's users), not UTC, so an
+ * upload just after midnight does not land on the previous day.
+ */
+const UPLOAD_DATE_FORMAT = new Intl.DateTimeFormat('en-CA', {
+  timeZone: 'Europe/Moscow',
+  year: 'numeric',
+  month: '2-digit',
+  day: '2-digit',
+})
+
 const nonEmpty = (s: string | null | undefined): s is string => typeof s === 'string' && s.trim() !== ''
 
 export interface ProtocolContextInput {
@@ -98,7 +110,7 @@ export interface ProtocolContextInput {
 /**
  * Sections for LlmInput.context, or undefined when there is nothing to say — in which
  * case the protocol request must stay byte-for-byte the pre-FR-004 one (RQ-049).
- * <meeting_meta> (title, date, type, goal) is only emitted alongside real context: a
+ * <meeting_meta> (title, upload date, type, goal) is only emitted alongside real context: a
  * title and a date alone would change every existing meeting's request.
  */
 export function buildProtocolContext(input: ProtocolContextInput): LlmContextSections | undefined {
@@ -124,7 +136,7 @@ export function buildProtocolContext(input: ProtocolContextInput): LlmContextSec
 
   sections.meeting_meta = [
     `${l.title}: ${meeting.title}`,
-    `${l.date}: ${meeting.createdAt.toISOString().slice(0, 10)}`,
+    `${l.date}: ${UPLOAD_DATE_FORMAT.format(meeting.createdAt)}`,
     meetingType ? `${l.type}: ${MEETING_TYPE_LABEL[language][meetingType]}` : null,
     goal ? `${l.goal}: ${goal}` : null,
   ]

@@ -74,20 +74,23 @@ export function frozenContextSnapshot(
 
 /**
  * Pessimistic token estimate for one keyterm. Real tokenizers spend roughly 3–4 Latin
- * characters or 2–3 Cyrillic characters per token; we assume 3 and 2, never less than
- * one token per word, plus one token of separator per term — so the real count stays
- * under ASR_KEYTERMS_MAX_TOKENS whenever the estimate does.
+ * letters or 2–3 Cyrillic letters per token; we assume 3 and 2. Digits and punctuation
+ * (`1С:ERP-2026`, `ABC123`) are often split one per token, so each counts as a full
+ * token. Never less than one token per word, plus one token of separator per term — so
+ * the real count stays under ASR_KEYTERMS_MAX_TOKENS whenever the estimate does.
  */
 export function estimateKeytermTokens(term: string): number {
   let tokens = 1
   for (const word of term.split(/\s+/).filter(Boolean)) {
-    let ascii = 0
+    let latin = 0
+    let symbols = 0
     let other = 0
     for (const ch of word) {
-      if (ch.charCodeAt(0) < 128) ascii++
+      if (/[A-Za-z]/.test(ch)) latin++
+      else if (ch.charCodeAt(0) < 128) symbols++
       else other++
     }
-    tokens += Math.max(1, Math.ceil(ascii / 3 + other / 2))
+    tokens += Math.max(1, Math.ceil(latin / 3 + other / 2) + symbols)
   }
   return tokens
 }

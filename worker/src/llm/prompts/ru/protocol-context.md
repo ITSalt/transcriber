@@ -53,7 +53,7 @@ List in "## Участники" the people who actually spoke or were clearly pr
 
 <carried_tasks>
 Tasks from <previous_protocol> and <project_memory> may be discussed again in this meeting.
-- Mark such a task as discussed, done, moved, or cancelled ONLY when the transcript confirms it, and refer to it by its code: "T-42: договор отправлен (подтверждено на встрече)".
+- Mark such a task as discussed, done, moved, or cancelled ONLY when the transcript confirms it, and refer to it by its code: "T-42: договор отправлен (подтверждено на встрече)". A task without a code is referred to by its wording.
 - Do not repeat tasks that were not mentioned in the transcript, and do not change their status on your own.
 - A new task that was assigned in this meeting gets no code; never invent T-codes.
 </carried_tasks>

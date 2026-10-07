@@ -177,7 +177,7 @@ describe('buildProtocolContext — what each section says', () => {
   it('memory alone yields <project_memory> plus <meeting_meta>', () => {
     const ctx = buildProtocolContext({ snapshot: null, memory: 'T-1 | x', meeting, language: 'RU' })!
     expect(ctx.project_memory).toBe('T-1 | x')
-    expect(ctx.meeting_meta).toBe('Название: Созвон\nДата: 2026-10-07')
+    expect(ctx.meeting_meta).toBe('Название: Созвон\nДата загрузки записи: 2026-10-07')
     expect(ctx.participants).toBeNull()
   })
 
@@ -201,7 +201,7 @@ describe('buildProtocolContext — what each section says', () => {
       meeting,
       language: 'RU',
     })!
-    expect(ctx.meeting_meta).toBe('Название: Созвон\nДата: 2026-10-07\nТип встречи: переговоры\nЦель: Подписать NDA')
+    expect(ctx.meeting_meta).toBe('Название: Созвон\nДата загрузки записи: 2026-10-07\nТип встречи: переговоры\nЦель: Подписать NDA')
     expect(ctx.participants).toBe(
       '- Мария Котова (также: Маша) — роль: юрист; организация: ООО Ромашка; сторона: клиент\n- Иван',
     )
@@ -210,12 +210,20 @@ describe('buildProtocolContext — what each section says', () => {
     expect(ctx.project_memory).toBeNull()
   })
 
+  it('the upload date is the Moscow calendar day, not the UTC one', () => {
+    const ctx = buildProtocolContext({
+      snapshot: { ...EMPTY, notes: 'n' }, memory: null, language: 'RU',
+      meeting: { title: 'Ночь', createdAt: new Date('2026-10-06T22:30:00Z') },
+    })!
+    expect(ctx.meeting_meta).toBe('Название: Ночь\nДата загрузки записи: 2026-10-07')
+  })
+
   it('previous protocol from the project without text is omitted', () => {
     const ctx = buildProtocolContext({
       snapshot: { ...EMPTY, notes: 'n', previous_protocol: { source: 'project', meeting_id: null, text: null } },
       memory: null, meeting, language: 'EN',
     })!
     expect(ctx.previous_protocol).toBeNull()
-    expect(ctx.meeting_meta).toBe('Title: Созвон\nDate: 2026-10-07')
+    expect(ctx.meeting_meta).toBe('Title: Созвон\nRecording uploaded: 2026-10-07')
   })
 })

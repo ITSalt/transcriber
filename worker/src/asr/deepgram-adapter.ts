@@ -220,7 +220,7 @@ export class DeepgramAsrProvider implements IAsrProvider {
     // pass it as min_speakers/max_speakers, but @deepgram/sdk 5.x transcribeFile
     // builds the query from a fixed whitelist of keys and silently dropped both, so
     // the count never reached Deepgram (nor are they in Deepgram's diarization docs).
-    // The participant count now reaches the LLM through <participants> instead.
+    // Per D-21 participant information reaches only the LLM (<participants> in UC-300).
 
     // FR-004 / RQ-048: repeated `keyterm=` parameters (the SDK serializes an array as
     // key=a&key=b). The caller already capped the list; re-capping is idempotent and

@@ -25,7 +25,7 @@ vi.mock('../lib/storage.js', () => ({
   }),
 }))
 
-import { processProtocolGenerationJob } from './protocol-generation.js'
+import { processProtocolGenerationJob, PROMPT_ARCHIVE_TIMEOUT_MS } from './protocol-generation.js'
 import { prisma } from '../lib/prisma.js'
 import { renderProtocolUserMessage } from '../llm/protocol-prompt.js'
 
@@ -220,7 +220,7 @@ describe('UC-300 context input (RQ-049, RQ-059)', () => {
     expect(input.prompt).toBe(TRANSCRIPT)
     expect(input.language).toBe('RU')
     expect(input.context).toMatchObject({
-      meeting_meta: 'Название: Встреча с Ромашкой\nДата: 2026-10-07\nТип встречи: переговоры\nЦель: Подписать договор',
+      meeting_meta: 'Название: Встреча с Ромашкой\nДата загрузки записи: 2026-10-07\nТип встречи: переговоры\nЦель: Подписать договор',
       agenda: '1. Договор',
       previous_protocol: '## Задачи\n- T-7: договор',
       project_memory: null,
@@ -284,6 +284,23 @@ describe('UC-300 prompt archive is best effort (RQ-061)', () => {
     expect(tx.protocolGeneration.create.mock.calls[0]![0].data.promptUri).toBeNull()
     expect(tx.protocolVersion.create).toHaveBeenCalledOnce()
     expect(log.warn).toHaveBeenCalled()
+  })
+
+  it('a hanging S3 is abandoned after the timeout — prompt_uri NULL, protocol persisted', async () => {
+    vi.useFakeTimers()
+    try {
+      const { llm, storage, tx } = setup()
+      storage.putObject.mockReturnValue(new Promise(() => {}))
+      const run = processProtocolGenerationJob(job, logger() as never, {
+        llm, storage, memory: noMemory, redisUrl: 'redis://x', env: {},
+      })
+      await vi.advanceTimersByTimeAsync(PROMPT_ARCHIVE_TIMEOUT_MS + 1)
+      await run
+      expect(tx.protocolGeneration.create.mock.calls[0]![0].data.promptUri).toBeNull()
+      expect(tx.protocol.create).toHaveBeenCalledOnce()
+    } finally {
+      vi.useRealTimers()
+    }
   })
 
   it('missing S3 configuration (default storage) behaves the same', async () => {

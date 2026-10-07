@@ -126,6 +126,11 @@ describe('estimateKeytermTokens — conservative', () => {
   it('Cyrillic costs more than Latin of the same length', () => {
     expect(estimateKeytermTokens('Петров')).toBeGreaterThan(estimateKeytermTokens('Petrov'))
   })
+  it('digits and punctuation count a token each', () => {
+    // 1С:ERP-2026 → 1,:,-,2,0,2,6 = 7 symbols + ceil(3/3 + 1/2) = 2 letters + 1 separator
+    expect(estimateKeytermTokens('1С:ERP-2026')).toBe(10)
+    expect(estimateKeytermTokens('ABC123')).toBeGreaterThanOrEqual(5)
+  })
   it('never estimates less than one token per word', () => {
     expect(estimateKeytermTokens('a b c d')).toBeGreaterThanOrEqual(4)
   })

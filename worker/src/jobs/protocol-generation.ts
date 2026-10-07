@@ -121,6 +121,12 @@ export interface ProtocolGenerationDeps {
 // ─── Context, memory, prompt archive ─────────────────────────────────────────
 
 /**
+ * RQ-061: upper bound for the prompt archive PUT. The archive is audit, not the product:
+ * an S3 that accepts the connection and then hangs must not keep the protocol unsaved.
+ */
+export const PROMPT_ARCHIVE_TIMEOUT_MS = 15_000
+
+/**
  * RQ-062: <project_memory> only for a project meeting, filtered by workspace AND
  * project. A failing provider must not cost the user a protocol (D-19): the section
  * is omitted and the generation goes on.
@@ -158,7 +164,21 @@ async function archivePrompt(
   const key = `ws/${workspaceId}/prompts/${generationId}.txt`
   try {
     const target = storage ?? createStorage()
-    await target.putObject(key, Buffer.from(userMessage, 'utf-8'), 'text/plain; charset=utf-8')
+    let timer: NodeJS.Timeout | undefined
+    const timeout = new Promise<never>((_, reject) => {
+      timer = setTimeout(
+        () => reject(new Error(`prompt archive timed out after ${PROMPT_ARCHIVE_TIMEOUT_MS} ms`)),
+        PROMPT_ARCHIVE_TIMEOUT_MS,
+      )
+    })
+    try {
+      await Promise.race([
+        target.putObject(key, Buffer.from(userMessage, 'utf-8'), 'text/plain; charset=utf-8'),
+        timeout,
+      ])
+    } finally {
+      clearTimeout(timer)
+    }
     return target.keyToStorageUri(key)
   } catch (err) {
     log.warn(
