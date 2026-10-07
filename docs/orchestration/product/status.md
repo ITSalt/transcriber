@@ -35,7 +35,7 @@ CANCELLED (причина).
 | [WP-WORKER-01](work-packages/WP-WORKER-01-context-asr-llm.md) | worker | Контекст встречи в Deepgram и в промпт протокола, метаданные генерации | ACCEPTED | product-worker | https://github.com/ITSalt/transcriber/pull/17 (accepted 830af93698) | 2026-10-07 |
 | [WP-WORKER-02](work-packages/WP-WORKER-02-project-memory.md) | worker | Память проекта в Neo4j: извлечение, сопоставление, сводка | CANCELLED (создан в неверном потоке; заменён WP-WORKER-MEMORY-01 (D-15)) | product-worker | — | 2026-10-07 |
 | [WP-INFRA-01](work-packages/WP-INFRA-01-neo4j.md) | infra | Neo4j памяти проекта: сервис, лимиты, бэкап, CI, шаг деплоя | PROD | product-infra | https://github.com/ITSalt/transcriber/pull/10 (accepted 0e7ebe85d3) | 2026-10-07 |
-| [WP-WEB-PROJECTS-01](work-packages/WP-WEB-PROJECTS-01-projects-context.md) | web-projects | Проекты и форма контекста перед распознаванием | REVIEW | product-web-projects | https://github.com/ITSalt/transcriber/pull/19 | 2026-10-07 |
+| [WP-WEB-PROJECTS-01](work-packages/WP-WEB-PROJECTS-01-projects-context.md) | web-projects | Проекты и форма контекста перед распознаванием | REVISE | product-web-projects | https://github.com/ITSalt/transcriber/pull/19 | 2026-10-07 |
 | [WP-WEB-FEEDBACK-01](work-packages/WP-WEB-FEEDBACK-01-feedback.md) | web-feedback | Режим обратной связи по протоколу | REVIEW | product-web-feedback | https://github.com/ITSalt/transcriber/pull/18 | 2026-10-07 |
 | [WP-WEB-MEMORY-01](work-packages/WP-WEB-MEMORY-01-registry.md) | web-memory | Реестр задач и решений проекта, очередь подтверждений | ACCEPTED | product-web-memory | https://github.com/ITSalt/transcriber/pull/14 (accepted b404424afc) | 2026-10-07 |
 | [WP-API-PROJECTS-01](work-packages/WP-API-PROJECTS-01-projects-context.md) | api-projects | API проектов и контекста встречи, запуск распознавания | READY | product-api-projects | — | 2026-10-07 |
@@ -130,6 +130,7 @@ R-n — действие: точная команда одной строкой 
 <!-- orch:journal -->
 | Дата | WP | Событие | Подтверждение |
 |------|----|---------|---------------|
+| 2026-10-07 22:34Z | WP-WEB-PROJECTS-01 | WP-WEB-PROJECTS-01: REVIEW -> REVISE | reports/wp-web-projects-01-review-20261007.md: 3 пункта сейчас (AWAITING_START без выхода; статус complete; 409 → навигация) + 1 при rebase на FRONTEND-02 |
 | 2026-10-07 22:33Z | — | Очередь слияний перестроена по порядку доставки: BACKEND-01 → FRONTEND-02 → WORKER-01 → WORKER-MEMORY-01 (после R-14) → WEB-MEMORY-01 (после волны 3) | orch.py merge drop/add |
 | 2026-10-07 22:33Z | WP-WEB-MEMORY-01 | WP-WEB-MEMORY-01 queued for merge (sequential) | https://github.com/ITSalt/transcriber/pull/14 |
 | 2026-10-07 22:33Z | WP-WORKER-MEMORY-01 | WP-WORKER-MEMORY-01 queued for merge (sequential) | https://github.com/ITSalt/transcriber/pull/16 |
