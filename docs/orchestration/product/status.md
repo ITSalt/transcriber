@@ -37,7 +37,7 @@ CANCELLED (причина).
 | [WP-INFRA-01](work-packages/WP-INFRA-01-neo4j.md) | infra | Neo4j памяти проекта: сервис, лимиты, бэкап, CI, шаг деплоя | PROD | product-infra | https://github.com/ITSalt/transcriber/pull/10 (accepted 0e7ebe85d3) | 2026-10-07 |
 | [WP-WEB-PROJECTS-01](work-packages/WP-WEB-PROJECTS-01-projects-context.md) | web-projects | Проекты и форма контекста перед распознаванием | IN_PROGRESS | product-web-projects | — | 2026-10-07 |
 | [WP-WEB-FEEDBACK-01](work-packages/WP-WEB-FEEDBACK-01-feedback.md) | web-feedback | Режим обратной связи по протоколу | IN_PROGRESS | product-web-feedback | — | 2026-10-07 |
-| [WP-WEB-MEMORY-01](work-packages/WP-WEB-MEMORY-01-registry.md) | web-memory | Реестр задач и решений проекта, очередь подтверждений | REVIEW | product-web-memory | — | 2026-10-07 |
+| [WP-WEB-MEMORY-01](work-packages/WP-WEB-MEMORY-01-registry.md) | web-memory | Реестр задач и решений проекта, очередь подтверждений | REVIEW | product-web-memory | https://github.com/ITSalt/transcriber/pull/14 | 2026-10-07 |
 | [WP-API-PROJECTS-01](work-packages/WP-API-PROJECTS-01-projects-context.md) | api-projects | API проектов и контекста встречи, запуск распознавания | READY | product-api-projects | — | 2026-10-07 |
 | [WP-API-FEEDBACK-01](work-packages/WP-API-FEEDBACK-01-feedback.md) | api-feedback | API версий протокола и обратной связи, разбор docx | READY | product-api-feedback | — | 2026-10-07 |
 | [WP-API-MEMORY-01](work-packages/WP-API-MEMORY-01-registry.md) | api-memory | API памяти проекта: задачи, решения, подтверждения | READY | product-api-memory | — | 2026-10-07 |
@@ -95,6 +95,7 @@ R-n — действие: точная команда одной строкой 
 | transcriber:worker/package.json | transcriber | WP-WORKER-MEMORY-01 | 2026-10-07 20:11Z | — | dispatch |
 | transcriber:api/package.json | transcriber | WP-BACKEND-01 | 2026-10-07 20:28Z | — | 5 строк scripts (user:create\|grant\|reset-pin\|blocks\|unblock), без зависимостей и lockfile |
 | transcriber:dev-stack | transcriber | WP-WORKER-MEMORY-01 | 2026-10-07 20:37Z | — | LOCK message: memory-neo4j на 127.0.0.1:7688 для интеграционных тестов |
+| transcriber:web/src/i18n/** | transcriber | WP-FRONTEND-02 | 2026-10-07 21:54Z | — | ретроактивно: пакет изменил root en/ru.json без объявления; замок был свободен |
 
 ## Очередь слияний
 
@@ -116,6 +117,9 @@ R-n — действие: точная команда одной строкой 
 <!-- orch:journal -->
 | Дата | WP | Событие | Подтверждение |
 |------|----|---------|---------------|
+| 2026-10-07 21:54Z | WP-WEB-MEMORY-01 | WP-WEB-MEMORY-01: review round 1 started at dd0ee730e5 | reports/wp-web-memory-01-review-20261007.md |
+| 2026-10-07 21:54Z | WP-FRONTEND-02 | WP-FRONTEND-02: REVIEW -> REVIEW | review-start feb98ef, PR #13; ревьюер запущен |
+| 2026-10-07 21:54Z | WP-FRONTEND-02 | lock transcriber:web/src/i18n/** acquired | ретроактивно: пакет изменил root en/ru.json без объявления; замок был свободен |
 | 2026-10-07 21:52Z | WP-WEB-MEMORY-01 | WP-WEB-MEMORY-01: READY dd0ee73, PR #14 (окно связи); ревью после восстановления доступа к GitHub, порядок: FRONTEND-02 первым | сообщение product-web-memory |
 | 2026-10-07 21:52Z | WP-WEB-MEMORY-01 | WP-WEB-MEMORY-01: IN_PROGRESS -> REVIEW | READY dd0ee73, PR #14 |
 | 2026-10-07 21:52Z | WP-FRONTEND-02 | WP-FRONTEND-02: IN_PROGRESS -> REVIEW | feb98efd46; report reports/wp-frontend-02-review-20261007.md |
