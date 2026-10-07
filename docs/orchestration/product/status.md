@@ -92,6 +92,7 @@ R-n — действие: точная команда одной строкой 
 | transcriber:migrations | transcriber | WP-BACKEND-01 | 2026-10-07 20:10Z | — | dispatch |
 | transcriber:shared/** | transcriber | WP-WORKER-MEMORY-01 | 2026-10-07 20:11Z | — | dispatch |
 | transcriber:worker/package.json | transcriber | WP-WORKER-MEMORY-01 | 2026-10-07 20:11Z | — | dispatch |
+| transcriber:api/package.json | transcriber | WP-BACKEND-01 | 2026-10-07 20:28Z | — | 5 строк scripts (user:create\|grant\|reset-pin\|blocks\|unblock), без зависимостей и lockfile |
 
 ## Очередь слияний
 
@@ -113,6 +114,8 @@ R-n — действие: точная команда одной строкой 
 <!-- orch:journal -->
 | Дата | WP | Событие | Подтверждение |
 |------|----|---------|---------------|
+| 2026-10-07 20:28Z | WP-BACKEND-01 | WP-BACKEND-01: QUESTION — scripts в api/package.json для CLI user:*; ANSWER: замок api/package.json выдан, объявление в шапке дополнено, зависимости/lockfile не трогать | orch.py lock acquire api/package.json |
+| 2026-10-07 20:28Z | WP-BACKEND-01 | lock transcriber:api/package.json acquired | 5 строк scripts (user:create\|grant\|reset-pin\|blocks\|unblock), без зависимостей и lockfile |
 | 2026-10-07 20:23Z | WP-BACKEND-01 | WP-BACKEND-01: QUESTION о хранении speaker_count для deferStart — ANSWER: ок (A-5); контракт /start вписан в WP-API-PROJECTS-01 | сообщение product-backend; safe_edit WP-API-PROJECTS-01 п. 8 |
 | 2026-10-07 20:23Z | — | A-5 recorded | — |
 | 2026-10-07 20:20Z | WP-BACKEND-01 | WP-BACKEND-01: UNLOCK graph (UC-400..403 детализированы, RQ-058 по D-20, Task UC-400-BE) | сообщение product-backend |

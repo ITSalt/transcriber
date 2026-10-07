@@ -17,7 +17,7 @@
 | Команды методологии: разрешены | nacl: `nacl-tl-dev-be`, `nacl-tl-dev`, `nacl-tl-fix`, `nacl-tl-review`, `nacl-tl-regression-test`, `nacl-tl-verify-code`, `nacl-tl-sync`, `nacl-tl-docs`, `nacl-tl-stubs`, `nacl-sa-uc`, `nacl-sa-domain`, `nacl-sa-feature`, `nacl-sa-validate`, `nacl-tl-plan`, `nacl-tl-status` |
 | Команды методологии: запрещены | `nacl-tl-release`, `nacl-tl-deploy`, `nacl-tl-deliver`, `nacl-tl-hotfix`, `nacl-tl-ship`, `nacl-tl-conductor`, `nacl-tl-full`, `nacl-goal`, `nacl-publish` |
 | Разрешённые пути | пути потока backend (orch.yaml): ядро api, api/src/features/auth/**, api/scripts/**, api/test/**; api/prisma/** — под замком |
-| Общие пути, которые трогает пакет | `api/prisma/**` (одна миграция NOT NULL), `.tl/**`; вне путей модуля, разрешено этим пакетом: `.worktreeinclude` (D-1), `.env.example` (только строка `PIN_PEPPER`) |
+| Общие пути, которые трогает пакет | `api/prisma/**` (одна миграция NOT NULL), `.tl/**`, `api/package.json` (только 5 строк `scripts` для CLI user:*; зависимости и lockfile не трогать); вне путей модуля, разрешено этим пакетом: `.worktreeinclude` (D-1), `.env.example` (только строка `PIN_PEPPER`) |
 | Миграции | да, маленькая: `*_meeting_workspace_not_null` — дозаполнить пустые `workspaceId` (встречи, созданные старым кодом между релизами) пространством «Роман» и поставить NOT NULL |
 | Ресурсы (замки) | `migrations` (с dispatch до merge), `graph` по запросу |
 | Тестовая БД и порты | нет; нет |
