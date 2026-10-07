@@ -92,6 +92,7 @@ R-n — действие: точная команда одной строкой 
 <!-- orch:journal -->
 | Дата | WP | Событие | Подтверждение |
 |------|----|---------|---------------|
+| 2026-10-07 16:46Z | — | resume: reconciled — no sessions, no program branches/PRs, no locks; main checkout /home/cloudpc/projects/transcriber has an uncommitted edit to config.yaml (neo4j_http_port 3574->3614, shared path, no package owns it; worktrees branch from origin/main so it does not reach packages) | ListAgents: only product-coord; git branch -r: no feature/wp-* ; gh pr list: last PR #8 MERGED 2026-08-17; git status: M config.yaml |
 | 2026-10-07 16:38Z | — | repo path fixed to the main checkout /home/cloudpc/projects/transcriber; start commands of active WPs updated | dispatch --dry-run WP-BACKEND-06/FRONTEND-01/INFRA-01: ok |
 | 2026-10-07 16:36Z | WP-WEB-MEMORY-01 | WP-WEB-MEMORY-01: DRAFT -> READY | разделы заполнены; D-11..D-15 |
 | 2026-10-07 16:36Z | WP-WEB-FEEDBACK-01 | WP-WEB-FEEDBACK-01: DRAFT -> READY | разделы заполнены; D-11..D-15 |
