@@ -32,7 +32,7 @@ CANCELLED (причина).
 | [WP-FRONTEND-05](work-packages/WP-FRONTEND-05-project-memory-ui.md) | frontend | Реестр задач и решений проекта, очередь подтверждений | CANCELLED (заменён WP-WEB-MEMORY-01 (D-15)) | product-frontend | — | 2026-10-07 |
 | [WP-BACKEND-05](work-packages/WP-BACKEND-05-neo4j-prod.md) | backend | Neo4j для памяти проекта: сервис, лимиты памяти, бэкап, CI | CANCELLED (заменён WP-INFRA-01 и WP-WORKER-MEMORY-01 (D-15)) | product-backend | — | 2026-10-07 |
 | [WP-BACKEND-06](work-packages/WP-BACKEND-06-contract.md) | backend | Контракт программы: схема БД, контракты shared, зависимости | PROD | product-backend | https://github.com/ITSalt/transcriber/pull/12 (accepted 3fa3500f47) | 2026-10-07 |
-| [WP-WORKER-01](work-packages/WP-WORKER-01-context-asr-llm.md) | worker | Контекст встречи в Deepgram и в промпт протокола, метаданные генерации | DISPATCHING | product-worker | — | 2026-10-07 |
+| [WP-WORKER-01](work-packages/WP-WORKER-01-context-asr-llm.md) | worker | Контекст встречи в Deepgram и в промпт протокола, метаданные генерации | IN_PROGRESS | product-worker | — | 2026-10-07 |
 | [WP-WORKER-02](work-packages/WP-WORKER-02-project-memory.md) | worker | Память проекта в Neo4j: извлечение, сопоставление, сводка | CANCELLED (создан в неверном потоке; заменён WP-WORKER-MEMORY-01 (D-15)) | product-worker | — | 2026-10-07 |
 | [WP-INFRA-01](work-packages/WP-INFRA-01-neo4j.md) | infra | Neo4j памяти проекта: сервис, лимиты, бэкап, CI, шаг деплоя | PROD | product-infra | https://github.com/ITSalt/transcriber/pull/10 (accepted 0e7ebe85d3) | 2026-10-07 |
 | [WP-WEB-PROJECTS-01](work-packages/WP-WEB-PROJECTS-01-projects-context.md) | web-projects | Проекты и форма контекста перед распознаванием | DISPATCHING | product-web-projects | — | 2026-10-07 |
@@ -114,6 +114,8 @@ R-n — действие: точная команда одной строкой 
 <!-- orch:journal -->
 | Дата | WP | Событие | Подтверждение |
 |------|----|---------|---------------|
+| 2026-10-07 20:32Z | WP-WORKER-01 | WP-WORKER-01: сессия product-worker стартовала; QUESTION instructions — ANSWER D-17 (b) | сообщение product-worker |
+| 2026-10-07 20:32Z | WP-WORKER-01 | WP-WORKER-01: DISPATCHING -> IN_PROGRESS | сообщение product-worker: сессия запущена, ветка от 2570d0a; QUESTION по D-17 отвечен |
 | 2026-10-07 20:31Z | — | Второй сетевой сбой машины оркестратора с ~20:10Z: GitHub 443/22 недоступны для всех сессий; product-frontend не может запушить готовый FRONTEND-02 (feb98ef); ждём, повтор push на стороне сессий | диагностика 20:31Z; сообщение product-frontend |
 | 2026-10-07 20:31Z | WP-FRONTEND-02 | WP-FRONTEND-02: DISPATCHING -> IN_PROGRESS | сообщение product-frontend: работа готова локально, коммит feb98efd в feature/wp-frontend-02-login-tasks; push/PR ждут восстановления сети |
 | 2026-10-07 20:28Z | WP-BACKEND-01 | WP-BACKEND-01: QUESTION — scripts в api/package.json для CLI user:*; ANSWER: замок api/package.json выдан, объявление в шапке дополнено, зависимости/lockfile не трогать | orch.py lock acquire api/package.json |
