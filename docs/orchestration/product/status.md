@@ -113,6 +113,8 @@ R-n — действие: точная команда одной строкой 
 <!-- orch:journal -->
 | Дата | WP | Событие | Подтверждение |
 |------|----|---------|---------------|
+| 2026-10-07 20:23Z | WP-BACKEND-01 | WP-BACKEND-01: QUESTION о хранении speaker_count для deferStart — ANSWER: ок (A-5); контракт /start вписан в WP-API-PROJECTS-01 | сообщение product-backend; safe_edit WP-API-PROJECTS-01 п. 8 |
+| 2026-10-07 20:23Z | — | A-5 recorded | — |
 | 2026-10-07 20:20Z | WP-BACKEND-01 | WP-BACKEND-01: UNLOCK graph (UC-400..403 детализированы, RQ-058 по D-20, Task UC-400-BE) | сообщение product-backend |
 | 2026-10-07 20:20Z | WP-BACKEND-01 | lock transcriber:graph released | orch.py lock |
 | 2026-10-07 20:18Z | WP-BACKEND-01 | WP-BACKEND-01: QUESTION о порядке включения входа — ANSWER по D-20 (флаг AUTH_REQUIRED, legacy-принципал «Роман»); WP-FRONTEND-02 извещён о контракте /me в обоих режимах | сообщение product-backend |

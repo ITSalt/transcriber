@@ -58,6 +58,8 @@
 5. `GET /api/projects/:id/last-protocol` — последний протокол проекта (текущая версия).
 6. Не делать: ASR/LLM, UI, память проекта.
 
+8. Контракт отложенного старта от WP-BACKEND-01 (A-5): при `complete` с `defer_start` BACKEND-01 сразу создаёт `TranscriptionJob` в статусе `PENDING` и всегда пишет `transcription_jobs.speaker_count` (новая nullable-колонка его миграции; `speaker_count` из `complete` больше не живёт только в payload очереди). `POST /api/meetings/:id/start` этого пакета не создаёт job, а ставит существующий `PENDING`-job в очередь с payload `{transcription_job_id, speaker_count: job.speakerCount}` (тот же формат, что у немедленного старта), переводит встречу из `AWAITING_START` в `TRANSCRIBING` и фиксирует снимок контекста. Повторный `/start` для встречи не в `AWAITING_START` — ошибка из `PROGRAM_ERRORS` (конфликт состояния), идемпотентность по job.
+
 ### Не входит
 
 - merge, деплой, PROD, запись в БД
