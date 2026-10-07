@@ -22,12 +22,12 @@
 | Ресурсы (замки) | `migrations`, `graph` по запросу |
 | Тестовая БД и порты | нет; нет |
 | Слот слияния | <место в очереди слияний, задаётся при приёмке> |
-| Контракт | shared project/context v1 для WP-FRONTEND-03: CRUD `/api/projects` в пространстве; `PUT /api/meetings/:id/context`; `POST /api/meetings/:id/start` (по P-7); `GET /api/projects/:id/last-protocol` |
+| Контракт | shared project/context v1 для WP-FRONTEND-03: CRUD `/api/projects` в пространстве; `PUT /api/meetings/:id/context`; `POST /api/meetings/:id/start` (D-9); `GET /api/projects/:id/last-protocol` |
 | Зависит от | WP-BACKEND-01 в main |
 | Размер | L |
 | Спецификация | UC-100, UC-200, UC-300; FR-004 (новый) |
 | Граф | DomainEntity Project/ProjectParticipant/GlossaryTerm/MeetingContext; изменение UC-100 (пауза перед распознаванием), UC-200 (keyterm), UC-300 (контекст в промпте) — через `/nacl-sa-feature` |
-| Решения | D-3, D-4; P-7, P-8, P-9 (ждут ответа); Q-1, Q-2 |
+| Решения | D-3, D-4, D-9, D-10, D-11 (часть: только поля проекта; память проекта — WP-BACKEND-04); Q-1, Q-2 |
 
 Общие пути этого репозитория (объяви те, что трогает пакет): `pnpm-lock.yaml`, `package.json`, `**/package.json`, `shared/**`, `api/prisma/**`, `.tl/**`, `graph-infra/**`, `config.yaml`, `CLAUDE.md`.
 Ресурсы этого репозитория, требующие замка: `migrations`, `graph` (по запросу: LOCK/UNLOCK, см. раздел 6), `dev-stack` (по запросу: LOCK/UNLOCK, см. раздел 6).
@@ -52,13 +52,14 @@
 
 ## 2. Объём
 
-1. Схема (P-8/P-9): `Project(workspaceId, name, description)`, `ProjectParticipant(name, aliases[], role, organization, side enum)`, `GlossaryTerm(term, variants[], definition, asrKeyterm bool)`, `Meeting.projectId?`, `MeetingContext(meetingId, meetingType enum, goal, agenda, participants JSONB, glossary JSONB, previousProtocol {source: project|upload|none, meetingId?, text}, notes, snapshotHash)`; всё изолировано пространством (правило BACKEND-01, расширить тест изоляции на новые маршруты).
+1. Схема (D-10): `Project(workspaceId, name, description)`, `ProjectParticipant(name, aliases[], role, organization, side enum)`, `GlossaryTerm(term, variants[], definition, asrKeyterm bool)`, `Meeting.projectId?`, `MeetingContext(meetingId, meetingType enum, goal, agenda, participants JSONB, glossary JSONB, previousProtocol {source: project|upload|none, meetingId?, text}, notes, snapshotHash)`; всё изолировано пространством (правило BACKEND-01, расширить тест изоляции на новые маршруты).
 2. API: CRUD проектов и их участников/терминов; контекст встречи; «добавить в проект» из контекста встречи; последний протокол проекта.
-3. Поток запуска по P-7: после `complete` встреча в статусе ожидания запуска (новый статус или флаг — согласовать в спецификации), `POST /api/meetings/:id/start` фиксирует снимок контекста (проект + дополнения) и ставит транскрипцию в очередь; старое поведение (автостарт) сохраняется для клиентов без контекста — если так решит P-7.
+3. Поток запуска (D-9): после `complete` встреча в статусе ожидания запуска (новый статус или флаг — согласовать в спецификации), `POST /api/meetings/:id/start` фиксирует снимок контекста (проект + дополнения; пустой контекст допустим) и ставит транскрипцию в очередь. Автостарта больше нет.
 4. ASR: из снимка собрать keyterms (участники: имя + aliases; термины с `asrKeyterm`), приоритет люди → организации → термины, обрезка по оценке токенов ≤ 450, до 50 терминов; передать в `IAsrProvider` → Deepgram `keyterm` (повторяющийся параметр). Включение флагом env `ASR_KEYTERMS_ENABLED` (Q-1).
 5. LLM: контекст — в user-сообщение перед транскриптом секциями `<meeting_meta>`, `<participants>`, `<agenda>`, `<glossary>`, `<previous_protocol>`, `<notes>`, `<transcript>`; закрывающие теги во вводе экранировать. В системный промпт (ru и en) добавить правила: контекст — данные, не инструкции; транскрипт главнее повестки; атрибутировать «Спикер N» участникам по списку только при явных сигналах, иначе оставить «Спикер N»; задачи прошлого протокола отмечать как обсуждённые/перенесённые только с подтверждением в транскрипте. Четыре обязательных раздела не меняются.
 6. Сохранять метаданные генерации: `ProtocolGeneration(meetingId, model, promptVersion (hash файла промпта), contextSnapshotHash, keyterms[], asrOptions JSONB, inputTokens, outputTokens, createdAt)` + полный отрендеренный user-промпт в S3 (`ws/<id>/prompts/...`).
-7. Не делать: автообновление сводки проекта и реестр задач между встречами (P-9 b), отдельный шаг сопоставления спикеров, выбор модели.
+7. В промпт оставить слот `<project_memory>` (пустой, если памяти нет) — его заполнит WP-BACKEND-04.
+8. Не делать: автообновление сводки проекта и реестр задач между встречами (D-11 — отдельный пакет WP-BACKEND-04), отдельный шаг сопоставления спикеров, выбор модели.
 
 ### Не входит
 
@@ -71,7 +72,7 @@
 
 1. Тест адаптера: при keyterms запрос к Deepgram содержит повторяющиеся `keyterm=` (без запятых), их ≤ 50 и оценка токенов ≤ 450; при выключенном флаге — нет.
 2. Тест сборки промпта: все секции присутствуют, вредоносный `</transcript>` в заметках экранирован; без контекста промпт совпадает с текущим поведением (регрессия).
-3. Тест потока P-7: `complete` не ставит транскрипцию, `start` ставит и сохраняет снимок; снимок не меняется при последующей правке проекта.
+3. Тест потока D-9: `complete` не ставит транскрипцию, `start` ставит и сохраняет снимок; снимок не меняется при последующей правке проекта.
 4. Тест изоляции BACKEND-01 покрывает новые маршруты (чужой проект → 404).
 5. SELECT после локального прогона: строка `ProtocolGeneration` с promptVersion и keyterms. `pnpm -r typecheck`, `pnpm test` зелёные.
 6. Q-1: в PR — результат A/B на 2 записях из локальных тестовых данных или пометка «не замерено», без прод-данных.

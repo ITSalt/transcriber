@@ -17,7 +17,7 @@
 | Команды методологии: разрешены | nacl: `nacl-tl-dev-be`, `nacl-tl-dev`, `nacl-tl-fix`, `nacl-tl-review`, `nacl-tl-regression-test`, `nacl-tl-verify-code`, `nacl-tl-sync`, `nacl-tl-docs`, `nacl-tl-stubs`, `nacl-sa-uc`, `nacl-sa-domain`, `nacl-sa-feature`, `nacl-sa-validate`, `nacl-tl-plan`, `nacl-tl-status` |
 | Команды методологии: запрещены | `nacl-tl-release`, `nacl-tl-deploy`, `nacl-tl-deliver`, `nacl-tl-hotfix`, `nacl-tl-ship`, `nacl-tl-conductor`, `nacl-tl-full`, `nacl-goal`, `nacl-publish` |
 | Разрешённые пути | `api/**`, `worker/**` |
-| Общие пути, которые трогает пакет | `shared/**` (Zod-схемы версий и отзывов), `api/prisma/**`, `api/package.json` + `pnpm-lock.yaml` (jszip + XML-парсер, если P-10 = a) |
+| Общие пути, которые трогает пакет | `shared/**` (Zod-схемы версий и отзывов), `api/prisma/**`, `api/package.json` + `pnpm-lock.yaml` (jszip + XML-парсер, D-12) |
 | Миграции | да: `*_protocol_versions_feedback` — новые таблицы + бэкфилл: текущий `Protocol.markdownContent` каждой встречи → `ProtocolVersion` (kind=`legacy` если editCount>0, иначе `generated`) |
 | Ресурсы (замки) | `migrations`, `graph` по запросу |
 | Тестовая БД и порты | нет; нет |
@@ -27,7 +27,7 @@
 | Размер | M |
 | Спецификация | UC-301 (изменённый), FR-005 (новый) |
 | Граф | DomainEntity ProtocolVersion/ProtocolFeedback; UC-301 — через `/nacl-sa-feature` |
-| Решения | D-3, D-4; P-10 (ждёт ответа) |
+| Решения | D-3, D-4, D-12 |
 
 Общие пути этого репозитория (объяви те, что трогает пакет): `pnpm-lock.yaml`, `package.json`, `**/package.json`, `shared/**`, `api/prisma/**`, `.tl/**`, `graph-infra/**`, `config.yaml`, `CLAUDE.md`.
 Ресурсы этого репозитория, требующие замка: `migrations`, `graph` (по запросу: LOCK/UNLOCK, см. раздел 6), `dev-stack` (по запросу: LOCK/UNLOCK, см. раздел 6).
@@ -54,7 +54,7 @@
 1. `ProtocolVersion(meetingId, n, kind: generated|user_edit|legacy, markdown, authorUserId?, generationId?, createdAt)` — неизменяемые строки; при генерации пишется версия `generated`, при каждом `PUT` — новая `user_edit`; `Protocol.markdownContent` остаётся текущим текстом (обратная совместимость).
 2. `ProtocolFeedback(meetingId, workspaceId, userId, protocolVersionN, kind: comment|corrected_protocol|docx_review, category enum?, text?, fileUri?, fileName, mime, sizeBytes, extracted JSONB?, createdAt)`. Категории для `comment` (необязательно): атрибуция спикера / пропущено решение / неверная задача / выдумано / термины-имена / стиль / другое.
 3. Приём: текст; исправленный протокол — текстом или файлом .md/.txt/.docx; Word с комментариями — .docx ≤ 20 МБ. Файлы — в S3 `ws/<workspaceId>/feedback/<id>/<имя>`; проверка mime/расширения и сигнатуры zip для docx.
-4. По P-10 (a): извлечение из .docx в `extracted`: комментарии {id, author, date, text, anchoredText}, правки {type ins|del, author, date, text}, принятый и исходный тексты. Ошибка разбора не роняет приём — файл сохраняется, `extracted.error`.
+4. По D-12: извлечение из .docx в `extracted`: комментарии {id, author, date, text, anchoredText}, правки {type ins|del, author, date, text}, принятый и исходный тексты. Ошибка разбора не роняет приём — файл сохраняется, `extracted.error`.
 5. Ко всем отзывам — ссылка на версию протокола и через неё на `ProtocolGeneration` (модель, версия промпта, снимок контекста).
 6. Изоляция по пространству (тест BACKEND-01 расширить).
 7. Не делать: анализ отзывов, изменение промпта по ним, экспорт.
