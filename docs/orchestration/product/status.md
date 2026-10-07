@@ -93,8 +93,8 @@ R-n — действие: точная команда одной строкой 
 | transcriber:shared/** | transcriber | WP-WORKER-MEMORY-01 | 2026-10-07 20:11Z | — | dispatch |
 | transcriber:worker/package.json | transcriber | WP-WORKER-MEMORY-01 | 2026-10-07 20:11Z | — | dispatch |
 | transcriber:api/package.json | transcriber | WP-BACKEND-01 | 2026-10-07 20:28Z | — | 5 строк scripts (user:create\|grant\|reset-pin\|blocks\|unblock), без зависимостей и lockfile |
-| transcriber:graph | transcriber | WP-WORKER-01 | 2026-10-07 20:32Z | — | LOCK message: /nacl-sa-feature UC-200 keyterm, UC-300 context/memory/generation |
 | transcriber:dev-stack | transcriber | WP-WORKER-MEMORY-01 | 2026-10-07 20:37Z | — | LOCK message: memory-neo4j на 127.0.0.1:7688 для интеграционных тестов |
+| transcriber:graph | transcriber | WP-WORKER-MEMORY-01 | 2026-10-07 20:41Z | — | из очереди: UC-600/UC-605 детализация |
 
 ## Очередь слияний
 
@@ -116,6 +116,10 @@ R-n — действие: точная команда одной строкой 
 <!-- orch:journal -->
 | Дата | WP | Событие | Подтверждение |
 |------|----|---------|---------------|
+| 2026-10-07 20:41Z | WP-WORKER-01 | WP-WORKER-01: UNLOCK graph (UC-200/UC-300 уточнены, RQ-059..062, DEC-010); Q-2 закрыт фактом (D-21); замок graph передан WP-WORKER-MEMORY-01 из очереди | сообщение product-worker; orch.py lock release/acquire |
+| 2026-10-07 20:41Z | — | D-21 recorded | — |
+| 2026-10-07 20:41Z | WP-WORKER-MEMORY-01 | lock transcriber:graph acquired | из очереди: UC-600/UC-605 детализация |
+| 2026-10-07 20:41Z | WP-WORKER-01 | lock transcriber:graph released | orch.py lock |
 | 2026-10-07 20:37Z | WP-WORKER-MEMORY-01 | lock transcriber:dev-stack acquired | LOCK message: memory-neo4j на 127.0.0.1:7688 для интеграционных тестов |
 | 2026-10-07 20:36Z | WP-WORKER-MEMORY-01 | WP-WORKER-MEMORY-01: сессия стартовала; LOCK graph — HOLD, замок у WP-WORKER-01, пакет в очереди | orch.py lock acquire graph |
 | 2026-10-07 20:36Z | WP-WORKER-MEMORY-01 | WP-WORKER-MEMORY-01: DISPATCHING -> IN_PROGRESS | сообщение product-worker-memory: сессия запущена, LOCK graph (в очереди за WP-WORKER-01) |
