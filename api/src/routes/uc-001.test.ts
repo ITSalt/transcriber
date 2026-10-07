@@ -9,7 +9,7 @@
  *   T02 — RQ-002: transient-status meetings appear in the list
  *   T03 — RQ-003/RQ-044 (FR-003): only the workspace's meetings — the legacy principal
  *         (AUTH_REQUIRED=false, D-20) lists «Роман» (NFR-007 superseded by NFR-011)
- *   T04 — NFR-007: endpoint reachable without authentication header
+ *   T04 — D-20 (AUTH_REQUIRED=false): endpoint reachable without authentication header
  *   T05 — empty list returns {items: []}
  *   T06 — DB failure maps to 500 INTERNAL_ERROR
  *   T07 — duration_sec is null when Recording is absent
@@ -180,9 +180,9 @@ describe('UC-001-BE — GET /api/meetings', () => {
     expect(returnedStatuses).toContain('GENERATING_PROTOCOL')
   })
 
-  // ─── T03/T04: NFR-007 no auth required ─────────────────────────────────────
+  // ─── T03/T04: D-20 — no session needed while AUTH_REQUIRED=false ─────────────────────────────────────
 
-  it('T04 — NFR-007: endpoint returns 200 with no Authorization header (no auth at MVP)', async () => {
+  it('T04 — D-20 (AUTH_REQUIRED=false): endpoint returns 200 with no Authorization header (legacy principal)', async () => {
     mockFindMany.mockResolvedValue([])
 
     const res = await app.inject({

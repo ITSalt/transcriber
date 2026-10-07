@@ -184,6 +184,25 @@ describe.skipIf(!DATABASE_URL)('FR-003 — login, isolation of every /api route,
       expect((await login(PIN.a, ip)).statusCode).toBe(200)
     })
 
+    it('B1: a burst of parallel attempts cannot test more PINs than the allowance', async () => {
+      const ip = nextIp()
+      const burst = await Promise.all(Array.from({ length: 30 }, (_, i) => login(String(500000 + i), ip)))
+      const tested = burst.filter((r) => r.statusCode === 401).length
+      const refused = burst.filter((r) => r.statusCode === 423).length
+      expect(tested).toBeLessThanOrEqual(9)
+      expect(tested + refused).toBe(30)
+      expect((await login(PIN.a, ip)).statusCode).toBe(423)
+      await cli(['unblock', '--client', ip])
+    })
+
+    it('M2: failures are cumulative — a successful login does not wipe them', async () => {
+      const ip = nextIp()
+      for (let i = 0; i < 9; i++) expect((await login('999997', ip)).statusCode).toBe(401)
+      expect((await login(PIN.a, ip)).statusCode).toBe(200)
+      expect((await login('999997', ip)).statusCode).toBe(423) // the 10th failure, not the 1st
+      await cli(['unblock', '--client', ip])
+    })
+
     it('two users cannot share a PIN; no PIN is stored in clear', async () => {
       await expect(cli(['create', '--name', 'Copycat', '--pin', PIN.a])).rejects.toThrow(/already taken/)
       const rows = await db.$queryRawUnsafe(`SELECT row_to_json(u)::text AS j FROM users u`)
@@ -211,8 +230,26 @@ describe.skipIf(!DATABASE_URL)('FR-003 — login, isolation of every /api route,
           return seen.has(k) ? false : (seen.add(k), true)
         })
     }
+    // Every path parameter must be one the isolation rules know; a new name fails the test,
+    // so the package that adds it has to decide (and document) how it is isolated.
+    const KNOWN_PARAMS: Record<string, () => string> = {
+      id: () => ids.meetingA,
+      projectId: () => ids.projectA,
+      workspaceId: () => ids.wsA,
+      // children of an already-checked meeting/project, or graph ids (task events): any value
+      n: () => '1',
+      feedbackId: () => '00000000-0000-4000-8000-00000000abcd',
+      participantId: () => '00000000-0000-4000-8000-00000000abcd',
+      termId: () => '00000000-0000-4000-8000-00000000abcd',
+      eventId: () => '00000000-0000-4000-8000-00000000abcd',
+      code: () => 'T-1',
+    }
     const fill = (url: string) =>
-      url.replace(':id', ids.meetingA).replace(':projectId', ids.projectA).replace(/:[A-Za-z]+/g, '00000000-0000-4000-8000-00000000abcd')
+      url.replace(/:([A-Za-z]+)/g, (_m, name: string) => {
+        const value = KNOWN_PARAMS[name]
+        if (!value) throw new Error(`route ${url}: unknown path parameter :${name} — add it to the isolation test`)
+        return value()
+      })
     // A route that wrongly lets the request through may never answer (an SSE stream stays
     // open): fail fast instead of hanging the suite.
     const req = (method: string, url: string, cookie?: string, extra: Partial<InjectOptions> = {}) =>
@@ -236,6 +273,17 @@ describe.skipIf(!DATABASE_URL)('FR-003 — login, isolation of every /api route,
         'GET /api/meetings/:id/protocol/pdf', 'GET /api/meetings/:id/transcript/download',
         'POST /api/uploads/init', 'POST /api/auth/login', 'GET /api/auth/me',
       ]))
+    })
+
+    it('a percent-encoded path cannot slip past the gate (/%61pi/… routes to /api/…)', async () => {
+      for (const url of ['/%61pi/meetings', `/%61pi/meetings/${ids.meetingA}`, '/api/%6deetings', '/%61pi/auth/me']) {
+        const res = await app.inject({ method: 'GET', url })
+        expect([401, 404], `${url} → ${res.statusCode}`).toContain(res.statusCode)
+        if (res.statusCode === 404) expect(res.json().code).not.toBe('MEETING_NOT_FOUND')
+      }
+      const cookieB = await cookieOf(PIN.b)
+      const viaEncoded = await app.inject({ method: 'GET', url: `/%61pi/meetings/${ids.meetingA}`, headers: { cookie: cookieB } })
+      expect(viaEncoded.statusCode).toBe(404)
     })
 
     it('without a session (AUTH_REQUIRED=true): 401 everywhere except health/login/logout', async () => {
@@ -271,9 +319,12 @@ describe.skipIf(!DATABASE_URL)('FR-003 — login, isolation of every /api route,
       const rest = apiRoutes().filter(
         (r) => !r.url.startsWith('/api/meetings/:id') && !r.url.startsWith('/api/projects/:projectId') && !r.url.startsWith('/api/auth/') && r.url !== '/api/health',
       )
+      // never a 2xx, never a crash: a membership refusal (404 NOT_FOUND), a missing/invalid
+      // workspace (400 WORKSPACE_REQUIRED) or a body the route rejects (400 VALIDATION_ERROR)
       for (const r of rest) {
         const res = await req(r.method, `${fill(r.url)}?workspace_id=${ids.wsA}`, cookieB)
-        expect(res.statusCode, `${r.method} ${r.url}`).toBeGreaterThanOrEqual(400)
+        expect([400, 404], `${r.method} ${r.url} → ${res.statusCode} ${res.body}`).toContain(res.statusCode)
+        expect(['NOT_FOUND', 'WORKSPACE_REQUIRED', 'VALIDATION_ERROR'], `${r.method} ${r.url}`).toContain(res.json().code)
       }
       expect((await req('GET', `/api/meetings?workspace_id=${ids.wsA}`, cookieB)).statusCode).toBe(404)
       const init = await req('POST', '/api/uploads/init', cookieB, {

@@ -11,7 +11,7 @@
  *   T04 — RQ-007: in-flight ProtocolGenerationJob marked FAILED; in_flight_failed=true
  *   T05 — RQ-007: BRQ-009 — terminal jobs (DONE/FAILED) not mutated
  *   T06 — 500 STORAGE_DELETE_FAILED when S3 delete throws StorageError
- *   T07 — NFR-007: endpoint reachable without Authorization header
+ *   T07 — D-20 (AUTH_REQUIRED=false): endpoint reachable without Authorization header
  *   T08 — invalid UUID in :id returns 400 VALIDATION_ERROR
  *   T09 — DB failure maps to 500 INTERNAL_ERROR
  *   T10 — RQ-006: meeting with no recording deletes without S3 call
@@ -355,7 +355,7 @@ describe('UC-003-BE — DELETE /api/meetings/:id', () => {
 
   // ─── T07: NFR-007 — no auth required ────────────────────────────────────
 
-  it('T07 — NFR-007: endpoint returns 200 without Authorization header', async () => {
+  it('T07 — D-20 (AUTH_REQUIRED=false): endpoint returns 200 without Authorization header', async () => {
     mockFindUnique.mockResolvedValue(makeDbMeeting())
 
     const res = await app.inject({

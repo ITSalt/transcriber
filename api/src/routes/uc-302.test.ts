@@ -13,7 +13,7 @@
  *   T06 — 409 STATUS_NOT_READY when Meeting.status not in {PROTOCOL_READY, EDITED}
  *   T07 — 500 PDF_RENDER_FAILED when renderPdf throws (RQ-033)
  *   T08 — 400 VALIDATION_ERROR for invalid UUID in :id
- *   T09 — NFR-007: endpoint reachable without Authorization header
+ *   T09 — D-20 (AUTH_REQUIRED=false): endpoint reachable without Authorization header
  *   T10 — Status-driven gating: PROTOCOL_READY and EDITED are accepted (200)
  *   T11 — Status-driven gating: non-protocol statuses rejected with 409
  */
@@ -261,8 +261,8 @@ describe('UC-302-BE — GET /api/meetings/:id/protocol/pdf', () => {
     expect(res.json<{ code: string }>().code).toBe('VALIDATION_ERROR')
   })
 
-  // T09 — NFR-007: endpoint reachable without Authorization header
-  it('T09 — NFR-007: endpoint reachable without Authorization header', async () => {
+  // T09 — D-20 (AUTH_REQUIRED=false): endpoint reachable without Authorization header
+  it('T09 — D-20 (AUTH_REQUIRED=false): endpoint reachable without Authorization header', async () => {
     mockFindUnique.mockResolvedValue(makeDbMeeting())
     mockRenderPdf.mockResolvedValue(PDF_MAGIC)
 

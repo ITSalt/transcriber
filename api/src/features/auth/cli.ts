@@ -8,7 +8,9 @@
  *   pnpm --filter @transcrib/api run user:blocks
  *   pnpm --filter @transcrib/api run user:unblock -- --client <ip> | --all
  *
- * Needs DATABASE_URL and PIN_PEPPER (api/.env). The PIN is never printed or logged.
+ * Needs DATABASE_URL and PIN_PEPPER (api/.env). The app never stores or logs a PIN, but a
+ * PIN on the command line lands in shell history, `ps` and pnpm's echo of the command — pass
+ * `--pin -` to read it from stdin (`pnpm --silent …` also stops the echo).
  * Exit code 0 = done, 1 = refused (e.g. PIN taken), 2 = usage error.
  */
 import { pathToFileURL } from 'node:url'
@@ -82,11 +84,19 @@ export interface CliDeps {
   db: PrismaClient
   pepper: string | undefined
   out: (line: string) => void
+  /** source of `--pin -` (stdin in the entry point) */
+  readPin?: () => Promise<string>
 }
 
 export async function runCli(argv: string[], deps: CliDeps): Promise<void> {
   const { command, args } = parseArgs(argv)
   const { db, out } = deps
+  const readPinArg = async (): Promise<string> => {
+    const raw = str(args, 'pin')
+    if (raw !== '-') return checkPin(raw)
+    if (!deps.readPin) throw new CliError('--pin - needs a PIN on stdin', 2)
+    return checkPin((await deps.readPin()).trim())
+  }
   const pepper = (): string => {
     if (!deps.pepper) throw new CliError('PIN_PEPPER is not set (api/.env) — refusing to touch PINs')
     return deps.pepper
@@ -95,7 +105,9 @@ export async function runCli(argv: string[], deps: CliDeps): Promise<void> {
   switch (command) {
     case 'create': {
       const name = str(args, 'name')
-      const pin = checkPin(str(args, 'pin'))
+      // `--workspace` without a value would silently create a second personal workspace
+      if (args['workspace'] === true) throw new CliError('--workspace needs a name or id', 2)
+      const pin = await readPinArg()
       const lookup = pinLookup(pin, pepper())
       await assertPinFree(db, lookup)
       const workspaceRef = typeof args['workspace'] === 'string' ? args['workspace'].trim() : undefined
@@ -124,7 +136,7 @@ export async function runCli(argv: string[], deps: CliDeps): Promise<void> {
     }
     case 'reset-pin': {
       const user = await findUser(db, str(args, 'user'))
-      const pin = checkPin(str(args, 'pin'))
+      const pin = await readPinArg()
       const lookup = pinLookup(pin, pepper())
       await assertPinFree(db, lookup, user.id)
       const pinHash = await hashPin(pin)
@@ -136,7 +148,10 @@ export async function runCli(argv: string[], deps: CliDeps): Promise<void> {
       return
     }
     case 'blocks': {
-      const rows = await db.loginBlock.findMany({ orderBy: { updatedAt: 'desc' } })
+      const rows = await db.loginBlock.findMany({
+        where: { OR: [{ failedCount: { gt: 0 } }, { blockedAt: { not: null } }] },
+        orderBy: { updatedAt: 'desc' },
+      })
       if (rows.length === 0) out('no failed logins recorded')
       for (const r of rows) {
         const label = r.clientKey === LOGIN_GLOBAL_CLIENT_KEY ? '(all clients, current hour)' : r.clientKey
@@ -165,7 +180,12 @@ export async function runCli(argv: string[], deps: CliDeps): Promise<void> {
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   const [{ config }, { prisma }] = await Promise.all([import('../../config.js'), import('../../db.js')])
   try {
-    await runCli(process.argv.slice(2), { db: prisma, pepper: config.PIN_PEPPER, out: (l) => console.log(l) })
+    const readPin = async (): Promise<string> => {
+      let data = ''
+      for await (const chunk of process.stdin) data += chunk
+      return data.split('\n')[0] ?? ''
+    }
+    await runCli(process.argv.slice(2), { db: prisma, pepper: config.PIN_PEPPER, out: (l) => console.log(l), readPin })
   } catch (err) {
     const code = err instanceof CliError ? err.exitCode : 1
     console.error(err instanceof Error ? err.message : String(err))

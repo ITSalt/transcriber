@@ -4,12 +4,21 @@
  *
  * Wrapped in fastify-plugin, so its hooks run at the ROOT scope — for the core routes and
  * for every other feature folder alike, whatever the registration order:
- *   onRequest     — resolves request.auth from the session cookie; without a session:
- *                   401 when AUTH_REQUIRED=true, else the legacy principal (D-20);
- *                   public: GET /api/health, POST /api/auth/login, POST /api/auth/logout.
+ *   onRequest     — gated by the matched ROUTE PATTERN (never the raw URL, which may be
+ *                   percent-encoded: `/%61pi/...` routes to `/api/...`); unmatched URLs are
+ *                   gated too. Resolves request.auth from the session cookie; without a
+ *                   session: 401 when AUTH_REQUIRED=true, else the legacy principal (D-20).
+ *                   Public (no session lookup at all): GET /api/health, POST /api/auth/login,
+ *                   POST /api/auth/logout.
  *   preValidation — every route under `/api/meetings/:id` and `/api/projects/:projectId`:
  *                   foreign or nonexistent id → the same 404 NOT_FOUND, before body
  *                   validation and before the handler (also covers SSE, PDF, downloads).
+ *                   A project route that also carries a meeting `:id` checks both.
+ *   onRoute       — refuses at startup a route under `/api/meetings/:` or `/api/projects/:`
+ *                   whose parameter is not exactly `:id` / `:projectId`, so no route can
+ *                   silently fall outside the check above.
+ * Feature folders load alphabetically; one sorting before `auth` that adds its own root
+ * onRequest hook would run before request.auth is set — keep such hooks in preHandler.
  *
  *   POST /api/auth/login   {pin}  → 200 MeResponse + Set-Cookie | 400 | 401 | 423 | 503
  *   POST /api/auth/logout         → 204 (idempotent)
@@ -35,7 +44,7 @@ import { prisma } from '../../db.js'
 import { AppError } from '../../plugins/errors.js'
 import { assertMeetingAccess, assertProjectAccess } from './access.js'
 import { burnPinCheck, hashToken, newSessionToken, pinLookup, verifyPin } from './crypto.js'
-import { clearFailures, clientKey, isBlocked, recordFailure } from './lockout.js'
+import { clientKey, isBlocked, reserveAttempt, settleFailure, settleSuccess } from './lockout.js'
 import { LEGACY_AUTH, LEGACY_USER_ID, type AuthContext } from './types.js'
 
 const SESSION_TTL_MS = SESSION_TTL_DAYS * 24 * 60 * 60 * 1000
@@ -51,6 +60,18 @@ const PROJECT_SCOPE = '/api/projects/:projectId'
 const inScope = (url: string | undefined, scope: string): boolean =>
   url !== undefined && (url === scope || url.startsWith(`${scope}/`))
 
+/** Startup guard: resource-scoped routes must use the parameter names the gate checks. */
+function assertGatedShape(url: string): void {
+  for (const [prefix, scope] of [['/api/meetings/:', MEETING_SCOPE], ['/api/projects/:', PROJECT_SCOPE]] as const) {
+    if (url.startsWith(prefix) && !inScope(url, scope)) {
+      throw new Error(`auth: route ${url} must use ${scope} (exact parameter name, no regex) so the access check covers it`)
+    }
+  }
+  if (url.startsWith('/api/projects/') && url.includes('/meetings/:') && !url.includes('/meetings/:id')) {
+    throw new Error(`auth: route ${url} must name its meeting parameter :id so the access check covers it`)
+  }
+}
+
 function authError(code: 'UNAUTHENTICATED' | 'INVALID_PIN' | 'PIN_FORMAT' | 'LOGIN_BLOCKED'): AppError {
   return new AppError(code, PROGRAM_ERRORS[code], PROGRAM_ERROR_MESSAGES[code])
 }
@@ -65,7 +86,8 @@ async function sessionAuth(request: FastifyRequest): Promise<AuthContext | null>
   const now = Date.now()
   if (!session || session.expiresAt.getTime() <= now) return null
   if (now - session.lastSeenAt.getTime() > TOUCH_INTERVAL_MS) {
-    await prisma.authSession.update({ where: { id: session.id }, data: { lastSeenAt: new Date(now) } })
+    // updateMany: a concurrent logout may have deleted the row — not an error
+    await prisma.authSession.updateMany({ where: { id: session.id }, data: { lastSeenAt: new Date(now) } })
   }
   return {
     kind: 'user',
@@ -107,15 +129,18 @@ async function authPlugin(app: FastifyInstance): Promise<void> {
   app.decorateRequest('meetingAccess', null)
   app.decorateRequest('projectAccess', null)
 
+  app.addHook('onRoute', (route) => assertGatedShape(route.url))
+
   app.addHook('onRequest', async (request) => {
-    if (!request.url.startsWith('/api/')) return
+    const pattern = request.routeOptions.url
+    // decide on the matched route pattern; an unmatched URL (pattern undefined) is gated
+    if (pattern !== undefined && !pattern.startsWith('/api/')) return
+    if (PUBLIC_ROUTES.has(`${request.method} ${pattern}`)) return
     const auth = await sessionAuth(request)
     if (auth) {
       request.auth = auth
       return
     }
-    const route = `${request.method} ${request.routeOptions.url ?? ''}`
-    if (PUBLIC_ROUTES.has(route)) return
     if (config.AUTH_REQUIRED === true) throw authError('UNAUTHENTICATED')
     request.auth = { ...LEGACY_AUTH, workspaceIds: [...LEGACY_AUTH.workspaceIds] }
   })
@@ -123,15 +148,16 @@ async function authPlugin(app: FastifyInstance): Promise<void> {
   app.addHook('preValidation', async (request) => {
     const url = request.routeOptions.url
     const params = (request.params ?? {}) as Record<string, string | undefined>
-    const scoped = inScope(url, MEETING_SCOPE) ? params['id'] : inScope(url, PROJECT_SCOPE) ? params['projectId'] : undefined
-    if (scoped === undefined) return
+    const meetingId = inScope(url, MEETING_SCOPE) || (inScope(url, PROJECT_SCOPE) && url!.includes('/meetings/:id')) ? params['id'] : undefined
+    const projectId = inScope(url, PROJECT_SCOPE) ? params['projectId'] : undefined
+    if (meetingId === undefined && projectId === undefined) return
     // a malformed id is a malformed request (400, as the route's params schema says) —
     // it reveals nothing about which ids exist
-    if (!UUID.test(scoped)) {
-      throw new AppError('VALIDATION_ERROR', 400, 'Request validation failed')
+    for (const id of [meetingId, projectId]) {
+      if (id !== undefined && !UUID.test(id)) throw new AppError('VALIDATION_ERROR', 400, 'Request validation failed')
     }
-    if (inScope(url, MEETING_SCOPE)) request.meetingAccess = await assertMeetingAccess(request, scoped)
-    else request.projectAccess = await assertProjectAccess(request, scoped)
+    if (projectId !== undefined) request.projectAccess = await assertProjectAccess(request, projectId)
+    if (meetingId !== undefined) request.meetingAccess = await assertMeetingAccess(request, meetingId)
   })
 
   const r = app.withTypeProvider<ZodTypeProvider>()
@@ -141,7 +167,7 @@ async function authPlugin(app: FastifyInstance): Promise<void> {
     '/api/auth/login',
     // the PIN format is checked in the handler: a blocked client gets 423 before anything
     // else, and a malformed PIN must answer PIN_FORMAT, not a generic validation error
-    { schema: { body: z.object({ pin: z.unknown() }).passthrough(), response: { 200: MeResponse } } },
+    { schema: { body: z.unknown(), response: { 200: MeResponse } } },
     async (request, reply) => {
       if (!config.PIN_PEPPER) {
         throw new AppError('AUTH_NOT_CONFIGURED', 503, 'Вход не настроен')
@@ -153,14 +179,19 @@ async function authPlugin(app: FastifyInstance): Promise<void> {
       if (!parsed.success) throw authError('PIN_FORMAT')
       const { pin } = parsed.data
 
+      // count the attempt BEFORE any scrypt work: parallel requests cannot outrun the limit
+      const reservation = await reserveAttempt(key)
+      if (reservation.blocked) throw authError('LOGIN_BLOCKED')
+
       const user = await prisma.user.findUnique({ where: { pinLookup: pinLookup(pin, config.PIN_PEPPER) } })
       const ok = user ? await verifyPin(pin, user.pinHash) : (await burnPinCheck(pin), false)
       if (!user || !ok) {
-        const { blocked } = await recordFailure(key, request.log)
+        const { blocked } = await settleFailure(reservation, request.log)
         throw authError(blocked ? 'LOGIN_BLOCKED' : 'INVALID_PIN')
       }
+      // a parallel failure may have blocked the client while this PIN was checked
+      if ((await settleSuccess(reservation)).blocked) throw authError('LOGIN_BLOCKED')
 
-      await clearFailures(key)
       const token = newSessionToken()
       const session = await prisma.authSession.create({
         data: { userId: user.id, tokenHash: hashToken(token), expiresAt: new Date(Date.now() + SESSION_TTL_MS) },

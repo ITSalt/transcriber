@@ -63,27 +63,22 @@ describe.skipIf(!DATABASE_URL)('program schema v1 (migration 20261007120000)', (
     })
   })
 
-  it('backfill SQL is idempotent and maps editCount → LEGACY / GENERATED', async () => {
+  // The NULL-workspace backfill needs a nullable column, i.e. a throw-away database — it is
+  // covered there (migrations.down.db.test.ts, AC-4); this shared-DB case keeps to versions.
+  it('protocol-version backfill SQL is idempotent and maps editCount → LEGACY / GENERATED', async () => {
     const sql = readFileSync(MIGRATION, 'utf8')
-    // The migration's own statements, narrowed to this test's rows: run unnarrowed they would
+    // The migration's own statement, narrowed to this test's rows: run unnarrowed it would
     // scan (and FK-lock) rows prisma.smoke.test.ts commits in parallel on the same database.
     const backfillSql = sql.slice(sql.indexOf('INSERT INTO "protocol_versions"'))
-    const wsUpdateSql = sql.slice(sql.indexOf('UPDATE "meetings"'), sql.indexOf('-- AddForeignKey'))
     expect(backfillSql).toContain('FROM "protocols" p\n')
-    expect(wsUpdateSql).toContain('WHERE "workspace_id" IS NULL;')
     const only = (ids: string[]) => ids.map((id) => `'${id}'::uuid`).join(', ')
     await inRollback(async (tx) => {
       const a = await tx.meeting.create({ data: { title: 'never edited', workspaceId: LEGACY_WORKSPACE_ID } })
       const b = await tx.meeting.create({ data: { title: 'edited', workspaceId: LEGACY_WORKSPACE_ID } })
-      // re-create the pre-WP-BACKEND-01 state for this row (rolled back with the transaction)
-      await tx.$executeRawUnsafe(`ALTER TABLE meetings ALTER COLUMN workspace_id DROP NOT NULL`)
-      await tx.$executeRawUnsafe(`UPDATE meetings SET workspace_id = NULL WHERE id = $1::uuid`, b.id)
       await tx.protocol.create({ data: { meetingId: a.id, markdownContent: '# A' } })
       await tx.protocol.create({ data: { meetingId: b.id, markdownContent: '# B edited', editCount: 2, lastEditedAt: new Date('2026-09-03T10:00:00Z') } })
       const ids = only([a.id, b.id])
       const backfill = backfillSql.replace('FROM "protocols" p\n', `FROM "protocols" p WHERE p."meeting_id" IN (${ids})\n`)
-      const wsUpdate = wsUpdateSql.replace('WHERE "workspace_id" IS NULL;', `WHERE "workspace_id" IS NULL AND "id" IN (${ids});`)
-      await tx.$executeRawUnsafe(wsUpdate)
       await tx.$executeRawUnsafe(backfill)
       await tx.$executeRawUnsafe(backfill) // second run must not duplicate or fail
       const versions = await tx.protocolVersion.findMany({ where: { meetingId: { in: [a.id, b.id] } }, orderBy: { kind: 'asc' } })
@@ -95,7 +90,6 @@ describe.skipIf(!DATABASE_URL)('program schema v1 (migration 20261007120000)', (
       )
       expect(versions).toHaveLength(2)
       expect(versions.find((v) => v.meetingId === b.id)!.createdAt.toISOString()).toBe('2026-09-03T10:00:00.000Z')
-      expect((await tx.meeting.findUnique({ where: { id: b.id } }))!.workspaceId).toBe(LEGACY_WORKSPACE_ID)
     })
   })
 

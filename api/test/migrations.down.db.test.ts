@@ -229,8 +229,13 @@ describe.skipIf(!DATABASE_URL)('20261008120000_meeting_workspace_not_null + down
   it('partially applied + failed: deploy blocked → down.sql → catalog = previous → re-apply succeeds', async () => {
     await runDown(workDb, NAME7)
     const up = migrationSql(NAME7)
+    // stop right before step 3: backfill and NOT NULL done, speaker_count missing
+    const partial = up.slice(0, up.indexOf('-- AlterTable\nALTER TABLE "transcription_jobs"'))
+    expect(partial).toContain('SET NOT NULL')
+    expect(partial).toContain('UPDATE "meetings"')
+    expect(partial).not.toContain('speaker_count" INTEGER')
     await withDb(workDb, async (c) => {
-      await c.query(up.slice(0, up.indexOf('-- 3. A-5')))
+      await c.query(partial)
       await c.query(`INSERT INTO _prisma_migrations (id, checksum, migration_name, started_at, applied_steps_count)
                      VALUES (gen_random_uuid()::text, 'failed-midway', $1, now(), 0)`, [NAME7])
     })

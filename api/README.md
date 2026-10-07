@@ -30,9 +30,16 @@ registered automatically (`src/features/index.ts`).
 
 ### Operator CLI
 
-The PIN is never stored (only HMAC lookup + scrypt hash) and never printed. The CLI runs
-from the build (`pnpm --filter @transcrib/api run build` first in a dev checkout) and needs
-`DATABASE_URL` and `PIN_PEPPER`.
+The app never stores a PIN (only HMAC lookup + scrypt hash) and never logs it. A PIN typed
+on the command line, however, ends up in shell history, `ps` and pnpm's echo of the
+command — prefer `--pin -` (read from stdin) with `pnpm --silent`:
+
+```bash
+read -rs PIN && printf '%s\n' "$PIN" | pnpm --silent --filter @transcrib/api run user:create -- --name "Иван" --pin - ; unset PIN
+```
+
+The CLI runs from the build (`pnpm --filter @transcrib/api run build` first in a dev
+checkout) and needs `DATABASE_URL` and `PIN_PEPPER`.
 
 ```bash
 # user + personal workspace named after them

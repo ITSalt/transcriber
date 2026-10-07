@@ -125,10 +125,18 @@ export async function saveProtocol(
 
     const now = new Date()
 
-    const protocol = meeting.protocol
-
     // RQ-027/028/029/BRQ-008 + RQ-050: all writes in a single transaction
     const updatedProtocol = await prisma.$transaction(async (tx) => {
+      // Lock the protocol row and re-read it: the text being replaced is the one this
+      // transaction overwrites, not the one read before it (a concurrent save may have won).
+      const [protocol] = await tx.$queryRaw<
+        Array<{ markdown_content: string; edit_count: number; last_edited_at: Date | null; generated_at: Date; updated_at: Date }>
+      >`SELECT "markdown_content", "edit_count", "last_edited_at", "generated_at", "updated_at"
+        FROM "protocols" WHERE "meeting_id" = ${meetingId}::uuid FOR UPDATE`
+      if (!protocol) {
+        throw new AppError('PROTOCOL_NOT_FOUND', 404, `Protocol for meeting ${meetingId} not found`)
+      }
+
       // RQ-050: make sure the text being replaced is in the history first
       const latest = await tx.protocolVersion.findFirst({
         where: { meetingId },
@@ -142,20 +150,21 @@ export async function saveProtocol(
           data: {
             meetingId,
             n,
-            kind: protocol.editCount > 0 ? 'LEGACY' : 'GENERATED',
-            markdown: protocol.markdownContent,
-            createdAt: protocol.lastEditedAt ?? protocol.generatedAt,
+            kind: protocol.edit_count > 0 ? 'LEGACY' : 'GENERATED',
+            markdown: protocol.markdown_content,
+            createdAt: protocol.last_edited_at ?? protocol.generated_at,
           },
         })
-      } else if (latest.markdown !== protocol.markdownContent) {
+      } else if (latest.markdown !== protocol.markdown_content) {
         n += 1
         await tx.protocolVersion.create({
           data: {
             meetingId,
             n,
             kind: 'LEGACY',
-            markdown: protocol.markdownContent,
-            createdAt: protocol.lastEditedAt ?? protocol.generatedAt,
+            markdown: protocol.markdown_content,
+            // same rule as migration 20261008120000 step 4b
+            createdAt: protocol.last_edited_at ?? protocol.updated_at,
           },
         })
       }
