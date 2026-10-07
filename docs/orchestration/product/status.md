@@ -111,6 +111,7 @@ R-n — действие: точная команда одной строкой 
 <!-- orch:journal -->
 | Дата | WP | Событие | Подтверждение |
 |------|----|---------|---------------|
+| 2026-10-07 16:55Z | — | Дефект плагина не записан: orch.py report --check отказывает «name from orch.yaml (6 characters)» даже с однострочным логом без имён — утечку находит в собственных собранных фактах; запись bugs/PLUGIN-BUG-n отложена (два кандидата: стартовый промпт требует instructions sync вопреки концепции §2; report --check не проходит собственную анонимизацию) | orch.py report --check --log <1 строка> 2026-10-07: nothing was written |
 | 2026-10-07 16:55Z | — | R-3 opened for owner | work-packages/WP-INFRA-01-neo4j.md |
 | 2026-10-07 16:55Z | — | R-2 closed | ssh 2026-10-07: docker system df — images 2.82 GB, containers 348 MB, volumes 804 MB, reclaimable 0; journald 2.0 GB; du: /var 9.7G (/var/lib 7.1G, /var/log 2.5G), /opt 4.4G (transcrib 604M, procontent 1.4G, learn 1.2G, atech 381M, google 405M), /home 3.0G (/home/deploy 2.9G), /usr 4.2G |
 | 2026-10-07 16:54Z | WP-INFRA-01 | WP-INFRA-01: QUESTION (push, instructions sync) — ANSWER по D-17 вариант (b), push повторить | SendMessage 0f03ea07 |
