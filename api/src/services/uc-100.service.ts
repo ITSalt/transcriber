@@ -47,6 +47,14 @@ export interface FinalizeUploadInput {
   speakerCount?: number | null
   /** Whether container has been probed externally — if false, we probe here */
   skipProbe?: boolean
+  /** FR-003: owning workspace — membership already checked by the route */
+  workspaceId: string
+  /**
+   * FR-004 / D-9: true = create the meeting in AWAITING_START and enqueue nothing; the
+   * TranscriptionJob (PENDING, with speakerCount — A-5) is created now and enqueued by
+   * POST /api/meetings/:id/start (WP-API-PROJECTS-01).
+   */
+  deferStart?: boolean
 }
 
 /** Map MIME string to Prisma VideoMimeType enum value */
@@ -136,6 +144,8 @@ export async function finalizeUpload(
     language,
     speakerCount,
     skipProbe = false,
+    workspaceId,
+    deferStart = false,
   } = input
 
   const storageUri = `s3://${bucket}/${s3Key}`
@@ -197,6 +207,7 @@ export async function finalizeUpload(
         data: {
           title: resolvedTitle,
           status: 'UPLOADING',
+          workspaceId,
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           ...(prismaLanguage ? { language: prismaLanguage as any } : {}),
         },
@@ -217,16 +228,19 @@ export async function finalizeUpload(
       })
 
       // Step 3: Create TranscriptionJob (status=PENDING by schema default)
+      // A-5: the speaker hint is kept on the job so a deferred start can enqueue it
       const job = await tx.transcriptionJob.create({
         data: {
           meetingId: meeting.id,
+          speakerCount: speakerCount ?? null,
         },
       })
 
-      // Step 4: Transition Meeting.status UPLOADING -> TRANSCRIBING (BRQ-008, RQ-011)
+      // Step 4: Transition Meeting.status UPLOADING -> TRANSCRIBING (BRQ-008, RQ-011),
+      //         or -> AWAITING_START for a deferred start (D-9)
       await tx.meeting.update({
         where: { id: meeting.id },
-        data: { status: 'TRANSCRIBING' },
+        data: { status: deferStart ? 'AWAITING_START' : 'TRANSCRIBING' },
       })
 
       return { meetingId: meeting.id, transcriptionJobId: job.id }
@@ -237,6 +251,11 @@ export async function finalizeUpload(
   } catch (err) {
     if (err instanceof AppError) throw err
     throw new AppError('INTERNAL_ERROR', 500, 'Failed to persist upload metadata', err)
+  }
+
+  // D-9: deferred start — the job waits for POST /api/meetings/:id/start
+  if (deferStart) {
+    return { meeting_id: meetingId, status: 'AWAITING_START' }
   }
 
   // RQ-011: Enqueue BullMQ job AFTER transaction commits

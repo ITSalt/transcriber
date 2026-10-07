@@ -47,16 +47,21 @@ vi.mock('../config.js', () => ({
   },
 }))
 
-const { mockFindUnique, mockProtocolUpdate, mockMeetingUpdate, mockTransaction } = vi.hoisted(() => ({
+const { mockFindUnique, mockProtocolUpdate, mockMeetingUpdate, mockTransaction, mockVersionFindFirst, mockVersionCreate } = vi.hoisted(() => ({
   mockFindUnique: vi.fn(),
   mockProtocolUpdate: vi.fn(),
   mockMeetingUpdate: vi.fn(),
   mockTransaction: vi.fn(),
+  // FR-005 (WP-BACKEND-01): saveProtocol appends ProtocolVersion rows inside the transaction
+  mockVersionFindFirst: vi.fn(),
+  mockVersionCreate: vi.fn(),
 }))
 
 vi.mock('../db.js', () => ({
   prisma: {
     meeting: {
+      // FR-003 access check of the auth plugin (meeting is in workspace «Роман»)
+      findFirst: vi.fn().mockResolvedValue({ id: '00000000-0000-4000-8000-0000000000ff', workspaceId: '00000000-0000-4000-8000-000000000001', projectId: null }),
       findMany: vi.fn(),
       findUnique: mockFindUnique,
       update: mockMeetingUpdate,
@@ -64,7 +69,18 @@ vi.mock('../db.js', () => ({
     protocol: {
       update: mockProtocolUpdate,
     },
-    $transaction: mockTransaction,
+    // saveProtocol uses an interactive transaction; the tests configure mockTransaction with
+    // the [updatedProtocol, updatedMeeting] pair, which this adapter hands out through `tx`.
+    $transaction: async (arg: unknown) => {
+      const configured = await mockTransaction(arg)
+      if (typeof arg !== 'function') return configured
+      const [protocol, meeting] = (Array.isArray(configured) ? configured : []) as unknown[]
+      return (arg as (tx: unknown) => Promise<unknown>)({
+        protocolVersion: { findFirst: mockVersionFindFirst, create: mockVersionCreate },
+        protocol: { update: vi.fn().mockResolvedValue(protocol) },
+        meeting: { update: vi.fn().mockResolvedValue(meeting) },
+      })
+    },
     $queryRaw: vi.fn().mockResolvedValue([{ '?column?': 1 }]),
   },
 }))
@@ -371,13 +387,10 @@ describe('UC-301-BE — PUT /api/meetings/:id/protocol', () => {
   // T06: RQ-030 — saves exact markdown_content
   it('T06 — RQ-030: PUT saves the exact markdown_content passed (BRQ-018)', async () => {
     mockFindUnique.mockResolvedValue(makeDbMeeting())
-    mockTransaction.mockImplementation(async (ops: unknown[]) => {
-      // Execute both ops to verify the protocol update call includes correct content
-      if (Array.isArray(ops)) {
-        return [makeUpdatedProtocol(2, 1), { ...makeDbMeeting(), status: 'EDITED' }]
-      }
-      return []
-    })
+    mockTransaction.mockImplementation(async () => [
+      makeUpdatedProtocol(2, 1),
+      { ...makeDbMeeting(), status: 'EDITED' },
+    ])
 
     const res = await app.inject({
       method: 'PUT',

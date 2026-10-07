@@ -61,6 +61,8 @@ const {
 vi.mock('../db.js', () => ({
   prisma: {
     meeting: {
+      // FR-003 access check of the auth plugin (meeting is in workspace «Роман»)
+      findFirst: vi.fn().mockResolvedValue({ id: '00000000-0000-4000-8000-0000000000ff', workspaceId: '00000000-0000-4000-8000-000000000001', projectId: null }),
       findUnique: mockFindUnique,
       findMany: vi.fn(),
     },

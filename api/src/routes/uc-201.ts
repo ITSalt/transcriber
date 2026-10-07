@@ -4,7 +4,8 @@
  * GET /api/meetings/:id/transcript        → TranscriptResponse (JSON)
  * GET /api/meetings/:id/transcript/download → plain-text attachment (RQ-020)
  *
- * NFR-007: No authentication at MVP — endpoints are open.
+ * FR-003 / RQ-044: workspace membership is checked by the auth plugin before validation
+ * and the handler (features/auth/routes.ts); foreign or nonexistent meeting → 404 NOT_FOUND.
  * RQ-019: JSON endpoint returns full transcript with speaker labels.
  * RQ-020: Download endpoint streams full_text as text/plain attachment.
  */
@@ -31,7 +32,7 @@ export async function transcriptRoutes(app: FastifyInstance): Promise<void> {
       },
     },
     async (request, reply) => {
-      // RQ-003/NFR-007: no ownership filter at MVP
+      // FR-003: access already checked by the auth plugin (request.meetingAccess)
       const { id } = request.params
       const { content, filename } = await getTranscriptDownload(id)
 
@@ -57,7 +58,7 @@ export async function transcriptRoutes(app: FastifyInstance): Promise<void> {
       },
     },
     async (request, reply) => {
-      // RQ-003/NFR-007: no ownership filter at MVP
+      // FR-003: access already checked by the auth plugin (request.meetingAccess)
       const { id } = request.params
       const result = await getTranscript(id)
       return reply.status(200).send(result)

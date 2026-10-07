@@ -4,7 +4,8 @@
  * GET /api/meetings/:id/protocol/pdf
  *   → streams a Puppeteer-rendered PDF buffer as application/pdf
  *
- * NFR-007: No authentication at MVP — endpoint is open.
+ * FR-003 / RQ-044: workspace membership is checked by the auth plugin before validation
+ * and the handler (features/auth/routes.ts); foreign or nonexistent meeting → 404 NOT_FOUND.
  * RQ-032: Gate on Meeting.status in {PROTOCOL_READY, EDITED}; NEVER persists output.
  * RQ-033: On render failure → 500 PDF_RENDER_FAILED; no state change.
  */
@@ -28,7 +29,7 @@ export async function protocolPdfRoutes(app: FastifyInstance): Promise<void> {
       },
     },
     async (request, reply) => {
-      // NFR-007: no ownership filter at MVP
+      // FR-003: access already checked by the auth plugin (request.meetingAccess)
       const { id } = request.params
       const { buffer, filename } = await exportProtocolPdf(id)
 

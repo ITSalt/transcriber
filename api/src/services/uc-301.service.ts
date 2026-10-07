@@ -7,6 +7,11 @@
  *   - UPDATE Meeting.status -> EDITED if not already (RQ-029)
  *   - Return updated metadata in response (RQ-029)
  *   - Reject save if Meeting.status NOT in {PROTOCOL_READY, EDITED} (409) (RQ-029)
+ *   - FR-005 / RQ-050: append an immutable ProtocolVersion(kind USER_EDIT, authorUserId) in the
+ *     SAME transaction. If the history does not yet hold the text being replaced (protocol
+ *     generated or edited by code that wrote no versions), that text is first recorded as v1
+ *     (GENERATED / LEGACY) or as the next LEGACY version, so the history is never missing the
+ *     text a user saw. Concurrent saves of one meeting → 409 PROTOCOL_EDIT_CONFLICT.
  *
  * BRQ-008 / BRQ-014 / BRQ-015 / BRQ-018: All enforced here.
  */
@@ -88,6 +93,8 @@ export async function getProtocol(meetingId: string): Promise<ProtocolResponse> 
 export async function saveProtocol(
   meetingId: string,
   markdownContent: string,
+  /** FR-003: the signed-in author; null for the legacy principal (D-20) */
+  authorUserId: string | null = null,
 ): Promise<ProtocolSaveResponse> {
   try {
     const meeting = await prisma.meeting.findUnique({
@@ -118,10 +125,43 @@ export async function saveProtocol(
 
     const now = new Date()
 
-    // RQ-027/028/029/BRQ-008: All writes in a single transaction
-    const [updatedProtocol] = await prisma.$transaction([
+    const protocol = meeting.protocol
+
+    // RQ-027/028/029/BRQ-008 + RQ-050: all writes in a single transaction
+    const updatedProtocol = await prisma.$transaction(async (tx) => {
+      // RQ-050: make sure the text being replaced is in the history first
+      const latest = await tx.protocolVersion.findFirst({
+        where: { meetingId },
+        orderBy: { n: 'desc' },
+        select: { n: true, markdown: true },
+      })
+      let n = latest?.n ?? 0
+      if (!latest) {
+        n = 1
+        await tx.protocolVersion.create({
+          data: {
+            meetingId,
+            n,
+            kind: protocol.editCount > 0 ? 'LEGACY' : 'GENERATED',
+            markdown: protocol.markdownContent,
+            createdAt: protocol.lastEditedAt ?? protocol.generatedAt,
+          },
+        })
+      } else if (latest.markdown !== protocol.markdownContent) {
+        n += 1
+        await tx.protocolVersion.create({
+          data: {
+            meetingId,
+            n,
+            kind: 'LEGACY',
+            markdown: protocol.markdownContent,
+            createdAt: protocol.lastEditedAt ?? protocol.generatedAt,
+          },
+        })
+      }
+
       // RQ-027: version+1 (BRQ-014 monotonic); RQ-028: edit_count+1 (BRQ-015)
-      prisma.protocol.update({
+      const updated = await tx.protocol.update({
         where: { meetingId },
         data: {
           // RQ-030: canonical Markdown (BRQ-018)
@@ -133,16 +173,21 @@ export async function saveProtocol(
           // RQ-029: record manual save timestamp
           lastEditedAt: now,
         },
-      }),
+      })
       // RQ-029: Transition Meeting.status to EDITED (BRQ-008 — co-occurs with protocol write)
-      prisma.meeting.update({
+      await tx.meeting.update({
         where: { id: meetingId },
         data: {
           status: 'EDITED',
           updatedAt: now,
         },
-      }),
-    ])
+      })
+      // RQ-050: the new text as an immutable USER_EDIT version
+      await tx.protocolVersion.create({
+        data: { meetingId, n: n + 1, kind: 'USER_EDIT', markdown: markdownContent, authorUserId, createdAt: now },
+      })
+      return updated
+    })
 
     return {
       version: updatedProtocol.version,
@@ -152,6 +197,10 @@ export async function saveProtocol(
     }
   } catch (err) {
     if (err instanceof AppError) throw err
+    // RQ-050: two saves raced for the same version number
+    if ((err as { code?: string } | null)?.code === 'P2002') {
+      throw new AppError('PROTOCOL_EDIT_CONFLICT', 409, 'The protocol was saved concurrently; reload and retry')
+    }
     throw new AppError('INTERNAL_ERROR', 500, 'Failed to save protocol', err)
   }
 }
