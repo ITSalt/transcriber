@@ -1,5 +1,33 @@
 # Changelog — .tl/
 
+## [2026-10-07] FR-003..FR-006 — program «product» contract v1 (WP-BACKEND-06, TECH-027)
+
+The contract package of the program «Модернизация Transcrib до продукта» (D-15): the whole
+Postgres schema, the shared contracts and the npm dependencies of ten parallel packages
+land first, in one PR, with **no change of production behaviour**.
+
+- **Graph (`/nacl-sa-feature`):** FR-003 login/workspaces, FR-004 projects + meeting
+  context, FR-005 protocol versions + feedback, FR-006 project memory; DEC-006..DEC-009;
+  **ADR-013** (project memory in a separate prod Neo4j). New modules `mod-access` (400s),
+  `mod-projects` (500s), `mod-memory` (600s); entities ent-007..ent-023 with attributes;
+  10 enumerations + `MeetingStatus.AWAITING_START`; SR-03 OPERATOR; RQ-040..RQ-057,
+  NFR-010, NFR-011 (supersedes NFR-007), RQ-003 revised. UC registry UC-400..403,
+  UC-500..504, UC-303..305, UC-600..605 (registered; activity/forms are refined by the
+  consumer packages); UC-001..004, UC-100, UC-200, UC-201, UC-300..302 carry a
+  `program_delta` and are stamped stale (17 Tasks) for their re-plan.
+- **Schema:** migration `20261007120000_program_product_schema` — strictly additive. Backfills:
+  workspace «Роман» (`00000000-0000-4000-8000-000000000001`) owns every meeting; every
+  protocol → `ProtocolVersion` v1 (`LEGACY` if edited, else `GENERATED`). `meetings.workspace_id`
+  keeps a temporary DB default to that workspace so rows inserted by the old code stay owned.
+- **Contracts:** `shared/src/api/{errors,auth,workspace,project,context,feedback,memory}.ts`;
+  `uc100.ts` +`workspace_id`/`defer_start`; `AudioInput.keyterms`; `LlmInput.context` +
+  `renderLlmContextSections`; `ILlmCompletionProvider`; `ProjectMemoryProvider` +
+  `NoProjectMemoryProvider`.
+- **Wiring:** `api/src/features/<name>/routes.ts` registered by `buildApp()` (registry
+  `api/src/features/index.ts`); worker modules `worker/src/<name>/index.ts register(ctx)`
+  (`WORKER_MODULES = ['memory']`).
+- **Docs:** `.tl/external-contracts/neo4j.md`, `.tl/deploy-plan.md` §9, FR files.
+
 ## [RELEASE] 2026-08-17 — PR #8 merged and deployed to production
 
 Merge `0e58fc4`, deploy run `32017076153`, 44 s. CI green (1 m 11 s).
