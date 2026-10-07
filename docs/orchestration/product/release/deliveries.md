@@ -8,6 +8,7 @@
 | Дата | Пакет | PR | SHA слияния | Run стенда | Проверка стенда | Run прода | Проверка прода | Откат | Примечание |
 |------|-------|----|-------------|------------|-----------------|-----------|----------------|-------|------------|
 | 2026-10-07 17:36Z | WP-FRONTEND-01 | https://github.com/ITSalt/transcriber/pull/9 | e31feb393fa4 | deploy-production.yml: run https://github.com/ITSalt/transcriber/actions/runs/37660361129 succeeded | PASS | — | — | — | влит --squash |
+| 2026-10-07 17:43Z | WP-INFRA-01 | https://github.com/ITSalt/transcriber/pull/10 | 9e5d534ca56a | — | — | — | — | — | влит --squash |
 
 ## Релизы
 
