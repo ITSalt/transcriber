@@ -3,19 +3,19 @@
 -- 1. Re-backfill: meetings created by the pre-program code after
 --    20261007120000_program_product_schema got «Роман» through the temporary DB default;
 --    this repeats the backfill for any row that still has no workspace (idempotent).
--- 2. Drop that default and set NOT NULL: from now on code that forgets the workspace fails
---    loudly instead of silently filing the meeting under «Роман».
+-- 2. SET NOT NULL. The temporary default «Роман» STAYS (D-22): NOT NULL with the default is
+--    compatible with the previous release, which keeps inserting meetings without
+--    workspace_id until `pm2 start`. Dropping the default is a separate clean-up migration
+--    of a later backend package, once only the new code runs.
 -- 3. A-5: transcription_jobs.speaker_count — the speaker hint must survive a deferred start
 --    (upload complete with defer_start → POST /api/meetings/:id/start enqueues the job).
 -- 4. ProtocolVersion reconciliation (FR-005): protocols the pre-program code created or
 --    edited after the previous migration have no / a stale latest version. Two idempotent
 --    steps; a no-op when WP-WORKER-01 already reconciled.
 --
--- Compatibility: additive except the NOT NULL. The previous code still running while
--- `migrate deploy` executes (deploy migrates before the dist swap) inserts meetings without
--- workspace_id; between this migration and `pm2 start` such an insert fails (upload
--- finalize 500) — the window is the build step of the deploy. Delivery order makes it
--- final: once this package runs, nothing creates meetings without a workspace.
+-- Compatibility (D-3): the previous code still running while `migrate deploy` executes
+-- (deploy migrates before the dist swap) keeps working — its inserts without workspace_id
+-- get «Роман» from the default, and nothing it writes can be NULL.
 -- Prisma runs this file WITHOUT a transaction; on failure use down.sql (deploy-plan §5).
 
 -- 1. re-backfill (same literal as LEGACY_WORKSPACE_ID)
@@ -23,10 +23,9 @@ UPDATE "meetings"
 SET "workspace_id" = '00000000-0000-4000-8000-000000000001'::uuid
 WHERE "workspace_id" IS NULL;
 
--- 2. no more silent default; ownership is mandatory
+-- 2. ownership is mandatory (the default stays — see the header)
 -- AlterTable
-ALTER TABLE "meetings" ALTER COLUMN "workspace_id" SET NOT NULL,
-ALTER COLUMN "workspace_id" DROP DEFAULT;
+ALTER TABLE "meetings" ALTER COLUMN "workspace_id" SET NOT NULL;
 
 -- 3. A-5
 -- AlterTable

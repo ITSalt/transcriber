@@ -8,7 +8,8 @@
 -- Not undone on purpose: the backfilled workspace ids (they are correct either way) and the
 -- reconciled ProtocolVersion rows (they mirror protocol texts that really existed; the
 -- previous code never reads protocol_versions). Lost: transcription_jobs.speaker_count
--- values — only meaningful for meetings still in AWAITING_START.
+-- values — only meaningful for meetings still in AWAITING_START. The «Роман» default is kept
+-- by the migration itself (D-22); SET DEFAULT below only re-states it (idempotent).
 -- To roll back further, run 20261007120000_program_product_schema/down.sql afterwards.
 
 BEGIN;

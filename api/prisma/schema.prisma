@@ -113,10 +113,12 @@ model Meeting {
   updatedAt DateTime        @updatedAt @map("updated_at")
 
   /// FR-003 / D-6, D-7: owning workspace — every meeting has exactly one. WP-BACKEND-06 added
-  /// it nullable with a temporary DB default («Роман»); WP-BACKEND-01 re-backfilled, dropped
-  /// the default and set NOT NULL, so code that forgets the workspace fails loudly instead
-  /// of silently filing the meeting under «Роман».
-  workspaceId String  @map("workspace_id") @db.Uuid
+  /// it nullable with a temporary DB default («Роман»); WP-BACKEND-01 re-backfilled and set
+  /// NOT NULL. The default STAYS for now (D-22): the previous release keeps running between
+  /// `migrate deploy` and `pm2 start` and inserts meetings without workspace_id. A later
+  /// clean-up migration drops it once only new code runs; until then new code must always
+  /// pass workspaceId explicitly (finalizeUpload does).
+  workspaceId String  @default(dbgenerated("'00000000-0000-4000-8000-000000000001'::uuid")) @map("workspace_id") @db.Uuid
   /// FR-004: optional project inside the workspace.
   projectId   String? @map("project_id") @db.Uuid
 

@@ -404,6 +404,58 @@ describe.skipIf(!DATABASE_URL)('FR-003 — login, isolation of every /api route,
       }
     })
 
+    describe('prod-window contract: the pre-login web uploads without workspace_id (D-20)', () => {
+      const body = (s3Key: string) => ({
+        s3_key: s3Key, s3_upload_id: 'u', filename: 'old-web.mp4', size_bytes: 10, filetype: 'video/mp4',
+        title: 'old web upload', language: null, parts: [{ part_number: 1, etag: 'e' }],
+      })
+
+      it('init without workspace_id → 200, key in «Роман»', async () => {
+        h.config.AUTH_REQUIRED = false
+        try {
+          const res = await app.inject({
+            method: 'POST', url: '/api/uploads/init',
+            payload: { filename: 'old-web.mp4', size_bytes: 10, filetype: 'video/mp4', title: 'old web', language: null },
+          })
+          expect(res.statusCode, res.body).toBe(200)
+          expect(res.json().s3_key).toMatch(new RegExp(`^ws/${LEGACY_WS}/[0-9a-f-]+\\.mp4$`))
+        } finally {
+          h.config.AUTH_REQUIRED = true
+        }
+      })
+
+      it('complete without workspace_id with an old pending/ key → meeting in «Роман»', async () => {
+        h.config.AUTH_REQUIRED = false
+        try {
+          const res = await app.inject({ method: 'POST', url: '/api/uploads/complete', payload: body('pending/started-before-deploy.mp4') })
+          expect(res.statusCode, res.body).toBe(200)
+          expect(res.json().status).toBe('TRANSCRIBING')
+          const m = await db.meeting.findUnique({ where: { id: res.json().meeting_id } })
+          expect(m.workspaceId).toBe(LEGACY_WS)
+          // a new-style key of «Роман» works too; a key of another workspace does not
+          expect((await app.inject({ method: 'POST', url: '/api/uploads/complete', payload: body(`ws/${LEGACY_WS}/n.mp4`) })).statusCode).toBe(200)
+          expect((await app.inject({ method: 'POST', url: '/api/uploads/complete', payload: body(`ws/${ids.wsA}/x.mp4`) })).statusCode).toBe(400)
+        } finally {
+          h.config.AUTH_REQUIRED = true
+        }
+      })
+
+      it('abort without workspace_id with an old pending/ key → 204', async () => {
+        h.config.AUTH_REQUIRED = false
+        try {
+          const res = await app.inject({
+            method: 'POST', url: '/api/uploads/abort',
+            payload: { s3_key: 'pending/started-before-deploy.mp4', s3_upload_id: 'u' },
+          })
+          expect(res.statusCode, res.body).toBe(204)
+          const foreign = await app.inject({ method: 'POST', url: '/api/uploads/abort', payload: { s3_key: `ws/${ids.wsA}/x.mp4`, s3_upload_id: 'u' } })
+          expect(foreign.statusCode).toBe(400)
+        } finally {
+          h.config.AUTH_REQUIRED = true
+        }
+      })
+    })
+
     it('without PIN_PEPPER login answers 503 and the CLI refuses', async () => {
       const pepper = h.config.PIN_PEPPER
       h.config.PIN_PEPPER = undefined

@@ -171,7 +171,7 @@ describe.skipIf(!DATABASE_URL)('20261008120000_meeting_workspace_not_null + down
     if (DATABASE_URL) await dropDatabases(workDb, refDb)
   })
 
-  it('AC-4: applies on a DB with a meeting without workspace — backfill, NOT NULL, no default, versions reconciled', async () => {
+  it('AC-4: applies on a DB with a meeting without workspace — backfill, NOT NULL (default kept, D-22), versions reconciled', async () => {
     expect(prismaCli(['migrate', 'deploy'], workDb).status).toBe(0)
     await runDown(workDb, NAME7) // → the previous release's schema, with its _prisma_migrations rows
 
@@ -198,7 +198,8 @@ describe.skipIf(!DATABASE_URL)('20261008120000_meeting_workspace_not_null + down
       expect(ws).toEqual([{ ws: LEGACY_WS }])
       const col = (await c.query(`SELECT is_nullable, column_default FROM information_schema.columns
                                   WHERE table_name = 'meetings' AND column_name = 'workspace_id'`)).rows
-      expect(col).toEqual([{ is_nullable: 'NO', column_default: null }])
+      // D-22: the «Роман» default stays until a later clean-up migration
+      expect(col).toEqual([{ is_nullable: 'NO', column_default: `'${LEGACY_WS}'::uuid` }])
       const versions = (await c.query(`SELECT m.title, v.n, v.kind::text AS kind, v.markdown FROM protocol_versions v
                                        JOIN meetings m ON m.id = v.meeting_id WHERE m.title LIKE 'nn-%' ORDER BY 1, 2`)).rows
       expect(versions).toEqual([
@@ -207,8 +208,16 @@ describe.skipIf(!DATABASE_URL)('20261008120000_meeting_workspace_not_null + down
         { title: 'nn-2 edited by old ui', n: 2, kind: 'LEGACY', markdown: '# edited later' },
         { title: 'nn-3 new by old worker', n: 1, kind: 'GENERATED', markdown: '# three' },
       ])
-      // the pre-program INSERT shape now fails loudly
-      await expect(c.query(`INSERT INTO meetings (id, title, updated_at) VALUES (gen_random_uuid(), 'x', now())`)).rejects.toThrow()
+      // D-3 / D-22: the previous release's INSERT shape (no workspace_id) keeps working during
+      // the deploy window and lands in «Роман»; an explicit NULL is rejected
+      const [old] = (await c.query(
+        `INSERT INTO meetings (id, title, updated_at) VALUES (gen_random_uuid(), 'nn-old-shape', now()) RETURNING workspace_id::text AS ws`,
+      )).rows
+      expect(old).toEqual({ ws: LEGACY_WS })
+      await expect(
+        c.query(`INSERT INTO meetings (id, title, updated_at, workspace_id) VALUES (gen_random_uuid(), 'x', now(), NULL)`),
+      ).rejects.toThrow(/null/i)
+      await c.query(`DELETE FROM meetings WHERE title = 'nn-old-shape'`)
     })
   }, 180_000)
 

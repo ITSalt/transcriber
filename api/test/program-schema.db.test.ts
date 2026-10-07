@@ -49,15 +49,20 @@ describe.skipIf(!DATABASE_URL)('program schema v1 (migration 20261007120000)', (
     expect(ws).toMatchObject({ name: LEGACY_WORKSPACE_NAME, personal: true })
   })
 
-  it('after WP-BACKEND-01 a meeting without a workspace is rejected (temporary default dropped, NOT NULL)', async () => {
+  it('after WP-BACKEND-01: NOT NULL; the old INSERT shape still lands in «Роман» (default kept, D-22)', async () => {
     await inRollback(async (tx) => {
       const m = await tx.meeting.create({ data: { title: 'with workspace', workspaceId: LEGACY_WORKSPACE_ID } })
       expect(m.workspaceId).toBe(LEGACY_WORKSPACE_ID)
       expect(m.projectId).toBeNull()
-      // the pre-program INSERT shape (no workspace_id) must now fail loudly
+      // the previous release's INSERT shape (no workspace_id) keeps working during a deploy
+      const [old] = await tx.$queryRawUnsafe<Array<{ ws: string }>>(
+        `INSERT INTO meetings (id, title, updated_at) VALUES (gen_random_uuid(), 'old shape', now()) RETURNING workspace_id::text AS ws`,
+      )
+      expect(old).toEqual({ ws: LEGACY_WORKSPACE_ID })
+      // an explicit NULL is rejected
       await tx.$executeRawUnsafe(`SAVEPOINT no_ws`)
       await expect(
-        tx.$executeRawUnsafe(`INSERT INTO meetings (id, title, updated_at) VALUES (gen_random_uuid(), 'no ws', now())`),
+        tx.$executeRawUnsafe(`INSERT INTO meetings (id, title, updated_at, workspace_id) VALUES (gen_random_uuid(), 'no ws', now(), NULL)`),
       ).rejects.toThrow(/workspace_id|null/i)
       await tx.$executeRawUnsafe(`ROLLBACK TO SAVEPOINT no_ws`)
     })
