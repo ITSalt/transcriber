@@ -44,7 +44,7 @@ import { prisma } from '../../db.js'
 import { AppError } from '../../plugins/errors.js'
 import { assertMeetingAccess, assertProjectAccess } from './access.js'
 import { burnPinCheck, hashToken, newSessionToken, pinLookup, verifyPin } from './crypto.js'
-import { clientKey, isBlocked, reserveAttempt, settleFailure, settleSuccess } from './lockout.js'
+import { clientKey, giveBack, isBlocked, reserveAttempt, settleFailure, settleSuccess } from './lockout.js'
 import { LEGACY_AUTH, LEGACY_USER_ID, type AuthContext } from './types.js'
 
 const SESSION_TTL_MS = SESSION_TTL_DAYS * 24 * 60 * 60 * 1000
@@ -56,6 +56,7 @@ const PUBLIC_ROUTES = new Set(['GET /api/health', 'HEAD /api/health', 'POST /api
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 const MEETING_SCOPE = '/api/meetings/:id'
 const PROJECT_SCOPE = '/api/projects/:projectId'
+const MEETING_IN_PROJECT = /\/meetings\/:id(\/|$)/
 
 const inScope = (url: string | undefined, scope: string): boolean =>
   url !== undefined && (url === scope || url.startsWith(`${scope}/`))
@@ -67,7 +68,7 @@ function assertGatedShape(url: string): void {
       throw new Error(`auth: route ${url} must use ${scope} (exact parameter name, no regex) so the access check covers it`)
     }
   }
-  if (url.startsWith('/api/projects/') && url.includes('/meetings/:') && !url.includes('/meetings/:id')) {
+  if (url.startsWith('/api/projects/') && url.includes('/meetings/:') && !MEETING_IN_PROJECT.test(url)) {
     throw new Error(`auth: route ${url} must name its meeting parameter :id so the access check covers it`)
   }
 }
@@ -148,7 +149,7 @@ async function authPlugin(app: FastifyInstance): Promise<void> {
   app.addHook('preValidation', async (request) => {
     const url = request.routeOptions.url
     const params = (request.params ?? {}) as Record<string, string | undefined>
-    const meetingId = inScope(url, MEETING_SCOPE) || (inScope(url, PROJECT_SCOPE) && url!.includes('/meetings/:id')) ? params['id'] : undefined
+    const meetingId = inScope(url, MEETING_SCOPE) || (inScope(url, PROJECT_SCOPE) && MEETING_IN_PROJECT.test(url!)) ? params['id'] : undefined
     const projectId = inScope(url, PROJECT_SCOPE) ? params['projectId'] : undefined
     if (meetingId === undefined && projectId === undefined) return
     // a malformed id is a malformed request (400, as the route's params schema says) —
@@ -183,14 +184,22 @@ async function authPlugin(app: FastifyInstance): Promise<void> {
       const reservation = await reserveAttempt(key)
       if (reservation.blocked) throw authError('LOGIN_BLOCKED')
 
-      const user = await prisma.user.findUnique({ where: { pinLookup: pinLookup(pin, config.PIN_PEPPER) } })
-      const ok = user ? await verifyPin(pin, user.pinHash) : (await burnPinCheck(pin), false)
-      if (!user || !ok) {
-        const { blocked } = await settleFailure(reservation, request.log)
-        throw authError(blocked ? 'LOGIN_BLOCKED' : 'INVALID_PIN')
+      let user: { id: string; name: string } | null
+      try {
+        const found = await prisma.user.findUnique({ where: { pinLookup: pinLookup(pin, config.PIN_PEPPER) } })
+        const ok = found ? await verifyPin(pin, found.pinHash) : (await burnPinCheck(pin), false)
+        if (!found || !ok) {
+          const { blocked } = await settleFailure(reservation, request.log)
+          throw authError(blocked ? 'LOGIN_BLOCKED' : 'INVALID_PIN')
+        }
+        // a parallel failure may have blocked the client while this PIN was checked
+        if ((await settleSuccess(reservation)).blocked) throw authError('LOGIN_BLOCKED')
+        user = found
+      } catch (err) {
+        // failures are permanent (A-6): an infrastructure error is not the client's failure
+        if (!(err instanceof AppError)) await giveBack(key).catch(() => undefined)
+        throw err
       }
-      // a parallel failure may have blocked the client while this PIN was checked
-      if ((await settleSuccess(reservation)).blocked) throw authError('LOGIN_BLOCKED')
 
       const token = newSessionToken()
       const session = await prisma.authSession.create({

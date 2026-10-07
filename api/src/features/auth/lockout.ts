@@ -83,11 +83,19 @@ export async function reserveAttempt(key: string): Promise<Reservation> {
   const count = Number(row!.failed_count)
   if (row!.blocked_at) return { key, count, blocked: true }
   if (count > LOGIN_MAX_FAILED_ATTEMPTS) {
-    // the allowance is used up by attempts still in flight or already failed
-    await block(key)
+    // the allowance is used up by attempts still in flight: refuse this one, give its
+    // reservation back, store nothing — only the 10th ACTUAL failure blocks (settleFailure)
+    await giveBack(key)
     return { key, count, blocked: true }
   }
   return { key, count, blocked: false }
+}
+
+/** Undo a reservation (the attempt did not test a PIN, or the check itself errored). */
+export async function giveBack(key: string): Promise<void> {
+  await prisma.$executeRaw`
+    UPDATE "login_blocks" SET "failed_count" = GREATEST("failed_count" - 1, 0), "updated_at" = now()
+    WHERE "client_key" = ${key}`
 }
 
 async function block(key: string): Promise<void> {

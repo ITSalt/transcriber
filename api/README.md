@@ -49,7 +49,7 @@ pnpm --filter @transcrib/api run user:create -- --name "Роман" --pin 654321
 pnpm --filter @transcrib/api run user:grant -- --user "Иван" --workspace "Роман"
 pnpm --filter @transcrib/api run user:reset-pin -- --user "Иван" --pin 112233   # ends their sessions
 pnpm --filter @transcrib/api run user:blocks                                    # failed logins / blocks
-pnpm --filter @transcrib/api run user:unblock -- --client 203.0.113.7           # or --all
+pnpm --filter @transcrib/api run user:unblock -- --client 203.0.113.7           # or --all; IPv6 is keyed by /64 — any address of it works
 ```
 
 Exit codes: 0 done, 1 refused (PIN taken, not found, ambiguous name), 2 usage error.

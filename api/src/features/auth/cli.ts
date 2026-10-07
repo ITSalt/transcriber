@@ -17,6 +17,7 @@ import { pathToFileURL } from 'node:url'
 import type { PrismaClient } from '@prisma/client'
 import { LOGIN_GLOBAL_CLIENT_KEY, PIN_PATTERN } from '@transcrib/shared'
 import { hashPin, pinLookup } from './crypto.js'
+import { addressKey } from './lockout.js'
 
 export class CliError extends Error {
   constructor(message: string, readonly exitCode: 1 | 2 = 1) {
@@ -165,7 +166,8 @@ export async function runCli(argv: string[], deps: CliDeps): Promise<void> {
         out(`unblocked all clients (${res.count} rows cleared)`)
         return
       }
-      const client = str(args, 'client')
+      // stored keys are normalised (IPv4-mapped unwrapped, IPv6 by /64) — normalise the input too
+      const client = addressKey(str(args, 'client'))
       const res = await db.loginBlock.deleteMany({ where: { clientKey: client } })
       if (res.count === 0) throw new CliError(`no record for client ${client}`)
       out(`unblocked ${client}`)
