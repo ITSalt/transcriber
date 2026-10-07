@@ -53,3 +53,5 @@ CI: run 37659393076 `Lint + Typecheck + Test` pass (1m45s); PR mergeable.
 - ротация: 2 копии; `docker compose down -v` — чисто.
 
 Автоматические находки review-start: нет (7 файлов, все в путях потока infra).
+
+**Ревизия `0e7ebe85d3` (после merge WP-FRONTEND-01 в main):** merge-коммит с родителями `1f33af81e2` (принятая ревизия) и `e31feb393f` (main), без force-push. `git diff 1f33af8 0e7ebe8 -- docker-compose.yml .env.example .github scripts` пуст; `git diff e31feb3...0e7ebe8`: те же 7 файлов, +258/−0. Содержимое пакета не изменилось; принимается без нового раунда.
