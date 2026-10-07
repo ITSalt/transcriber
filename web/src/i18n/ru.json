@@ -9,6 +9,10 @@
     "upload": "Загрузить",
     "back": "Назад"
   },
+  "shell": {
+    "brand": "Transcrib",
+    "navLabel": "Основная навигация"
+  },
   "nav": {
     "catalog": "Встречи",
     "upload": "Загрузить"
