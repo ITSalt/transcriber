@@ -92,6 +92,7 @@ R-n — действие: точная команда одной строкой 
 | transcriber:shared/package.json | transcriber | WP-BACKEND-06 | 2026-10-07 16:48Z | — | narrowed from **/package.json: the package edits only the workspace manifests |
 | transcriber:web/src/App.tsx | transcriber | WP-FRONTEND-01 | 2026-10-07 16:48Z | — | dispatch |
 | transcriber:web/src/i18n/** | transcriber | WP-FRONTEND-01 | 2026-10-07 16:48Z | — | dispatch |
+| transcriber:graph | transcriber | WP-BACKEND-06 | 2026-10-07 16:52Z | — | LOCK message: /nacl-sa-feature FR-003..FR-006 — доменная модель программы в Neo4j |
 
 ## Очередь слияний
 
@@ -109,6 +110,9 @@ R-n — действие: точная команда одной строкой 
 <!-- orch:journal -->
 | Дата | WP | Событие | Подтверждение |
 |------|----|---------|---------------|
+| 2026-10-07 16:52Z | WP-BACKEND-06 | WP-BACKEND-06: LOCK graph выдан (ACK); QUESTION про CLAUDE.md/AGENTS.md — ANSWER по D-17 (вариант а) | сообщения product-backend 2026-10-07; orch.py lock acquire graph: held; instructions check exit 0 |
+| 2026-10-07 16:52Z | — | D-17 recorded | — |
+| 2026-10-07 16:52Z | WP-BACKEND-06 | lock transcriber:graph acquired | LOCK message: /nacl-sa-feature FR-003..FR-006 — доменная модель программы в Neo4j |
 | 2026-10-07 16:51Z | WP-BACKEND-06 | WP-BACKEND-06: DISPATCHING -> IN_PROGRESS | ListAgents 2026-10-07 ~16:55Z: сессия product-backend запущена (busy), PR пока нет |
 | 2026-10-07 16:51Z | — | R-2 opened for owner | work-packages/WP-INFRA-01-neo4j.md |
 | 2026-10-07 16:51Z | — | R-1 closed | ssh deploy@transcriber.itsalt.ru 2026-10-07: Mem 7.8Gi (used 3.2Gi, avail 4.6Gi), swap 2.0Gi (715Mi used), nproc 4, / 30G used 24G avail 4.6G (84%); docker stats: fc-neo4j 1.276GiB/2GiB, learn-mattermost, learn-postgres, learn-redis; лимиты вписаны в WP-INFRA-01 раздел 2 (D-16) |
