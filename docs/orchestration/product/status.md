@@ -113,6 +113,7 @@ R-n — действие: точная команда одной строкой 
 <!-- orch:journal -->
 | Дата | WP | Событие | Подтверждение |
 |------|----|---------|---------------|
+| 2026-10-07 17:12Z | — | Дефекты плагина оформлены вручную (D-18): PLUGIN-BUG-1 → ITSalt/PepperSkills#32 (стартовый промпт требует instructions sync), PLUGIN-BUG-2 → #33 (report --check не проходит свою анонимизацию при origin-owner = организация плагина), PLUGIN-BUG-3 → #34 (коллизия замков по глобу на несуществующем файле) | gh issue create: issues/32, /33, /34; bugs/PLUGIN-BUG-{1,2,3}.md |
 | 2026-10-07 17:10Z | — | R-5 opened for owner | work-packages/WP-INFRA-01-neo4j.md |
 | 2026-10-07 17:10Z | — | R-3 closed | ssh 2026-10-07: journalctl --vacuum-size=200M freed 1.9G; df /: 22G used, 6.6G avail (77%); du: /var/lib/snapd 3.1G, /var/lib/containerd 2.7G, /home/deploy/.local 2.0G, /var/lib/docker 1.2G, /home/deploy/.npm 1000M, .nvm 659M, /var/log 473M (caddy 126M, journal 152M) |
 | 2026-10-07 17:10Z | — | D-18 recorded | — |
