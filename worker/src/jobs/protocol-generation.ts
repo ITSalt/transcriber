@@ -127,6 +127,26 @@ export interface ProtocolGenerationDeps {
 export const PROMPT_ARCHIVE_TIMEOUT_MS = 15_000
 
 /**
+ * RQ-062: upper bound for ProjectMemoryProvider.getPromptMemory. Defence in depth — the
+ * Neo4j provider bounds itself — so a provider that neither resolves nor throws cannot
+ * hold the job (and its BullMQ lock) forever; on timeout the section is omitted.
+ */
+export const PROJECT_MEMORY_TIMEOUT_MS = 15_000
+
+/** Reject after `ms` unless `work` settles first. The work itself is not cancelled. */
+async function withTimeout<T>(work: Promise<T>, ms: number, what: string): Promise<T> {
+  let timer: NodeJS.Timeout | undefined
+  const timeout = new Promise<never>((_, reject) => {
+    timer = setTimeout(() => reject(new Error(`${what} timed out after ${ms} ms`)), ms)
+  })
+  try {
+    return await Promise.race([work, timeout])
+  } finally {
+    clearTimeout(timer)
+  }
+}
+
+/**
  * RQ-062: <project_memory> only for a project meeting, filtered by workspace AND
  * project. A failing provider must not cost the user a protocol (D-19): the section
  * is omitted and the generation goes on.
@@ -139,7 +159,11 @@ async function loadProjectMemory(
 ): Promise<string | null> {
   if (!projectId) return null
   try {
-    return await provider.getPromptMemory(projectId, workspaceId)
+    return await withTimeout(
+      provider.getPromptMemory(projectId, workspaceId),
+      PROJECT_MEMORY_TIMEOUT_MS,
+      'project memory',
+    )
   } catch (err) {
     log.warn(
       { projectId, workspaceId, error: err instanceof Error ? err.message : String(err) },
@@ -164,21 +188,11 @@ async function archivePrompt(
   const key = `ws/${workspaceId}/prompts/${generationId}.txt`
   try {
     const target = storage ?? createStorage()
-    let timer: NodeJS.Timeout | undefined
-    const timeout = new Promise<never>((_, reject) => {
-      timer = setTimeout(
-        () => reject(new Error(`prompt archive timed out after ${PROMPT_ARCHIVE_TIMEOUT_MS} ms`)),
-        PROMPT_ARCHIVE_TIMEOUT_MS,
-      )
-    })
-    try {
-      await Promise.race([
-        target.putObject(key, Buffer.from(userMessage, 'utf-8'), 'text/plain; charset=utf-8'),
-        timeout,
-      ])
-    } finally {
-      clearTimeout(timer)
-    }
+    await withTimeout(
+      target.putObject(key, Buffer.from(userMessage, 'utf-8'), 'text/plain; charset=utf-8'),
+      PROMPT_ARCHIVE_TIMEOUT_MS,
+      'prompt archive',
+    )
     return target.keyToStorageUri(key)
   } catch (err) {
     log.warn(

@@ -55,6 +55,14 @@ vi.mock('../lib/publisher.js', () => ({
   publishMeetingEvent: vi.fn(),
 }))
 
+// Never reach a real bucket from a developer shell with S3_* exported: the prompt
+// archive (RQ-061) is best effort, so an unconfigured storage just leaves prompt_uri NULL.
+vi.mock('../lib/storage.js', () => ({
+  createStorage: vi.fn(() => {
+    throw new Error('storage is not available in unit tests')
+  }),
+}))
+
 // ── Subject under test ────────────────────────────────────────────────────────
 import { processProtocolGenerationJob } from './protocol-generation.js'
 import { prisma } from '../lib/prisma.js'

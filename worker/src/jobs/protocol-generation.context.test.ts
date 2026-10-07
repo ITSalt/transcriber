@@ -25,7 +25,11 @@ vi.mock('../lib/storage.js', () => ({
   }),
 }))
 
-import { processProtocolGenerationJob, PROMPT_ARCHIVE_TIMEOUT_MS } from './protocol-generation.js'
+import {
+  processProtocolGenerationJob,
+  PROMPT_ARCHIVE_TIMEOUT_MS,
+  PROJECT_MEMORY_TIMEOUT_MS,
+} from './protocol-generation.js'
 import { prisma } from '../lib/prisma.js'
 import { renderProtocolUserMessage } from '../llm/protocol-prompt.js'
 
@@ -270,6 +274,27 @@ describe('UC-300 project memory (RQ-062)', () => {
     expect('context' in llm.generate.mock.calls[0]![0]).toBe(false)
     expect(log.warn).toHaveBeenCalled()
     expect(tx.protocol.create).toHaveBeenCalledOnce()
+  })
+})
+
+describe('UC-300 project memory is time-boxed (RQ-062)', () => {
+  it('a provider that never settles is abandoned after the timeout — section omitted, protocol persisted', async () => {
+    vi.useFakeTimers()
+    try {
+      const { llm, storage, tx } = setup({ projectId: PROJECT_ID })
+      const memory: ProjectMemoryProvider = { getPromptMemory: vi.fn(() => new Promise<string | null>(() => {})) }
+      const log = logger()
+      const run = processProtocolGenerationJob(job, log as never, {
+        llm, storage, memory, redisUrl: 'redis://x', env: {},
+      })
+      await vi.advanceTimersByTimeAsync(PROJECT_MEMORY_TIMEOUT_MS + 1)
+      await run
+      expect('context' in llm.generate.mock.calls[0]![0]).toBe(false)
+      expect(log.warn).toHaveBeenCalled()
+      expect(tx.protocol.create).toHaveBeenCalledOnce()
+    } finally {
+      vi.useRealTimers()
+    }
   })
 })
 
