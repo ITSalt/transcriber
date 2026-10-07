@@ -32,7 +32,7 @@ CANCELLED (причина).
 | [WP-FRONTEND-05](work-packages/WP-FRONTEND-05-project-memory-ui.md) | frontend | Реестр задач и решений проекта, очередь подтверждений | CANCELLED (заменён WP-WEB-MEMORY-01 (D-15)) | product-frontend | — | 2026-10-07 |
 | [WP-BACKEND-05](work-packages/WP-BACKEND-05-neo4j-prod.md) | backend | Neo4j для памяти проекта: сервис, лимиты памяти, бэкап, CI | CANCELLED (заменён WP-INFRA-01 и WP-WORKER-MEMORY-01 (D-15)) | product-backend | — | 2026-10-07 |
 | [WP-BACKEND-06](work-packages/WP-BACKEND-06-contract.md) | backend | Контракт программы: схема БД, контракты shared, зависимости | PROD | product-backend | https://github.com/ITSalt/transcriber/pull/12 (accepted 3fa3500f47) | 2026-10-07 |
-| [WP-WORKER-01](work-packages/WP-WORKER-01-context-asr-llm.md) | worker | Контекст встречи в Deepgram и в промпт протокола, метаданные генерации | IN_PROGRESS | product-worker | — | 2026-10-07 |
+| [WP-WORKER-01](work-packages/WP-WORKER-01-context-asr-llm.md) | worker | Контекст встречи в Deepgram и в промпт протокола, метаданные генерации | REVIEW | product-worker | https://github.com/ITSalt/transcriber/pull/17 | 2026-10-07 |
 | [WP-WORKER-02](work-packages/WP-WORKER-02-project-memory.md) | worker | Память проекта в Neo4j: извлечение, сопоставление, сводка | CANCELLED (создан в неверном потоке; заменён WP-WORKER-MEMORY-01 (D-15)) | product-worker | — | 2026-10-07 |
 | [WP-INFRA-01](work-packages/WP-INFRA-01-neo4j.md) | infra | Neo4j памяти проекта: сервис, лимиты, бэкап, CI, шаг деплоя | PROD | product-infra | https://github.com/ITSalt/transcriber/pull/10 (accepted 0e7ebe85d3) | 2026-10-07 |
 | [WP-WEB-PROJECTS-01](work-packages/WP-WEB-PROJECTS-01-projects-context.md) | web-projects | Проекты и форма контекста перед распознаванием | IN_PROGRESS | product-web-projects | — | 2026-10-07 |
@@ -116,6 +116,7 @@ R-n — действие: точная команда одной строкой 
 <!-- orch:journal -->
 | Дата | WP | Событие | Подтверждение |
 |------|----|---------|---------------|
+| 2026-10-07 21:56Z | WP-WORKER-01 | WP-WORKER-01: IN_PROGRESS -> REVIEW | 4c1a580e4b; report reports/wp-worker-01-review-20261007.md |
 | 2026-10-07 21:54Z | WP-WORKER-MEMORY-01 | WP-WORKER-MEMORY-01: IN_PROGRESS -> REVIEW | 58dcf8efbd; report reports/wp-worker-memory-01-review-20261007.md |
 | 2026-10-07 21:54Z | WP-WORKER-MEMORY-01 | lock transcriber:dev-stack released | orch.py lock |
 | 2026-10-07 21:54Z | WP-WEB-MEMORY-01 | WP-WEB-MEMORY-01: review round 1 started at dd0ee730e5 | reports/wp-web-memory-01-review-20261007.md |
