@@ -23,7 +23,7 @@ CANCELLED (причина).
 |----|--------|----------|--------|--------|----|-----------|
 | [WP-BACKEND-01](work-packages/WP-BACKEND-01-auth-workspaces.md) | backend | Вход по PIN, рабочие пространства и изоляция данных (API+worker) | IN_PROGRESS | product-backend | — | 2026-10-07 |
 | [WP-FRONTEND-01](work-packages/WP-FRONTEND-01-design-system.md) | frontend | Дизайн-система ITSALT и каркас приложения | PROD | product-frontend | https://github.com/ITSalt/transcriber/pull/9 (accepted 364b6b9fb8) | 2026-10-07 |
-| [WP-FRONTEND-02](work-packages/WP-FRONTEND-02-login-tasks.md) | frontend | Экран входа, переключатель пространств, список задач | IN_PROGRESS | product-frontend | — | 2026-10-07 |
+| [WP-FRONTEND-02](work-packages/WP-FRONTEND-02-login-tasks.md) | frontend | Экран входа, переключатель пространств, список задач | REVIEW | product-frontend | https://github.com/ITSalt/transcriber/pull/13 | 2026-10-07 |
 | [WP-BACKEND-02](work-packages/WP-BACKEND-02-projects-context.md) | backend | Проекты и контекст встречи: в распознавание и в протокол | CANCELLED (заменён WP-API-PROJECTS-01 (D-15, поток api-projects)) | product-backend | — | 2026-10-07 |
 | [WP-FRONTEND-03](work-packages/WP-FRONTEND-03-projects-context-ui.md) | frontend | Проекты и форма контекста перед распознаванием | CANCELLED (заменён WP-WEB-PROJECTS-01 (D-15)) | product-frontend | — | 2026-10-07 |
 | [WP-BACKEND-03](work-packages/WP-BACKEND-03-feedback.md) | backend | История версий протокола и приём обратной связи | CANCELLED (заменён WP-API-FEEDBACK-01 (D-15, поток api-feedback)) | product-backend | — | 2026-10-07 |
@@ -37,7 +37,7 @@ CANCELLED (причина).
 | [WP-INFRA-01](work-packages/WP-INFRA-01-neo4j.md) | infra | Neo4j памяти проекта: сервис, лимиты, бэкап, CI, шаг деплоя | PROD | product-infra | https://github.com/ITSalt/transcriber/pull/10 (accepted 0e7ebe85d3) | 2026-10-07 |
 | [WP-WEB-PROJECTS-01](work-packages/WP-WEB-PROJECTS-01-projects-context.md) | web-projects | Проекты и форма контекста перед распознаванием | IN_PROGRESS | product-web-projects | — | 2026-10-07 |
 | [WP-WEB-FEEDBACK-01](work-packages/WP-WEB-FEEDBACK-01-feedback.md) | web-feedback | Режим обратной связи по протоколу | IN_PROGRESS | product-web-feedback | — | 2026-10-07 |
-| [WP-WEB-MEMORY-01](work-packages/WP-WEB-MEMORY-01-registry.md) | web-memory | Реестр задач и решений проекта, очередь подтверждений | IN_PROGRESS | product-web-memory | — | 2026-10-07 |
+| [WP-WEB-MEMORY-01](work-packages/WP-WEB-MEMORY-01-registry.md) | web-memory | Реестр задач и решений проекта, очередь подтверждений | REVIEW | product-web-memory | — | 2026-10-07 |
 | [WP-API-PROJECTS-01](work-packages/WP-API-PROJECTS-01-projects-context.md) | api-projects | API проектов и контекста встречи, запуск распознавания | READY | product-api-projects | — | 2026-10-07 |
 | [WP-API-FEEDBACK-01](work-packages/WP-API-FEEDBACK-01-feedback.md) | api-feedback | API версий протокола и обратной связи, разбор docx | READY | product-api-feedback | — | 2026-10-07 |
 | [WP-API-MEMORY-01](work-packages/WP-API-MEMORY-01-registry.md) | api-memory | API памяти проекта: задачи, решения, подтверждения | READY | product-api-memory | — | 2026-10-07 |
@@ -116,6 +116,9 @@ R-n — действие: точная команда одной строкой 
 <!-- orch:journal -->
 | Дата | WP | Событие | Подтверждение |
 |------|----|---------|---------------|
+| 2026-10-07 21:52Z | WP-WEB-MEMORY-01 | WP-WEB-MEMORY-01: READY dd0ee73, PR #14 (окно связи); ревью после восстановления доступа к GitHub, порядок: FRONTEND-02 первым | сообщение product-web-memory |
+| 2026-10-07 21:52Z | WP-WEB-MEMORY-01 | WP-WEB-MEMORY-01: IN_PROGRESS -> REVIEW | READY dd0ee73, PR #14 |
+| 2026-10-07 21:52Z | WP-FRONTEND-02 | WP-FRONTEND-02: IN_PROGRESS -> REVIEW | feb98efd46; report reports/wp-frontend-02-review-20261007.md |
 | 2026-10-07 21:37Z | WP-BACKEND-01 | WP-BACKEND-01: QUESTION о сбросе счётчика блокировки — ANSWER: буквально по D-8 (A-6), нюанс окна времени — P-14 владельцу, не блокирует; находка вне пакета: SSRF в экспорте PDF — записана как BUG-1 (отдельный пакет после волны 2) | сообщение product-backend; bugs/BUG-1.md |
 | 2026-10-07 21:37Z | — | P-14 opened for owner | work-packages/WP-BACKEND-01-auth-workspaces.md |
 | 2026-10-07 21:37Z | — | A-6 recorded | — |
