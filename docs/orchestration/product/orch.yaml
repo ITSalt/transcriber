@@ -242,6 +242,9 @@ guards: {}
 spec_graph: nacl
 # Live checks: playwright | none.
 e2e: none
+# Plugin defects: Issues in ITSalt/PepperSkills without a separate owner confirmation (D-18).
+bug_reports: auto
+bug_reports_decision: D-18
 
 numbering:
   scope: program-cdb126e7-beec-44b8-8b7d-146583adf01c
