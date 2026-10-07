@@ -41,7 +41,7 @@ CANCELLED (причина).
 | [WP-API-PROJECTS-01](work-packages/WP-API-PROJECTS-01-projects-context.md) | api-projects | API проектов и контекста встречи, запуск распознавания | READY | product-api-projects | — | 2026-10-07 |
 | [WP-API-FEEDBACK-01](work-packages/WP-API-FEEDBACK-01-feedback.md) | api-feedback | API версий протокола и обратной связи, разбор docx | READY | product-api-feedback | — | 2026-10-07 |
 | [WP-API-MEMORY-01](work-packages/WP-API-MEMORY-01-registry.md) | api-memory | API памяти проекта: задачи, решения, подтверждения | READY | product-api-memory | — | 2026-10-07 |
-| [WP-WORKER-MEMORY-01](work-packages/WP-WORKER-MEMORY-01-pipeline.md) | worker-memory | Память проекта в Neo4j: слой графа, извлечение, сопоставление, сводка | DISPATCHING | product-worker-memory | — | 2026-10-07 |
+| [WP-WORKER-MEMORY-01](work-packages/WP-WORKER-MEMORY-01-pipeline.md) | worker-memory | Память проекта в Neo4j: слой графа, извлечение, сопоставление, сводка | IN_PROGRESS | product-worker-memory | — | 2026-10-07 |
 | [WP-INFRA-02](work-packages/WP-INFRA-02-deploy-migrate-first.md) | infra | Порядок деплоя: миграции Postgres до сборки и замены dist | PROD | product-infra | https://github.com/ITSalt/transcriber/pull/11 (accepted 6694e5e172) | 2026-10-07 |
 
 ## Ждёт владельца
@@ -93,7 +93,7 @@ R-n — действие: точная команда одной строкой 
 | transcriber:shared/** | transcriber | WP-WORKER-MEMORY-01 | 2026-10-07 20:11Z | — | dispatch |
 | transcriber:worker/package.json | transcriber | WP-WORKER-MEMORY-01 | 2026-10-07 20:11Z | — | dispatch |
 | transcriber:api/package.json | transcriber | WP-BACKEND-01 | 2026-10-07 20:28Z | — | 5 строк scripts (user:create\|grant\|reset-pin\|blocks\|unblock), без зависимостей и lockfile |
-| transcriber:graph | transcriber | WP-WORKER-01 | 2026-10-07 20:32Z | — | LOCK message: /nacl-sa-feature UC-200 keyterm, UC-300 context/memory/generation |
+| transcriber:graph | transcriber | WP-WORKER-01 | 2026-10-07 20:32Z | WP-WORKER-MEMORY-01 | LOCK message: /nacl-sa-feature UC-200 keyterm, UC-300 context/memory/generation |
 
 ## Очередь слияний
 
@@ -115,6 +115,9 @@ R-n — действие: точная команда одной строкой 
 <!-- orch:journal -->
 | Дата | WP | Событие | Подтверждение |
 |------|----|---------|---------------|
+| 2026-10-07 20:36Z | WP-WORKER-MEMORY-01 | WP-WORKER-MEMORY-01: сессия стартовала; LOCK graph — HOLD, замок у WP-WORKER-01, пакет в очереди | orch.py lock acquire graph |
+| 2026-10-07 20:36Z | WP-WORKER-MEMORY-01 | WP-WORKER-MEMORY-01: DISPATCHING -> IN_PROGRESS | сообщение product-worker-memory: сессия запущена, LOCK graph (в очереди за WP-WORKER-01) |
+| 2026-10-07 20:36Z | WP-WORKER-MEMORY-01 | WP-WORKER-MEMORY-01 waits for lock transcriber:graph (WP-WORKER-01) | orch.py lock acquire |
 | 2026-10-07 20:32Z | WP-WORKER-01 | WP-WORKER-01: LOCK graph выдан; QUESTION по п. 8 — ANSWER (b): миграций не добавлять, слот слияния после WP-BACKEND-01 (сверка FR-005 в его миграции), при rebase перед merge проверить её наличие в main | сообщение product-worker; migrations держит WP-BACKEND-01 |
 | 2026-10-07 20:32Z | WP-WORKER-01 | lock transcriber:graph acquired | LOCK message: /nacl-sa-feature UC-200 keyterm, UC-300 context/memory/generation |
 | 2026-10-07 20:32Z | WP-WORKER-01 | WP-WORKER-01: сессия product-worker стартовала; QUESTION instructions — ANSWER D-17 (b) | сообщение product-worker |
