@@ -21,7 +21,7 @@ CANCELLED (причина).
 <!-- orch:wp -->
 | WP | Модуль | Название | Статус | Сессия | PR | Обновлено |
 |----|--------|----------|--------|--------|----|-----------|
-| [WP-BACKEND-01](work-packages/WP-BACKEND-01-auth-workspaces.md) | backend | Вход по PIN, рабочие пространства и изоляция данных (API+worker) | REVISE | product-backend | https://github.com/ITSalt/transcriber/pull/15 | 2026-10-07 |
+| [WP-BACKEND-01](work-packages/WP-BACKEND-01-auth-workspaces.md) | backend | Вход по PIN, рабочие пространства и изоляция данных (API+worker) | ACCEPTED | product-backend | https://github.com/ITSalt/transcriber/pull/15 (accepted ba75536568) | 2026-10-07 |
 | [WP-FRONTEND-01](work-packages/WP-FRONTEND-01-design-system.md) | frontend | Дизайн-система ITSALT и каркас приложения | PROD | product-frontend | https://github.com/ITSalt/transcriber/pull/9 (accepted 364b6b9fb8) | 2026-10-07 |
 | [WP-FRONTEND-02](work-packages/WP-FRONTEND-02-login-tasks.md) | frontend | Экран входа, переключатель пространств, список задач | ACCEPTED | product-frontend | https://github.com/ITSalt/transcriber/pull/13 (accepted feb98efd46) | 2026-10-07 |
 | [WP-BACKEND-02](work-packages/WP-BACKEND-02-projects-context.md) | backend | Проекты и контекст встречи: в распознавание и в протокол | CANCELLED (заменён WP-API-PROJECTS-01 (D-15, поток api-projects)) | product-backend | — | 2026-10-07 |
@@ -113,10 +113,15 @@ R-n — действие: точная команда одной строкой 
 | 2 | transcriber | WP-INFRA-01 | https://github.com/ITSalt/transcriber/pull/10 | WP-FRONTEND-01 | merged |
 | 3 | transcriber | WP-INFRA-02 | https://github.com/ITSalt/transcriber/pull/11 | — | merged |
 | 4 | transcriber | WP-BACKEND-06 | https://github.com/ITSalt/transcriber/pull/12 | — | merged |
-| 5 | transcriber | WP-FRONTEND-02 | https://github.com/ITSalt/transcriber/pull/13 | — | queued |
-| 6 | transcriber | WP-WEB-MEMORY-01 | https://github.com/ITSalt/transcriber/pull/14 | WP-FRONTEND-02 | queued |
-| 7 | transcriber | WP-WORKER-01 | https://github.com/ITSalt/transcriber/pull/17 | WP-WEB-MEMORY-01 | queued |
-| 8 | transcriber | WP-WORKER-MEMORY-01 | https://github.com/ITSalt/transcriber/pull/16 | WP-WORKER-01 | queued |
+| 5 | transcriber | WP-FRONTEND-02 | https://github.com/ITSalt/transcriber/pull/13 | — | dropped |
+| 6 | transcriber | WP-WEB-MEMORY-01 | https://github.com/ITSalt/transcriber/pull/14 | WP-FRONTEND-02 | dropped |
+| 7 | transcriber | WP-WORKER-01 | https://github.com/ITSalt/transcriber/pull/17 | WP-WEB-MEMORY-01 | dropped |
+| 8 | transcriber | WP-WORKER-MEMORY-01 | https://github.com/ITSalt/transcriber/pull/16 | WP-WORKER-01 | dropped |
+| 9 | transcriber | WP-BACKEND-01 | https://github.com/ITSalt/transcriber/pull/15 | — | queued |
+| 10 | transcriber | WP-FRONTEND-02 | https://github.com/ITSalt/transcriber/pull/13 | WP-BACKEND-01 | queued |
+| 11 | transcriber | WP-WORKER-01 | https://github.com/ITSalt/transcriber/pull/17 | WP-FRONTEND-02 | queued |
+| 12 | transcriber | WP-WORKER-MEMORY-01 | https://github.com/ITSalt/transcriber/pull/16 | WP-WORKER-01 | queued |
+| 13 | transcriber | WP-WEB-MEMORY-01 | https://github.com/ITSalt/transcriber/pull/14 | WP-WORKER-MEMORY-01 | queued |
 
 ## Журнал
 
@@ -125,6 +130,19 @@ R-n — действие: точная команда одной строкой 
 <!-- orch:journal -->
 | Дата | WP | Событие | Подтверждение |
 |------|----|---------|---------------|
+| 2026-10-07 22:33Z | — | Очередь слияний перестроена по порядку доставки: BACKEND-01 → FRONTEND-02 → WORKER-01 → WORKER-MEMORY-01 (после R-14) → WEB-MEMORY-01 (после волны 3) | orch.py merge drop/add |
+| 2026-10-07 22:33Z | WP-WEB-MEMORY-01 | WP-WEB-MEMORY-01 queued for merge (sequential) | https://github.com/ITSalt/transcriber/pull/14 |
+| 2026-10-07 22:33Z | WP-WORKER-MEMORY-01 | WP-WORKER-MEMORY-01 queued for merge (sequential) | https://github.com/ITSalt/transcriber/pull/16 |
+| 2026-10-07 22:33Z | WP-WORKER-01 | WP-WORKER-01 queued for merge (sequential) | https://github.com/ITSalt/transcriber/pull/17 |
+| 2026-10-07 22:33Z | WP-FRONTEND-02 | WP-FRONTEND-02 queued for merge (sequential) | https://github.com/ITSalt/transcriber/pull/13 |
+| 2026-10-07 22:33Z | WP-BACKEND-01 | WP-BACKEND-01 queued for merge (sequential) | https://github.com/ITSalt/transcriber/pull/15 |
+| 2026-10-07 22:33Z | WP-WORKER-MEMORY-01 | WP-WORKER-MEMORY-01 dropped in the merge queue | — |
+| 2026-10-07 22:33Z | WP-WORKER-01 | WP-WORKER-01 dropped in the merge queue | — |
+| 2026-10-07 22:33Z | WP-WEB-MEMORY-01 | WP-WEB-MEMORY-01 dropped in the merge queue | — |
+| 2026-10-07 22:33Z | WP-FRONTEND-02 | WP-FRONTEND-02 dropped in the merge queue | — |
+| 2026-10-07 22:33Z | WP-BACKEND-01 | WP-BACKEND-01: accepted at ba7553656848d0e71a937fcebf1ffb59139b3b50 | report reports/wp-backend-01-review-20261007-r2.md |
+| 2026-10-07 22:33Z | WP-BACKEND-01 | WP-BACKEND-01: REVIEW -> ACCEPTED | ba75536568; reports/wp-backend-01-review-20261007-r2.md |
+| 2026-10-07 22:32Z | WP-BACKEND-01 | WP-BACKEND-01: REVISE -> REVIEW | ba75536568; report reports/wp-backend-01-review-20261007-r2.md |
 | 2026-10-07 22:25Z | WP-WEB-FEEDBACK-01 | WP-WEB-FEEDBACK-01: IN_PROGRESS -> REVIEW | 966f21b6e9; report reports/wp-web-feedback-01-review-20261007.md |
 | 2026-10-07 22:24Z | WP-WEB-PROJECTS-01 | WP-WEB-PROJECTS-01: IN_PROGRESS -> REVIEW | d2d18ffef1; report reports/wp-web-projects-01-review-20261007.md |
 | 2026-10-07 22:24Z | WP-BACKEND-01 | WP-BACKEND-01: REVIEW -> REVISE | reports/wp-backend-01-review-20261007.md: 2 пункта — оставить DEFAULT (D-22, окно деплоя), тест legacy-загрузки без workspace_id; остальное принято, 9/9 мутаций |
