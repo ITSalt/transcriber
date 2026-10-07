@@ -23,7 +23,7 @@
 | Тестовая БД и порты | нет; нет |
 | Слот слияния | <место в очереди слияний, задаётся при приёмке> |
 | Контракт | env `MEMORY_NEO4J_URI`, `MEMORY_NEO4J_USER`, `MEMORY_NEO4J_PASSWORD`, `MEMORY_NEO4J_DATABASE`; команда `pnpm --filter @transcrib/worker run graph:migrate` (реализует WP-WORKER-MEMORY-01; деплой вызывает её с `--if-present`) |
-| Зависит от | нет (лимиты памяти — после закрытия R-1; до этого значения по умолчанию) |
+| Зависит от | нет (R-1 закрыт 2026-10-07: лимиты памяти вписаны в раздел 2) |
 | Размер | S |
 | Спецификация | ADR-013 (новый) |
 | Граф | ADR-013 |
@@ -48,14 +48,14 @@
 - D-13: граф задач и решений — в Neo4j на проде, отдельный экземпляр от dev-контейнера `transcrib-neo4j` (порты 3614/3627, только для спецификаций, после OOM пересоздаётся вручную).
 - Прод-деплой не управляет контейнерами: `.github/workflows/deploy-production.yml:38-71` — git reset, сборка, `db:migrate:deploy`, rsync фронта, рестарт pm2; Postgres/Redis/MinIO подняты на VM отдельно. Запуск Neo4j на VM — действие владельца (R-n), пакет готовит определение и скрипты.
 - `docker-compose.yml:1-74` — postgres, redis, minio, minio-init; CI поднимает только postgres (`.github/workflows/ci.yml:24-36`).
-- Объём памяти прод-VM неизвестен — R-1.
+- Прод-VM (R-1, 2026-10-07): 7.8 GiB RAM (used 3.2 GiB, swap 2 GiB, из него занято 715 MiB), 4 vCPU, диск `/` 30 GB, свободно 4.6 GB (84 %). На том же docker-демоне уже живут чужие контейнеры: `fc-neo4j` (1.28 GiB из лимита 2 GiB), `learn-mattermost`, `learn-postgres`, `learn-redis`. Transcrib (api/worker под pm2 в `/opt/transcrib`, Postgres/Redis/MinIO) в `docker stats` не виден — работает вне этого демона. Вывод: второй Neo4j получает жёсткий потолок памяти и обязан падать с выходом, а не зависать, при OOM; диск тесный — бэкапы сжатые и короткая ротация (D-16).
 
 ## 2. Объём
 
-1. Сервис `memory-neo4j` в `docker-compose.yml`: Neo4j 5 Community LTS, порты только на 127.0.0.1 и не пересекаются с dev 3614/3627, auth включена (пароль из env), отдельный volume, явные `NEO4J_server_memory_heap_max__size` и `NEO4J_server_memory_pagecache_size` (по итогам R-1; по умолчанию heap 512m + pagecache 256m), `restart: unless-stopped`, healthcheck.
+1. Сервис `memory-neo4j` в `docker-compose.yml`: Neo4j 5 Community LTS, порты только на 127.0.0.1 и не пересекаются с dev 3614/3627, auth включена (пароль из env), отдельный volume, явные лимиты по D-16: `NEO4J_server_memory_heap_initial__size=512m`, `NEO4J_server_memory_heap_max__size=512m`, `NEO4J_server_memory_pagecache_size=256m`, `NEO4J_db_memory_transaction_total_max=256m`, `NEO4J_server_jvm_additional=-XX:+ExitOnOutOfMemoryError` (при OOM процесс выходит, контейнер перезапускается, а не висит, как dev-контейнер), потолок контейнера `mem_limit: 1536m` (`deploy.resources.limits.memory` для compose v2), `restart: unless-stopped`, healthcheck.
 2. `deploy-production.yml`: после `db:migrate:deploy` — `pnpm --filter @transcrib/worker run --if-present graph:migrate`; если `MEMORY_NEO4J_URI` не задан — шаг пропускается с предупреждением (деплой не ломается до запуска Neo4j владельцем).
 3. CI: service Neo4j 5 в `ci.yml` с env для интеграционных тестов графа.
-4. `scripts/neo4j-backup.sh`: дамп (`neo4j-admin database dump` с кратким стопом контейнера — Community не умеет online) с ротацией 7 копий + `scripts/neo4j-restore.sh`; инструкция по cron и восстановлению — в `scripts/README-neo4j.md` (раздел в `.tl/deploy-plan.md` пишет WP-BACKEND-06 со ссылкой на этот файл).
+4. `scripts/neo4j-backup.sh`: дамп (`neo4j-admin database dump` с кратким стопом контейнера — Community не умеет online), сжатый (gzip), ротация 3 копий (диск прода: 4.6 GB свободно, D-16), перед дампом проверка свободного места (минимум 2× размер каталога данных, иначе выход с ошибкой) + `scripts/neo4j-restore.sh`; инструкция по cron и восстановлению — в `scripts/README-neo4j.md` (раздел в `.tl/deploy-plan.md` пишет WP-BACKEND-06 со ссылкой на этот файл).
 5. `.env.example` — переменные `MEMORY_NEO4J_*`.
 6. Не делать: код драйвера и миграций графа (WP-WORKER-MEMORY-01), запуск на проде.
 
