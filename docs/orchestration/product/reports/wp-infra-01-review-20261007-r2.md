@@ -22,7 +22,7 @@
 - Как в раунде 1: F-7 (`--memory` на одноразовом контейнере), F-8 (`profiles:`), F-9 (CI +33 с) — backlog/информация владельцу.
 - Дополнение сессии вне списка: замер `/data` через `docker run --rm --volumes-from … --entrypoint du` вместо `docker exec` — обосновано (`ps -aq` пропускает остановленный контейнер, `exec` на нём падает), проверено вживую (сценарий B).
 - Защита по label добавлена и в backup (не только в restore) — принято.
-- graph: ADR-013 в графе спецификаций пока нет; пишет WP-BACKEND-06 (A-4); строка `graph: checked` будет проставлена точечной правкой при доставке после проверки графа.
+- graph: checked — ADR-013 «Project memory: separate Neo4j on prod; Postgres stays the system of record» (Requirement, approved) записан в граф сессией WP-BACKEND-06 под замком `graph` (A-4); read-cypher 2026-10-07 ~17:40Z, вместе с DEC-009, FR-006, TECH-027. Пакет INFRA-01 соответствует ADR-013 (отдельный экземпляр, лимиты D-16, бэкап).
 
 ## Автоматические находки
 

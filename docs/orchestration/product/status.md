@@ -22,7 +22,7 @@ CANCELLED (причина).
 | WP | Модуль | Название | Статус | Сессия | PR | Обновлено |
 |----|--------|----------|--------|--------|----|-----------|
 | [WP-BACKEND-01](work-packages/WP-BACKEND-01-auth-workspaces.md) | backend | Вход по PIN, рабочие пространства и изоляция данных (API+worker) | READY | product-backend | — | 2026-10-07 |
-| [WP-FRONTEND-01](work-packages/WP-FRONTEND-01-design-system.md) | frontend | Дизайн-система ITSALT и каркас приложения | ACCEPTED | product-frontend | https://github.com/ITSalt/transcriber/pull/9 (accepted 364b6b9fb8) | 2026-10-07 |
+| [WP-FRONTEND-01](work-packages/WP-FRONTEND-01-design-system.md) | frontend | Дизайн-система ITSALT и каркас приложения | MERGED | product-frontend | https://github.com/ITSalt/transcriber/pull/9 (accepted 364b6b9fb8) | 2026-10-07 |
 | [WP-FRONTEND-02](work-packages/WP-FRONTEND-02-login-tasks.md) | frontend | Экран входа, переключатель пространств, список задач | READY | product-frontend | — | 2026-10-07 |
 | [WP-BACKEND-02](work-packages/WP-BACKEND-02-projects-context.md) | backend | Проекты и контекст встречи: в распознавание и в протокол | CANCELLED (заменён WP-API-PROJECTS-01 (D-15, поток api-projects)) | product-backend | — | 2026-10-07 |
 | [WP-FRONTEND-03](work-packages/WP-FRONTEND-03-projects-context-ui.md) | frontend | Проекты и форма контекста перед распознаванием | CANCELLED (заменён WP-WEB-PROJECTS-01 (D-15)) | product-frontend | — | 2026-10-07 |
@@ -96,9 +96,6 @@ R-n — действие: точная команда одной строкой 
 | transcriber:worker/package.json | transcriber | WP-BACKEND-06 | 2026-10-07 16:48Z | — | narrowed from **/package.json: the package edits only the workspace manifests |
 | transcriber:web/package.json | transcriber | WP-BACKEND-06 | 2026-10-07 16:48Z | — | narrowed from **/package.json: the package edits only the workspace manifests |
 | transcriber:shared/package.json | transcriber | WP-BACKEND-06 | 2026-10-07 16:48Z | — | narrowed from **/package.json: the package edits only the workspace manifests |
-| transcriber:web/src/App.tsx | transcriber | WP-FRONTEND-01 | 2026-10-07 16:48Z | — | dispatch |
-| transcriber:web/src/i18n/** | transcriber | WP-FRONTEND-01 | 2026-10-07 16:48Z | — | dispatch |
-| transcriber:graph | transcriber | WP-BACKEND-06 | 2026-10-07 16:52Z | — | LOCK message: /nacl-sa-feature FR-003..FR-006 — доменная модель программы в Neo4j |
 
 ## Очередь слияний
 
@@ -108,7 +105,7 @@ R-n — действие: точная команда одной строкой 
 <!-- orch:merge -->
 | # | Репозиторий | WP | PR | Rebase после | Статус |
 |---|-------------|----|----|--------------|--------|
-| 1 | transcriber | WP-FRONTEND-01 | https://github.com/ITSalt/transcriber/pull/9 | — | queued |
+| 1 | transcriber | WP-FRONTEND-01 | https://github.com/ITSalt/transcriber/pull/9 | — | merged |
 | 2 | transcriber | WP-INFRA-01 | https://github.com/ITSalt/transcriber/pull/10 | WP-FRONTEND-01 | queued |
 
 ## Журнал
@@ -118,6 +115,11 @@ R-n — действие: точная команда одной строкой 
 <!-- orch:journal -->
 | Дата | WP | Событие | Подтверждение |
 |------|----|---------|---------------|
+| 2026-10-07 17:36Z | WP-BACKEND-06 | WP-BACKEND-06: UNLOCK graph — сессия сообщает: ADR-013, FR-003..006, DEC-006..009, модули, сущности, enum, UC-400..605, TECH-027 записаны в граф | сообщение product-backend; проверка ADR-013 read-cypher ниже |
+| 2026-10-07 17:36Z | WP-BACKEND-06 | lock transcriber:graph released | orch.py lock |
+| 2026-10-07 17:36Z | WP-FRONTEND-01 | WP-FRONTEND-01 merged in the merge queue; released transcriber:web/src/App.tsx, transcriber:web/src/i18n/** | orch.py deliver: e31feb393f |
+| 2026-10-07 17:36Z | WP-FRONTEND-01 | WP-FRONTEND-01: ACCEPTED -> MERGED | gh pr merge --squash: e31feb393f (https://github.com/ITSalt/transcriber/pull/9) |
+| 2026-10-07 17:36Z | WP-FRONTEND-01 | Порядок доставки: WP-FRONTEND-01 доставляется первым (плановый порядок BACKEND-06 → INFRA-01 → FRONTEND-01 был удобством, не зависимостью): у FRONTEND-01 «Зависит от: нет», спецификации нет; INFRA-01 ждёт ADR-013 от BACKEND-06 (гейт G9, A-4); BACKEND-06 ещё в работе. deliver --check WP-FRONTEND-01: G1–G10 зелёные | orch.py deliver --check WP-FRONTEND-01 2026-10-07 |
 | 2026-10-07 17:35Z | WP-INFRA-01 | WP-INFRA-01 queued for merge (sequential) | https://github.com/ITSalt/transcriber/pull/10 |
 | 2026-10-07 17:35Z | WP-INFRA-01 | WP-INFRA-01: accepted at 1f33af81e2e93adec05c0c41e62e81e8579ad884 | report reports/wp-infra-01-review-20261007-r2.md |
 | 2026-10-07 17:35Z | WP-INFRA-01 | WP-INFRA-01: REVIEW -> ACCEPTED | 1f33af81e2; reports/wp-infra-01-review-20261007-r2.md |
