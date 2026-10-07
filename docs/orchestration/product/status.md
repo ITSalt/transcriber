@@ -93,6 +93,7 @@ R-n — действие: точная команда одной строкой 
 | transcriber:shared/** | transcriber | WP-WORKER-MEMORY-01 | 2026-10-07 20:11Z | — | dispatch |
 | transcriber:worker/package.json | transcriber | WP-WORKER-MEMORY-01 | 2026-10-07 20:11Z | — | dispatch |
 | transcriber:api/package.json | transcriber | WP-BACKEND-01 | 2026-10-07 20:28Z | — | 5 строк scripts (user:create\|grant\|reset-pin\|blocks\|unblock), без зависимостей и lockfile |
+| transcriber:graph | transcriber | WP-WORKER-01 | 2026-10-07 20:32Z | — | LOCK message: /nacl-sa-feature UC-200 keyterm, UC-300 context/memory/generation |
 
 ## Очередь слияний
 
@@ -114,6 +115,8 @@ R-n — действие: точная команда одной строкой 
 <!-- orch:journal -->
 | Дата | WP | Событие | Подтверждение |
 |------|----|---------|---------------|
+| 2026-10-07 20:32Z | WP-WORKER-01 | WP-WORKER-01: LOCK graph выдан; QUESTION по п. 8 — ANSWER (b): миграций не добавлять, слот слияния после WP-BACKEND-01 (сверка FR-005 в его миграции), при rebase перед merge проверить её наличие в main | сообщение product-worker; migrations держит WP-BACKEND-01 |
+| 2026-10-07 20:32Z | WP-WORKER-01 | lock transcriber:graph acquired | LOCK message: /nacl-sa-feature UC-200 keyterm, UC-300 context/memory/generation |
 | 2026-10-07 20:32Z | WP-WORKER-01 | WP-WORKER-01: сессия product-worker стартовала; QUESTION instructions — ANSWER D-17 (b) | сообщение product-worker |
 | 2026-10-07 20:32Z | WP-WORKER-01 | WP-WORKER-01: DISPATCHING -> IN_PROGRESS | сообщение product-worker: сессия запущена, ветка от 2570d0a; QUESTION по D-17 отвечен |
 | 2026-10-07 20:31Z | — | Второй сетевой сбой машины оркестратора с ~20:10Z: GitHub 443/22 недоступны для всех сессий; product-frontend не может запушить готовый FRONTEND-02 (feb98ef); ждём, повтор push на стороне сессий | диагностика 20:31Z; сообщение product-frontend |
