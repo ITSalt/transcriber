@@ -84,7 +84,13 @@ function json(body: unknown, status = 200) {
 }
 
 /** Routes all API traffic of the upload page; returns the recorded calls. */
-function mockApi(opts: { lastProtocol?: boolean } = {}) {
+function mockApi(
+  opts: {
+    lastProtocol?: boolean;
+    completeStatus?: "AWAITING_START" | "TRANSCRIBING";
+    startConflict?: boolean;
+  } = {},
+) {
   const calls: Call[] = [];
   vi.spyOn(globalThis, "fetch").mockImplementation(async (url, init) => {
     const u = String(url);
@@ -105,7 +111,7 @@ function mockApi(opts: { lastProtocol?: boolean } = {}) {
       return new Response("", { status: 200, headers: { ETag: '"e1"' } });
     }
     if (u.includes("/api/uploads/complete")) {
-      return json({ meeting_id: MEETING_ID, status: "AWAITING_START" });
+      return json({ meeting_id: MEETING_ID, status: opts.completeStatus ?? "AWAITING_START" });
     }
     if (u.includes("/api/projects?")) return json(PROJECT_LIST);
     if (u.endsWith(`/api/projects/${PROJECT_ID}`)) return json(PROJECT_DETAIL);
@@ -127,6 +133,9 @@ function mockApi(opts: { lastProtocol?: boolean } = {}) {
       });
     }
     if (u.endsWith(`/api/meetings/${MEETING_ID}/start`)) {
+      if (opts.startConflict) {
+        return json({ code: "MEETING_NOT_AWAITING_START", message: "already started" }, 409);
+      }
       return json(
         StartMeetingResponse.parse({
           meeting_id: MEETING_ID,
@@ -335,5 +344,26 @@ describe("UploadPage — project and context (FR-004)", () => {
       "Up to 50 names and terms are passed to recognition",
     );
     expect(screen.getByTestId("context-limit-hint")).toHaveAttribute("data-over-limit", "false");
+  });
+
+  it("backend that ignores defer_start (status TRANSCRIBING): goes straight to the card, no start step", async () => {
+    const calls = mockApi({ completeStatus: "TRANSCRIBING" });
+    renderUpload();
+    const file = new File([new ArrayBuffer(1024)], "meeting.mp4", { type: "video/mp4" });
+    await userEvent.upload(screen.getByTestId("upload-input-file"), file);
+    await userEvent.click(screen.getByTestId("upload-submit"));
+
+    await waitFor(() => expect(screen.getByTestId("meeting-detail")).toBeInTheDocument());
+    expect(callsTo(calls, "POST", `/api/meetings/${MEETING_ID}/start`)).toHaveLength(0);
+  });
+
+  it("409 MEETING_NOT_AWAITING_START on start: the meeting is already running, open the card", async () => {
+    mockApi({ startConflict: true });
+    renderUpload();
+    await uploadFile();
+    await userEvent.click(screen.getByTestId("upload-start"));
+
+    await waitFor(() => expect(screen.getByTestId("meeting-detail")).toBeInTheDocument());
+    expect(screen.queryByTestId("upload-error")).not.toBeInTheDocument();
   });
 });

@@ -12,9 +12,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
 import { ContextForm } from "@/features/context/ContextForm";
-import { putMeetingContext, startMeeting } from "@/features/context/api";
+import { startWithContext } from "@/features/context/start";
 import {
-  buildPutRequest,
   emptyDraft,
   isDraftEmpty,
   type ContextDraft,
@@ -224,6 +223,12 @@ export default function UploadPage() {
       );
 
       multipartStateRef.current = null;
+      // A backend that ignores defer_start already started recognition (A-5 allows both):
+      // there is nothing to wait for, go straight to the card.
+      if (result.status === "TRANSCRIBING") {
+        void navigate(`/meetings/${result.meeting_id}`);
+        return;
+      }
       setMeetingId(result.meeting_id);
       setUploadState("uploaded");
     } catch (err: unknown) {
@@ -240,13 +245,8 @@ export default function UploadPage() {
     setErrorMsg(null);
     setUploadState("starting");
     try {
-      if (!isDraftEmpty(draft)) {
-        await putMeetingContext(
-          meetingId,
-          buildPutRequest(draft, lastProtocol.data?.meeting_id),
-        );
-      }
-      await startMeeting(meetingId);
+      // "already-started" (409) is fine too: the card shows the running meeting.
+      await startWithContext(meetingId, draft, lastProtocol.data?.meeting_id);
       void navigate(`/meetings/${meetingId}`);
     } catch (err: unknown) {
       setErrorMsg(err instanceof Error ? err.message : t("common.error"));
