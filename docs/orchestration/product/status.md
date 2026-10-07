@@ -31,10 +31,10 @@ CANCELLED (причина).
 | [WP-BACKEND-04](work-packages/WP-BACKEND-04-project-memory.md) | backend | Память проекта: граф задач и решений, сводка, перенос между встречами | CANCELLED (заменён WP-API-MEMORY-01 (D-15, поток api-memory)) | product-backend | — | 2026-10-07 |
 | [WP-FRONTEND-05](work-packages/WP-FRONTEND-05-project-memory-ui.md) | frontend | Реестр задач и решений проекта, очередь подтверждений | CANCELLED (заменён WP-WEB-MEMORY-01 (D-15)) | product-frontend | — | 2026-10-07 |
 | [WP-BACKEND-05](work-packages/WP-BACKEND-05-neo4j-prod.md) | backend | Neo4j для памяти проекта: сервис, лимиты памяти, бэкап, CI | CANCELLED (заменён WP-INFRA-01 и WP-WORKER-MEMORY-01 (D-15)) | product-backend | — | 2026-10-07 |
-| [WP-BACKEND-06](work-packages/WP-BACKEND-06-contract.md) | backend | Контракт программы: схема БД, контракты shared, зависимости | READY | product-backend | — | 2026-10-07 |
+| [WP-BACKEND-06](work-packages/WP-BACKEND-06-contract.md) | backend | Контракт программы: схема БД, контракты shared, зависимости | DISPATCHING | product-backend | — | 2026-10-07 |
 | [WP-WORKER-01](work-packages/WP-WORKER-01-context-asr-llm.md) | worker | Контекст встречи в Deepgram и в промпт протокола, метаданные генерации | READY | product-worker | — | 2026-10-07 |
 | [WP-WORKER-02](work-packages/WP-WORKER-02-project-memory.md) | worker | Память проекта в Neo4j: извлечение, сопоставление, сводка | CANCELLED (создан в неверном потоке; заменён WP-WORKER-MEMORY-01 (D-15)) | product-worker | — | 2026-10-07 |
-| [WP-INFRA-01](work-packages/WP-INFRA-01-neo4j.md) | infra | Neo4j памяти проекта: сервис, лимиты, бэкап, CI, шаг деплоя | READY | product-infra | — | 2026-10-07 |
+| [WP-INFRA-01](work-packages/WP-INFRA-01-neo4j.md) | infra | Neo4j памяти проекта: сервис, лимиты, бэкап, CI, шаг деплоя | DISPATCHING | product-infra | — | 2026-10-07 |
 | [WP-WEB-PROJECTS-01](work-packages/WP-WEB-PROJECTS-01-projects-context.md) | web-projects | Проекты и форма контекста перед распознаванием | READY | product-web-projects | — | 2026-10-07 |
 | [WP-WEB-FEEDBACK-01](work-packages/WP-WEB-FEEDBACK-01-feedback.md) | web-feedback | Режим обратной связи по протоколу | READY | product-web-feedback | — | 2026-10-07 |
 | [WP-WEB-MEMORY-01](work-packages/WP-WEB-MEMORY-01-registry.md) | web-memory | Реестр задач и решений проекта, очередь подтверждений | READY | product-web-memory | — | 2026-10-07 |
@@ -75,6 +75,17 @@ R-n — действие: точная команда одной строкой 
 <!-- orch:locks -->
 | Замок | Репозиторий | Держатель | С | Ждут | Примечание |
 |-------|-------------|-----------|---|------|------------|
+| transcriber:api/prisma/** | transcriber | WP-BACKEND-06 | 2026-10-07 16:47Z | — | dispatch |
+| transcriber:shared/** | transcriber | WP-BACKEND-06 | 2026-10-07 16:47Z | — | dispatch |
+| transcriber:package.json | transcriber | WP-BACKEND-06 | 2026-10-07 16:47Z | — | dispatch |
+| transcriber:**/package.json | transcriber | WP-BACKEND-06 | 2026-10-07 16:47Z | WP-FRONTEND-01 | dispatch |
+| transcriber:pnpm-lock.yaml | transcriber | WP-BACKEND-06 | 2026-10-07 16:47Z | — | dispatch |
+| transcriber:api/src/server.ts | transcriber | WP-BACKEND-06 | 2026-10-07 16:47Z | — | dispatch |
+| transcriber:worker/src/job-processor.ts | transcriber | WP-BACKEND-06 | 2026-10-07 16:47Z | — | dispatch |
+| transcriber:worker/src/queues.ts | transcriber | WP-BACKEND-06 | 2026-10-07 16:47Z | — | dispatch |
+| transcriber:worker/src/index.ts | transcriber | WP-BACKEND-06 | 2026-10-07 16:47Z | — | dispatch |
+| transcriber:.tl/** | transcriber | WP-BACKEND-06 | 2026-10-07 16:47Z | — | dispatch |
+| transcriber:migrations | transcriber | WP-BACKEND-06 | 2026-10-07 16:47Z | — | dispatch |
 
 ## Очередь слияний
 
@@ -92,6 +103,9 @@ R-n — действие: точная команда одной строкой 
 <!-- orch:journal -->
 | Дата | WP | Событие | Подтверждение |
 |------|----|---------|---------------|
+| 2026-10-07 16:47Z | WP-INFRA-01 | WP-INFRA-01: READY -> DISPATCHING | start command handed to the owner; model sonnet |
+| 2026-10-07 16:47Z | WP-FRONTEND-01 | dispatch of WP-FRONTEND-01 refused: lock transcriber:**/package.json is held by WP-BACKEND-06 (overlaps web/src/i18n/**) | orch.py dispatch |
+| 2026-10-07 16:47Z | WP-BACKEND-06 | WP-BACKEND-06: READY -> DISPATCHING | start command handed to the owner; model opus, effort high; locks transcriber:api/prisma/**, transcriber:shared/**, transcriber:package.json, transcriber:**/package.json, transcriber:pnpm-lock.yaml, transcriber:api/src/server.ts, transcriber:worker/src/job-processor.ts, transcriber:worker/src/queues.ts, transcriber:worker/src/index.ts, transcriber:.tl/**, transcriber:migrations |
 | 2026-10-07 16:46Z | — | resume: reconciled — no sessions, no program branches/PRs, no locks; main checkout /home/cloudpc/projects/transcriber has an uncommitted edit to config.yaml (neo4j_http_port 3574->3614, shared path, no package owns it; worktrees branch from origin/main so it does not reach packages) | ListAgents: only product-coord; git branch -r: no feature/wp-* ; gh pr list: last PR #8 MERGED 2026-08-17; git status: M config.yaml |
 | 2026-10-07 16:38Z | — | repo path fixed to the main checkout /home/cloudpc/projects/transcriber; start commands of active WPs updated | dispatch --dry-run WP-BACKEND-06/FRONTEND-01/INFRA-01: ok |
 | 2026-10-07 16:36Z | WP-WEB-MEMORY-01 | WP-WEB-MEMORY-01: DRAFT -> READY | разделы заполнены; D-11..D-15 |
