@@ -97,6 +97,7 @@ R-n — действие: точная команда одной строкой 
 | transcriber:worker/package.json | transcriber | WP-BACKEND-06 | 2026-10-07 16:48Z | — | narrowed from **/package.json: the package edits only the workspace manifests |
 | transcriber:web/package.json | transcriber | WP-BACKEND-06 | 2026-10-07 16:48Z | — | narrowed from **/package.json: the package edits only the workspace manifests |
 | transcriber:shared/package.json | transcriber | WP-BACKEND-06 | 2026-10-07 16:48Z | — | narrowed from **/package.json: the package edits only the workspace manifests |
+| transcriber:graph | transcriber | WP-BACKEND-06 | 2026-10-07 18:15Z | — | LOCK message: TECH-027 in_progress -> done + commit sha |
 
 ## Очередь слияний
 
@@ -117,6 +118,8 @@ R-n — действие: точная команда одной строкой 
 <!-- orch:journal -->
 | Дата | WP | Событие | Подтверждение |
 |------|----|---------|---------------|
+| 2026-10-07 18:15Z | WP-BACKEND-06 | WP-BACKEND-06: LOCK graph выдан повторно (TECH-027 → done, внутреннее ревью APPROVED) | сообщение product-backend; orch.py lock acquire graph |
+| 2026-10-07 18:15Z | WP-BACKEND-06 | lock transcriber:graph acquired | LOCK message: TECH-027 in_progress -> done + commit sha |
 | 2026-10-07 18:14Z | WP-INFRA-02 | WP-INFRA-02 queued for merge (sequential) | https://github.com/ITSalt/transcriber/pull/11 |
 | 2026-10-07 18:14Z | WP-INFRA-02 | WP-INFRA-02: accepted at 6694e5e172d330b5c7cd1404dc38cd5c30fb17a9 | report reports/wp-infra-02-review-20261007-r2.md |
 | 2026-10-07 18:14Z | WP-INFRA-02 | WP-INFRA-02: REVIEW -> ACCEPTED | 6694e5e172; reports/wp-infra-02-review-20261007-r2.md |
