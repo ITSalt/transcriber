@@ -42,6 +42,7 @@ CANCELLED (причина).
 | [WP-API-FEEDBACK-01](work-packages/WP-API-FEEDBACK-01-feedback.md) | api-feedback | API версий протокола и обратной связи, разбор docx | READY | product-api-feedback | — | 2026-10-07 |
 | [WP-API-MEMORY-01](work-packages/WP-API-MEMORY-01-registry.md) | api-memory | API памяти проекта: задачи, решения, подтверждения | READY | product-api-memory | — | 2026-10-07 |
 | [WP-WORKER-MEMORY-01](work-packages/WP-WORKER-MEMORY-01-pipeline.md) | worker-memory | Память проекта в Neo4j: слой графа, извлечение, сопоставление, сводка | READY | product-worker-memory | — | 2026-10-07 |
+| [WP-INFRA-02](work-packages/WP-INFRA-02-deploy-migrate-first.md) | infra | Порядок деплоя: миграции Postgres до сборки и замены dist | READY | product-infra | — | 2026-10-07 |
 
 ## Ждёт владельца
 
@@ -115,6 +116,9 @@ R-n — действие: точная команда одной строкой 
 <!-- orch:journal -->
 | Дата | WP | Событие | Подтверждение |
 |------|----|---------|---------------|
+| 2026-10-07 18:06Z | WP-INFRA-02 | dispatch of WP-INFRA-02 refused: depends on WP-BACKEND-06 (IN_PROGRESS), not merged yet | orch.py dispatch |
+| 2026-10-07 18:06Z | WP-INFRA-02 | WP-INFRA-02: DRAFT -> READY | разделы заполнены; находка product-backend о порядке деплоя; D-3 |
+| 2026-10-07 18:05Z | WP-INFRA-02 | WP-INFRA-02 created (DRAFT) | work-packages/WP-INFRA-02-deploy-migrate-first.md |
 | 2026-10-07 17:46Z | WP-INFRA-01 | WP-INFRA-01: доставлен на прод — merge 9e5d534ca5 (squash), Deploy to Production success, CI main success, verify --env prod PASS; живой сценарий: шаг graph:migrate в деплое (см. отчёт verify prod) | reports/verify-WP-INFRA-01-prod-20261007.md; gh run 37661241627 |
 | 2026-10-07 17:45Z | WP-INFRA-01 | WP-INFRA-01: VERIFIED_TEST -> PROD | verify --env prod 9e5d534ca5: reports/verify-WP-INFRA-01-prod-20261007.md |
 | 2026-10-07 17:45Z | WP-INFRA-01 | WP-INFRA-01: MERGED -> VERIFIED_TEST | verify --env test 9e5d534ca5: reports/verify-WP-INFRA-01-test-20261007.md |
