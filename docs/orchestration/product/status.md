@@ -35,7 +35,7 @@ CANCELLED (причина).
 | [WP-WORKER-01](work-packages/WP-WORKER-01-context-asr-llm.md) | worker | Контекст встречи в Deepgram и в промпт протокола, метаданные генерации | IN_PROGRESS | product-worker | — | 2026-10-07 |
 | [WP-WORKER-02](work-packages/WP-WORKER-02-project-memory.md) | worker | Память проекта в Neo4j: извлечение, сопоставление, сводка | CANCELLED (создан в неверном потоке; заменён WP-WORKER-MEMORY-01 (D-15)) | product-worker | — | 2026-10-07 |
 | [WP-INFRA-01](work-packages/WP-INFRA-01-neo4j.md) | infra | Neo4j памяти проекта: сервис, лимиты, бэкап, CI, шаг деплоя | PROD | product-infra | https://github.com/ITSalt/transcriber/pull/10 (accepted 0e7ebe85d3) | 2026-10-07 |
-| [WP-WEB-PROJECTS-01](work-packages/WP-WEB-PROJECTS-01-projects-context.md) | web-projects | Проекты и форма контекста перед распознаванием | DISPATCHING | product-web-projects | — | 2026-10-07 |
+| [WP-WEB-PROJECTS-01](work-packages/WP-WEB-PROJECTS-01-projects-context.md) | web-projects | Проекты и форма контекста перед распознаванием | IN_PROGRESS | product-web-projects | — | 2026-10-07 |
 | [WP-WEB-FEEDBACK-01](work-packages/WP-WEB-FEEDBACK-01-feedback.md) | web-feedback | Режим обратной связи по протоколу | IN_PROGRESS | product-web-feedback | — | 2026-10-07 |
 | [WP-WEB-MEMORY-01](work-packages/WP-WEB-MEMORY-01-registry.md) | web-memory | Реестр задач и решений проекта, очередь подтверждений | IN_PROGRESS | product-web-memory | — | 2026-10-07 |
 | [WP-API-PROJECTS-01](work-packages/WP-API-PROJECTS-01-projects-context.md) | api-projects | API проектов и контекста встречи, запуск распознавания | READY | product-api-projects | — | 2026-10-07 |
@@ -115,6 +115,8 @@ R-n — действие: точная команда одной строкой 
 <!-- orch:journal -->
 | Дата | WP | Событие | Подтверждение |
 |------|----|---------|---------------|
+| 2026-10-07 21:02Z | WP-WEB-PROJECTS-01 | WP-WEB-PROJECTS-01: сессия стартовала и закончила код локально (d2d18ff; web 179/179); E2E отложен до merge API-PROJECTS-01/WORKER-01; push ждёт сети | сообщение product-web-projects |
+| 2026-10-07 21:02Z | WP-WEB-PROJECTS-01 | WP-WEB-PROJECTS-01: DISPATCHING -> IN_PROGRESS | сообщение product-web-projects: код готов локально (d2d18ff), push ждёт сети; QUESTION D-17 отвечен |
 | 2026-10-07 20:51Z | WP-WEB-MEMORY-01 | WP-WEB-MEMORY-01: сессия стартовала и закончила код локально (dd0ee73); E2E/скриншоты отложены до merge API-MEMORY-01 и WEB-PROJECTS-01; push ждёт сети | сообщение product-web-memory |
 | 2026-10-07 20:51Z | WP-WEB-MEMORY-01 | WP-WEB-MEMORY-01: DISPATCHING -> IN_PROGRESS | сообщение product-web-memory: код готов локально (dd0ee73), push ждёт сети; QUESTION D-17 отвечен |
 | 2026-10-07 20:48Z | WP-WEB-FEEDBACK-01 | WP-WEB-FEEDBACK-01: сессия стартовала и закончила код локально (966f21b); push/PR ждут сети; ANSWER D-17 (b) | сообщение product-web-feedback |
