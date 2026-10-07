@@ -23,7 +23,7 @@ CANCELLED (причина).
 |----|--------|----------|--------|--------|----|-----------|
 | [WP-BACKEND-01](work-packages/WP-BACKEND-01-auth-workspaces.md) | backend | Вход по PIN, рабочие пространства и изоляция данных (API+worker) | IN_PROGRESS | product-backend | — | 2026-10-07 |
 | [WP-FRONTEND-01](work-packages/WP-FRONTEND-01-design-system.md) | frontend | Дизайн-система ITSALT и каркас приложения | PROD | product-frontend | https://github.com/ITSalt/transcriber/pull/9 (accepted 364b6b9fb8) | 2026-10-07 |
-| [WP-FRONTEND-02](work-packages/WP-FRONTEND-02-login-tasks.md) | frontend | Экран входа, переключатель пространств, список задач | DISPATCHING | product-frontend | — | 2026-10-07 |
+| [WP-FRONTEND-02](work-packages/WP-FRONTEND-02-login-tasks.md) | frontend | Экран входа, переключатель пространств, список задач | IN_PROGRESS | product-frontend | — | 2026-10-07 |
 | [WP-BACKEND-02](work-packages/WP-BACKEND-02-projects-context.md) | backend | Проекты и контекст встречи: в распознавание и в протокол | CANCELLED (заменён WP-API-PROJECTS-01 (D-15, поток api-projects)) | product-backend | — | 2026-10-07 |
 | [WP-FRONTEND-03](work-packages/WP-FRONTEND-03-projects-context-ui.md) | frontend | Проекты и форма контекста перед распознаванием | CANCELLED (заменён WP-WEB-PROJECTS-01 (D-15)) | product-frontend | — | 2026-10-07 |
 | [WP-BACKEND-03](work-packages/WP-BACKEND-03-feedback.md) | backend | История версий протокола и приём обратной связи | CANCELLED (заменён WP-API-FEEDBACK-01 (D-15, поток api-feedback)) | product-backend | — | 2026-10-07 |
@@ -114,6 +114,8 @@ R-n — действие: точная команда одной строкой 
 <!-- orch:journal -->
 | Дата | WP | Событие | Подтверждение |
 |------|----|---------|---------------|
+| 2026-10-07 20:31Z | — | Второй сетевой сбой машины оркестратора с ~20:10Z: GitHub 443/22 недоступны для всех сессий; product-frontend не может запушить готовый FRONTEND-02 (feb98ef); ждём, повтор push на стороне сессий | диагностика 20:31Z; сообщение product-frontend |
+| 2026-10-07 20:31Z | WP-FRONTEND-02 | WP-FRONTEND-02: DISPATCHING -> IN_PROGRESS | сообщение product-frontend: работа готова локально, коммит feb98efd в feature/wp-frontend-02-login-tasks; push/PR ждут восстановления сети |
 | 2026-10-07 20:28Z | WP-BACKEND-01 | WP-BACKEND-01: QUESTION — scripts в api/package.json для CLI user:*; ANSWER: замок api/package.json выдан, объявление в шапке дополнено, зависимости/lockfile не трогать | orch.py lock acquire api/package.json |
 | 2026-10-07 20:28Z | WP-BACKEND-01 | lock transcriber:api/package.json acquired | 5 строк scripts (user:create\|grant\|reset-pin\|blocks\|unblock), без зависимостей и lockfile |
 | 2026-10-07 20:23Z | WP-BACKEND-01 | WP-BACKEND-01: QUESTION о хранении speaker_count для deferStart — ANSWER: ок (A-5); контракт /start вписан в WP-API-PROJECTS-01 | сообщение product-backend; safe_edit WP-API-PROJECTS-01 п. 8 |
