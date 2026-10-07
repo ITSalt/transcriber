@@ -41,7 +41,7 @@ CANCELLED (причина).
 | [WP-API-PROJECTS-01](work-packages/WP-API-PROJECTS-01-projects-context.md) | api-projects | API проектов и контекста встречи, запуск распознавания | READY | product-api-projects | — | 2026-10-07 |
 | [WP-API-FEEDBACK-01](work-packages/WP-API-FEEDBACK-01-feedback.md) | api-feedback | API версий протокола и обратной связи, разбор docx | READY | product-api-feedback | — | 2026-10-07 |
 | [WP-API-MEMORY-01](work-packages/WP-API-MEMORY-01-registry.md) | api-memory | API памяти проекта: задачи, решения, подтверждения | READY | product-api-memory | — | 2026-10-07 |
-| [WP-WORKER-MEMORY-01](work-packages/WP-WORKER-MEMORY-01-pipeline.md) | worker-memory | Память проекта в Neo4j: слой графа, извлечение, сопоставление, сводка | IN_PROGRESS | product-worker-memory | — | 2026-10-07 |
+| [WP-WORKER-MEMORY-01](work-packages/WP-WORKER-MEMORY-01-pipeline.md) | worker-memory | Память проекта в Neo4j: слой графа, извлечение, сопоставление, сводка | REVIEW | product-worker-memory | https://github.com/ITSalt/transcriber/pull/16 | 2026-10-07 |
 | [WP-INFRA-02](work-packages/WP-INFRA-02-deploy-migrate-first.md) | infra | Порядок деплоя: миграции Postgres до сборки и замены dist | PROD | product-infra | https://github.com/ITSalt/transcriber/pull/11 (accepted 6694e5e172) | 2026-10-07 |
 
 ## Ждёт владельца
@@ -94,7 +94,6 @@ R-n — действие: точная команда одной строкой 
 | transcriber:shared/** | transcriber | WP-WORKER-MEMORY-01 | 2026-10-07 20:11Z | — | dispatch |
 | transcriber:worker/package.json | transcriber | WP-WORKER-MEMORY-01 | 2026-10-07 20:11Z | — | dispatch |
 | transcriber:api/package.json | transcriber | WP-BACKEND-01 | 2026-10-07 20:28Z | — | 5 строк scripts (user:create\|grant\|reset-pin\|blocks\|unblock), без зависимостей и lockfile |
-| transcriber:dev-stack | transcriber | WP-WORKER-MEMORY-01 | 2026-10-07 20:37Z | — | LOCK message: memory-neo4j на 127.0.0.1:7688 для интеграционных тестов |
 | transcriber:web/src/i18n/** | transcriber | WP-FRONTEND-02 | 2026-10-07 21:54Z | — | ретроактивно: пакет изменил root en/ru.json без объявления; замок был свободен |
 
 ## Очередь слияний
@@ -117,6 +116,8 @@ R-n — действие: точная команда одной строкой 
 <!-- orch:journal -->
 | Дата | WP | Событие | Подтверждение |
 |------|----|---------|---------------|
+| 2026-10-07 21:54Z | WP-WORKER-MEMORY-01 | WP-WORKER-MEMORY-01: IN_PROGRESS -> REVIEW | 58dcf8efbd; report reports/wp-worker-memory-01-review-20261007.md |
+| 2026-10-07 21:54Z | WP-WORKER-MEMORY-01 | lock transcriber:dev-stack released | orch.py lock |
 | 2026-10-07 21:54Z | WP-WEB-MEMORY-01 | WP-WEB-MEMORY-01: review round 1 started at dd0ee730e5 | reports/wp-web-memory-01-review-20261007.md |
 | 2026-10-07 21:54Z | WP-FRONTEND-02 | WP-FRONTEND-02: REVIEW -> REVIEW | review-start feb98ef, PR #13; ревьюер запущен |
 | 2026-10-07 21:54Z | WP-FRONTEND-02 | lock transcriber:web/src/i18n/** acquired | ретроактивно: пакет изменил root en/ru.json без объявления; замок был свободен |
