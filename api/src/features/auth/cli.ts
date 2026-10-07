@@ -180,7 +180,7 @@ export async function runCli(argv: string[], deps: CliDeps): Promise<void> {
 
 // ── entry point (node dist/features/auth/cli.js <command> …) ───────────────
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
-  const [{ config }, { prisma }] = await Promise.all([import('../../config.js'), import('../../db.js')])
+  const [{ config }, { prisma, closeDb }] = await Promise.all([import('../../config.js'), import('../../db.js')])
   try {
     const readPin = async (): Promise<string> => {
       let data = ''
@@ -193,6 +193,6 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
     console.error(err instanceof Error ? err.message : String(err))
     process.exitCode = code
   } finally {
-    await prisma.$disconnect()
+    await closeDb()
   }
 }

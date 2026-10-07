@@ -140,7 +140,9 @@ describe.skipIf(!DATABASE_URL)('FR-003 — login, isolation of every /api route,
 
   afterAll(async () => {
     await app?.close()
-    await db?.$disconnect()
+    // end the pg pool too: DROP DATABASE … WITH (FORCE) would kill its idle connections and
+    // surface as unhandled 57P01 errors
+    if (db) await (await import('../src/db.js')).closeDb()
     if (DATABASE_URL) await dropDatabases(dbName)
   })
 
