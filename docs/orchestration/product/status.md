@@ -34,7 +34,7 @@ CANCELLED (причина).
 | [WP-BACKEND-06](work-packages/WP-BACKEND-06-contract.md) | backend | Контракт программы: схема БД, контракты shared, зависимости | IN_PROGRESS | product-backend | — | 2026-10-07 |
 | [WP-WORKER-01](work-packages/WP-WORKER-01-context-asr-llm.md) | worker | Контекст встречи в Deepgram и в промпт протокола, метаданные генерации | READY | product-worker | — | 2026-10-07 |
 | [WP-WORKER-02](work-packages/WP-WORKER-02-project-memory.md) | worker | Память проекта в Neo4j: извлечение, сопоставление, сводка | CANCELLED (создан в неверном потоке; заменён WP-WORKER-MEMORY-01 (D-15)) | product-worker | — | 2026-10-07 |
-| [WP-INFRA-01](work-packages/WP-INFRA-01-neo4j.md) | infra | Neo4j памяти проекта: сервис, лимиты, бэкап, CI, шаг деплоя | REVISE | product-infra | https://github.com/ITSalt/transcriber/pull/10 | 2026-10-07 |
+| [WP-INFRA-01](work-packages/WP-INFRA-01-neo4j.md) | infra | Neo4j памяти проекта: сервис, лимиты, бэкап, CI, шаг деплоя | ACCEPTED | product-infra | https://github.com/ITSalt/transcriber/pull/10 (accepted 1f33af81e2) | 2026-10-07 |
 | [WP-WEB-PROJECTS-01](work-packages/WP-WEB-PROJECTS-01-projects-context.md) | web-projects | Проекты и форма контекста перед распознаванием | READY | product-web-projects | — | 2026-10-07 |
 | [WP-WEB-FEEDBACK-01](work-packages/WP-WEB-FEEDBACK-01-feedback.md) | web-feedback | Режим обратной связи по протоколу | READY | product-web-feedback | — | 2026-10-07 |
 | [WP-WEB-MEMORY-01](work-packages/WP-WEB-MEMORY-01-registry.md) | web-memory | Реестр задач и решений проекта, очередь подтверждений | READY | product-web-memory | — | 2026-10-07 |
@@ -109,6 +109,7 @@ R-n — действие: точная команда одной строкой 
 | # | Репозиторий | WP | PR | Rebase после | Статус |
 |---|-------------|----|----|--------------|--------|
 | 1 | transcriber | WP-FRONTEND-01 | https://github.com/ITSalt/transcriber/pull/9 | — | queued |
+| 2 | transcriber | WP-INFRA-01 | https://github.com/ITSalt/transcriber/pull/10 | WP-FRONTEND-01 | queued |
 
 ## Журнал
 
@@ -117,6 +118,10 @@ R-n — действие: точная команда одной строкой 
 <!-- orch:journal -->
 | Дата | WP | Событие | Подтверждение |
 |------|----|---------|---------------|
+| 2026-10-07 17:35Z | WP-INFRA-01 | WP-INFRA-01 queued for merge (sequential) | https://github.com/ITSalt/transcriber/pull/10 |
+| 2026-10-07 17:35Z | WP-INFRA-01 | WP-INFRA-01: accepted at 1f33af81e2e93adec05c0c41e62e81e8579ad884 | report reports/wp-infra-01-review-20261007-r2.md |
+| 2026-10-07 17:35Z | WP-INFRA-01 | WP-INFRA-01: REVIEW -> ACCEPTED | 1f33af81e2; reports/wp-infra-01-review-20261007-r2.md |
+| 2026-10-07 17:29Z | WP-INFRA-01 | WP-INFRA-01: REVISE -> REVIEW | 1f33af81e2; report reports/wp-infra-01-review-20261007-r2.md |
 | 2026-10-07 17:27Z | WP-INFRA-01 | WP-INFRA-01: восстановление подтверждено (после wipe 0 узлов, после restore 1), ротация 2 копии, compose down -v чисто | tasks/b4yp0nvm6.output 2026-10-07 17:23Z |
 | 2026-10-07 17:27Z | WP-INFRA-01 | WP-INFRA-01: REVIEW -> REVISE | reports/wp-infra-01-review-20261007.md: 4 пункта (eval .env в шаге деплоя; README про файл и порядок задания пароля; условно по P-13 нефатальный graph:migrate; мелкие в скриптах ps -aq / guard restore / .partial); критерии 1 и 4 подтверждены вживую оркестратором |
 | 2026-10-07 17:25Z | WP-FRONTEND-01 | WP-FRONTEND-01 queued for merge (sequential) | https://github.com/ITSalt/transcriber/pull/9 |
