@@ -163,6 +163,9 @@ function wireHappyPath() {
 
   fp.$transaction.mockImplementation(async (cb: any) => {
     const txProxy = {
+      // FR-005 (WP-WORKER-01): generation audit + first version, same transaction
+      protocolGeneration: { create: vi.fn().mockResolvedValue({}) },
+      protocolVersion: { create: vi.fn().mockResolvedValue({}) },
       protocol: {
         create: vi.fn().mockImplementation(async () => {
           callLog.push('TX:protocol.create')
@@ -286,6 +289,9 @@ describe('REGR-P2 — Successful path: Protocol persisted + Meeting PROTOCOL_REA
     let capturedProtocolData: any
     fp.$transaction.mockImplementation(async (cb: any) => {
       const txProxy = {
+        // FR-005 (WP-WORKER-01): generation audit + first version, same transaction
+        protocolGeneration: { create: vi.fn().mockResolvedValue({}) },
+        protocolVersion: { create: vi.fn().mockResolvedValue({}) },
         protocol: {
           create: vi.fn().mockImplementation(async (args: any) => {
             callLog.push('TX:protocol.create')
@@ -413,6 +419,9 @@ describe('REGR-P4 — FR-001 transient-retry semantics (RC-UC-300)', () => {
     let failJobArgs: any
     fp.$transaction.mockImplementation(async (cb: any) => {
       const txProxy = {
+        // FR-005 (WP-WORKER-01): generation audit + first version, same transaction
+        protocolGeneration: { create: vi.fn().mockResolvedValue({}) },
+        protocolVersion: { create: vi.fn().mockResolvedValue({}) },
         protocolGenerationJob: {
           updateMany: vi.fn().mockImplementation(async (args: any) => {
             failJobArgs = args
@@ -455,6 +464,9 @@ describe('REGR-P4 — FR-001 transient-retry semantics (RC-UC-300)', () => {
     let failJobArgs: any
     fp.$transaction.mockImplementation(async (cb: any) => {
       const txProxy = {
+        // FR-005 (WP-WORKER-01): generation audit + first version, same transaction
+        protocolGeneration: { create: vi.fn().mockResolvedValue({}) },
+        protocolVersion: { create: vi.fn().mockResolvedValue({}) },
         protocolGenerationJob: {
           updateMany: vi.fn().mockImplementation(async (args: any) => {
             failJobArgs = args
@@ -496,6 +508,9 @@ describe('REGR-P4 — FR-001 transient-retry semantics (RC-UC-300)', () => {
     let failJobArgs: any
     fp.$transaction.mockImplementation(async (cb: any) => {
       const txProxy = {
+        // FR-005 (WP-WORKER-01): generation audit + first version, same transaction
+        protocolGeneration: { create: vi.fn().mockResolvedValue({}) },
+        protocolVersion: { create: vi.fn().mockResolvedValue({}) },
         protocolGenerationJob: {
           updateMany: vi.fn().mockImplementation(async (args: any) => {
             failJobArgs = args
@@ -540,6 +555,9 @@ describe('REGR-P4 — FR-001 transient-retry semantics (RC-UC-300)', () => {
     let failJobArgs: any
     fp.$transaction.mockImplementation(async (cb: any) => {
       const txProxy = {
+        // FR-005 (WP-WORKER-01): generation audit + first version, same transaction
+        protocolGeneration: { create: vi.fn().mockResolvedValue({}) },
+        protocolVersion: { create: vi.fn().mockResolvedValue({}) },
         protocolGenerationJob: {
           updateMany: vi.fn().mockImplementation(async (args: any) => {
             failJobArgs = args
@@ -656,6 +674,9 @@ describe('REGR-P5 — F-004: producer-declared retry budget is authoritative', (
     let failJobArgs: any
     fp.$transaction.mockImplementation(async (cb: any) => {
       const txProxy = {
+        // FR-005 (WP-WORKER-01): generation audit + first version, same transaction
+        protocolGeneration: { create: vi.fn().mockResolvedValue({}) },
+        protocolVersion: { create: vi.fn().mockResolvedValue({}) },
         protocolGenerationJob: {
           updateMany: vi.fn().mockImplementation(async (args: any) => {
             failJobArgs = args

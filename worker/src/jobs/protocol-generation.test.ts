@@ -175,6 +175,9 @@ function makeMockLlm(result = MOCK_LLM_RESULT) {
 function setupSuccessfulTransaction(mockLlmResult = MOCK_LLM_RESULT) {
   mockPrisma.$transaction.mockImplementation(async (cb: any) => {
     const txMock = {
+      // FR-005 (WP-WORKER-01): generation audit + first version, same transaction
+      protocolGeneration: { create: vi.fn().mockResolvedValue({}) },
+      protocolVersion: { create: vi.fn().mockResolvedValue({}) },
       protocol: {
         create: vi.fn().mockResolvedValue({ id: PROTOCOL_ID, meetingId: MEETING_ID }),
       },
@@ -388,6 +391,9 @@ describe('T03 (RQ-023) — Protocol must contain four required sections', () => 
     // FAILED path transaction
     mockPrisma.$transaction.mockImplementation(async (cb: any) => {
       const txMock = {
+        // FR-005 (WP-WORKER-01): generation audit + first version, same transaction
+        protocolGeneration: { create: vi.fn().mockResolvedValue({}) },
+        protocolVersion: { create: vi.fn().mockResolvedValue({}) },
         protocolGenerationJob: {
           updateMany: vi.fn().mockResolvedValue({ count: 1 }),
           findUnique: vi.fn().mockResolvedValue({ meetingId: MEETING_ID }),
@@ -419,6 +425,9 @@ describe('T03 (RQ-023) — Protocol must contain four required sections', () => 
 
     mockPrisma.$transaction.mockImplementation(async (cb: any) => {
       const txMock = {
+        // FR-005 (WP-WORKER-01): generation audit + first version, same transaction
+        protocolGeneration: { create: vi.fn().mockResolvedValue({}) },
+        protocolVersion: { create: vi.fn().mockResolvedValue({}) },
         protocolGenerationJob: {
           updateMany: vi.fn().mockResolvedValue({ count: 1 }),
           findUnique: vi.fn().mockResolvedValue({ meetingId: MEETING_ID }),
@@ -453,6 +462,9 @@ describe('T05 (RQ-025) — Protocol version=1 and Meeting.status PROTOCOL_READY 
     let capturedProtocolData: Record<string, unknown> | undefined
     mockPrisma.$transaction.mockImplementation(async (cb: any) => {
       const txMock = {
+        // FR-005 (WP-WORKER-01): generation audit + first version, same transaction
+        protocolGeneration: { create: vi.fn().mockResolvedValue({}) },
+        protocolVersion: { create: vi.fn().mockResolvedValue({}) },
         protocol: {
           create: vi.fn().mockImplementation((args: any) => {
             capturedProtocolData = args.data
@@ -488,6 +500,9 @@ describe('T05 (RQ-025) — Protocol version=1 and Meeting.status PROTOCOL_READY 
     let capturedMeetingUpdate: Record<string, unknown> | undefined
     mockPrisma.$transaction.mockImplementation(async (cb: any) => {
       const txMock = {
+        // FR-005 (WP-WORKER-01): generation audit + first version, same transaction
+        protocolGeneration: { create: vi.fn().mockResolvedValue({}) },
+        protocolVersion: { create: vi.fn().mockResolvedValue({}) },
         protocol: { create: vi.fn().mockResolvedValue({ id: PROTOCOL_ID }) },
         meeting: {
           update: vi.fn().mockImplementation((args: any) => {
@@ -519,6 +534,9 @@ describe('T06 (RQ-026) — On ANY failure: job FAILED, Meeting status FAILED, no
   function setupFailurePath() {
     mockPrisma.$transaction.mockImplementation(async (cb: any) => {
       const txMock = {
+        // FR-005 (WP-WORKER-01): generation audit + first version, same transaction
+        protocolGeneration: { create: vi.fn().mockResolvedValue({}) },
+        protocolVersion: { create: vi.fn().mockResolvedValue({}) },
         protocolGenerationJob: {
           updateMany: vi.fn().mockResolvedValue({ count: 1 }),
           findUnique: vi.fn().mockResolvedValue({ meetingId: MEETING_ID }),
@@ -553,6 +571,9 @@ describe('T06 (RQ-026) — On ANY failure: job FAILED, Meeting status FAILED, no
     ;(publishMeetingEvent as MockedFunction<typeof publishMeetingEvent>).mockResolvedValue(undefined)
     mockPrisma.$transaction.mockImplementation(async (cb: any) => {
       const txMock = {
+        // FR-005 (WP-WORKER-01): generation audit + first version, same transaction
+        protocolGeneration: { create: vi.fn().mockResolvedValue({}) },
+        protocolVersion: { create: vi.fn().mockResolvedValue({}) },
         protocolGenerationJob: {
           updateMany: vi.fn().mockResolvedValue({ count: 0 }),
           findUnique: vi.fn().mockResolvedValue(null),
@@ -579,6 +600,9 @@ describe('T06 (RQ-026) — On ANY failure: job FAILED, Meeting status FAILED, no
     ;(publishMeetingEvent as MockedFunction<typeof publishMeetingEvent>).mockResolvedValue(undefined)
     mockPrisma.$transaction.mockImplementation(async (cb: any) => {
       const txMock = {
+        // FR-005 (WP-WORKER-01): generation audit + first version, same transaction
+        protocolGeneration: { create: vi.fn().mockResolvedValue({}) },
+        protocolVersion: { create: vi.fn().mockResolvedValue({}) },
         protocolGenerationJob: {
           updateMany: vi.fn().mockResolvedValue({ count: 1 }),
           findUnique: vi.fn().mockResolvedValue({ meetingId: MEETING_ID }),
@@ -623,6 +647,9 @@ describe('T06 (RQ-026) — On ANY failure: job FAILED, Meeting status FAILED, no
     let capturedErrorMsg: string | undefined
     mockPrisma.$transaction.mockImplementation(async (cb: any) => {
       const txMock = {
+        // FR-005 (WP-WORKER-01): generation audit + first version, same transaction
+        protocolGeneration: { create: vi.fn().mockResolvedValue({}) },
+        protocolVersion: { create: vi.fn().mockResolvedValue({}) },
         protocolGenerationJob: {
           updateMany: vi.fn().mockImplementation((args: any) => {
             if (args.data?.errorMsg) capturedErrorMsg = args.data.errorMsg
@@ -692,6 +719,9 @@ describe('T10 (NFR-006) — Markdown canonical', () => {
     let storedMd: string | undefined
     mockPrisma.$transaction.mockImplementation(async (cb: any) => {
       const txMock = {
+        // FR-005 (WP-WORKER-01): generation audit + first version, same transaction
+        protocolGeneration: { create: vi.fn().mockResolvedValue({}) },
+        protocolVersion: { create: vi.fn().mockResolvedValue({}) },
         protocol: {
           create: vi.fn().mockImplementation((args: any) => {
             storedMd = args.data.markdownContent

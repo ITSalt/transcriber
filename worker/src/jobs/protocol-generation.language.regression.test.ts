@@ -175,6 +175,9 @@ function wire(pgJob: ReturnType<typeof makePgJob>) {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   fp.$transaction.mockImplementation(async (cb: any) => {
     const txProxy = {
+      // FR-005 (WP-WORKER-01): generation audit + first version, same transaction
+      protocolGeneration: { create: vi.fn().mockResolvedValue({}) },
+      protocolVersion: { create: vi.fn().mockResolvedValue({}) },
       protocol: { create: protocolCreate },
       meeting: {
         update: vi.fn().mockResolvedValue({}),
