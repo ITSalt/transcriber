@@ -56,6 +56,8 @@
 4. Недоступность Neo4j → 503 с понятной ошибкой, остальное приложение работает.
 5. Не делать: UI, изменения пайплайна.
 
+8. Обновление контракта графа `.tl/external-contracts/neo4j.md` (объявить общий путь `.tl/external-contracts/neo4j.md` и замок): по отчёту ревью WP-WORKER-MEMORY-01 (reports/wp-worker-memory-01-review-20261007.md, Q9) — дополнения модели (Project.{taskSeq,decisionSeq,meetingSeq}; Meeting{seq,title,occurredAt}/Participant{name} -[:OF_PROJECT]->; поля Task/Decision/TaskEvent; Decision-[:MENTIONED_IN {startMs,endMs,speakerLabel}]; служебные Tombstone и SchemaVersion; USER-события как reviewState CONFIRMED), пометка, что DEPENDS_ON/SUBTASK_OF в v1 не производятся. Продюсер GraphOutbox для удаления проекта — в этом пакете (DELETE /api/projects/:id пишет строку outbox в той же транзакции, контракт §6); для удаления встречи — проверить, что BACKEND-01 (uc-003) это делает, иначе добавить здесь.
+
 ### Не входит
 
 - merge, деплой, PROD, запись в БД
