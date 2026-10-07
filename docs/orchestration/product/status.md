@@ -27,9 +27,9 @@ R-n — действие: точная команда одной строкой 
 <!-- orch:owner -->
 | ID | Что (команда ; ожидание) | Где описано | Открыто | Закрыто |
 |----|--------------------------|-------------|---------|---------|
-| P-1 | Repository transcriber: add `.worktreeinclude` in its root (a change of the project, made by a package there) so that every new worktree gets the gitignored files it needs: .env, .env.local (gitignore syntax, one pattern per line; directories as dir/**). Recommend (a) yes: sessions then never copy secrets or settings themselves | orch.py init | 2026-10-07 |  |
-| P-2 | Потоки программы: backend = api/**, worker/** ; frontend = web/** ; общие пути (только под блокировкой) = shared/**, api/prisma/**, pnpm-lock.yaml, **/package.json, .tl/**, graph-infra/**, config.yaml, CLAUDE.md. Варианты: (a) так и оставить; (b) резать по доменам (auth/workspaces, reports) сквозь слои. Рекомендую (a): авторизация и отчёты всё равно идут парой BE+FE через контракт в shared/, а доменная нарезка даст пересечения путей в api/src/routes и web/src/routes | orch.yaml | 2026-10-07 |  |
-| P-3 | Стенда нет: любой merge в main сразу деплоит прод (deploy-production.yml, base_deploys: prod). Для авторизации и миграции данных в рабочие пространства это рискованно. Варианты: (a) первым пакетом поднять staging (ветка develop -> тестовый стенд), merge пакетов в develop, в прод — пачкой по релизному листу; (b) оставить как есть, merge по одному с проверкой прода после каждого; (c) feature-флаги в проде. Рекомендую (a) | orch.yaml | 2026-10-07 |  |
+| ~~P-1~~ | ~~Repository transcriber: add `.worktreeinclude` in its root (a change of the project, made by a package there) so that every new worktree gets the gitignored files it needs: .env, .env.local (gitignore syntax, one pattern per line; directories as dir/**). Recommend (a) yes: sessions then never copy secrets or settings themselves~~ | orch.py init | 2026-10-07 | 2026-10-07: answered by D-1 |
+| ~~P-2~~ | ~~Потоки программы: backend = api/**, worker/** ; frontend = web/** ; общие пути (только под блокировкой) = shared/**, api/prisma/**, pnpm-lock.yaml, **/package.json, .tl/**, graph-infra/**, config.yaml, CLAUDE.md. Варианты: (a) так и оставить; (b) резать по доменам (auth/workspaces, reports) сквозь слои. Рекомендую (a): авторизация и отчёты всё равно идут парой BE+FE через контракт в shared/, а доменная нарезка даст пересечения путей в api/src/routes и web/src/routes~~ | orch.yaml | 2026-10-07 | 2026-10-07: answered by D-2 |
+| ~~P-3~~ | ~~Стенда нет: любой merge в main сразу деплоит прод (deploy-production.yml, base_deploys: prod). Для авторизации и миграции данных в рабочие пространства это рискованно. Варианты: (a) первым пакетом поднять staging (ветка develop -> тестовый стенд), merge пакетов в develop, в прод — пачкой по релизному листу; (b) оставить как есть, merge по одному с проверкой прода после каждого; (c) feature-флаги в проде. Рекомендую (a)~~ | orch.yaml | 2026-10-07 | 2026-10-07: answered by D-3 |
 
 ## Замки
 
@@ -57,6 +57,12 @@ R-n — действие: точная команда одной строкой 
 <!-- orch:journal -->
 | Дата | WP | Событие | Подтверждение |
 |------|----|---------|---------------|
+| 2026-10-07 15:48Z | — | P-3 closed | answered by D-3 |
+| 2026-10-07 15:48Z | — | D-3 recorded | answer to P-3 |
+| 2026-10-07 15:48Z | — | P-2 closed | answered by D-2 |
+| 2026-10-07 15:48Z | — | D-2 recorded | answer to P-2 |
+| 2026-10-07 15:48Z | — | P-1 closed | answered by D-1 |
+| 2026-10-07 15:48Z | — | D-1 recorded | answer to P-1 |
 | 2026-10-07 15:45Z | — | P-3 opened for owner | orch.yaml |
 | 2026-10-07 15:44Z | — | P-2 opened for owner | orch.yaml |
 | 2026-10-07 15:44Z | — | P-1 opened for owner | orch.py init |
