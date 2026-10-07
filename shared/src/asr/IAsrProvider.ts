@@ -36,6 +36,15 @@ export interface AudioInput {
    * max_speakers). Null/undefined = let the provider auto-detect.
    */
   speakerCount?: number | null;
+
+  /**
+   * FR-004 (contract v1): vocabulary to boost — participant names and their variants,
+   * organizations, glossary terms flagged asr_keyterm. Already deduplicated and capped by
+   * the caller (ASR_KEYTERMS_MAX = 50, ≈ ASR_KEYTERMS_MAX_TOKENS = 450). Deepgram sends each
+   * as a repeated `keyterm=` query parameter (no commas, no weights). Absent or empty =
+   * today's request, byte for byte. Gated by ASR_KEYTERMS_ENABLED (Q-1, off by default).
+   */
+  keyterms?: string[];
 }
 
 // ─── AsrSegment ───────────────────────────────────────────────────────────────

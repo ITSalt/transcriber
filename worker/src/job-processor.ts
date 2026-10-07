@@ -7,10 +7,14 @@
  *
  * Concurrency = 1 per NFR-009 (one video at a time per worker instance).
  */
+import { existsSync } from 'node:fs'
+import { join } from 'node:path'
+import { fileURLToPath, pathToFileURL } from 'node:url'
 import { Worker, type Job, type ConnectionOptions } from 'bullmq'
 import type { Logger } from 'pino'
 import { QueueName } from './queues.js'
-import type { TranscriptionJobPayload, ProtocolGenerationJobPayload } from '@transcrib/shared'
+import type { TranscriptionJobPayload, ProtocolGenerationJobPayload, ProjectMemoryProvider } from '@transcrib/shared'
+import { setProjectMemoryProvider } from '@transcrib/shared'
 import { processTranscriptionJob as runTranscriptionPipeline } from './jobs/transcription.js'
 import { processProtocolGenerationJob as runProtocolPipeline } from './jobs/protocol-generation.js'
 
@@ -89,5 +93,123 @@ export function createWorkers(connection: ConnectionOptions, log: Logger): Worke
     )
   })
 
+  protocolWorker.on('completed', (job) => {
+    workerEvents.emit('protocolJobCompleted', { protocolGenerationJobId: job.data.protocol_generation_job_id })
+  })
+
   return [transcriptionWorker, protocolWorker]
+}
+
+// ─── WP-BACKEND-06 (D-15): worker modules ─────────────────────────────────────
+//
+// A module is a folder worker/src/<name>/ with index.ts (compiled: index.js) that exports
+//   export async function register(ctx: WorkerModuleContext): Promise<void>
+// It declares its OWN queues and workers (new Queue/Worker with ctx.connection), hands
+// every Worker to ctx.addWorker() so graceful shutdown closes it, subscribes to pipeline
+// events through ctx.events, and registers cleanup (e.g. closing the Neo4j driver) with
+// ctx.onShutdown() — run after every worker has closed, before Prisma disconnects.
+// WORKER_MODULES lists the folders; a listed folder that does not exist is skipped, so
+// worker/src/memory/ (WP-WORKER-MEMORY-01) is picked up as soon as it lands.
+
+export const WORKER_MODULES = ['memory'] as const
+
+export interface ProtocolJobCompletedEvent {
+  /** ProtocolGenerationJob.id — resolve meeting / project / workspace from it */
+  protocolGenerationJobId: string
+}
+
+export interface WorkerEvents {
+  /** A protocol-generation job finished without throwing (the protocol may be re-checked). */
+  protocolJobCompleted: ProtocolJobCompletedEvent
+}
+
+type Listener<T> = (event: T) => void | Promise<void>
+
+/**
+ * Tiny typed event bus. A failing listener never breaks the emitting pipeline: its error
+ * goes to the handler set with onListenerError (index.ts logs it).
+ */
+export class WorkerEventBus {
+  private readonly listeners = new Map<keyof WorkerEvents, Listener<never>[]>()
+  private onError: (err: unknown, event: keyof WorkerEvents) => void = () => {}
+
+  onListenerError(handler: (err: unknown, event: keyof WorkerEvents) => void): void {
+    this.onError = handler
+  }
+
+  on<K extends keyof WorkerEvents>(event: K, listener: Listener<WorkerEvents[K]>): void {
+    const list = this.listeners.get(event) ?? []
+    list.push(listener as Listener<never>)
+    this.listeners.set(event, list)
+  }
+
+  emit<K extends keyof WorkerEvents>(event: K, payload: WorkerEvents[K]): void {
+    for (const listener of this.listeners.get(event) ?? []) {
+      try {
+        void Promise.resolve((listener as Listener<WorkerEvents[K]>)(payload)).catch((err: unknown) =>
+          this.onError(err, event),
+        )
+      } catch (err) {
+        this.onError(err, event)
+      }
+    }
+  }
+}
+
+/** Process-wide bus the core pipelines emit on (see createWorkers). */
+export const workerEvents = new WorkerEventBus()
+
+export interface WorkerModuleContext {
+  connection: ConnectionOptions
+  log: Logger
+  events: Pick<WorkerEventBus, 'on'>
+  /** Keep a module-owned BullMQ Worker for graceful shutdown. */
+  addWorker(worker: Worker): void
+  /** Cleanup run on SIGTERM/SIGINT after all workers closed. */
+  onShutdown(hook: () => Promise<void> | void): void
+  /** Replace the <project_memory> provider used by protocol generation. */
+  setProjectMemoryProvider(provider: ProjectMemoryProvider): void
+}
+
+export interface LoadedWorkerModules {
+  names: string[]
+  workers: Worker[]
+  shutdownHooks: Array<() => Promise<void> | void>
+}
+
+/**
+ * Imports and registers every present worker module.
+ * @param baseDir directory that holds the module folders (default: this file's directory)
+ */
+export async function loadWorkerModules(
+  connection: ConnectionOptions,
+  log: Logger,
+  options: { baseDir?: string; modules?: readonly string[]; events?: WorkerEventBus } = {},
+): Promise<LoadedWorkerModules> {
+  const baseDir = options.baseDir ?? fileURLToPath(new URL('.', import.meta.url))
+  const bus = options.events ?? workerEvents
+  const loaded: LoadedWorkerModules = { names: [], workers: [], shutdownHooks: [] }
+
+  for (const name of options.modules ?? WORKER_MODULES) {
+    const file = ['index.js', 'index.ts'].map((f) => join(baseDir, name, f)).find((p) => existsSync(p))
+    if (!file) continue
+    const mod = (await import(pathToFileURL(file).href)) as {
+      register?: (ctx: WorkerModuleContext) => Promise<void> | void
+    }
+    if (typeof mod.register !== 'function') {
+      throw new Error(`worker module "${name}": ${file} must export register(ctx)`)
+    }
+    await mod.register({
+      connection,
+      log: log.child({ module: name }),
+      events: bus,
+      addWorker: (w) => loaded.workers.push(w),
+      onShutdown: (hook) => loaded.shutdownHooks.push(hook),
+      setProjectMemoryProvider: (p) => {
+        setProjectMemoryProvider(p)
+      },
+    })
+    loaded.names.push(name)
+  }
+  return loaded
 }

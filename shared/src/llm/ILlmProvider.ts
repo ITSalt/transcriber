@@ -35,6 +35,50 @@ export interface LlmInput {
    * Used to select the matching prompt template.
    */
   language: 'RU' | 'EN';
+
+  /**
+   * FR-004 / FR-006 (contract v1): context sections placed before the transcript, in the
+   * order of LLM_CONTEXT_SECTION_ORDER, each wrapped as <name>…</name>. The caller passes
+   * plain text; the adapter escapes closing tags inside it and omits empty sections.
+   * Absent or all-empty = today's request, byte for byte.
+   */
+  context?: LlmContextSections;
+}
+
+// ─── Context sections ─────────────────────────────────────────────────────────
+
+export const LLM_CONTEXT_SECTION_ORDER = [
+  'meeting_meta',
+  'participants',
+  'agenda',
+  'glossary',
+  'previous_protocol',
+  'notes',
+  'project_memory',
+] as const;
+export type LlmContextSectionName = (typeof LLM_CONTEXT_SECTION_ORDER)[number];
+
+/** Rendered text per section; the transcript always goes last as <transcript>. */
+export type LlmContextSections = Partial<Record<LlmContextSectionName, string | null>>;
+
+/** True when no section carries text — the request must then equal the pre-program one. */
+export function isLlmContextEmpty(context: LlmContextSections | undefined): boolean {
+  if (!context) return true;
+  return LLM_CONTEXT_SECTION_ORDER.every((k) => !context[k] || context[k]!.trim() === '');
+}
+
+/**
+ * Wrap non-empty sections in tags, in canonical order. A closing tag of any section that
+ * appears inside the text is neutralised as `<\/name>` so user text cannot end a section.
+ */
+export function renderLlmContextSections(context: LlmContextSections | undefined): string {
+  if (!context) return '';
+  const names = [...LLM_CONTEXT_SECTION_ORDER, 'transcript'];
+  const escape = (text: string): string =>
+    names.reduce((acc, n) => acc.split(`</${n}>`).join(`<\\/${n}>`), text);
+  return LLM_CONTEXT_SECTION_ORDER.filter((k) => context[k] && context[k]!.trim() !== '')
+    .map((k) => `<${k}>\n${escape(context[k]!.trim())}\n</${k}>`)
+    .join('\n\n');
 }
 
 // ─── LlmResult ────────────────────────────────────────────────────────────────
@@ -66,4 +110,25 @@ export interface ILlmProvider {
    * @returns Resolved LlmResult with generated markdown and token counts.
    */
   generate(input: LlmInput): Promise<LlmResult>;
+}
+
+// ─── ILlmCompletionProvider (FR-006, contract v1) ─────────────────────────────
+
+/**
+ * Generic completion for the project-memory steps (MEMORY_EXTRACT / RESOLVE / SUMMARY):
+ * the caller owns the system prompt and, for JSON steps, the output schema. Implemented by
+ * the same vendor adapter as ILlmProvider (worker/src/llm); every call is recorded as a
+ * ProtocolGeneration row by the caller, hence model + tokens in the result.
+ */
+export interface LlmCompletionInput {
+  system: string;
+  user: string;
+  model?: LlmModel;
+  /** 'json' = the reply must be one JSON value (the adapter strips code fences) */
+  responseFormat?: 'text' | 'json';
+  maxTokens?: number;
+}
+
+export interface ILlmCompletionProvider {
+  complete(input: LlmCompletionInput): Promise<LlmResult>;
 }

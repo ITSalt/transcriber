@@ -6,6 +6,8 @@ export const MeetingStatus = z.enum([
   'CREATED',
   'UPLOADING',
   'UPLOADED',
+  // FR-004 / D-9: uploaded, waiting for POST /api/meetings/:id/start (contract v1)
+  'AWAITING_START',
   'TRANSCRIBING',
   'TRANSCRIBED',
   'GENERATING_PROTOCOL',
