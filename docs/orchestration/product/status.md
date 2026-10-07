@@ -31,7 +31,7 @@ CANCELLED (причина).
 | [WP-BACKEND-04](work-packages/WP-BACKEND-04-project-memory.md) | backend | Память проекта: граф задач и решений, сводка, перенос между встречами | CANCELLED (заменён WP-API-MEMORY-01 (D-15, поток api-memory)) | product-backend | — | 2026-10-07 |
 | [WP-FRONTEND-05](work-packages/WP-FRONTEND-05-project-memory-ui.md) | frontend | Реестр задач и решений проекта, очередь подтверждений | CANCELLED (заменён WP-WEB-MEMORY-01 (D-15)) | product-frontend | — | 2026-10-07 |
 | [WP-BACKEND-05](work-packages/WP-BACKEND-05-neo4j-prod.md) | backend | Neo4j для памяти проекта: сервис, лимиты памяти, бэкап, CI | CANCELLED (заменён WP-INFRA-01 и WP-WORKER-MEMORY-01 (D-15)) | product-backend | — | 2026-10-07 |
-| [WP-BACKEND-06](work-packages/WP-BACKEND-06-contract.md) | backend | Контракт программы: схема БД, контракты shared, зависимости | MERGED | product-backend | https://github.com/ITSalt/transcriber/pull/12 (accepted 3fa3500f47) | 2026-10-07 |
+| [WP-BACKEND-06](work-packages/WP-BACKEND-06-contract.md) | backend | Контракт программы: схема БД, контракты shared, зависимости | PROD | product-backend | https://github.com/ITSalt/transcriber/pull/12 (accepted 3fa3500f47) | 2026-10-07 |
 | [WP-WORKER-01](work-packages/WP-WORKER-01-context-asr-llm.md) | worker | Контекст встречи в Deepgram и в промпт протокола, метаданные генерации | READY | product-worker | — | 2026-10-07 |
 | [WP-WORKER-02](work-packages/WP-WORKER-02-project-memory.md) | worker | Память проекта в Neo4j: извлечение, сопоставление, сводка | CANCELLED (создан в неверном потоке; заменён WP-WORKER-MEMORY-01 (D-15)) | product-worker | — | 2026-10-07 |
 | [WP-INFRA-01](work-packages/WP-INFRA-01-neo4j.md) | infra | Neo4j памяти проекта: сервис, лимиты, бэкап, CI, шаг деплоя | PROD | product-infra | https://github.com/ITSalt/transcriber/pull/10 (accepted 0e7ebe85d3) | 2026-10-07 |
@@ -87,7 +87,6 @@ R-n — действие: точная команда одной строкой 
 <!-- orch:locks -->
 | Замок | Репозиторий | Держатель | С | Ждут | Примечание |
 |-------|-------------|-----------|---|------|------------|
-| transcriber:migrations | transcriber | WP-BACKEND-06 | 2026-10-07 16:47Z | — | dispatch |
 
 ## Очередь слияний
 
@@ -109,6 +108,10 @@ R-n — действие: точная команда одной строкой 
 <!-- orch:journal -->
 | Дата | WP | Событие | Подтверждение |
 |------|----|---------|---------------|
+| 2026-10-07 20:09Z | WP-BACKEND-06 | lock transcriber:migrations released | orch.py lock |
+| 2026-10-07 20:09Z | WP-BACKEND-06 | WP-BACKEND-06: доставлен на прод — merge 2570d0a669 (squash), миграция program_product_schema применена (лог деплоя), Deploy success, verify --env prod PASS, health/meetings 200 (записей: 26) | reports/verify-WP-BACKEND-06-prod-20261007.md; gh run 37679417337 |
+| 2026-10-07 20:08Z | WP-BACKEND-06 | WP-BACKEND-06: VERIFIED_TEST -> PROD | verify --env prod 2570d0a669: reports/verify-WP-BACKEND-06-prod-20261007.md |
+| 2026-10-07 20:08Z | WP-BACKEND-06 | WP-BACKEND-06: MERGED -> VERIFIED_TEST | verify --env test 2570d0a669: reports/verify-WP-BACKEND-06-test-20261007.md |
 | 2026-10-07 20:08Z | — | R-11 opened for owner | work-packages/WP-INFRA-01-neo4j.md |
 | 2026-10-07 20:08Z | — | R-10 closed | ssh 2026-10-07: pnpm не в PATH неинтерактивного ssh (живёт в nvm, деплой грузит nvm.sh явно); /var/lib/snapd/cache всё ещё 3.3G — rm с глобом под sudo не удалил (глоб раскрывает non-root shell); 6 выключенных ревизий snap; df 7.4G avail |
 | 2026-10-07 20:05Z | WP-BACKEND-06 | WP-BACKEND-06 merged in the merge queue; released transcriber:api/prisma/**, transcriber:shared/**, transcriber:package.json, transcriber:pnpm-lock.yaml, transcriber:api/src/server.ts, transcriber:worker/src/job-processor.ts, transcriber:worker/src/queues.ts, transcriber:worker/src/index.ts, transcriber:.tl/**, transcriber:api/package.json, transcriber:worker/package.json, transcriber:web/package.json, transcriber:shared/package.json | orch.py deliver: 2570d0a669 |
