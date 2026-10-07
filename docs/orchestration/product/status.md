@@ -34,7 +34,7 @@ CANCELLED (причина).
 | [WP-BACKEND-06](work-packages/WP-BACKEND-06-contract.md) | backend | Контракт программы: схема БД, контракты shared, зависимости | IN_PROGRESS | product-backend | — | 2026-10-07 |
 | [WP-WORKER-01](work-packages/WP-WORKER-01-context-asr-llm.md) | worker | Контекст встречи в Deepgram и в промпт протокола, метаданные генерации | READY | product-worker | — | 2026-10-07 |
 | [WP-WORKER-02](work-packages/WP-WORKER-02-project-memory.md) | worker | Память проекта в Neo4j: извлечение, сопоставление, сводка | CANCELLED (создан в неверном потоке; заменён WP-WORKER-MEMORY-01 (D-15)) | product-worker | — | 2026-10-07 |
-| [WP-INFRA-01](work-packages/WP-INFRA-01-neo4j.md) | infra | Neo4j памяти проекта: сервис, лимиты, бэкап, CI, шаг деплоя | MERGED | product-infra | https://github.com/ITSalt/transcriber/pull/10 (accepted 0e7ebe85d3) | 2026-10-07 |
+| [WP-INFRA-01](work-packages/WP-INFRA-01-neo4j.md) | infra | Neo4j памяти проекта: сервис, лимиты, бэкап, CI, шаг деплоя | PROD | product-infra | https://github.com/ITSalt/transcriber/pull/10 (accepted 0e7ebe85d3) | 2026-10-07 |
 | [WP-WEB-PROJECTS-01](work-packages/WP-WEB-PROJECTS-01-projects-context.md) | web-projects | Проекты и форма контекста перед распознаванием | READY | product-web-projects | — | 2026-10-07 |
 | [WP-WEB-FEEDBACK-01](work-packages/WP-WEB-FEEDBACK-01-feedback.md) | web-feedback | Режим обратной связи по протоколу | READY | product-web-feedback | — | 2026-10-07 |
 | [WP-WEB-MEMORY-01](work-packages/WP-WEB-MEMORY-01-registry.md) | web-memory | Реестр задач и решений проекта, очередь подтверждений | READY | product-web-memory | — | 2026-10-07 |
@@ -115,6 +115,9 @@ R-n — действие: точная команда одной строкой 
 <!-- orch:journal -->
 | Дата | WP | Событие | Подтверждение |
 |------|----|---------|---------------|
+| 2026-10-07 17:46Z | WP-INFRA-01 | WP-INFRA-01: доставлен на прод — merge 9e5d534ca5 (squash), Deploy to Production success, CI main success, verify --env prod PASS; живой сценарий: шаг graph:migrate в деплое (см. отчёт verify prod) | reports/verify-WP-INFRA-01-prod-20261007.md; gh run 37661241627 |
+| 2026-10-07 17:45Z | WP-INFRA-01 | WP-INFRA-01: VERIFIED_TEST -> PROD | verify --env prod 9e5d534ca5: reports/verify-WP-INFRA-01-prod-20261007.md |
+| 2026-10-07 17:45Z | WP-INFRA-01 | WP-INFRA-01: MERGED -> VERIFIED_TEST | verify --env test 9e5d534ca5: reports/verify-WP-INFRA-01-test-20261007.md |
 | 2026-10-07 17:43Z | WP-BACKEND-06 | WP-BACKEND-06: QUESTION (instructions check exit 1) — ANSWER: не блокирует, D-17; READY после ревью сессии | SendMessage aaf9ace0 |
 | 2026-10-07 17:43Z | WP-INFRA-01 | WP-INFRA-01 merged in the merge queue | orch.py deliver: 9e5d534ca5 |
 | 2026-10-07 17:43Z | WP-INFRA-01 | WP-INFRA-01: ACCEPTED -> MERGED | gh pr merge --squash: 9e5d534ca5 (https://github.com/ITSalt/transcriber/pull/10) |
