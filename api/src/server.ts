@@ -28,14 +28,17 @@ import { transcriptRoutes } from './routes/uc-201.js'
 import { protocolRoutes } from './routes/uc-301.js'
 import { protocolPdfRoutes } from './routes/uc-302.js'
 import { retryMeetingRoutes } from './routes/uc-004.js'
+import { registerFeatures } from './features/index.js'
 
 export interface BuildAppOptions {
   logLevel?: string
   prettyLogs?: boolean
+  /** Feature folder root; default api/src/features (dist/features in prod). Tests only. */
+  featuresDir?: string
 }
 
 export async function buildApp(options: BuildAppOptions = {}): Promise<FastifyInstance> {
-  const { logLevel = 'info', prettyLogs = false } = options
+  const { logLevel = 'info', prettyLogs = false, featuresDir } = options
 
   const app = Fastify({
     logger: buildLoggerOptions(logLevel, prettyLogs),
@@ -74,6 +77,10 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<FastifyIn
   await app.register(protocolPdfRoutes)
   // UC-004: retry failed meeting processing
   await app.register(retryMeetingRoutes)
+
+  // WP-BACKEND-06 (D-15): program features — every api/src/features/<name>/routes.ts,
+  // registered without touching this file (see features/index.ts)
+  await registerFeatures(app, featuresDir)
 
   return app
 }

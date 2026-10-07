@@ -141,7 +141,8 @@ Existing waves 0–5 (Transcrib feature development) are unchanged. Deploy waves
 |---|---|
 | `pm2 reload` failed but old process still running | pm2 keeps the old version (zero-downtime reload). No action. |
 | New build crashes after reload | `pm2 stop transcrib-*; cd /opt/transcrib && git reset --hard <prev-sha>; pnpm i; pnpm -r build; pm2 reload ecosystem.config.cjs` |
-| Prisma migration broke DB | `prisma migrate resolve --rolled-back <name>` (data not destroyed because we don't do destructive migrations); restore from manual `pg_dump` snapshot taken pre-deploy (added as a manual step in TECH-024 runbook). |
+| Prisma migration broke DB | `prisma migrate resolve --rolled-back <name>` (data not destroyed because we don't do destructive migrations); restore from manual `pg_dump` snapshot taken pre-deploy (added as a manual step in TECH-024 runbook). **Not enough for a multi-statement migration that failed midway** — Prisma does not wrap `migration.sql` in a transaction, so a retry hits objects that already exist. Use the migration's `down.sql` when it has one (rule below). |
+| `20261007120000_program_product_schema` failed or must be undone (program «product», WP-BACKEND-06) | 1) `psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f api/prisma/migrations/20261007120000_program_product_schema/down.sql` — one transaction, works on a fully or partially applied schema, keeps all meetings/recordings/transcripts/protocols, removes the migration's `_prisma_migrations` row (no `migrate resolve` needed); 2) `pnpm --filter @transcrib/api run db:migrate:deploy` to re-apply (backfills are idempotent), or deploy the previous code. **Restore from the pre-deploy `pg_dump` only if `down.sql` itself fails.** `down.sql` refuses to run while any meeting is in `AWAITING_START` (status absent from the old schema). |
 | Caddy block invalid | `caddy validate` is run by deploy workflow before reload; failure aborts deploy before any change to running config. |
 | S3 keys leaked | Revoke service account on Cloud.ru panel → generate new pair → update `.env` → `pm2 reload`. No code change. |
 
@@ -181,3 +182,31 @@ Backups are explicitly **out of scope for MVP** (per your decision). When traffi
 3. Поднимать ли свой `pm2 logrotate` (учитывая, что learn уже его запустил) — обычно один экземпляр на сервер обслуживает всех пользователей deploy.
 
 Эти вопросы не блокируют TECH-016 (создание bucket) — можно начинать сейчас параллельно.
+
+---
+
+## 9. Neo4j памяти проекта
+
+**Добавлено:** 2026-10-07 (WP-BACKEND-06, программа product; ADR-013, D-13, D-16).
+
+Второе хранилище на том же VM — граф памяти проекта (задачи, решения, события, сводки;
+FR-006). Postgres остаётся источником истины; Neo4j хранит производный граф и может быть
+восстановлен из бэкапа без потери встреч и протоколов.
+
+| Что | Где / значение |
+|---|---|
+| Как поднять, проверить, бэкапить, восстановить | `scripts/README-neo4j.md` (WP-INFRA-01) — единственная инструкция по эксплуатации |
+| Контракт для кода | `.tl/external-contracts/neo4j.md` |
+| Переменные окружения api и worker | `MEMORY_NEO4J_URI`, `MEMORY_NEO4J_USER`, `MEMORY_NEO4J_PASSWORD`, `MEMORY_NEO4J_DATABASE` (в `.env` прода, не в репозитории) |
+| Лимиты (D-16) | heap 512m (initial = max), pagecache 256m, transaction total max 256m, потолок контейнера 1536m, `-XX:+ExitOnOutOfMemoryError` |
+| Бэкапы | gzip, ротация 3 копий, проверка свободного места перед дампом |
+| Не путать | `transcrib-neo4j` (порты 3614/3627) — граф спецификаций для nacl-скиллов, к приложению отношения не имеет |
+
+**Порядок выкладки.** Контейнер Neo4j и переменные окружения появляются раньше кода,
+который их читает (WP-INFRA-01 → WP-WORKER-MEMORY-01 / WP-API-MEMORY-01). Пока переменных
+нет, воркер работает с `NoProjectMemoryProvider`, эндпоинты памяти отвечают 503 — прод не
+ломается. Схема графа (constraints, indexes) накатывается скриптом `graph:migrate` воркера.
+
+**Влияние на бюджет памяти VM (§2).** +до 1.5 GiB под контейнер; факты R-1 на 2026-10-07:
+7.8 GiB RAM, занято ~3.2 GiB + fc-neo4j до 2 GiB, свободно на диске 4.6 GB — пересмотр
+лимитов после освобождения диска (R-2) и первого месяца работы.

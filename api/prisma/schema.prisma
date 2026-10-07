@@ -15,6 +15,9 @@ enum MeetingStatus {
   CREATED
   UPLOADING
   UPLOADED
+  /// FR-004 / D-9: uploaded, waiting for the author's "Start" (POST /api/meetings/:id/start).
+  /// Never written by the pre-program code; introduced by WP-BACKEND-06, used from WP-BACKEND-02.
+  AWAITING_START
   TRANSCRIBING
   TRANSCRIBED
   GENERATING_PROTOCOL
@@ -44,6 +47,60 @@ enum VideoMimeType {
   VIDEO_MKV
 }
 
+// ─── Program enums (WP-BACKEND-06, FR-003..FR-006) ────────────────────────────
+
+/// FR-004 / D-10: which side of the deal a project participant is on.
+enum ParticipantSide {
+  OURS
+  CLIENT
+  CONTRACTOR
+  OTHER
+}
+
+/// FR-004 / D-10: meeting type chosen in the meeting context.
+enum MeetingType {
+  NEGOTIATION
+  STATUS
+  PLANNING
+  INTERVIEW
+  OTHER
+}
+
+/// FR-004 / FR-006: what one LLM run produced.
+enum ProtocolGenerationKind {
+  PROTOCOL
+  MEMORY_EXTRACT
+  MEMORY_RESOLVE
+  MEMORY_SUMMARY
+}
+
+/// FR-005: provenance of a protocol version.
+/// LEGACY = backfilled from a pre-program Protocol row that had been edited (editCount > 0),
+/// so the generated original is lost and the text is the author's last edit.
+enum ProtocolVersionKind {
+  GENERATED
+  USER_EDIT
+  LEGACY
+}
+
+/// FR-005: kind of protocol feedback.
+enum ProtocolFeedbackKind {
+  COMMENT
+  CORRECTED_PROTOCOL
+  DOCX_REVIEW
+}
+
+/// FR-005: optional classification of a feedback item.
+enum ProtocolFeedbackCategory {
+  SPEAKER_ATTRIBUTION
+  MISSED_DECISION
+  WRONG_TASK
+  FABRICATED
+  TERMS_NAMES
+  STYLE
+  OTHER
+}
+
 // ─── Models ───────────────────────────────────────────────────────────────────
 
 /// Root aggregate — mod-common
@@ -55,24 +112,42 @@ model Meeting {
   createdAt DateTime        @default(now()) @map("created_at")
   updatedAt DateTime        @updatedAt @map("updated_at")
 
-  recording          Recording?
-  transcriptionJob   TranscriptionJob?
-  transcript         Transcript?
-  protocolGenJob     ProtocolGenerationJob?
-  protocol           Protocol?
+  /// FR-003 / D-6, D-7: owning workspace. NULLABLE in WP-BACKEND-06 (contract package);
+  /// WP-BACKEND-01 drops the DB default and sets NOT NULL. The DB default is the fixed id of
+  /// the legacy personal workspace «Роман» so meetings inserted by the pre-program code
+  /// (still running while `migrate deploy` executes, and until WP-BACKEND-01 ships) never
+  /// end up without an owner.
+  workspaceId String? @default(dbgenerated("'00000000-0000-4000-8000-000000000001'::uuid")) @map("workspace_id") @db.Uuid
+  /// FR-004: optional project inside the workspace.
+  projectId   String? @map("project_id") @db.Uuid
 
+  workspace Workspace? @relation(fields: [workspaceId], references: [id], onDelete: Restrict)
+  project   Project?   @relation(fields: [projectId], references: [id], onDelete: SetNull)
+
+  recording           Recording?
+  transcriptionJob    TranscriptionJob?
+  transcript          Transcript?
+  protocolGenJob      ProtocolGenerationJob?
+  protocol            Protocol?
+  context             MeetingContext?
+  protocolGenerations ProtocolGeneration[]
+  protocolVersions    ProtocolVersion[]
+  feedback            ProtocolFeedback[]
+
+  @@index([workspaceId, createdAt], name: "idx_meetings_workspace_created")
+  @@index([projectId, createdAt], name: "idx_meetings_project_created")
   @@map("meetings")
 }
 
 /// mod-ingest — one recording per meeting
 model Recording {
-  id           String        @id @default(uuid()) @db.Uuid
-  meetingId    String        @unique @map("meeting_id") @db.Uuid
-  storageUri   String        @map("storage_uri")   // s3://bucket/key
-  mimeType     VideoMimeType @map("mime_type")
-  sizeBytes    BigInt        @map("size_bytes")
-  durationSec  Float?        @map("duration_sec")
-  uploadedAt   DateTime      @default(now()) @map("uploaded_at")
+  id          String        @id @default(uuid()) @db.Uuid
+  meetingId   String        @unique @map("meeting_id") @db.Uuid
+  storageUri  String        @map("storage_uri") // s3://bucket/key
+  mimeType    VideoMimeType @map("mime_type")
+  sizeBytes   BigInt        @map("size_bytes")
+  durationSec Float?        @map("duration_sec")
+  uploadedAt  DateTime      @default(now()) @map("uploaded_at")
 
   meeting Meeting @relation(fields: [meetingId], references: [id], onDelete: Cascade)
 
@@ -99,20 +174,20 @@ model TranscriptionJob {
 
 /// mod-transcription — ASR output
 model Transcript {
-  id          String   @id @default(uuid()) @db.Uuid
-  meetingId   String   @unique @map("meeting_id") @db.Uuid
+  id           String           @id @default(uuid()) @db.Uuid
+  meetingId    String           @unique @map("meeting_id") @db.Uuid
   /// JSONB: { [speakerId: string]: string } — speaker label overrides
-  speakerMap  Json     @default("{}") @map("speaker_map") @db.JsonB
+  speakerMap   Json             @default("{}") @map("speaker_map") @db.JsonB
   /// JSONB array of Deepgram word/utterance segments
-  segmentsBlob Json    @default("[]") @map("segments_blob") @db.JsonB
-  rawText     String?  @map("raw_text")
+  segmentsBlob Json             @default("[]") @map("segments_blob") @db.JsonB
+  rawText      String?          @map("raw_text")
   /// RQ-018 / BRQ-005: the language actually spoken in the recording, as reported by ASR
   /// (or the confirmed hint when the author declared one). RU or EN only; NULL when the
   /// provider reported neither. NEVER 'AUTO'. Records the recording — it does NOT select
   /// the protocol prompt template, which is driven by Meeting.language (RQ-022 / DEC-003).
-  language    MeetingLanguage?
-  createdAt   DateTime @default(now()) @map("created_at")
-  updatedAt   DateTime @updatedAt @map("updated_at")
+  language     MeetingLanguage?
+  createdAt    DateTime         @default(now()) @map("created_at")
+  updatedAt    DateTime         @updatedAt @map("updated_at")
 
   meeting Meeting @relation(fields: [meetingId], references: [id], onDelete: Cascade)
 
@@ -139,17 +214,281 @@ model ProtocolGenerationJob {
 
 /// mod-protocol — generated meeting protocol document
 model Protocol {
-  id            String    @id @default(uuid()) @db.Uuid
-  meetingId     String    @unique @map("meeting_id") @db.Uuid
-  markdownContent String  @map("markdown_content")
-  version       Int       @default(1)
-  editCount     Int       @default(0) @map("edit_count")
-  generatedAt   DateTime  @default(now()) @map("generated_at")
-  lastEditedAt  DateTime? @map("last_edited_at")
-  createdAt     DateTime  @default(now()) @map("created_at")
-  updatedAt     DateTime  @updatedAt @map("updated_at")
+  id              String    @id @default(uuid()) @db.Uuid
+  meetingId       String    @unique @map("meeting_id") @db.Uuid
+  markdownContent String    @map("markdown_content")
+  version         Int       @default(1)
+  editCount       Int       @default(0) @map("edit_count")
+  generatedAt     DateTime  @default(now()) @map("generated_at")
+  lastEditedAt    DateTime? @map("last_edited_at")
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
 
   meeting Meeting @relation(fields: [meetingId], references: [id], onDelete: Cascade)
 
   @@map("protocols")
+}
+
+// ─── FR-003: users, workspaces, sessions (tables: WP-BACKEND-06; logic: WP-BACKEND-01) ─
+
+/// FR-003 / D-8: a person who logs in with a 6-digit PIN. The PIN itself is never stored:
+/// pinLookup = HMAC-SHA256(PIN, PIN_PEPPER) for the unique lookup (A-3), pinHash = slow
+/// salted hash (scrypt, A-1) verified after the lookup.
+model User {
+  id        String   @id @default(uuid()) @db.Uuid
+  name      String
+  pinLookup String   @unique @map("pin_lookup")
+  pinHash   String   @map("pin_hash")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  memberships      Membership[]
+  sessions         AuthSession[]
+  authoredVersions ProtocolVersion[]
+  feedback         ProtocolFeedback[]
+
+  @@map("users")
+}
+
+/// FR-003 / D-6: unit of isolation — every member sees everything inside it.
+/// personal = a user's own workspace; shared ones are reached through Membership.
+/// The legacy personal workspace «Роман» (D-7) has the fixed id
+/// 00000000-0000-4000-8000-000000000001 (shared LEGACY_WORKSPACE_ID).
+model Workspace {
+  id        String   @id @default(uuid()) @db.Uuid
+  name      String
+  personal  Boolean  @default(false)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  memberships Membership[]
+  meetings    Meeting[]
+  projects    Project[]
+  feedback    ProtocolFeedback[]
+
+  @@map("workspaces")
+}
+
+/// FR-003: user ↔ workspace membership.
+model Membership {
+  id          String   @id @default(uuid()) @db.Uuid
+  userId      String   @map("user_id") @db.Uuid
+  workspaceId String   @map("workspace_id") @db.Uuid
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, workspaceId])
+  @@index([workspaceId], name: "idx_memberships_workspace")
+  @@map("memberships")
+}
+
+/// FR-003: server-side login session. The cookie carries the raw random token; the DB
+/// keeps only its SHA-256 (tokenHash).
+model AuthSession {
+  id         String   @id @default(uuid()) @db.Uuid
+  userId     String   @map("user_id") @db.Uuid
+  tokenHash  String   @unique @map("token_hash")
+  expiresAt  DateTime @map("expires_at")
+  lastSeenAt DateTime @default(now()) @map("last_seen_at")
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId], name: "idx_auth_sessions_user")
+  @@map("auth_sessions")
+}
+
+/// FR-003 / D-8 / A-3: failed-PIN counter per client key (client IP; plus the global row
+/// with clientKey '*'). blockedAt is set at the 10th failure and cleared only by the CLI.
+model LoginBlock {
+  id          String    @id @default(uuid()) @db.Uuid
+  clientKey   String    @unique @map("client_key")
+  failedCount Int       @default(0) @map("failed_count")
+  blockedAt   DateTime? @map("blocked_at")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+
+  @@map("login_blocks")
+}
+
+// ─── FR-004: projects and meeting context (logic: WP-API-PROJECTS-01) ─────────
+
+/// FR-004: a project groups meetings of one workspace and carries their shared context.
+model Project {
+  id          String   @id @default(uuid()) @db.Uuid
+  workspaceId String   @map("workspace_id") @db.Uuid
+  name        String
+  description String?
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  workspace    Workspace            @relation(fields: [workspaceId], references: [id], onDelete: Restrict)
+  participants ProjectParticipant[]
+  glossary     GlossaryTerm[]
+  meetings     Meeting[]
+
+  @@index([workspaceId, createdAt], name: "idx_projects_workspace_created")
+  @@map("projects")
+}
+
+/// FR-004 / D-10: a recurring participant of a project's meetings.
+model ProjectParticipant {
+  id           String          @id @default(uuid()) @db.Uuid
+  projectId    String          @map("project_id") @db.Uuid
+  name         String
+  /// spelling variants / nicknames, also used as ASR keyterms
+  aliases      String[]        @default([])
+  role         String?
+  organization String?
+  side         ParticipantSide @default(OTHER)
+  createdAt    DateTime        @default(now()) @map("created_at")
+  updatedAt    DateTime        @updatedAt @map("updated_at")
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([projectId], name: "idx_project_participants_project")
+  @@map("project_participants")
+}
+
+/// FR-004 / D-10: project glossary. asrKeyterm = true → the term is offered to ASR as a
+/// keyterm (Q-1, behind ASR_KEYTERMS_ENABLED); every term goes to the LLM.
+model GlossaryTerm {
+  id         String   @id @default(uuid()) @db.Uuid
+  projectId  String   @map("project_id") @db.Uuid
+  term       String
+  variants   String[] @default([])
+  definition String?
+  asrKeyterm Boolean  @default(false) @map("asr_keyterm")
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([projectId], name: "idx_glossary_terms_project")
+  @@map("glossary_terms")
+}
+
+/// FR-004 / D-9, D-10: the context of one meeting.
+/// Lifecycle: PUT /api/meetings/:id/context writes a DRAFT (snapshotHash NULL, entries of
+/// participants/glossary only with source 'meeting'); POST /api/meetings/:id/start freezes
+/// it into a SNAPSHOT — project card entries (source 'project') are copied in, the previous
+/// protocol text is resolved, snapshotHash is set — and it is never changed afterwards, so
+/// later project edits do not rewrite what a protocol was generated with.
+model MeetingContext {
+  id               String       @id @default(uuid()) @db.Uuid
+  meetingId        String       @unique @map("meeting_id") @db.Uuid
+  meetingType      MeetingType? @map("meeting_type")
+  goal             String?
+  agenda           String?
+  /// JSONB: ContextParticipant[] (shared/src/api/context.ts)
+  participants     Json         @default("[]") @db.JsonB
+  /// JSONB: ContextGlossaryTerm[] (shared/src/api/context.ts)
+  glossary         Json         @default("[]") @db.JsonB
+  /// JSONB: PreviousProtocol { source: 'project'|'upload'|'none', meetingId?, text? }
+  previousProtocol Json         @default("{\"source\":\"none\"}") @map("previous_protocol") @db.JsonB
+  notes            String?
+  /// sha256 of the canonical snapshot JSON; NULL while the context is still a draft
+  snapshotHash     String?      @map("snapshot_hash")
+  createdAt        DateTime     @default(now()) @map("created_at")
+  updatedAt        DateTime     @updatedAt @map("updated_at")
+
+  meeting Meeting @relation(fields: [meetingId], references: [id], onDelete: Cascade)
+
+  @@map("meeting_contexts")
+}
+
+// ─── FR-005: generations, versions, feedback (logic: WP-WORKER-01, WP-API-FEEDBACK-01) ─
+
+/// FR-004 / FR-005 / FR-006: audit record of one LLM run (protocol or a memory step):
+/// model, prompt version, context snapshot and ASR keyterms that produced the output.
+model ProtocolGeneration {
+  id                  String                 @id @default(uuid()) @db.Uuid
+  meetingId           String                 @map("meeting_id") @db.Uuid
+  kind                ProtocolGenerationKind
+  model               String
+  /// sha256 of the prompt template file
+  promptVersion       String                 @map("prompt_version")
+  contextSnapshotHash String?                @map("context_snapshot_hash")
+  keyterms            String[]               @default([])
+  /// JSONB: ASR options actually sent (keyterms flag, speaker hints, …)
+  asrOptions          Json?                  @map("asr_options") @db.JsonB
+  inputTokens         Int?                   @map("input_tokens")
+  outputTokens        Int?                   @map("output_tokens")
+  /// s3://bucket/ws/<workspaceId>/prompts/<generationId>.txt when the rendered prompt is kept
+  promptUri           String?                @map("prompt_uri")
+  createdAt           DateTime               @default(now()) @map("created_at")
+
+  meeting  Meeting           @relation(fields: [meetingId], references: [id], onDelete: Cascade)
+  versions ProtocolVersion[]
+
+  @@index([meetingId, createdAt], name: "idx_protocol_generations_meeting_created")
+  @@map("protocol_generations")
+}
+
+/// FR-005: immutable, append-only protocol history; n = 1, 2, … per meeting.
+/// Protocol.markdownContent keeps holding the CURRENT text (the pre-program code reads it).
+model ProtocolVersion {
+  id           String              @id @default(uuid()) @db.Uuid
+  meetingId    String              @map("meeting_id") @db.Uuid
+  n            Int
+  kind         ProtocolVersionKind
+  markdown     String
+  authorUserId String?             @map("author_user_id") @db.Uuid
+  generationId String?             @map("generation_id") @db.Uuid
+  createdAt    DateTime            @default(now()) @map("created_at")
+
+  meeting    Meeting             @relation(fields: [meetingId], references: [id], onDelete: Cascade)
+  author     User?               @relation(fields: [authorUserId], references: [id], onDelete: SetNull)
+  generation ProtocolGeneration? @relation(fields: [generationId], references: [id], onDelete: SetNull)
+
+  @@unique([meetingId, n])
+  @@map("protocol_versions")
+}
+
+/// FR-005 / D-12: feedback on one protocol version — a comment, a corrected protocol, or
+/// a reviewed .docx (stored at fileUri and parsed into `extracted`).
+model ProtocolFeedback {
+  id               String                    @id @default(uuid()) @db.Uuid
+  meetingId        String                    @map("meeting_id") @db.Uuid
+  workspaceId      String                    @map("workspace_id") @db.Uuid
+  userId           String                    @map("user_id") @db.Uuid
+  protocolVersionN Int                       @map("protocol_version_n")
+  kind             ProtocolFeedbackKind
+  category         ProtocolFeedbackCategory?
+  text             String?
+  /// s3://bucket/ws/<workspaceId>/feedback/<id>/<fileName>
+  fileUri          String?                   @map("file_uri")
+  fileName         String?                   @map("file_name")
+  mime             String?
+  sizeBytes        BigInt?                   @map("size_bytes")
+  /// JSONB: FeedbackExtract (shared/src/api/feedback.ts)
+  extracted        Json?                     @db.JsonB
+  createdAt        DateTime                  @default(now()) @map("created_at")
+
+  meeting   Meeting   @relation(fields: [meetingId], references: [id], onDelete: Cascade)
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Restrict)
+  user      User      @relation(fields: [userId], references: [id], onDelete: Restrict)
+
+  @@index([meetingId, createdAt], name: "idx_protocol_feedback_meeting_created")
+  @@index([workspaceId, createdAt], name: "idx_protocol_feedback_workspace_created")
+  @@map("protocol_feedback")
+}
+
+// ─── FR-006: Postgres → Neo4j outbox (logic: WP-WORKER-MEMORY-01) ─────────────
+
+/// FR-006 / D-13: transactional outbox of project-memory graph writes. A row is inserted in
+/// the same Postgres transaction as the change it mirrors (e.g. deleting a meeting that has
+/// a project) and drained into Neo4j by the worker. doneAt NULL = pending.
+model GraphOutbox {
+  id        String    @id @default(uuid()) @db.Uuid
+  /// GraphOutboxOp (shared/src/api/memory.ts), e.g. 'DELETE_MEETING'
+  op        String
+  payload   Json      @db.JsonB
+  attempts  Int       @default(0)
+  lastError String?   @map("last_error")
+  createdAt DateTime  @default(now()) @map("created_at")
+  doneAt    DateTime? @map("done_at")
+
+  @@index([doneAt, createdAt], name: "idx_graph_outbox_pending")
+  @@map("graph_outbox")
 }

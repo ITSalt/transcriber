@@ -41,7 +41,8 @@ export type AcceptedUploadMime = z.infer<typeof AcceptedUploadMime>;
 
 export const UploadFinalizeResponse = z.object({
   meeting_id: z.string().uuid(),
-  status: z.literal('TRANSCRIBING'),
+  // FR-004 / D-9: AWAITING_START when the complete request carried defer_start: true.
+  status: z.enum(['TRANSCRIBING', 'AWAITING_START']),
 });
 export type UploadFinalizeResponse = z.infer<typeof UploadFinalizeResponse>;
 
@@ -64,6 +65,10 @@ export const UploadInitRequest = z.object({
   filetype: AcceptedUploadMime, // RQ-009
   title: z.string().min(1).max(255),
   language: z.enum(['RU', 'EN']).nullable(), // null = auto-detect (RQ-012)
+  // FR-003 (contract v1): target workspace. Optional in the schema so the pre-program web
+  // keeps working; WP-BACKEND-01 requires it at the route (400 WORKSPACE_REQUIRED) and
+  // checks membership before issuing presigned URLs.
+  workspace_id: z.string().uuid().optional(),
 });
 export type UploadInitRequest = z.infer<typeof UploadInitRequest>;
 
@@ -91,11 +96,19 @@ export const UploadCompleteRequest = z.object({
     part_number: z.number().int().positive(),
     etag: z.string().min(1),
   })).min(1),
+  // FR-003 (contract v1): see UploadInitRequest.workspace_id.
+  workspace_id: z.string().uuid().optional(),
+  // FR-004 / D-9 (contract v1): true = create the meeting in AWAITING_START and enqueue
+  // nothing; transcription starts on POST /api/meetings/:id/start. Absent/false = today's
+  // behaviour (TRANSCRIBING + enqueue).
+  defer_start: z.boolean().optional(),
 });
 export type UploadCompleteRequest = z.infer<typeof UploadCompleteRequest>;
 
 export const UploadAbortRequest = z.object({
   s3_key: z.string().min(1),
   s3_upload_id: z.string().min(1),
+  // FR-003 (contract v1): see UploadInitRequest.workspace_id.
+  workspace_id: z.string().uuid().optional(),
 });
 export type UploadAbortRequest = z.infer<typeof UploadAbortRequest>;
