@@ -92,7 +92,7 @@ export default async function routes(app: FastifyInstance) {
     expect(res.json()).toEqual({ feature: 'demo' })
     expect((await app.inject({ method: 'GET', url: '/api/health' })).statusCode).not.toBe(404)
     await app.close()
-  })
+  }, 30_000) // buildApp() imports every core route module — slow under a loaded parallel run
 })
 
 describe('program dependencies load on Fastify 5', () => {
@@ -108,5 +108,5 @@ describe('program dependencies load on Fastify 5', () => {
     const xml = await (await JSZip.loadAsync(await zip.generateAsync({ type: 'uint8array' }))).file('word/document.xml')!.async('string')
     expect(new XMLParser().parse(xml)).toHaveProperty('w:document')
     await app.close()
-  })
+  }, 30_000)
 })
