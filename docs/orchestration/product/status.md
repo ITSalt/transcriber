@@ -114,6 +114,8 @@ R-n — действие: точная команда одной строкой 
 <!-- orch:journal -->
 | Дата | WP | Событие | Подтверждение |
 |------|----|---------|---------------|
+| 2026-10-07 20:18Z | WP-BACKEND-01 | WP-BACKEND-01: QUESTION о порядке включения входа — ANSWER по D-20 (флаг AUTH_REQUIRED, legacy-принципал «Роман»); WP-FRONTEND-02 извещён о контракте /me в обоих режимах | сообщение product-backend |
+| 2026-10-07 20:18Z | — | D-20 recorded | — |
 | 2026-10-07 20:17Z | WP-BACKEND-01 | WP-BACKEND-01: LOCK graph выдан (UC-400..403); сессия сообщает о таймаутах GitHub — локальный origin/main = 2570d0a актуален, fetch перед push | сообщение product-backend |
 | 2026-10-07 20:17Z | WP-BACKEND-01 | WP-BACKEND-01: DISPATCHING -> IN_PROGRESS | сообщение product-backend: ветка создана от 2570d0a, LOCK graph |
 | 2026-10-07 20:17Z | WP-BACKEND-01 | lock transcriber:graph acquired | LOCK message: /nacl-sa-uc UC-400..403, FR-003 in-progress |
