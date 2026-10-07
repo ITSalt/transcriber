@@ -21,7 +21,7 @@ CANCELLED (причина).
 <!-- orch:wp -->
 | WP | Модуль | Название | Статус | Сессия | PR | Обновлено |
 |----|--------|----------|--------|--------|----|-----------|
-| [WP-BACKEND-01](work-packages/WP-BACKEND-01-auth-workspaces.md) | backend | Вход по PIN, рабочие пространства и изоляция данных (API+worker) | DISPATCHING | product-backend | — | 2026-10-07 |
+| [WP-BACKEND-01](work-packages/WP-BACKEND-01-auth-workspaces.md) | backend | Вход по PIN, рабочие пространства и изоляция данных (API+worker) | IN_PROGRESS | product-backend | — | 2026-10-07 |
 | [WP-FRONTEND-01](work-packages/WP-FRONTEND-01-design-system.md) | frontend | Дизайн-система ITSALT и каркас приложения | PROD | product-frontend | https://github.com/ITSalt/transcriber/pull/9 (accepted 364b6b9fb8) | 2026-10-07 |
 | [WP-FRONTEND-02](work-packages/WP-FRONTEND-02-login-tasks.md) | frontend | Экран входа, переключатель пространств, список задач | DISPATCHING | product-frontend | — | 2026-10-07 |
 | [WP-BACKEND-02](work-packages/WP-BACKEND-02-projects-context.md) | backend | Проекты и контекст встречи: в распознавание и в протокол | CANCELLED (заменён WP-API-PROJECTS-01 (D-15, поток api-projects)) | product-backend | — | 2026-10-07 |
@@ -92,6 +92,7 @@ R-n — действие: точная команда одной строкой 
 | transcriber:migrations | transcriber | WP-BACKEND-01 | 2026-10-07 20:10Z | — | dispatch |
 | transcriber:shared/** | transcriber | WP-WORKER-MEMORY-01 | 2026-10-07 20:11Z | — | dispatch |
 | transcriber:worker/package.json | transcriber | WP-WORKER-MEMORY-01 | 2026-10-07 20:11Z | — | dispatch |
+| transcriber:graph | transcriber | WP-BACKEND-01 | 2026-10-07 20:17Z | — | LOCK message: /nacl-sa-uc UC-400..403, FR-003 in-progress |
 
 ## Очередь слияний
 
@@ -113,6 +114,9 @@ R-n — действие: точная команда одной строкой 
 <!-- orch:journal -->
 | Дата | WP | Событие | Подтверждение |
 |------|----|---------|---------------|
+| 2026-10-07 20:17Z | WP-BACKEND-01 | WP-BACKEND-01: LOCK graph выдан (UC-400..403); сессия сообщает о таймаутах GitHub — локальный origin/main = 2570d0a актуален, fetch перед push | сообщение product-backend |
+| 2026-10-07 20:17Z | WP-BACKEND-01 | WP-BACKEND-01: DISPATCHING -> IN_PROGRESS | сообщение product-backend: ветка создана от 2570d0a, LOCK graph |
+| 2026-10-07 20:17Z | WP-BACKEND-01 | lock transcriber:graph acquired | LOCK message: /nacl-sa-uc UC-400..403, FR-003 in-progress |
 | 2026-10-07 20:11Z | WP-WORKER-MEMORY-01 | WP-WORKER-MEMORY-01: READY -> DISPATCHING | start command handed to the owner; model opus, effort high; locks transcriber:shared/**, transcriber:worker/package.json |
 | 2026-10-07 20:11Z | WP-WORKER-01 | WP-WORKER-01: замок shared/ снят — взят dispatch по обратным кавычкам в строке «нет (контракт из `shared/` только читается)»; пакет shared не правит; строка исправлена | dispatch WP-WORKER-01: locks to take: shared/; dispatch WP-WORKER-MEMORY-01 refused |
 | 2026-10-07 20:11Z | WP-WORKER-01 | lock transcriber:shared/ released | orch.py lock |
