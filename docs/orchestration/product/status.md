@@ -115,6 +115,7 @@ R-n — действие: точная команда одной строкой 
 <!-- orch:journal -->
 | Дата | WP | Событие | Подтверждение |
 |------|----|---------|---------------|
+| 2026-10-07 21:26Z | WP-WORKER-MEMORY-01 | WP-WORKER-MEMORY-01: код готов локально (58dcf8e; shared 141, worker 299 зелёные на memory-neo4j); push/PR ждут сети | сообщение product-worker-memory |
 | 2026-10-07 21:02Z | WP-WEB-PROJECTS-01 | WP-WEB-PROJECTS-01: сессия стартовала и закончила код локально (d2d18ff; web 179/179); E2E отложен до merge API-PROJECTS-01/WORKER-01; push ждёт сети | сообщение product-web-projects |
 | 2026-10-07 21:02Z | WP-WEB-PROJECTS-01 | WP-WEB-PROJECTS-01: DISPATCHING -> IN_PROGRESS | сообщение product-web-projects: код готов локально (d2d18ff), push ждёт сети; QUESTION D-17 отвечен |
 | 2026-10-07 20:51Z | WP-WEB-MEMORY-01 | WP-WEB-MEMORY-01: сессия стартовала и закончила код локально (dd0ee73); E2E/скриншоты отложены до merge API-MEMORY-01 и WEB-PROJECTS-01; push ждёт сети | сообщение product-web-memory |
