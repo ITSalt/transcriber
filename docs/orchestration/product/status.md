@@ -115,6 +115,7 @@ R-n — действие: точная команда одной строкой 
 <!-- orch:journal -->
 | Дата | WP | Событие | Подтверждение |
 |------|----|---------|---------------|
+| 2026-10-07 17:40Z | WP-INFRA-01 | WP-INFRA-01: QUESTION — отказ правила на git push --force-with-lease после rebase (намеренный deny); ANSWER: вместо rebase влить origin/main merge-коммитом и запушить обычным push, затем READY с новым sha; моё указание «rebase + force-with-lease» было ошибкой против настроек модуля | сообщение product-infra; SendMessage 66dfcd6d |
 | 2026-10-07 17:39Z | WP-FRONTEND-01 | WP-FRONTEND-01: доставлен на прод — merge e31feb393f (squash), Deploy to Production зелёный, verify --env prod PASS, живой сценарий: CSS прода содержит токены ITSALT, шрифты отдаются, слот шапки в бандле | reports/verify-WP-FRONTEND-01-prod-20261007.md; curl assets/index-Blhzfsef.css |
 | 2026-10-07 17:39Z | WP-FRONTEND-01 | WP-FRONTEND-01: VERIFIED_TEST -> PROD | verify --env prod e31feb393f: reports/verify-WP-FRONTEND-01-prod-20261007.md |
 | 2026-10-07 17:38Z | WP-FRONTEND-01 | WP-FRONTEND-01: MERGED -> VERIFIED_TEST | verify --env test e31feb393f: reports/verify-WP-FRONTEND-01-test-20261007.md |
