@@ -23,7 +23,7 @@ CANCELLED (причина).
 |----|--------|----------|--------|--------|----|-----------|
 | [WP-BACKEND-01](work-packages/WP-BACKEND-01-auth-workspaces.md) | backend | Вход по PIN, рабочие пространства и изоляция данных (API+worker) | REVIEW | product-backend | https://github.com/ITSalt/transcriber/pull/15 | 2026-10-07 |
 | [WP-FRONTEND-01](work-packages/WP-FRONTEND-01-design-system.md) | frontend | Дизайн-система ITSALT и каркас приложения | PROD | product-frontend | https://github.com/ITSalt/transcriber/pull/9 (accepted 364b6b9fb8) | 2026-10-07 |
-| [WP-FRONTEND-02](work-packages/WP-FRONTEND-02-login-tasks.md) | frontend | Экран входа, переключатель пространств, список задач | REVIEW | product-frontend | https://github.com/ITSalt/transcriber/pull/13 | 2026-10-07 |
+| [WP-FRONTEND-02](work-packages/WP-FRONTEND-02-login-tasks.md) | frontend | Экран входа, переключатель пространств, список задач | ACCEPTED | product-frontend | https://github.com/ITSalt/transcriber/pull/13 (accepted feb98efd46) | 2026-10-07 |
 | [WP-BACKEND-02](work-packages/WP-BACKEND-02-projects-context.md) | backend | Проекты и контекст встречи: в распознавание и в протокол | CANCELLED (заменён WP-API-PROJECTS-01 (D-15, поток api-projects)) | product-backend | — | 2026-10-07 |
 | [WP-FRONTEND-03](work-packages/WP-FRONTEND-03-projects-context-ui.md) | frontend | Проекты и форма контекста перед распознаванием | CANCELLED (заменён WP-WEB-PROJECTS-01 (D-15)) | product-frontend | — | 2026-10-07 |
 | [WP-BACKEND-03](work-packages/WP-BACKEND-03-feedback.md) | backend | История версий протокола и приём обратной связи | CANCELLED (заменён WP-API-FEEDBACK-01 (D-15, поток api-feedback)) | product-backend | — | 2026-10-07 |
@@ -32,12 +32,12 @@ CANCELLED (причина).
 | [WP-FRONTEND-05](work-packages/WP-FRONTEND-05-project-memory-ui.md) | frontend | Реестр задач и решений проекта, очередь подтверждений | CANCELLED (заменён WP-WEB-MEMORY-01 (D-15)) | product-frontend | — | 2026-10-07 |
 | [WP-BACKEND-05](work-packages/WP-BACKEND-05-neo4j-prod.md) | backend | Neo4j для памяти проекта: сервис, лимиты памяти, бэкап, CI | CANCELLED (заменён WP-INFRA-01 и WP-WORKER-MEMORY-01 (D-15)) | product-backend | — | 2026-10-07 |
 | [WP-BACKEND-06](work-packages/WP-BACKEND-06-contract.md) | backend | Контракт программы: схема БД, контракты shared, зависимости | PROD | product-backend | https://github.com/ITSalt/transcriber/pull/12 (accepted 3fa3500f47) | 2026-10-07 |
-| [WP-WORKER-01](work-packages/WP-WORKER-01-context-asr-llm.md) | worker | Контекст встречи в Deepgram и в промпт протокола, метаданные генерации | REVIEW | product-worker | https://github.com/ITSalt/transcriber/pull/17 | 2026-10-07 |
+| [WP-WORKER-01](work-packages/WP-WORKER-01-context-asr-llm.md) | worker | Контекст встречи в Deepgram и в промпт протокола, метаданные генерации | REVISE | product-worker | https://github.com/ITSalt/transcriber/pull/17 | 2026-10-07 |
 | [WP-WORKER-02](work-packages/WP-WORKER-02-project-memory.md) | worker | Память проекта в Neo4j: извлечение, сопоставление, сводка | CANCELLED (создан в неверном потоке; заменён WP-WORKER-MEMORY-01 (D-15)) | product-worker | — | 2026-10-07 |
 | [WP-INFRA-01](work-packages/WP-INFRA-01-neo4j.md) | infra | Neo4j памяти проекта: сервис, лимиты, бэкап, CI, шаг деплоя | PROD | product-infra | https://github.com/ITSalt/transcriber/pull/10 (accepted 0e7ebe85d3) | 2026-10-07 |
 | [WP-WEB-PROJECTS-01](work-packages/WP-WEB-PROJECTS-01-projects-context.md) | web-projects | Проекты и форма контекста перед распознаванием | IN_PROGRESS | product-web-projects | — | 2026-10-07 |
 | [WP-WEB-FEEDBACK-01](work-packages/WP-WEB-FEEDBACK-01-feedback.md) | web-feedback | Режим обратной связи по протоколу | IN_PROGRESS | product-web-feedback | — | 2026-10-07 |
-| [WP-WEB-MEMORY-01](work-packages/WP-WEB-MEMORY-01-registry.md) | web-memory | Реестр задач и решений проекта, очередь подтверждений | REVISE | product-web-memory | https://github.com/ITSalt/transcriber/pull/14 | 2026-10-07 |
+| [WP-WEB-MEMORY-01](work-packages/WP-WEB-MEMORY-01-registry.md) | web-memory | Реестр задач и решений проекта, очередь подтверждений | REVIEW | product-web-memory | https://github.com/ITSalt/transcriber/pull/14 | 2026-10-07 |
 | [WP-API-PROJECTS-01](work-packages/WP-API-PROJECTS-01-projects-context.md) | api-projects | API проектов и контекста встречи, запуск распознавания | READY | product-api-projects | — | 2026-10-07 |
 | [WP-API-FEEDBACK-01](work-packages/WP-API-FEEDBACK-01-feedback.md) | api-feedback | API версий протокола и обратной связи, разбор docx | READY | product-api-feedback | — | 2026-10-07 |
 | [WP-API-MEMORY-01](work-packages/WP-API-MEMORY-01-registry.md) | api-memory | API памяти проекта: задачи, решения, подтверждения | READY | product-api-memory | — | 2026-10-07 |
@@ -79,6 +79,8 @@ R-n — действие: точная команда одной строкой 
 | ~~R-11~~ | ~~Освободить диск прод-VM, шаг 4 (повтор с исправленными командами): кэш snap удаляется под root целиком, выключенные ревизии snap удаляются, pnpm грузится через nvm как в деплое : ssh deploy@transcriber.itsalt.ru 'sudo sh -c "rm -rf /var/lib/snapd/cache/*"; sudo snap list --all \| awk "/disabled/{print \$1, \$3}" \| while read n r; do sudo snap remove "$n" --revision="$r"; done; export NVM_DIR=$HOME/.nvm; . $NVM_DIR/nvm.sh; nvm use 22 >/dev/null; pnpm store prune \| tail -2; sudo du -sh /var/lib/snapd/cache; df -h / \| tail -1' ; expected: кэш snap ~0, несколько строк «<snap> (revision N) removed», pnpm сообщит число удалённых пакетов, df ≈ 10–11 GB свободно ; then: оркестратор закрывает тему диска~~ | work-packages/WP-INFRA-01-neo4j.md | 2026-10-07 | 2026-10-07: ssh 2026-10-07: кэш snap 4.0K, удалены 6 выключенных ревизий snap, pnpm store prune: 2910 файлов / 37 пакетов; df /: 19G used, 10G avail (65%) — цель 8 GB достигнута |
 | P-14 | Блокировка входа по PIN (D-8): сейчас 10 неудачных попыток с одного IP накапливаются навсегда, успешный вход их не сбрасывает (сброс при успехе позволил бы владельцу любого PIN перебирать чужие бесконечно), снимает только ваша CLI-команда user:unblock. Варианты: (a) так и оставить — проще и безопаснее всего, редкий честный пользователь, 10 раз ошибившийся с одного IP за месяцы, пишет вам; (b) неудачи старше 30 дней не считать — честных блокировок почти не будет, перебор получает 10 попыток в месяц с IP (при 10⁶ PIN — безопасно); (c) сбрасывать при успешном входе — отвергнуто, открывает перебор. Рекомендую (a) сейчас, (b) — если за первый месяц будут жалобы; ответ не блокирует пакет | work-packages/WP-BACKEND-01-auth-workspaces.md | 2026-10-07 |  |
 | R-12 | Бэкап БД прода перед merge WP-BACKEND-01 — блокирует доставку (D-4: миграция NOT NULL на meetings.workspace_id + сверка версий протоколов): ssh deploy@transcriber.itsalt.ru 'docker exec learn-postgres pg_dump -U postgres -d transcrib -Fc > ~/backup/transcrib-before-backend01-$(date +%Y%m%d-%H%M).dump && ls -la ~/backup \| tail -2 && df -h / \| tail -1' ; expected: файл transcrib-before-backend01-<дата>.dump ненулевого размера ; then: оркестратор закроет пункт и доставит BACKEND-01 после ACCEPTED (делать непосредственно перед merge, после вердикта) | work-packages/WP-BACKEND-01-auth-workspaces.md | 2026-10-07 |  |
+| P-15 | Архив промптов протокола в S3 (WP-WORKER-01, RQ-061): файлы ws/<workspace>/prompts/<id>.txt попадают под 3-дневный lifecycle прод-бакета (.tl/deploy-plan.md) и исчезнут через 3 дня. Варианты: (a) оставить — архив нужен только для разбора свежих жалоб на протокол; (b) добавить исключение lifecycle для префикса ws/*/prompts/ (хранить, например, 90 дней) — это настройка бакета в консоли Cloud.ru, не код. Рекомендую (a) сейчас; (b) — когда появится обратная связь по протоколам (WEB-FEEDBACK), чтобы аналитик видел промпт | reports/wp-worker-01-review-20261007.md | 2026-10-07 |  |
+| P-16 | Размер «предыдущего протокола» в контексте встречи (WP-WORKER-01, L4): пользователь может вставить/загрузить до 200 000 символов, и вместе с длинным транскриптом промпт превысит окно модели; kie.ai ответит 400 — постоянная ошибка, встреча станет FAILED с кнопкой «Повторить» без шансов. Варианты: (a) бюджет в рендерере: обрезать <previous_protocol> до N символов (например, 30 000) с пометкой «обрезано»; (b) ограничить размер поля на API/форме (API-PROJECTS-01, WEB-PROJECTS-01); (c) оба. Рекомендую (c): лимит на форме 50 000 символов + страховочная обрезка в воркере; делается небольшими правками в пакетах волны 3 (API-PROJECTS-01) и follow-up воркера | reports/wp-worker-01-review-20261007.md | 2026-10-07 |  |
 
 ## Замки
 
@@ -109,6 +111,7 @@ R-n — действие: точная команда одной строкой 
 | 2 | transcriber | WP-INFRA-01 | https://github.com/ITSalt/transcriber/pull/10 | WP-FRONTEND-01 | merged |
 | 3 | transcriber | WP-INFRA-02 | https://github.com/ITSalt/transcriber/pull/11 | — | merged |
 | 4 | transcriber | WP-BACKEND-06 | https://github.com/ITSalt/transcriber/pull/12 | — | merged |
+| 5 | transcriber | WP-FRONTEND-02 | https://github.com/ITSalt/transcriber/pull/13 | — | queued |
 
 ## Журнал
 
@@ -117,6 +120,13 @@ R-n — действие: точная команда одной строкой 
 <!-- orch:journal -->
 | Дата | WP | Событие | Подтверждение |
 |------|----|---------|---------------|
+| 2026-10-07 22:13Z | WP-WEB-MEMORY-01 | WP-WEB-MEMORY-01: REVISE -> REVIEW | b404424afc; report reports/wp-web-memory-01-review-20261007-r2.md |
+| 2026-10-07 22:13Z | — | P-16 opened for owner | reports/wp-worker-01-review-20261007.md |
+| 2026-10-07 22:13Z | — | P-15 opened for owner | reports/wp-worker-01-review-20261007.md |
+| 2026-10-07 22:13Z | WP-WORKER-01 | WP-WORKER-01: REVIEW -> REVISE | reports/wp-worker-01-review-20261007.md: 1 обязательный low-пункт (моки S3 в трёх тестовых файлах) + 1 по желанию (таймаут провайдера памяти); условие merge подтверждено |
+| 2026-10-07 22:13Z | WP-FRONTEND-02 | WP-FRONTEND-02 queued for merge (sequential) | https://github.com/ITSalt/transcriber/pull/13 |
+| 2026-10-07 22:13Z | WP-FRONTEND-02 | WP-FRONTEND-02: accepted at feb98efd465f032e13871caae1b9dbaf393a0725 | report reports/wp-frontend-02-review-20261007.md |
+| 2026-10-07 22:13Z | WP-FRONTEND-02 | WP-FRONTEND-02: REVIEW -> ACCEPTED | feb98efd46; reports/wp-frontend-02-review-20261007.md |
 | 2026-10-07 22:07Z | WP-WEB-MEMORY-01 | WP-WEB-MEMORY-01: REVIEW -> REVISE | reports/wp-web-memory-01-review-20261007.md: 2 low-пункта (инвалидация очереди после 409; «Сохранено» после перезапроса); аутлет protocol.toolbar вписан в WEB-FEEDBACK-01 п. 8 |
 | 2026-10-07 22:04Z | — | R-12 opened for owner | work-packages/WP-BACKEND-01-auth-workspaces.md |
 | 2026-10-07 22:04Z | WP-BACKEND-01 | WP-BACKEND-01: IN_PROGRESS -> REVIEW | 0f9f56171b; report reports/wp-backend-01-review-20261007.md |
