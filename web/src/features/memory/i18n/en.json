@@ -1,0 +1,91 @@
+{
+  "tabs": {
+    "label": "Project memory",
+    "tasks": "Tasks",
+    "decisions": "Decisions",
+    "summary": "Summary",
+    "review": "To review"
+  },
+  "unavailable": "Project memory is temporarily unavailable. The rest of the app works.",
+  "loadError": "Could not load data",
+  "tasks": {
+    "empty": "No tasks yet.",
+    "filterStatus": "Status",
+    "filterAssignee": "Assignee",
+    "allStatuses": "All statuses",
+    "allAssignees": "All assignees",
+    "unassigned": "Unassigned",
+    "due": "Due {{date}}",
+    "mergedInto": "merged into {{code}}",
+    "pending": "{{count}} pending"
+  },
+  "status": {
+    "OPEN": "Open",
+    "IN_PROGRESS": "In progress",
+    "DONE": "Done",
+    "CANCELLED": "Cancelled",
+    "POSTPONED": "Postponed"
+  },
+  "detail": {
+    "title": "History of {{code}}",
+    "close": "Close",
+    "createdIn": "Created in meeting",
+    "unknownMeeting": "—",
+    "mentions": "Mentions",
+    "noMentions": "No mentions yet.",
+    "openAt": "Open transcript at {{time}}",
+    "events": "Change log",
+    "noEvents": "No changes yet.",
+    "source": { "LLM": "AI", "USER": "Manual" },
+    "reviewState": {
+      "AUTO": "applied",
+      "PENDING": "awaiting confirmation",
+      "CONFIRMED": "confirmed",
+      "REJECTED": "rejected"
+    },
+    "empty": "(empty)"
+  },
+  "field": {
+    "title": "Title",
+    "description": "Description",
+    "status": "Status",
+    "assignee": "Assignee",
+    "due_date": "Due date",
+    "merged_into": "Merged into"
+  },
+  "edit": {
+    "title": "Edit task",
+    "status": "Status",
+    "assignee": "Assignee",
+    "dueDate": "Due date",
+    "save": "Save changes",
+    "saved": "Saved",
+    "error": "Could not save: {{message}}"
+  },
+  "decisions": {
+    "empty": "No decisions yet.",
+    "supersededBy": "superseded by {{code}}",
+    "leadsTo": "Leads to"
+  },
+  "summary": {
+    "empty": "The project summary has not been generated yet.",
+    "current": "Current version v{{version}}",
+    "history": "Version history",
+    "version": "v{{version}} — {{date}}"
+  },
+  "review": {
+    "empty": "Nothing waits for confirmation.",
+    "was": "Was",
+    "became": "Now",
+    "confidence": "confidence {{value}}%",
+    "meeting": "Meeting: {{title}}",
+    "confirm": "Confirm",
+    "reject": "Reject",
+    "error": "Could not apply the decision: {{message}}"
+  },
+  "refs": {
+    "title": "From project memory",
+    "tasks": "Tasks",
+    "decisions": "Decisions"
+  }
+}
