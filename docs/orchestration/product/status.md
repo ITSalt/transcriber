@@ -41,7 +41,7 @@ CANCELLED (причина).
 | [WP-API-PROJECTS-01](work-packages/WP-API-PROJECTS-01-projects-context.md) | api-projects | API проектов и контекста встречи, запуск распознавания | READY | product-api-projects | — | 2026-10-07 |
 | [WP-API-FEEDBACK-01](work-packages/WP-API-FEEDBACK-01-feedback.md) | api-feedback | API версий протокола и обратной связи, разбор docx | READY | product-api-feedback | — | 2026-10-07 |
 | [WP-API-MEMORY-01](work-packages/WP-API-MEMORY-01-registry.md) | api-memory | API памяти проекта: задачи, решения, подтверждения | READY | product-api-memory | — | 2026-10-07 |
-| [WP-WORKER-MEMORY-01](work-packages/WP-WORKER-MEMORY-01-pipeline.md) | worker-memory | Память проекта в Neo4j: слой графа, извлечение, сопоставление, сводка | READY | product-worker-memory | — | 2026-10-07 |
+| [WP-WORKER-MEMORY-01](work-packages/WP-WORKER-MEMORY-01-pipeline.md) | worker-memory | Память проекта в Neo4j: слой графа, извлечение, сопоставление, сводка | DISPATCHING | product-worker-memory | — | 2026-10-07 |
 | [WP-INFRA-02](work-packages/WP-INFRA-02-deploy-migrate-first.md) | infra | Порядок деплоя: миграции Postgres до сборки и замены dist | PROD | product-infra | https://github.com/ITSalt/transcriber/pull/11 (accepted 6694e5e172) | 2026-10-07 |
 
 ## Ждёт владельца
@@ -90,7 +90,8 @@ R-n — действие: точная команда одной строкой 
 | transcriber:api/prisma/** | transcriber | WP-BACKEND-01 | 2026-10-07 20:10Z | — | dispatch |
 | transcriber:.tl/** | transcriber | WP-BACKEND-01 | 2026-10-07 20:10Z | — | dispatch |
 | transcriber:migrations | transcriber | WP-BACKEND-01 | 2026-10-07 20:10Z | — | dispatch |
-| transcriber:shared/ | transcriber | WP-WORKER-01 | 2026-10-07 20:10Z | WP-WORKER-MEMORY-01 | dispatch |
+| transcriber:shared/** | transcriber | WP-WORKER-MEMORY-01 | 2026-10-07 20:11Z | — | dispatch |
+| transcriber:worker/package.json | transcriber | WP-WORKER-MEMORY-01 | 2026-10-07 20:11Z | — | dispatch |
 
 ## Очередь слияний
 
@@ -112,6 +113,9 @@ R-n — действие: точная команда одной строкой 
 <!-- orch:journal -->
 | Дата | WP | Событие | Подтверждение |
 |------|----|---------|---------------|
+| 2026-10-07 20:11Z | WP-WORKER-MEMORY-01 | WP-WORKER-MEMORY-01: READY -> DISPATCHING | start command handed to the owner; model opus, effort high; locks transcriber:shared/**, transcriber:worker/package.json |
+| 2026-10-07 20:11Z | WP-WORKER-01 | WP-WORKER-01: замок shared/ снят — взят dispatch по обратным кавычкам в строке «нет (контракт из `shared/` только читается)»; пакет shared не правит; строка исправлена | dispatch WP-WORKER-01: locks to take: shared/; dispatch WP-WORKER-MEMORY-01 refused |
+| 2026-10-07 20:11Z | WP-WORKER-01 | lock transcriber:shared/ released | orch.py lock |
 | 2026-10-07 20:10Z | WP-WEB-MEMORY-01 | WP-WEB-MEMORY-01: READY -> DISPATCHING | start command handed to the owner; model sonnet |
 | 2026-10-07 20:10Z | WP-WEB-FEEDBACK-01 | WP-WEB-FEEDBACK-01: READY -> DISPATCHING | start command handed to the owner; model sonnet |
 | 2026-10-07 20:10Z | WP-WEB-PROJECTS-01 | WP-WEB-PROJECTS-01: READY -> DISPATCHING | start command handed to the owner; model sonnet |

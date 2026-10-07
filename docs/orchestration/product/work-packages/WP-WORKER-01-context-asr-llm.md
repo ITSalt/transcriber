@@ -17,7 +17,7 @@
 | Команды методологии: разрешены | nacl: `nacl-tl-dev-be`, `nacl-tl-dev`, `nacl-tl-fix`, `nacl-tl-review`, `nacl-tl-regression-test`, `nacl-tl-verify-code`, `nacl-tl-sync`, `nacl-tl-docs`, `nacl-tl-stubs`, `nacl-sa-uc`, `nacl-sa-domain`, `nacl-sa-feature`, `nacl-sa-validate`, `nacl-tl-plan`, `nacl-tl-status` |
 | Команды методологии: запрещены | `nacl-tl-release`, `nacl-tl-deploy`, `nacl-tl-deliver`, `nacl-tl-hotfix`, `nacl-tl-ship`, `nacl-tl-conductor`, `nacl-tl-full`, `nacl-goal`, `nacl-publish` |
 | Разрешённые пути | пути потока worker (orch.yaml): worker/src/{asr,jobs,lib,llm}/**, корневые файлы worker/src кроме общих, worker/test/** |
-| Общие пути, которые трогает пакет | нет (контракт из `shared/` только читается) |
+| Общие пути, которые трогает пакет | нет (контракт из папки shared только читается) |
 | Миграции | нет |
 | Ресурсы (замки) | `graph` по запросу |
 | Тестовая БД и порты | нет; нет |
