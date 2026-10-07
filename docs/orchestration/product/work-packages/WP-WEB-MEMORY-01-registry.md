@@ -1,40 +1,40 @@
-# WP-FRONTEND-05 — Реестр задач и решений проекта, очередь подтверждений
+# WP-WEB-MEMORY-01 — Реестр задач и решений проекта, очередь подтверждений
 
 | Поле | Значение |
 |------|----------|
-| Поток | frontend (area) |
+| Поток | web-memory (area) |
 | Репозиторий | . |
 | Базовая ветка | main |
 | Линия | main |
-| Рабочая ветка | `feature/wp-frontend-05-project-memory-ui` |
-| Worktree | `.claude/worktrees/wp-frontend-05-project-memory-ui` (создаёт `claude -w wp-frontend-05-project-memory-ui`) |
-| Заголовок PR | `[PRODUCT] WP-FRONTEND-05: Реестр задач и решений проекта, очередь подтверждений` |
-| Сессия | `product-frontend` |
+| Рабочая ветка | `feature/wp-web-memory-01-registry` |
+| Worktree | `.claude/worktrees/wp-web-memory-01-registry` (создаёт `claude -w wp-web-memory-01-registry`) |
+| Заголовок PR | `[PRODUCT] WP-WEB-MEMORY-01: Реестр задач и решений проекта, очередь подтверждений` |
+| Сессия | `product-web-memory` |
 | Модель | `sonnet` |
 | Усилие | — |
 | Почему такая модель | модель реализатора по умолчанию (orch.yaml models.implement) |
 | Режим | nacl: `/nacl-tl-dev-fe` по TDD, `/nacl-tl-sync`, `/nacl-tl-review --fe` |
 | Команды методологии: разрешены | nacl: `nacl-tl-dev-fe`, `nacl-tl-fix`, `nacl-tl-review`, `nacl-tl-regression-test`, `nacl-tl-verify-code`, `nacl-tl-sync`, `nacl-tl-docs`, `nacl-tl-stubs`, `nacl-tl-qa`, `nacl-sa-ui`, `nacl-tl-status` |
 | Команды методологии: запрещены | `nacl-tl-release`, `nacl-tl-deploy`, `nacl-tl-deliver`, `nacl-tl-hotfix`, `nacl-tl-ship`, `nacl-tl-conductor`, `nacl-tl-full`, `nacl-goal`, `nacl-publish` |
-| Разрешённые пути | `web/**` |
-| Общие пути, которые трогает пакет | нет |
+| Разрешённые пути | `web/src/features/memory/**` |
+| Общие пути, которые трогает пакет | нет (фича подключается автоматически через index.ts своей папки и слоты AppShell из WP-FRONTEND-01) |
 | Миграции | нет |
 | Ресурсы (замки) | `dev-stack` по запросу |
 | Тестовая БД и порты | нет; нет |
 | Слот слияния | <место в очереди слияний, задаётся при приёмке> |
-| Контракт | shared project-memory v1 из WP-BACKEND-04 |
-| Зависит от | WP-BACKEND-04, WP-FRONTEND-03 |
+| Контракт | shared memory v1 из WP-BACKEND-06 |
+| Зависит от | WP-FRONTEND-01, WP-BACKEND-06 (в main). Слот слияния: после WP-API-MEMORY-01 и WP-WEB-PROJECTS-01 (вкладки встраиваются в слот `project.tabs` карточки проекта) |
 | Размер | M |
 | Спецификация | FR-006 |
 | Граф | при необходимости `/nacl-sa-ui` под замком `graph` |
-| Решения | D-5, D-11, D-14 |
+| Решения | D-5, D-11, D-14, D-15 |
 
-Общие пути этого репозитория (объяви те, что трогает пакет): `pnpm-lock.yaml`, `package.json`, `**/package.json`, `shared/**`, `api/prisma/**`, `.tl/**`, `graph-infra/**`, `config.yaml`, `CLAUDE.md`.
+Общие пути этого репозитория (объяви те, что трогает пакет): `pnpm-lock.yaml`, `package.json`, `**/package.json`, `shared/**`, `api/prisma/**`, `.tl/**`, `graph-infra/**`, `config.yaml`, `CLAUDE.md`, `api/src/server.ts`, `worker/src/index.ts`, `worker/src/job-processor.ts`, `worker/src/queues.ts`, `web/src/App.tsx`, `web/src/i18n/**`.
 Ресурсы этого репозитория, требующие замка: `migrations`, `graph` (по запросу: LOCK/UNLOCK, см. раздел 6), `dev-stack` (по запросу: LOCK/UNLOCK, см. раздел 6).
 
 ## 0. Подготовка worktree
 
-1. Переключи worktree на ветку пакета: `git fetch origin && git switch -c feature/wp-frontend-05-project-memory-ui origin/main`.
+1. Переключи worktree на ветку пакета: `git fetch origin && git switch -c feature/wp-web-memory-01-registry origin/main`.
 2. Подготовь worktree (команды из `orch.yaml`, выполнять внутри worktree):
 
    ```bash
@@ -47,6 +47,7 @@
 
 - Карточка проекта появляется в WP-FRONTEND-03; реестра задач и решений в UI нет.
 - По исследованию Q-3 подтверждение человеком закрытий и слияний — норма рынка и источник обратной связи.
+- Вкладки проекта добавляются через слот `project.tabs`; ссылки на коды T-n/D-n на странице протокола — через слот `protocol.toolbar` (WP-FRONTEND-01).
 
 ## 2. Объём
 
@@ -68,17 +69,18 @@
 1. Тесты web: фильтры, история задачи, подтверждение/отклонение, ручная правка.
 2. `/nacl-tl-sync` без расхождений; typecheck и тесты зелёные.
 3. Локальный E2E: две встречи проекта → задача перенесена, закрытие подтверждено; скриншоты в PR.
+4. Тесты с моками ответов API по Zod-схемам контракта; если API-пакет ещё не в main — локальный E2E на его ветке или пометка «E2E после merge API», тогда сценарий проходит оркестратор при доставке.
 
 ## 4. Порядок сдачи
 
-- PR из `feature/wp-frontend-05-project-memory-ui` в `main`; не мержить.
+- PR из `feature/wp-web-memory-01-registry` в `main`; не мержить.
 - Тело PR = отчёт разработки + `Deviations` (чем результат отличается от пакета и почему).
-- Затем сообщение `product-coord`: `[PRODUCT] READY WP-FRONTEND-05 :: <sha> :: ref=<PR URL>`.
+- Затем сообщение `product-coord`: `[PRODUCT] READY WP-WEB-MEMORY-01 :: <sha> :: ref=<PR URL>`.
 
 ## 5. Start prompt
 
 ```text
-Прочитай /home/cloudpc/projects/transcriber-orch/docs/orchestration/product/work-packages/WP-FRONTEND-05-project-memory-ui.md и выполни. Сначала раздел 0 (подготовка worktree). Ветка feature/wp-frontend-05-project-memory-ui от origin/main, PR в main, не мержить. По готовности — сообщение product-coord: [PRODUCT] READY WP-FRONTEND-05 :: <sha> :: ref=<PR URL>
+Прочитай /home/cloudpc/projects/transcriber-orch/docs/orchestration/product/work-packages/WP-WEB-MEMORY-01-registry.md и выполни. Сначала раздел 0 (подготовка worktree). Ветка feature/wp-web-memory-01-registry от origin/main, PR в main, не мержить. По готовности — сообщение product-coord: [PRODUCT] READY WP-WEB-MEMORY-01 :: <sha> :: ref=<PR URL>
 
 Before implementing, read both CLAUDE.md and AGENTS.md (including existing case variants)
 and the applicable nested instruction files. Preserve all existing client-specific text.
@@ -95,7 +97,7 @@ Only the module session edits its repository's instructions; the coordinator nev
 Команда запуска (владельцу, в новом терминале):
 
 ```bash
-cd /home/cloudpc/projects/transcriber-orch && claude -w wp-frontend-05-project-memory-ui --model sonnet --name product-frontend "Прочитай /home/cloudpc/projects/transcriber-orch/docs/orchestration/product/work-packages/WP-FRONTEND-05-project-memory-ui.md и выполни. Сначала раздел 0 (подготовка worktree). Ветка feature/wp-frontend-05-project-memory-ui от origin/main, PR в main, не мержить. По готовности — сообщение product-coord: [PRODUCT] READY WP-FRONTEND-05 :: <sha> :: ref=<PR URL>
+cd /home/cloudpc/projects/transcriber-orch && claude -w wp-web-memory-01-registry --model sonnet --name product-web-memory "Прочитай /home/cloudpc/projects/transcriber-orch/docs/orchestration/product/work-packages/WP-WEB-MEMORY-01-registry.md и выполни. Сначала раздел 0 (подготовка worktree). Ветка feature/wp-web-memory-01-registry от origin/main, PR в main, не мержить. По готовности — сообщение product-coord: [PRODUCT] READY WP-WEB-MEMORY-01 :: <sha> :: ref=<PR URL>
 
 Before implementing, read both CLAUDE.md and AGENTS.md (including existing case variants)
 and the applicable nested instruction files. Preserve all existing client-specific text.
@@ -116,8 +118,8 @@ Only the module session edits its repository's instructions; the coordinator nev
 - Отказ правила или классификатора auto mode — это ответ: не обходить его (никаких `sh -c`, `git -C`, переименованных или скопированных команд, никакого копирования или правки файлов настроек и `.claude/`).
 - Сообщение о недоступности классификатора (решение не принято) — не вердикт: повтори ту же команду позже.
 - Дефект самого плагина (неверное сгенерированное правило, ошибка скрипта) оркестратор сообщает режимом `report`; плагин и его настройки не правь.
-- Пришли `product-coord`: `[PRODUCT] QUESTION WP-FRONTEND-05 :: отказ: <точный текст отказа> :: ref=<команда>`; продолжай работу, которой это не нужно, или жди `ANSWER`.
-- Ресурсы по запросу (`graph`, `dev-stack`): перед использованием пришли `product-coord`: `[PRODUCT] LOCK WP-FRONTEND-05 :: <ресурс> :: ref=<зачем>` и жди `ACK`; как только закончишь — `[PRODUCT] UNLOCK WP-FRONTEND-05 :: <ресурс> :: ref=<результат>`. READY возвращает все замки по запросу.
+- Пришли `product-coord`: `[PRODUCT] QUESTION WP-WEB-MEMORY-01 :: отказ: <точный текст отказа> :: ref=<команда>`; продолжай работу, которой это не нужно, или жди `ANSWER`.
+- Ресурсы по запросу (`graph`, `dev-stack`): перед использованием пришли `product-coord`: `[PRODUCT] LOCK WP-WEB-MEMORY-01 :: <ресурс> :: ref=<зачем>` и жди `ACK`; как только закончишь — `[PRODUCT] UNLOCK WP-WEB-MEMORY-01 :: <ресурс> :: ref=<результат>`. READY возвращает все замки по запросу.
 
 ## Пересдачи
 

@@ -57,10 +57,17 @@
 
 ## Модули
 
-| Модуль | Репозиторий | База | Сессия |
+| Модуль | Репозиторий | Пути | Сессия |
 |--------|-------------|------|--------|
-| backend | transcriber (area) | api/**, worker/** | product-backend |
-| frontend | transcriber (area) | web/** | product-frontend |
+| backend | transcriber (area) | ядро api, api/src/features/auth | product-backend |
+| api-projects / api-feedback / api-memory | transcriber (area) | api/src/features/<фича> | product-api-* |
+| worker | transcriber (area) | worker: asr, jobs, lib, llm | product-worker |
+| worker-memory | transcriber (area) | worker/src/{memory,graph} | product-worker-memory |
+| infra | transcriber (area) | docker-compose.yml, .github, scripts, .env.example | product-infra |
+| frontend | transcriber (area) | ядро web: стили, ui, lib, i18n, каркас, вход, задачи | product-frontend |
+| web-projects / web-feedback / web-memory | transcriber (area) | папки фич web | product-web-* |
+
+Потоки и правило «общие файлы меняет только пакет-контракт, остальное подключается автоматически» — D-15.
 
 ## Факты
 
@@ -116,11 +123,10 @@ Postgres (`.github/workflows/ci.yml:75-90`); Playwright-спеков нет (QA 
 
 | Волна | Цель | Пакеты работ | Гейт (приёмка) |
 |-------|------|--------------|----------------|
-| 1 | Вход и изоляция; дизайн | WP-BACKEND-01, WP-FRONTEND-01 (параллельно) | BACKEND-01: тест изоляции по всем маршрутам зелёный; FRONTEND-01: токены ITSALT в `globals.css`, тесты web зелёные. Мержить BACKEND-01 только вместе с готовым FRONTEND-02 (иначе прод без экрана входа) |
-| 2 | Вход в UI и список задач | WP-FRONTEND-02 | На проде: без входа — экран входа; вход двумя пользователями, чужая встреча 404; R-бэкап БД закрыт перед merge BACKEND-01 |
-| 3 | Проекты и контекст | WP-BACKEND-02 → WP-FRONTEND-03 | Встреча с проектом: `keyterm` в запросе Deepgram (лог/снимок), XML-секции в промпте, снимок контекста — SELECT |
-| 4 | Обратная связь | WP-BACKEND-03 → WP-FRONTEND-04 | Три вида отзыва сохранены (SELECT + объекты в S3), исходная версия протокола неизменна |
-| 5 | Память проекта (D-11) | WP-BACKEND-04 → WP-FRONTEND-05 | Две встречи проекта: открытая задача перенесена в протокол второй встречи; закрытие только с проверенной цитатой; хранилище — по P-11, подтверждения — по P-12 |
+| 1 | Контракт, дизайн, инфраструктура — параллельно | WP-BACKEND-06, WP-FRONTEND-01, WP-INFRA-01 | Схема всей программы и контракты в main без изменения поведения прода; автоподключение фич api/worker/web; Neo4j-сервис и CI |
+| 2 | Реализация против контракта — до 7 потоков | WP-BACKEND-01, WP-FRONTEND-02, WP-WORKER-01, WP-WORKER-MEMORY-01, WP-WEB-PROJECTS-01, WP-WEB-FEEDBACK-01, WP-WEB-MEMORY-01 | Тест изоляции; вход по PIN с блокировкой; keyterm и XML-контекст; память на фикстуре двух встреч |
+| 3 | API фич — 3 потока | WP-API-PROJECTS-01, WP-API-FEEDBACK-01, WP-API-MEMORY-01 | Новые маршруты под тестом изоляции |
+| Доставка | По одному в main (= прод), пары BACKEND-01+FRONTEND-02 и API-*→WEB-* | порядок в status.md | verify --env prod после каждого; бэкап БД перед миграциями |
 
 ## Риски
 

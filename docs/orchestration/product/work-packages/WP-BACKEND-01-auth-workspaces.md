@@ -16,18 +16,18 @@
 | Режим | nacl, spec-first: `/nacl-sa-feature` (FeatureRequest: роли, сущности User/Workspace/Membership/Session, правила изоляции; граф — под замком `graph`), затем `/nacl-tl-dev-be` по TDD, `/nacl-tl-review --be` |
 | Команды методологии: разрешены | nacl: `nacl-tl-dev-be`, `nacl-tl-dev`, `nacl-tl-fix`, `nacl-tl-review`, `nacl-tl-regression-test`, `nacl-tl-verify-code`, `nacl-tl-sync`, `nacl-tl-docs`, `nacl-tl-stubs`, `nacl-sa-uc`, `nacl-sa-domain`, `nacl-sa-feature`, `nacl-sa-validate`, `nacl-tl-plan`, `nacl-tl-status` |
 | Команды методологии: запрещены | `nacl-tl-release`, `nacl-tl-deploy`, `nacl-tl-deliver`, `nacl-tl-hotfix`, `nacl-tl-ship`, `nacl-tl-conductor`, `nacl-tl-full`, `nacl-goal`, `nacl-publish` |
-| Разрешённые пути | `api/**`, `worker/**` |
-| Общие пути, которые трогает пакет | `shared/**` (Zod-схемы auth/workspace, `IAsrProvider` не трогать), `api/prisma/**`, `api/package.json` (cookie/rate-limit/scrypt-зависимости), `pnpm-lock.yaml`, `.tl/**`, `.worktreeinclude` (D-1, вне путей модуля — разрешено этим пакетом) |
-| Миграции | да: одна аддитивная миграция `2026MMDDhhmmss_auth_workspaces` (новее `20260814120000_*`); FK `workspaceId` сначала nullable → бэкфилл в пространство «Роман» (D-7) → NOT NULL в той же миграции; совместима со старыми процессами, работающими во время `migrate deploy` |
+| Разрешённые пути | пути потока backend (orch.yaml): ядро api, api/src/features/auth/**, api/scripts/**, api/test/**; api/prisma/** — под замком |
+| Общие пути, которые трогает пакет | `api/prisma/**` (одна миграция NOT NULL), `.tl/**`; вне путей модуля, разрешено этим пакетом: `.worktreeinclude` (D-1), `.env.example` (только строка `PIN_PEPPER`) |
+| Миграции | да, маленькая: `*_meeting_workspace_not_null` — дозаполнить пустые `workspaceId` (встречи, созданные старым кодом между релизами) пространством «Роман» и поставить NOT NULL |
 | Ресурсы (замки) | `migrations` (с dispatch до merge), `graph` по запросу |
 | Тестовая БД и порты | нет; нет |
 | Слот слияния | <место в очереди слияний, задаётся при приёмке> |
-| Контракт | shared/src/api/auth.ts + workspace.ts — контракт v1 для WP-FRONTEND-02: `POST /api/auth/login {pin}`, `POST /api/auth/logout`, `GET /api/auth/me` → `{user:{id,name}, workspaces:[{id,name}]}`; текущее пространство — заголовок `X-Workspace-Id` или параметр; `GET /api/meetings?workspaceId=` |
-| Зависит от | нет |
+| Контракт | реализует контракт auth/workspace v1 из WP-BACKEND-06; ничего в `shared/` не меняет |
+| Зависит от | WP-BACKEND-06 (в main) |
 | Размер | L |
 | Спецификация | NFR-007 (снять), RQ-003, SR-01 AUTHOR; UC-001..004, UC-100, UC-201, UC-301, UC-302 (проверка доступа) |
 | Граф | новые DomainEntity User/Workspace/Membership/AuthSession, правило изоляции, FeatureRequest FR-003 — через `/nacl-sa-feature` |
-| Решения | D-1, D-2, D-3, D-4, D-6, D-7, D-8; A-1, A-3 |
+| Решения | D-1, D-3, D-4, D-6, D-7, D-8, D-15; A-1, A-3 |
 
 Общие пути этого репозитория (объяви те, что трогает пакет): `pnpm-lock.yaml`, `package.json`, `**/package.json`, `shared/**`, `api/prisma/**`, `.tl/**`, `graph-infra/**`, `config.yaml`, `CLAUDE.md`.
 Ресурсы этого репозитория, требующие замка: `migrations`, `graph` (по запросу: LOCK/UNLOCK, см. раздел 6), `dev-stack` (по запросу: LOCK/UNLOCK, см. раздел 6).
@@ -54,14 +54,16 @@
 ## 2. Объём
 
 1. Добавить `.worktreeinclude` в корень (`.env`, `.env.local`) — D-1.
-2. Схема: `User(id, name, pinLookup уникальный, pinHash, createdAt)`, `Workspace(id, name, personal bool)`, `Membership(userId, workspaceId)`, `AuthSession(id, userId, tokenHash, expiresAt, lastSeenAt)`, `LoginBlock(clientKey, failedCount, blockedAt?)`; `Meeting.workspaceId` NOT NULL после бэкфилла. Миграция создаёт личное пространство «Роман» и переносит туда все существующие встречи (D-7); пользователь Роман заводится CLI и привязывается к нему.
-3. Вход только по PIN (D-8): PIN — ровно 6 цифр, уникален среди пользователей. Поиск пользователя — по `pinLookup` = HMAC-SHA256(PIN, серверный секрет из env `PIN_PEPPER`), проверка — scrypt-хеш `pinHash` с солью, сравнение за постоянное время; PIN в открытом виде нигде не хранится и не логируется. Блокировка (A-3): после 10 неуспешных попыток клиента (ключ — IP из `X-Forwarded-For` от Caddy, доверять только прокси 127.0.0.1) вход для него закрыт бессрочно, ответ 423 с текстом «Больше нельзя, пиши Максу для разблокировки»; снимается только CLI. Дополнительно глобальный предохранитель: > 100 неудач за час со всех клиентов → лог-предупреждение (без блокировки всех). Сессия — случайный токен в httpOnly Secure SameSite=Lax cookie на 30 дней, в БД только хеш; logout удаляет сессию.
-4. Глобальный preHandler: всё под `/api/*` требует сессию, кроме `/api/health` и `/api/auth/login`; 401 без сессии.
-5. Изоляция: каждый запрос к встрече проверяет членство пользователя в её пространстве; чужая или несуществующая → одинаковый 404. Список встреч — только по выбранному пространству, к которому есть членство. Upload init/complete/abort привязаны к пространству; S3-ключ `ws/<workspaceId>/...` для новых загрузок; presign только после проверки. SSE, PDF, скачивание транскрипта — та же проверка.
-6. Worker не меняет поведение, но пробрасывает workspaceId где нужно для ключей (если требуется).
-7. CLI (A-1): `user:create -- --name "<имя>" --pin <6 цифр> [--workspace "<имя|id>"]` (создаёт пользователя и личное пространство, D-6; с `--workspace` — привязывает к существующему, например «Роман»; отказ при занятом PIN), `user:grant -- --user <id|имя> --workspace <id|имя>`, `user:reset-pin`, `user:unblock -- --client <ip>|--all`, `user:blocks` (список блокировок). Без вывода PIN в логи. Описать в `api/README` и `.tl/`. Новая переменная `PIN_PEPPER` — в `.env.example` и в описании деплоя (значение на проде задаёт владелец).
-8. Контракт в `shared/` (см. шапку) + обновить спецификацию в графе (`/nacl-sa-feature`).
-9. Не делать: UI (WP-FRONTEND-02), проекты/контекст, правку протокола.
+2. Вход только по PIN (D-8) на таблицах из WP-BACKEND-06: поиск по `pinLookup` = HMAC-SHA256(PIN, env `PIN_PEPPER`), проверка scrypt-хеша `pinHash` (соль, сравнение за постоянное время); PIN нигде не хранится и не логируется. `POST /api/auth/login {pin}`, `POST /api/auth/logout`, `GET /api/auth/me` → `{user, workspaces}`. Сессия — случайный токен в httpOnly Secure SameSite=Lax cookie на 30 дней, в БД только хеш.
+3. Блокировка (A-3): ключ клиента — IP из `X-Forwarded-For` только от прокси 127.0.0.1; 10 неудач → бессрочно 423 «Больше нельзя, пиши Максу для разблокировки», в том числе для верного PIN; снимается только CLI. Глобальный счётчик: > 100 неудач/час — предупреждение в лог.
+4. Глобальный preHandler: всё под `/api/*` требует сессию, кроме `/api/health` и `/api/auth/login`; 401 без сессии. Декоратор запроса `request.auth {userId, workspaceIds}` и помощник `assertMeetingAccess(meetingId)` / `assertWorkspaceAccess(workspaceId)` в `api/src/features/auth/` — ими пользуются пакеты api-projects, api-feedback, api-memory.
+5. Изоляция всех существующих маршрутов: каждая встреча проверяется на членство; чужая или несуществующая → одинаковый 404. Список встреч — по `workspaceId` (обязателен, с членством). Upload init/complete/abort — в выбранное пространство, S3-ключ новых загрузок `ws/<workspaceId>/...`, presign только после проверки. SSE, PDF, скачивание транскрипта — та же проверка.
+6. «Крючки» ядра для параллельных потоков (чтобы они не правили ядро):
+   - `complete` принимает `deferStart` из контракта: при `true` встреча остаётся `AWAITING_START`, очередь не ставится (запуск — `POST /start` из WP-API-PROJECTS-01); при `false`/отсутствии — как сейчас (D-9 обеспечивает UI, который всегда шлёт `true`).
+   - `PUT /api/meetings/:id/protocol` дополнительно пишет неизменяемую `ProtocolVersion(kind USER_EDIT, authorUserId)` в той же транзакции.
+   - Удаление встречи с `projectId` пишет операцию в `GraphOutbox` в той же транзакции.
+7. CLI (A-1): `user:create -- --name "<имя>" --pin <6 цифр> [--workspace "<имя|id>"]` (без `--workspace` создаёт личное пространство, D-6; с ним — привязывает, например к «Роман»; отказ при занятом PIN), `user:grant`, `user:reset-pin`, `user:unblock -- --client <ip>|--all`, `user:blocks`. Описать в `api/README.md` и `.tl/`. Строка `PIN_PEPPER=` в `.env.example`.
+8. Не делать: UI, проекты/контекст/отзывы/память (свои потоки), изменения `shared/`.
 
 ### Не входит
 
@@ -72,11 +74,11 @@
 
 ## 3. Критерии приёмки
 
-1. Интеграционный тест изоляции перебирает **все** зарегистрированные маршруты `/api/*` (список берётся из Fastify, не вручную): без cookie → 401 (кроме health/login); пользователь B к встрече пользователя A → 404 на каждом GET/PUT/DELETE/POST, SSE, PDF, download; новый маршрут без проверки роняет тест.
-2. Тесты входа: верный PIN → cookie и `/api/auth/me`; неверный → 401; 10-я неудача с одного IP → 423 с точным текстом «Больше нельзя, пиши Максу для разблокировки», после этого и верный PIN → 423, пока не выполнен `user:unblock`; PIN не 6 цифр → 400; два пользователя с одним PIN создать нельзя; в БД нет PIN в открытом виде.
-3. Миграция: `prisma migrate deploy` на схеме с существующими встречами проходит, все встречи попадают в пространство «Роман»; CI-джоба миграций зелёная; `user:create --name Роман --workspace Роман` даёт доступ к ним (тест).
-4. `pnpm -r typecheck` и `pnpm test` зелёные; CLI создаёт пользователя, которым можно войти (тест).
-5. PR-тело: схема, список закрытых маршрутов, команды CLI, план отката миграции (SQL).
+1. Интеграционный тест изоляции перебирает **все** зарегистрированные маршруты `/api/*` (список из Fastify, не вручную; включая будущие из `api/src/features/*`): без cookie → 401 (кроме health/login); пользователь B к встрече A → 404 на каждом методе, SSE, PDF, download. Тест лежит в `api/test/` и автоматически охватывает маршруты параллельных потоков после их merge.
+2. Тесты входа: верный PIN → cookie и `/api/auth/me`; неверный → 401; 10-я неудача с одного IP → 423 с точным текстом, затем и верный PIN → 423 до `user:unblock`; PIN не 6 цифр → 400; два пользователя с одним PIN создать нельзя; в БД нет PIN в открытом виде.
+3. Тесты крючков: `deferStart=true` → `AWAITING_START` без задания в очереди; `PUT` протокола создаёт `ProtocolVersion`; удаление встречи проекта пишет `GraphOutbox`.
+4. Миграция NOT NULL проходит на БД, где есть встреча без workspaceId; `user:create --name Роман --workspace Роман` даёт доступ ко всем старым встречам (тест).
+5. `pnpm -r typecheck`, `pnpm test` зелёные; в PR — список закрытых маршрутов, команды CLI, SQL отката миграции.
 
 ## 4. Порядок сдачи
 

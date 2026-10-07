@@ -50,7 +50,7 @@ repos:
     worktree_root: .claude/worktrees
     worktree_setup: ["pnpm install --frozen-lockfile", "pnpm --filter @transcrib/api run db:generate"]
     merge_policy: sequential
-    shared_paths: [pnpm-lock.yaml, "package.json", "**/package.json", "shared/**", "api/prisma/**", ".tl/**", "graph-infra/**", "config.yaml", "CLAUDE.md"]
+    shared_paths: [pnpm-lock.yaml, "package.json", "**/package.json", "shared/**", "api/prisma/**", ".tl/{status.json,master-plan.md,changelog.md,release-status.json,deploy-plan.md}", ".tl/external-contracts/**", "graph-infra/**", "config.yaml", "CLAUDE.md", "api/src/server.ts", "worker/src/index.ts", "worker/src/job-processor.ts", "worker/src/queues.ts", "web/src/App.tsx", "web/src/i18n/**"]
     resources: [migrations, {name: graph, mode: on-demand}, {name: dev-stack, mode: on-demand}]
     checks: []
     review_setup: ["pnpm install --frozen-lockfile", "pnpm --filter @transcrib/api run db:generate"]
@@ -115,16 +115,88 @@ modules:
   - id: backend
     kind: area
     repo: transcriber
-    paths: ["api/**", "worker/**"]
+    paths: ["api/{prisma.config.ts,tsconfig.json,vitest.config.ts,README.md}", "api/prisma/**", "api/scripts/**", "api/test/**", "api/src/{config.ts,db.ts,index.ts,queue.ts,server.test.ts,prisma.smoke.test.ts,queue.test.ts,queue.regression.test.ts}", "api/src/{lib,plugins,routes,services,sse,storage}/**", "api/src/features/auth/**"]
     session: product-backend
-    tests: {scoped: ["pnpm --filter @transcrib/api test", "pnpm --filter @transcrib/worker test"], full: ["pnpm -r typecheck", "pnpm test"]}
+    tests: {scoped: ["pnpm --filter @transcrib/api test"], full: ["pnpm -r typecheck", "pnpm test"]}
     methodology: {name: nacl, allowed: [nacl-tl-dev-be, nacl-tl-dev, nacl-tl-fix, nacl-tl-review, nacl-tl-regression-test, nacl-tl-verify-code, nacl-tl-sync, nacl-tl-docs, nacl-tl-stubs, nacl-sa-uc, nacl-sa-domain, nacl-sa-feature, nacl-sa-validate, nacl-tl-plan, nacl-tl-status], forbidden: [nacl-tl-release, nacl-tl-deploy, nacl-tl-deliver, nacl-tl-hotfix, nacl-tl-ship, nacl-tl-conductor, nacl-tl-full, nacl-goal, nacl-publish]}
     web_urls: {test: "https://transcriber.itsalt.ru", prod: "https://transcriber.itsalt.ru"}
   - id: frontend
     kind: area
     repo: transcriber
-    paths: ["web/**"]
+    paths: ["web/{index.html,vite.config.ts,tsconfig.json,tsconfig.node.json,vitest.config.ts,README.md}", "web/public/**", "web/src/{main.tsx,App.test.tsx,test-setup.ts,vite-env.d.ts}", "web/src/styles/**", "web/src/components/**", "web/src/lib/**", "web/src/i18n/**", "web/src/routes/{catalog,meeting,transcript}/**", "web/src/features/{shell,auth,tasks}/**"]
     session: product-frontend
+    tests: {scoped: ["pnpm --filter @transcrib/web test"], full: ["pnpm -r typecheck", "pnpm test"]}
+    methodology: {name: nacl, allowed: [nacl-tl-dev-fe, nacl-tl-fix, nacl-tl-review, nacl-tl-regression-test, nacl-tl-verify-code, nacl-tl-sync, nacl-tl-docs, nacl-tl-stubs, nacl-tl-qa, nacl-sa-ui, nacl-tl-status], forbidden: [nacl-tl-release, nacl-tl-deploy, nacl-tl-deliver, nacl-tl-hotfix, nacl-tl-ship, nacl-tl-conductor, nacl-tl-full, nacl-goal, nacl-publish]}
+    web_urls: {test: "https://transcriber.itsalt.ru", prod: "https://transcriber.itsalt.ru"}
+  - id: worker
+    kind: area
+    repo: transcriber
+    paths: ["worker/{tsconfig.json,vitest.config.ts}", "worker/test/**", "worker/src/{asr,jobs,lib,llm}/**", "worker/src/{config.ts,config.test.ts,logger.ts,shutdown.ts,shutdown.test.ts,job-processor.test.ts,queues.test.ts,queues.regression.test.ts}"]
+    session: product-worker
+    tests: {scoped: ["pnpm --filter @transcrib/worker test"], full: ["pnpm -r typecheck", "pnpm test"]}
+    methodology: {name: nacl, allowed: [nacl-tl-dev-be, nacl-tl-dev, nacl-tl-fix, nacl-tl-review, nacl-tl-regression-test, nacl-tl-verify-code, nacl-tl-sync, nacl-tl-docs, nacl-tl-stubs, nacl-sa-uc, nacl-sa-domain, nacl-sa-feature, nacl-sa-validate, nacl-tl-plan, nacl-tl-status], forbidden: [nacl-tl-release, nacl-tl-deploy, nacl-tl-deliver, nacl-tl-hotfix, nacl-tl-ship, nacl-tl-conductor, nacl-tl-full, nacl-goal, nacl-publish]}
+    web_urls: {test: "https://transcriber.itsalt.ru", prod: "https://transcriber.itsalt.ru"}
+  - id: api-projects
+    kind: area
+    repo: transcriber
+    paths: ["api/src/features/{projects,context}/**"]
+    session: product-api-projects
+    tests: {scoped: ["pnpm --filter @transcrib/api test"], full: ["pnpm -r typecheck", "pnpm test"]}
+    methodology: {name: nacl, allowed: [nacl-tl-dev-be, nacl-tl-dev, nacl-tl-fix, nacl-tl-review, nacl-tl-regression-test, nacl-tl-verify-code, nacl-tl-sync, nacl-tl-docs, nacl-tl-stubs, nacl-sa-uc, nacl-sa-domain, nacl-sa-feature, nacl-sa-validate, nacl-tl-plan, nacl-tl-status], forbidden: [nacl-tl-release, nacl-tl-deploy, nacl-tl-deliver, nacl-tl-hotfix, nacl-tl-ship, nacl-tl-conductor, nacl-tl-full, nacl-goal, nacl-publish]}
+    web_urls: {test: "https://transcriber.itsalt.ru", prod: "https://transcriber.itsalt.ru"}
+  - id: api-feedback
+    kind: area
+    repo: transcriber
+    paths: ["api/src/features/feedback/**"]
+    session: product-api-feedback
+    tests: {scoped: ["pnpm --filter @transcrib/api test"], full: ["pnpm -r typecheck", "pnpm test"]}
+    methodology: {name: nacl, allowed: [nacl-tl-dev-be, nacl-tl-dev, nacl-tl-fix, nacl-tl-review, nacl-tl-regression-test, nacl-tl-verify-code, nacl-tl-sync, nacl-tl-docs, nacl-tl-stubs, nacl-sa-uc, nacl-sa-domain, nacl-sa-feature, nacl-sa-validate, nacl-tl-plan, nacl-tl-status], forbidden: [nacl-tl-release, nacl-tl-deploy, nacl-tl-deliver, nacl-tl-hotfix, nacl-tl-ship, nacl-tl-conductor, nacl-tl-full, nacl-goal, nacl-publish]}
+    web_urls: {test: "https://transcriber.itsalt.ru", prod: "https://transcriber.itsalt.ru"}
+  - id: api-memory
+    kind: area
+    repo: transcriber
+    paths: ["api/src/features/memory/**"]
+    session: product-api-memory
+    tests: {scoped: ["pnpm --filter @transcrib/api test"], full: ["pnpm -r typecheck", "pnpm test"]}
+    methodology: {name: nacl, allowed: [nacl-tl-dev-be, nacl-tl-dev, nacl-tl-fix, nacl-tl-review, nacl-tl-regression-test, nacl-tl-verify-code, nacl-tl-sync, nacl-tl-docs, nacl-tl-stubs, nacl-sa-uc, nacl-sa-domain, nacl-sa-feature, nacl-sa-validate, nacl-tl-plan, nacl-tl-status], forbidden: [nacl-tl-release, nacl-tl-deploy, nacl-tl-deliver, nacl-tl-hotfix, nacl-tl-ship, nacl-tl-conductor, nacl-tl-full, nacl-goal, nacl-publish]}
+    web_urls: {test: "https://transcriber.itsalt.ru", prod: "https://transcriber.itsalt.ru"}
+  - id: worker-memory
+    kind: area
+    repo: transcriber
+    paths: ["worker/src/{memory,graph}/**"]
+    session: product-worker-memory
+    tests: {scoped: ["pnpm --filter @transcrib/worker test"], full: ["pnpm -r typecheck", "pnpm test"]}
+    methodology: {name: nacl, allowed: [nacl-tl-dev-be, nacl-tl-dev, nacl-tl-fix, nacl-tl-review, nacl-tl-regression-test, nacl-tl-verify-code, nacl-tl-sync, nacl-tl-docs, nacl-tl-stubs, nacl-sa-uc, nacl-sa-domain, nacl-sa-feature, nacl-sa-validate, nacl-tl-plan, nacl-tl-status], forbidden: [nacl-tl-release, nacl-tl-deploy, nacl-tl-deliver, nacl-tl-hotfix, nacl-tl-ship, nacl-tl-conductor, nacl-tl-full, nacl-goal, nacl-publish]}
+    web_urls: {test: "https://transcriber.itsalt.ru", prod: "https://transcriber.itsalt.ru"}
+  - id: infra
+    kind: area
+    repo: transcriber
+    paths: ["docker-compose.yml", ".github/**", "scripts/**", ".env.example"]
+    session: product-infra
+    tests: {scoped: ["pnpm -r typecheck"], full: ["pnpm -r typecheck", "pnpm test"]}
+    methodology: {name: nacl, allowed: [nacl-tl-dev-be, nacl-tl-dev, nacl-tl-fix, nacl-tl-review, nacl-tl-regression-test, nacl-tl-verify-code, nacl-tl-sync, nacl-tl-docs, nacl-tl-stubs, nacl-sa-uc, nacl-sa-domain, nacl-sa-feature, nacl-sa-validate, nacl-tl-plan, nacl-tl-status], forbidden: [nacl-tl-release, nacl-tl-deploy, nacl-tl-deliver, nacl-tl-hotfix, nacl-tl-ship, nacl-tl-conductor, nacl-tl-full, nacl-goal, nacl-publish]}
+    web_urls: {test: "https://transcriber.itsalt.ru", prod: "https://transcriber.itsalt.ru"}
+  - id: web-projects
+    kind: area
+    repo: transcriber
+    paths: ["web/src/routes/upload/**", "web/src/features/{projects,context}/**"]
+    session: product-web-projects
+    tests: {scoped: ["pnpm --filter @transcrib/web test"], full: ["pnpm -r typecheck", "pnpm test"]}
+    methodology: {name: nacl, allowed: [nacl-tl-dev-fe, nacl-tl-fix, nacl-tl-review, nacl-tl-regression-test, nacl-tl-verify-code, nacl-tl-sync, nacl-tl-docs, nacl-tl-stubs, nacl-tl-qa, nacl-sa-ui, nacl-tl-status], forbidden: [nacl-tl-release, nacl-tl-deploy, nacl-tl-deliver, nacl-tl-hotfix, nacl-tl-ship, nacl-tl-conductor, nacl-tl-full, nacl-goal, nacl-publish]}
+    web_urls: {test: "https://transcriber.itsalt.ru", prod: "https://transcriber.itsalt.ru"}
+  - id: web-feedback
+    kind: area
+    repo: transcriber
+    paths: ["web/src/routes/protocol/**", "web/src/features/feedback/**"]
+    session: product-web-feedback
+    tests: {scoped: ["pnpm --filter @transcrib/web test"], full: ["pnpm -r typecheck", "pnpm test"]}
+    methodology: {name: nacl, allowed: [nacl-tl-dev-fe, nacl-tl-fix, nacl-tl-review, nacl-tl-regression-test, nacl-tl-verify-code, nacl-tl-sync, nacl-tl-docs, nacl-tl-stubs, nacl-tl-qa, nacl-sa-ui, nacl-tl-status], forbidden: [nacl-tl-release, nacl-tl-deploy, nacl-tl-deliver, nacl-tl-hotfix, nacl-tl-ship, nacl-tl-conductor, nacl-tl-full, nacl-goal, nacl-publish]}
+    web_urls: {test: "https://transcriber.itsalt.ru", prod: "https://transcriber.itsalt.ru"}
+  - id: web-memory
+    kind: area
+    repo: transcriber
+    paths: ["web/src/features/memory/**"]
+    session: product-web-memory
     tests: {scoped: ["pnpm --filter @transcrib/web test"], full: ["pnpm -r typecheck", "pnpm test"]}
     methodology: {name: nacl, allowed: [nacl-tl-dev-fe, nacl-tl-fix, nacl-tl-review, nacl-tl-regression-test, nacl-tl-verify-code, nacl-tl-sync, nacl-tl-docs, nacl-tl-stubs, nacl-tl-qa, nacl-sa-ui, nacl-tl-status], forbidden: [nacl-tl-release, nacl-tl-deploy, nacl-tl-deliver, nacl-tl-hotfix, nacl-tl-ship, nacl-tl-conductor, nacl-tl-full, nacl-goal, nacl-publish]}
     web_urls: {test: "https://transcriber.itsalt.ru", prod: "https://transcriber.itsalt.ru"}
