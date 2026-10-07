@@ -22,7 +22,7 @@ CANCELLED (причина).
 | WP | Модуль | Название | Статус | Сессия | PR | Обновлено |
 |----|--------|----------|--------|--------|----|-----------|
 | [WP-BACKEND-01](work-packages/WP-BACKEND-01-auth-workspaces.md) | backend | Вход по PIN, рабочие пространства и изоляция данных (API+worker) | READY | product-backend | — | 2026-10-07 |
-| [WP-FRONTEND-01](work-packages/WP-FRONTEND-01-design-system.md) | frontend | Дизайн-система ITSALT и каркас приложения | READY | product-frontend | — | 2026-10-07 |
+| [WP-FRONTEND-01](work-packages/WP-FRONTEND-01-design-system.md) | frontend | Дизайн-система ITSALT и каркас приложения | DISPATCHING | product-frontend | — | 2026-10-07 |
 | [WP-FRONTEND-02](work-packages/WP-FRONTEND-02-login-tasks.md) | frontend | Экран входа, переключатель пространств, список задач | READY | product-frontend | — | 2026-10-07 |
 | [WP-BACKEND-02](work-packages/WP-BACKEND-02-projects-context.md) | backend | Проекты и контекст встречи: в распознавание и в протокол | CANCELLED (заменён WP-API-PROJECTS-01 (D-15, поток api-projects)) | product-backend | — | 2026-10-07 |
 | [WP-FRONTEND-03](work-packages/WP-FRONTEND-03-projects-context-ui.md) | frontend | Проекты и форма контекста перед распознаванием | CANCELLED (заменён WP-WEB-PROJECTS-01 (D-15)) | product-frontend | — | 2026-10-07 |
@@ -78,7 +78,6 @@ R-n — действие: точная команда одной строкой 
 | transcriber:api/prisma/** | transcriber | WP-BACKEND-06 | 2026-10-07 16:47Z | — | dispatch |
 | transcriber:shared/** | transcriber | WP-BACKEND-06 | 2026-10-07 16:47Z | — | dispatch |
 | transcriber:package.json | transcriber | WP-BACKEND-06 | 2026-10-07 16:47Z | — | dispatch |
-| transcriber:**/package.json | transcriber | WP-BACKEND-06 | 2026-10-07 16:47Z | WP-FRONTEND-01 | dispatch |
 | transcriber:pnpm-lock.yaml | transcriber | WP-BACKEND-06 | 2026-10-07 16:47Z | — | dispatch |
 | transcriber:api/src/server.ts | transcriber | WP-BACKEND-06 | 2026-10-07 16:47Z | — | dispatch |
 | transcriber:worker/src/job-processor.ts | transcriber | WP-BACKEND-06 | 2026-10-07 16:47Z | — | dispatch |
@@ -86,6 +85,12 @@ R-n — действие: точная команда одной строкой 
 | transcriber:worker/src/index.ts | transcriber | WP-BACKEND-06 | 2026-10-07 16:47Z | — | dispatch |
 | transcriber:.tl/** | transcriber | WP-BACKEND-06 | 2026-10-07 16:47Z | — | dispatch |
 | transcriber:migrations | transcriber | WP-BACKEND-06 | 2026-10-07 16:47Z | — | dispatch |
+| transcriber:api/package.json | transcriber | WP-BACKEND-06 | 2026-10-07 16:48Z | — | narrowed from **/package.json: the package edits only the workspace manifests |
+| transcriber:worker/package.json | transcriber | WP-BACKEND-06 | 2026-10-07 16:48Z | — | narrowed from **/package.json: the package edits only the workspace manifests |
+| transcriber:web/package.json | transcriber | WP-BACKEND-06 | 2026-10-07 16:48Z | — | narrowed from **/package.json: the package edits only the workspace manifests |
+| transcriber:shared/package.json | transcriber | WP-BACKEND-06 | 2026-10-07 16:48Z | — | narrowed from **/package.json: the package edits only the workspace manifests |
+| transcriber:web/src/App.tsx | transcriber | WP-FRONTEND-01 | 2026-10-07 16:48Z | — | dispatch |
+| transcriber:web/src/i18n/** | transcriber | WP-FRONTEND-01 | 2026-10-07 16:48Z | — | dispatch |
 
 ## Очередь слияний
 
@@ -103,6 +108,13 @@ R-n — действие: точная команда одной строкой 
 <!-- orch:journal -->
 | Дата | WP | Событие | Подтверждение |
 |------|----|---------|---------------|
+| 2026-10-07 16:48Z | WP-FRONTEND-01 | WP-FRONTEND-01: READY -> DISPATCHING | start command handed to the owner; model sonnet; locks transcriber:web/src/App.tsx, transcriber:web/src/i18n/** |
+| 2026-10-07 16:48Z | WP-BACKEND-06 | WP-BACKEND-06: declared shared path **/package.json narrowed to the four workspace manifests (api, worker, web, shared); the glob collided with web/src/i18n/** of WP-FRONTEND-01 on a file neither package creates (FRONTEND-01 adds no npm dependencies) | dispatch WP-FRONTEND-01: refused, lock **/package.json overlaps web/src/i18n/**; WP-FRONTEND-01 header: без новых npm-зависимостей; ls web/src/i18n: config.ts en.json ru.json |
+| 2026-10-07 16:48Z | WP-BACKEND-06 | lock transcriber:shared/package.json acquired | narrowed from **/package.json: the package edits only the workspace manifests |
+| 2026-10-07 16:48Z | WP-BACKEND-06 | lock transcriber:web/package.json acquired | narrowed from **/package.json: the package edits only the workspace manifests |
+| 2026-10-07 16:48Z | WP-BACKEND-06 | lock transcriber:worker/package.json acquired | narrowed from **/package.json: the package edits only the workspace manifests |
+| 2026-10-07 16:48Z | WP-BACKEND-06 | lock transcriber:api/package.json acquired | narrowed from **/package.json: the package edits only the workspace manifests |
+| 2026-10-07 16:48Z | WP-BACKEND-06 | lock transcriber:**/package.json released | orch.py lock |
 | 2026-10-07 16:47Z | WP-INFRA-01 | WP-INFRA-01: READY -> DISPATCHING | start command handed to the owner; model sonnet |
 | 2026-10-07 16:47Z | WP-FRONTEND-01 | dispatch of WP-FRONTEND-01 refused: lock transcriber:**/package.json is held by WP-BACKEND-06 (overlaps web/src/i18n/**) | orch.py dispatch |
 | 2026-10-07 16:47Z | WP-BACKEND-06 | WP-BACKEND-06: READY -> DISPATCHING | start command handed to the owner; model opus, effort high; locks transcriber:api/prisma/**, transcriber:shared/**, transcriber:package.json, transcriber:**/package.json, transcriber:pnpm-lock.yaml, transcriber:api/src/server.ts, transcriber:worker/src/job-processor.ts, transcriber:worker/src/queues.ts, transcriber:worker/src/index.ts, transcriber:.tl/**, transcriber:migrations |
