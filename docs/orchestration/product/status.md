@@ -42,7 +42,7 @@ CANCELLED (причина).
 | [WP-API-FEEDBACK-01](work-packages/WP-API-FEEDBACK-01-feedback.md) | api-feedback | API версий протокола и обратной связи, разбор docx | READY | product-api-feedback | — | 2026-10-07 |
 | [WP-API-MEMORY-01](work-packages/WP-API-MEMORY-01-registry.md) | api-memory | API памяти проекта: задачи, решения, подтверждения | READY | product-api-memory | — | 2026-10-07 |
 | [WP-WORKER-MEMORY-01](work-packages/WP-WORKER-MEMORY-01-pipeline.md) | worker-memory | Память проекта в Neo4j: слой графа, извлечение, сопоставление, сводка | READY | product-worker-memory | — | 2026-10-07 |
-| [WP-INFRA-02](work-packages/WP-INFRA-02-deploy-migrate-first.md) | infra | Порядок деплоя: миграции Postgres до сборки и замены dist | REVISE | product-infra | https://github.com/ITSalt/transcriber/pull/11 | 2026-10-07 |
+| [WP-INFRA-02](work-packages/WP-INFRA-02-deploy-migrate-first.md) | infra | Порядок деплоя: миграции Postgres до сборки и замены dist | ACCEPTED | product-infra | https://github.com/ITSalt/transcriber/pull/11 (accepted 6694e5e172) | 2026-10-07 |
 
 ## Ждёт владельца
 
@@ -108,6 +108,7 @@ R-n — действие: точная команда одной строкой 
 |---|-------------|----|----|--------------|--------|
 | 1 | transcriber | WP-FRONTEND-01 | https://github.com/ITSalt/transcriber/pull/9 | — | merged |
 | 2 | transcriber | WP-INFRA-01 | https://github.com/ITSalt/transcriber/pull/10 | WP-FRONTEND-01 | merged |
+| 3 | transcriber | WP-INFRA-02 | https://github.com/ITSalt/transcriber/pull/11 | — | queued |
 
 ## Журнал
 
@@ -116,6 +117,10 @@ R-n — действие: точная команда одной строкой 
 <!-- orch:journal -->
 | Дата | WP | Событие | Подтверждение |
 |------|----|---------|---------------|
+| 2026-10-07 18:14Z | WP-INFRA-02 | WP-INFRA-02 queued for merge (sequential) | https://github.com/ITSalt/transcriber/pull/11 |
+| 2026-10-07 18:14Z | WP-INFRA-02 | WP-INFRA-02: accepted at 6694e5e172d330b5c7cd1404dc38cd5c30fb17a9 | report reports/wp-infra-02-review-20261007-r2.md |
+| 2026-10-07 18:14Z | WP-INFRA-02 | WP-INFRA-02: REVIEW -> ACCEPTED | 6694e5e172; reports/wp-infra-02-review-20261007-r2.md |
+| 2026-10-07 18:13Z | WP-INFRA-02 | WP-INFRA-02: REVISE -> REVIEW | 6694e5e172; report reports/wp-infra-02-review-20261007-r2.md |
 | 2026-10-07 18:13Z | WP-INFRA-02 | WP-INFRA-02: REVIEW -> REVISE | reports/wp-infra-02-review-20261007.md: 1 пункт — подсказка отката (строки 126-128): Prisma-клиент уже новый до миграции, откат нужен и должен включать db:generate |
 | 2026-10-07 18:08Z | WP-INFRA-02 | WP-INFRA-02: IN_PROGRESS -> REVIEW | 8253fece3d; report reports/wp-infra-02-review-20261007.md |
 | 2026-10-07 18:08Z | WP-INFRA-02 | WP-INFRA-02: DISPATCHING -> IN_PROGRESS | PR #11 открыт сессией product-infra, sha 8253fece3d1265e61547391e81d1f42a195d7192 |
