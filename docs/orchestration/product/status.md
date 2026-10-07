@@ -92,7 +92,6 @@ R-n — действие: точная команда одной строкой 
 | transcriber:migrations | transcriber | WP-BACKEND-01 | 2026-10-07 20:10Z | — | dispatch |
 | transcriber:shared/** | transcriber | WP-WORKER-MEMORY-01 | 2026-10-07 20:11Z | — | dispatch |
 | transcriber:worker/package.json | transcriber | WP-WORKER-MEMORY-01 | 2026-10-07 20:11Z | — | dispatch |
-| transcriber:graph | transcriber | WP-BACKEND-01 | 2026-10-07 20:17Z | — | LOCK message: /nacl-sa-uc UC-400..403, FR-003 in-progress |
 
 ## Очередь слияний
 
@@ -114,6 +113,8 @@ R-n — действие: точная команда одной строкой 
 <!-- orch:journal -->
 | Дата | WP | Событие | Подтверждение |
 |------|----|---------|---------------|
+| 2026-10-07 20:20Z | WP-BACKEND-01 | WP-BACKEND-01: UNLOCK graph (UC-400..403 детализированы, RQ-058 по D-20, Task UC-400-BE) | сообщение product-backend |
+| 2026-10-07 20:20Z | WP-BACKEND-01 | lock transcriber:graph released | orch.py lock |
 | 2026-10-07 20:18Z | WP-BACKEND-01 | WP-BACKEND-01: QUESTION о порядке включения входа — ANSWER по D-20 (флаг AUTH_REQUIRED, legacy-принципал «Роман»); WP-FRONTEND-02 извещён о контракте /me в обоих режимах | сообщение product-backend |
 | 2026-10-07 20:18Z | — | D-20 recorded | — |
 | 2026-10-07 20:17Z | WP-BACKEND-01 | WP-BACKEND-01: LOCK graph выдан (UC-400..403); сессия сообщает о таймаутах GitHub — локальный origin/main = 2570d0a актуален, fetch перед push | сообщение product-backend |
