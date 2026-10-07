@@ -54,8 +54,10 @@ jobs:
             # process at any moment (max_memory_restart), and a restart between
             # the dist/ swap and the migration would start new code on the old
             # schema. A failed migration (set -e) aborts here with the old dist/
-            # still on disk. Safe because migrations are additive and compatible
-            # with the old code (D-3).
+            # still on disk, but node_modules and the Prisma client are already
+            # new, so a failed deploy still needs the rollback (see the failure
+            # hint). Safe because migrations are additive and compatible with
+            # the old code (D-3).
             pnpm --filter @transcrib/api run db:migrate:deploy
 
             # Build (workspace-wide)
@@ -123,6 +125,6 @@ jobs:
       - name: Notify on failure
         if: failure()
         run: |
-          echo "::error::Deploy failed for commit ${{ github.sha }}. If the failure is in db:migrate:deploy, dist/ on disk was not changed (migrations run before the builds), so no code rollback is needed. To roll back:"
+          echo "::error::Deploy failed for commit ${{ github.sha }}. If the failure is in db:migrate:deploy, dist/ on disk was not changed (migrations run before the builds), but node_modules and the Prisma client are already new, so the rollback to <previous-sha> is still required and must include db:generate. To roll back:"
           echo "  ssh deploy@${{ secrets.PRODUCTION_HOST }}"
-          echo "  cd /opt/transcrib && git reset --hard <previous-sha> && pnpm install --frozen-lockfile && pnpm --filter @transcrib/shared run build && pnpm --filter @transcrib/api run build && pnpm --filter @transcrib/worker run build && pm2 reload ecosystem.config.cjs"
+          echo "  cd /opt/transcrib && git reset --hard <previous-sha> && pnpm install --frozen-lockfile && pnpm --filter @transcrib/api run db:generate && pnpm --filter @transcrib/shared run build && pnpm --filter @transcrib/api run build && pnpm --filter @transcrib/worker run build && pm2 reload ecosystem.config.cjs"
