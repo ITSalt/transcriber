@@ -21,7 +21,7 @@ CANCELLED (причина).
 <!-- orch:wp -->
 | WP | Модуль | Название | Статус | Сессия | PR | Обновлено |
 |----|--------|----------|--------|--------|----|-----------|
-| [WP-BACKEND-01](work-packages/WP-BACKEND-01-auth-workspaces.md) | backend | Вход по PIN, рабочие пространства и изоляция данных (API+worker) | REVIEW | product-backend | https://github.com/ITSalt/transcriber/pull/15 | 2026-10-07 |
+| [WP-BACKEND-01](work-packages/WP-BACKEND-01-auth-workspaces.md) | backend | Вход по PIN, рабочие пространства и изоляция данных (API+worker) | REVISE | product-backend | https://github.com/ITSalt/transcriber/pull/15 | 2026-10-07 |
 | [WP-FRONTEND-01](work-packages/WP-FRONTEND-01-design-system.md) | frontend | Дизайн-система ITSALT и каркас приложения | PROD | product-frontend | https://github.com/ITSalt/transcriber/pull/9 (accepted 364b6b9fb8) | 2026-10-07 |
 | [WP-FRONTEND-02](work-packages/WP-FRONTEND-02-login-tasks.md) | frontend | Экран входа, переключатель пространств, список задач | ACCEPTED | product-frontend | https://github.com/ITSalt/transcriber/pull/13 (accepted feb98efd46) | 2026-10-07 |
 | [WP-BACKEND-02](work-packages/WP-BACKEND-02-projects-context.md) | backend | Проекты и контекст встречи: в распознавание и в протокол | CANCELLED (заменён WP-API-PROJECTS-01 (D-15, поток api-projects)) | product-backend | — | 2026-10-07 |
@@ -125,6 +125,8 @@ R-n — действие: точная команда одной строкой 
 <!-- orch:journal -->
 | Дата | WP | Событие | Подтверждение |
 |------|----|---------|---------------|
+| 2026-10-07 22:24Z | WP-BACKEND-01 | WP-BACKEND-01: REVIEW -> REVISE | reports/wp-backend-01-review-20261007.md: 2 пункта — оставить DEFAULT (D-22, окно деплоя), тест legacy-загрузки без workspace_id; остальное принято, 9/9 мутаций |
+| 2026-10-07 22:24Z | — | D-22 recorded | — |
 | 2026-10-07 22:22Z | — | R-14 opened for owner | work-packages/WP-WORKER-MEMORY-01-pipeline.md |
 | 2026-10-07 22:22Z | — | R-13 dropped | текст пункта споткнул линт о секреты (строка вида PASSWORD=…); заменён на R-14 с той же сутью |
 | 2026-10-07 22:22Z | — | R-13 opened for owner | work-packages/WP-WORKER-MEMORY-01-pipeline.md |
