@@ -37,7 +37,7 @@ CANCELLED (причина).
 | [WP-INFRA-01](work-packages/WP-INFRA-01-neo4j.md) | infra | Neo4j памяти проекта: сервис, лимиты, бэкап, CI, шаг деплоя | PROD | product-infra | https://github.com/ITSalt/transcriber/pull/10 (accepted 0e7ebe85d3) | 2026-10-07 |
 | [WP-WEB-PROJECTS-01](work-packages/WP-WEB-PROJECTS-01-projects-context.md) | web-projects | Проекты и форма контекста перед распознаванием | DISPATCHING | product-web-projects | — | 2026-10-07 |
 | [WP-WEB-FEEDBACK-01](work-packages/WP-WEB-FEEDBACK-01-feedback.md) | web-feedback | Режим обратной связи по протоколу | IN_PROGRESS | product-web-feedback | — | 2026-10-07 |
-| [WP-WEB-MEMORY-01](work-packages/WP-WEB-MEMORY-01-registry.md) | web-memory | Реестр задач и решений проекта, очередь подтверждений | DISPATCHING | product-web-memory | — | 2026-10-07 |
+| [WP-WEB-MEMORY-01](work-packages/WP-WEB-MEMORY-01-registry.md) | web-memory | Реестр задач и решений проекта, очередь подтверждений | IN_PROGRESS | product-web-memory | — | 2026-10-07 |
 | [WP-API-PROJECTS-01](work-packages/WP-API-PROJECTS-01-projects-context.md) | api-projects | API проектов и контекста встречи, запуск распознавания | READY | product-api-projects | — | 2026-10-07 |
 | [WP-API-FEEDBACK-01](work-packages/WP-API-FEEDBACK-01-feedback.md) | api-feedback | API версий протокола и обратной связи, разбор docx | READY | product-api-feedback | — | 2026-10-07 |
 | [WP-API-MEMORY-01](work-packages/WP-API-MEMORY-01-registry.md) | api-memory | API памяти проекта: задачи, решения, подтверждения | READY | product-api-memory | — | 2026-10-07 |
@@ -115,6 +115,8 @@ R-n — действие: точная команда одной строкой 
 <!-- orch:journal -->
 | Дата | WP | Событие | Подтверждение |
 |------|----|---------|---------------|
+| 2026-10-07 20:51Z | WP-WEB-MEMORY-01 | WP-WEB-MEMORY-01: сессия стартовала и закончила код локально (dd0ee73); E2E/скриншоты отложены до merge API-MEMORY-01 и WEB-PROJECTS-01; push ждёт сети | сообщение product-web-memory |
+| 2026-10-07 20:51Z | WP-WEB-MEMORY-01 | WP-WEB-MEMORY-01: DISPATCHING -> IN_PROGRESS | сообщение product-web-memory: код готов локально (dd0ee73), push ждёт сети; QUESTION D-17 отвечен |
 | 2026-10-07 20:48Z | WP-WEB-FEEDBACK-01 | WP-WEB-FEEDBACK-01: сессия стартовала и закончила код локально (966f21b); push/PR ждут сети; ANSWER D-17 (b) | сообщение product-web-feedback |
 | 2026-10-07 20:48Z | WP-WEB-FEEDBACK-01 | WP-WEB-FEEDBACK-01: DISPATCHING -> IN_PROGRESS | сообщение product-web-feedback: код готов локально (966f21b), push ждёт сети; QUESTION D-17 отвечен |
 | 2026-10-07 20:43Z | WP-WORKER-MEMORY-01 | WP-WORKER-MEMORY-01: UNLOCK graph (UC-600 11 шагов, UC-605 4 шага, RQ-063) | сообщение product-worker-memory |
