@@ -59,12 +59,28 @@ jobs:
 
             # Project-memory graph migrations (ADR-013). Skipped until the owner
             # starts Neo4j on the VM and sets MEMORY_NEO4J_* in /opt/transcrib/.env;
-            # --if-present tolerates the script not existing yet.
-            if [ -f .env ]; then set -a; eval "$(grep -E '^MEMORY_NEO4J_' .env || true)"; set +a; fi
+            # --if-present tolerates the script not existing yet. A failure is not
+            # fatal (P-13): the deploy continues and the error is surfaced.
+            # .env is parsed line by line and never executed as shell.
+            if [ -f .env ]; then
+              while IFS= read -r line || [ -n "$line" ]; do
+                line="${line%$'\r'}"
+                case "$line" in
+                  MEMORY_NEO4J_URI=*|MEMORY_NEO4J_USER=*|MEMORY_NEO4J_PASSWORD=*|MEMORY_NEO4J_DATABASE=*)
+                    key="${line%%=*}"; val="${line#*=}"
+                    case "$val" in
+                      \"*\") val="${val#\"}"; val="${val%\"}" ;;
+                      \'*\') val="${val#\'}"; val="${val%\'}" ;;
+                    esac
+                    export "$key=$val" ;;
+                esac
+              done < .env
+            fi
             if [ -z "${MEMORY_NEO4J_URI:-}" ]; then
               echo "::warning::MEMORY_NEO4J_URI is not set - skipping graph:migrate"
             else
-              pnpm --filter @transcrib/worker run --if-present graph:migrate
+              pnpm --filter @transcrib/worker run --if-present graph:migrate \
+                || echo "::error::graph:migrate failed - run it manually"
             fi
 
             # Sync static frontend to Caddy's serving directory

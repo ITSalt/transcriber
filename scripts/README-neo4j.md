@@ -22,6 +22,28 @@ docker inspect -f '{{.HostConfig.Memory}}' "$(docker compose ps -q memory-neo4j)
 Env for the app: `MEMORY_NEO4J_URI` (`bolt://localhost:7688`), `MEMORY_NEO4J_USER`,
 `MEMORY_NEO4J_PASSWORD`, `MEMORY_NEO4J_DATABASE` (see `.env.example`).
 
+### Password — set it BEFORE the first start
+
+`NEO4J_AUTH` is applied only on the first start against an empty volume. Put
+`MEMORY_NEO4J_PASSWORD` into `/opt/transcrib/.env` **before** the first
+`docker compose up -d memory-neo4j`. If the first start happens without it, the
+database is created with the dev default `memory_dev_password` and changing the
+env later does not change the password (it would need `ALTER USER` or a fresh
+volume).
+
+### Which `.env` is read by what
+
+| Reader | File |
+|--------|------|
+| `docker compose` (substitutes `MEMORY_NEO4J_PASSWORD` into `NEO4J_AUTH`) | `/opt/transcrib/.env` (compose project directory) |
+| prod deploy step (`deploy-production.yml`, reads only `MEMORY_NEO4J_*`, never executes the file) | `/opt/transcrib/.env` |
+| worker at runtime and `graph:migrate` (pm2 `cwd=/opt/transcrib/worker`, `env_file: '.env'`, dotenv) | `/opt/transcrib/worker/.env` |
+
+The `MEMORY_NEO4J_*` values must match in both files. Deploy: if
+`MEMORY_NEO4J_URI` is missing from `/opt/transcrib/.env` the `graph:migrate`
+step is skipped with a warning; if the migration fails the deploy continues and
+logs `::error::graph:migrate failed - run it manually`.
+
 ## Backup
 
 Community cannot dump online, so `scripts/neo4j-backup.sh` stops the container
