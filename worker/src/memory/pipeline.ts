@@ -9,7 +9,7 @@
  * a later step fails). Nothing here touches Meeting / Protocol status: a failure only fails
  * the project-memory job, which BullMQ retries (FR-001).
  */
-import { randomUUID } from 'node:crypto'
+import { createHash, randomUUID } from 'node:crypto'
 import type { Logger } from 'pino'
 import type { ILlmCompletionProvider, LlmModel, MemoryTask, ProjectMemoryJobPayload } from '@transcrib/shared'
 import {
@@ -141,7 +141,7 @@ export async function runMemoryUpdate(deps: MemoryPipelineDeps, payload: Project
     const quote = verify(task.quote, task.segment)
     if (!quote) {
       droppedQuotes++
-      log.warn({ quote: task.quote, title: task.title }, 'memory: task quote not found in transcript — item dropped')
+      log.warn({ segment: task.segment, quoteHash: contentHash(task.quote) }, 'memory: task quote not found in transcript — item dropped')
       continue
     }
     taskItems.push({ id: `i${taskItems.length + 1}`, task, quote })
@@ -151,7 +151,7 @@ export async function runMemoryUpdate(deps: MemoryPipelineDeps, payload: Project
     const quote = verify(decision.quote, decision.segment)
     if (!quote) {
       droppedQuotes++
-      log.warn({ quote: decision.quote, text: decision.text }, 'memory: decision quote not found in transcript — item dropped')
+      log.warn({ segment: decision.segment, quoteHash: contentHash(decision.quote) }, 'memory: decision quote not found in transcript — item dropped')
       continue
     }
     decisionItems.push({ id: `d${decisionItems.length + 1}`, decision, quote })
@@ -251,6 +251,11 @@ export async function runMemoryUpdate(deps: MemoryPipelineDeps, payload: Project
     droppedQuotes,
     rejected: gate.rejected.length,
   }
+}
+
+/** Logs never carry meeting content: a quote is identified by a truncated sha256. */
+export function contentHash(text: string): string {
+  return createHash('sha256').update(text, 'utf8').digest('hex').slice(0, 12)
 }
 
 function renderNotes(notes: readonly ChangeNote[]): string {

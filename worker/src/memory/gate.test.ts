@@ -168,6 +168,31 @@ describe('memory gate (D-14)', () => {
     ])
   })
 
+  it('a fuzzy quote never makes a change automatic, even with every word found (score 1)', () => {
+    // transcript: «…договор заказчику отправил Козлов, не Иванов»; LLM: «Иванов отправил договор заказчику»
+    const fuzzy = item('i1')
+    fuzzy.quote = { ...fuzzy.quote, quote: 'договор заказчику отправил Козлов, не Иванов', match: 'fuzzy', score: 1 }
+    const plan = gate({
+      candidates: [candidate('T-1')],
+      taskItems: [fuzzy],
+      taskResolutions: [
+        res({
+          item: 'i1',
+          action: 'UPDATE',
+          target_task_code: 'T-1',
+          changes: { status: 'IN_PROGRESS', assignee: 'Иванов', due_date: '2026-11-01' },
+          confidence: 0.95,
+        }),
+      ],
+    })
+    expect(plan.taskUpdates[0]!.events.map((e) => [e.field, e.reviewState])).toEqual([
+      ['status', 'PENDING'],
+      ['assignee', 'PENDING'],
+      ['due_date', 'PENDING'],
+    ])
+    expect(plan.notes.every((n) => n.pending)).toBe(true)
+  })
+
   it('a task the meeting does not mention gets nothing', () => {
     const plan = gate({ candidates: [candidate('T-1'), candidate('T-2')], taskItems: [item('i1')], taskResolutions: [res({ item: 'i1', action: 'CLOSE', target_task_code: 'T-1' })] })
     expect(plan.taskUpdates.map((u) => u.code)).toEqual(['T-1'])

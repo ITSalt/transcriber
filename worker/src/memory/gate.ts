@@ -11,7 +11,7 @@
  *             title, description, status → IN_PROGRESS / POSTPONED / OPEN, first assignee —
  *             when confidence ≥ threshold;
  *   PENDING — status → DONE / CANCELLED, merged_into, a different assignee replacing an
- *             existing one, anything below the threshold or backed by a fuzzy (partial) quote.
+ *             existing one, anything below the threshold or backed by a fuzzy (non-exact) quote.
  * Tasks the meeting does not mention get nothing.
  */
 import {
@@ -175,8 +175,10 @@ export function applyGate(input: GateInput): GatePlan {
     }
     resolved.add(r.item)
     const quote = item.quote
-    // a change backed by a quote that only partly matches the transcript is never automatic
-    const sure = confident(r.confidence) && quote.score >= 1
+    // only an exact quote can make a change automatic: a fuzzy match is a bag of words in a
+    // window of segments, blind to word order and to the transcript's own negations
+    // («…отправил Козлов, не Иванов» matches «Иванов отправил») — always PENDING
+    const sure = confident(r.confidence) && quote.match === 'exact'
     const ev = (
       field: NewTaskEventInput['field'],
       oldValue: string | null,
