@@ -121,6 +121,9 @@ R-n — действие: точная команда одной строкой 
 <!-- orch:journal -->
 | Дата | WP | Событие | Подтверждение |
 |------|----|---------|---------------|
+| 2026-10-07 22:17Z | WP-BACKEND-01 | WP-BACKEND-01: UNLOCK graph — отложенная запись выполнена (UC-400-BE done, wave-15 done, FR-003 dev-complete) | сообщение product-backend |
+| 2026-10-07 22:17Z | WP-BACKEND-01 | lock transcriber:graph released | orch.py lock |
+| 2026-10-07 22:17Z | WP-BACKEND-01 | lock transcriber:graph acquired | отложенная запись UC-400-BE done / wave-15 / FR-003 dev-complete |
 | 2026-10-07 22:17Z | — | Граф спецификаций (dev Neo4j 3627) упал по OOM в 20:43Z (контейнер codex-transcriber-knowledge-neo4j из ~/projects/.graphs/transcriber, без лимита памяти); первая попытка подняла не тот контейнер (graph-infra compose, пустой том, 0 узлов) — снят; настоящий перезапущен через compose down/up: 855 узлов, ADR-013/UC-400/UC-600/RQ-063/DEC-010 на месте. BACKEND-01 допишет отложенную запись | docker inspect/ps; cypher-shell count 2026-10-07 ~23:00Z |
 | 2026-10-07 22:15Z | WP-WORKER-MEMORY-01 | WP-WORKER-MEMORY-01: REVIEW -> REVISE | reports/wp-worker-memory-01-review-20261007.md: 3 пункта (гейт D-14: нечёткая цитата score 1 → AUTO; логи с текстом встречи; DEPENDS_ON/SUBTASK_OF не реализованы — объявить) |
 | 2026-10-07 22:15Z | WP-WEB-MEMORY-01 | WP-WEB-MEMORY-01 queued for merge (sequential) | https://github.com/ITSalt/transcriber/pull/14 |
