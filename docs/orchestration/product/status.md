@@ -116,6 +116,7 @@ R-n — действие: точная команда одной строкой 
 <!-- orch:journal -->
 | Дата | WP | Событие | Подтверждение |
 |------|----|---------|---------------|
+| 2026-10-07 18:07Z | WP-BACKEND-06 | WP-BACKEND-06: QUESTION — риск порядка деплоя (dist и Prisma-клиент заменяются до db:migrate:deploy; pm2 max_memory_restart в окне или упавшая миграция = новый код на старой схеме). ANSWER: отдельный пакет WP-INFRA-02 (migrate до сборок), мерж до BACKEND-06; BACKEND-06 подтверждает в PR совместимость миграции со старым кодом | сообщение product-backend; deploy-production.yml:49-58 на main 9e5d534 |
 | 2026-10-07 18:06Z | WP-INFRA-02 | WP-INFRA-02: READY -> DISPATCHING | TASK message to live session; model sonnet |
 | 2026-10-07 18:06Z | WP-INFRA-02 | dispatch of WP-INFRA-02 refused: depends on WP-BACKEND-06 (IN_PROGRESS), not merged yet | orch.py dispatch |
 | 2026-10-07 18:06Z | WP-INFRA-02 | WP-INFRA-02: DRAFT -> READY | разделы заполнены; находка product-backend о порядке деплоя; D-3 |
