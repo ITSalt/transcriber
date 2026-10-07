@@ -13,21 +13,21 @@
 | Модель | `sonnet` |
 | Усилие | — |
 | Почему такая модель | модель реализатора по умолчанию (orch.yaml models.implement) |
-| Режим | <методология, по которой работает сессия в своём репозитории> |
+| Режим | nacl: `/nacl-tl-dev` (TECH), `/nacl-tl-review`; граф не трогает |
 | Команды методологии: разрешены | nacl: `nacl-tl-dev-be`, `nacl-tl-dev`, `nacl-tl-fix`, `nacl-tl-review`, `nacl-tl-regression-test`, `nacl-tl-verify-code`, `nacl-tl-sync`, `nacl-tl-docs`, `nacl-tl-stubs`, `nacl-sa-uc`, `nacl-sa-domain`, `nacl-sa-feature`, `nacl-sa-validate`, `nacl-tl-plan`, `nacl-tl-status` |
 | Команды методологии: запрещены | `nacl-tl-release`, `nacl-tl-deploy`, `nacl-tl-deliver`, `nacl-tl-hotfix`, `nacl-tl-ship`, `nacl-tl-conductor`, `nacl-tl-full`, `nacl-goal`, `nacl-publish` |
 | Разрешённые пути | `docker-compose.yml`, `.github/**`, `scripts/**`, `.env.example` |
 | Общие пути, которые трогает пакет | нет |
 | Миграции | нет |
-| Ресурсы (замки) | <ресурсы в обратных кавычках из списка ниже, или нет> |
+| Ресурсы (замки) | нет |
 | Тестовая БД и порты | нет; нет |
 | Слот слияния | <место в очереди слияний, задаётся при приёмке> |
-| Контракт | <версия контракта или нет> |
-| Зависит от | нет (WP-INFRA-01 в main). Доставка: до merge WP-BACKEND-06 |
+| Контракт | нет |
+| Зависит от | нет |
 | Размер | XS |
 | Спецификация | нет |
 | Граф | нет |
-| Решения | <D-n, на которые опирается пакет, или нет> |
+| Решения | D-3 (миграции совместимы со старым кодом), D-4 |
 
 Общие пути этого репозитория (объяви те, что трогает пакет): `pnpm-lock.yaml`, `package.json`, `**/package.json`, `shared/**`, `api/prisma/**`, `.tl/{status.json,master-plan.md,changelog.md,release-status.json,deploy-plan.md}`, `.tl/external-contracts/**`, `graph-infra/**`, `config.yaml`, `CLAUDE.md`, `api/src/server.ts`, `worker/src/index.ts`, `worker/src/job-processor.ts`, `worker/src/queues.ts`, `web/src/App.tsx`, `web/src/i18n/**`.
 Ресурсы этого репозитория, требующие замка: `migrations`, `graph` (по запросу: LOCK/UNLOCK, см. раздел 6), `dev-stack` (по запросу: LOCK/UNLOCK, см. раздел 6).
@@ -54,7 +54,7 @@
 ## 2. Объём
 
 1. В `.github/workflows/deploy-production.yml` перенести `pnpm --filter @transcrib/api run db:migrate:deploy` сразу после `pnpm --filter @transcrib/api run db:generate`, до сборок `shared/api/worker/web`. Комментарий в workflow: почему миграция идёт до замены `dist/` (окно pm2-рестарта; упавшая миграция оставляет старый код на диске).
-2. Шаг `graph:migrate` не двигать (остаётся после сборок, до rsync).
+2. Шаг `graph:migrate` не двигать (остаётся после сборок, до rsync). Порядок доставки: этот пакет мержится в main раньше контракта программы (пакет backend с миграцией), чтобы его миграция шла уже по новому порядку.
 3. Текст подсказки отката в шаге «Notify on failure» (строка ~105): добавить, что при упавшей миграции код на диске не менялся и откат кода не нужен.
 4. Не делать: любые другие изменения workflow, `ci.yml`, compose, скриптов.
 
