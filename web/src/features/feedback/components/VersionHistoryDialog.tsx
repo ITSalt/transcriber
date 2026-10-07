@@ -4,6 +4,7 @@ import type { ProtocolVersionSummary } from "@transcrib/shared";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
@@ -47,19 +48,28 @@ export function VersionHistoryDialog({ meetingId, open, onOpenChange }: Props) {
     [compare, version.data, originalVersion.data],
   );
 
+  const handleOpenChange = (next: boolean) => {
+    if (!next) {
+      setSelected(null);
+      setCompare(false);
+    }
+    onOpenChange(next);
+  };
+
   const view = (n: number, withDiff: boolean) => {
     setSelected(n);
     setCompare(withDiff);
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent
         data-testid="version-history-dialog"
         className="max-h-[90vh] max-w-3xl overflow-y-auto"
       >
         <DialogHeader>
           <DialogTitle>{t("history.title")}</DialogTitle>
+          <DialogDescription>{t("history.description")}</DialogDescription>
         </DialogHeader>
 
         {versions.isLoading && <p>{t("history.loading")}</p>}

@@ -369,6 +369,60 @@ describe("feedback panel", () => {
   });
 });
 
+describe("feedback panel — revision 1", () => {
+  it("does not send remarks typed on another tab with a Word review", async () => {
+    const posts = mockApi();
+    const user = await openFeedback();
+
+    await user.type(screen.getByTestId("feedback-text"), "stale remark");
+    await user.click(screen.getByTestId("feedback-tab-docx"));
+    await user.upload(
+      screen.getByTestId("feedback-file"),
+      makeFile("review.docx", DOCX_MIME),
+    );
+    await user.click(screen.getByTestId("feedback-submit"));
+
+    await screen.findByTestId("feedback-success");
+    expect(posts[0]!.get("kind")).toBe("DOCX_REVIEW");
+    expect(posts[0]!.has("text")).toBe(false);
+    expect(posts[0]!.has("category")).toBe(false);
+  });
+
+  it("accepts a .md file whose browser MIME type is empty", async () => {
+    const posts = mockApi();
+    const user = await openFeedback();
+
+    await user.click(screen.getByTestId("feedback-tab-corrected"));
+    await user.upload(
+      screen.getByTestId("feedback-file"),
+      makeFile("protocol.md", ""),
+    );
+    await user.click(screen.getByTestId("feedback-submit"));
+
+    await screen.findByTestId("feedback-success");
+    expect(posts).toHaveLength(1);
+  });
+
+  it("starts from a clean form after the panel is closed and reopened", async () => {
+    mockApi();
+    const user = await openFeedback();
+
+    await user.type(screen.getByTestId("feedback-text"), "Sent remark");
+    await user.click(screen.getByTestId("feedback-submit"));
+    await screen.findByTestId("feedback-success");
+
+    await user.keyboard("{Escape}");
+    await waitFor(() =>
+      expect(screen.queryByTestId("feedback-dialog")).not.toBeInTheDocument(),
+    );
+    await user.click(screen.getByTestId("btn-feedback"));
+
+    expect(await screen.findByTestId("feedback-form")).toBeInTheDocument();
+    expect(screen.queryByTestId("feedback-success")).not.toBeInTheDocument();
+    expect(screen.getByTestId("feedback-text")).toHaveValue("");
+  });
+});
+
 describe("sent feedback list", () => {
   it("shows an empty state", async () => {
     mockApi({ list: { items: [] } });

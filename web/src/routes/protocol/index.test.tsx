@@ -5,6 +5,8 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { createMemoryRouter, RouterProvider } from "react-router";
 import i18n from "@/i18n/config";
 import ProtocolPage from "./index";
+import { FeatureRegistryContext } from "@/components/layout/slot";
+import { featureRegistry, type FeatureRegistry } from "@/lib/features";
 
 // Lock i18n to English for predictable assertions
 beforeAll(async () => {
@@ -94,10 +96,13 @@ const MOCK_SAVE_RESPONSE = {
   meeting_status: "EDITED",
 };
 
-function renderProtocolPage(id = MEETING_ID) {
-  const client = new QueryClient({
-    defaultOptions: { queries: { retry: false } },
-  });
+function renderProtocolPage(
+  id = MEETING_ID,
+  opts: { client?: QueryClient; registry?: FeatureRegistry } = {},
+) {
+  const client =
+    opts.client ??
+    new QueryClient({ defaultOptions: { queries: { retry: false } } });
   const router = createMemoryRouter(
     [
       {
@@ -113,7 +118,9 @@ function renderProtocolPage(id = MEETING_ID) {
   );
   return render(
     <QueryClientProvider client={client}>
-      <RouterProvider router={router} />
+      <FeatureRegistryContext.Provider value={opts.registry ?? featureRegistry}>
+        <RouterProvider router={router} />
+      </FeatureRegistryContext.Provider>
     </QueryClientProvider>,
   );
 }
@@ -338,6 +345,43 @@ describe("ProtocolPage", () => {
     // View mode restored after save
     expect(screen.queryByTestId("btn-save")).not.toBeInTheDocument();
     expect(screen.getByTestId("btn-edit")).toBeInTheDocument();
+  });
+
+  it("invalidates the version history after Save (FR-005 item 4)", async () => {
+    mockFetchSequence([
+      { body: MOCK_PROTOCOL },
+      { body: MOCK_SAVE_RESPONSE },
+    ]);
+    const client = new QueryClient({
+      defaultOptions: { queries: { retry: false } },
+    });
+    const invalidate = vi.spyOn(client, "invalidateQueries");
+    renderProtocolPage(MEETING_ID, { client });
+    await waitFor(() => screen.getByTestId("btn-edit"));
+    await userEvent.click(screen.getByTestId("btn-edit"));
+    await waitFor(() => screen.getByTestId("btn-save"));
+    await userEvent.click(screen.getByTestId("btn-save"));
+    await waitFor(() => screen.getByTestId("protocol-save-success"));
+    expect(invalidate).toHaveBeenCalledWith({
+      queryKey: ["protocol-versions", MEETING_ID],
+    });
+  });
+
+  it("renders protocol.toolbar slot components in the action bar", async () => {
+    mockFetch(MOCK_PROTOCOL);
+    const registry: FeatureRegistry = {
+      ...featureRegistry,
+      slots: {
+        ...featureRegistry.slots,
+        "protocol.toolbar": [
+          ({ meetingId }) => <button data-testid="slot-probe">{meetingId}</button>,
+        ],
+      },
+    };
+    renderProtocolPage(MEETING_ID, { registry });
+    const probe = await screen.findByTestId("slot-probe");
+    expect(probe).toHaveTextContent(MEETING_ID);
+    expect(probe.parentElement).toContainElement(screen.getByTestId("btn-edit"));
   });
 
   it("updates version after successful save", async () => {

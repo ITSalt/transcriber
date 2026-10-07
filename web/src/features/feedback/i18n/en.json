@@ -60,6 +60,7 @@
     }
   },
   "history": {
+    "description": "Earlier versions of the protocol: generated and saved edits.",
     "title": "Protocol version history",
     "empty": "No versions yet",
     "loading": "Loading…",

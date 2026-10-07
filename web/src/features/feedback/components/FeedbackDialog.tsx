@@ -65,8 +65,20 @@ export function FeedbackDialog({ meetingId, open, onOpenChange }: Props) {
     setKind(next);
     setError(null);
     setResult(null);
+    setText("");
+    setCategory("");
     setFile(null);
     setFileInputKey((k) => k + 1);
+  };
+
+  const handleOpenChange = (next: boolean) => {
+    if (!next) {
+      setKind("COMMENT");
+      setError(null);
+      setResult(null);
+      resetForm();
+    }
+    onOpenChange(next);
   };
 
   const errorMessage = (code: string) =>
@@ -87,7 +99,7 @@ export function FeedbackDialog({ meetingId, open, onOpenChange }: Props) {
     const problem: FeedbackSubmissionError | null = checkFeedbackSubmission(
       fields,
       file
-        ? { fileName: file.name, mime: file.type, sizeBytes: file.size }
+        ? { fileName: file.name, mime: file.type || "application/octet-stream", sizeBytes: file.size }
         : null,
     );
     if (problem) {
@@ -118,7 +130,7 @@ export function FeedbackDialog({ meetingId, open, onOpenChange }: Props) {
   const extracted = result?.extracted;
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent
         data-testid="feedback-dialog"
         className="max-h-[90vh] max-w-2xl overflow-y-auto"
