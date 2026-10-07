@@ -21,9 +21,9 @@
 | Миграции | нет миграций Postgres; миграции графа — идемпотентные Cypher (constraints/индексы), версия в узле `:SchemaVersion`, команда `graph:migrate` |
 | Ресурсы (замки) | `graph` по запросу (граф спецификаций), `dev-stack` по запросу |
 | Тестовая БД и порты | нет; нет |
-| Слот слияния | <место в очереди слияний, задаётся при приёмке> |
+| Слот слияния | после WP-INFRA-01 (CI с Neo4j, в main) и WP-WORKER-01 (слот <project_memory>) |
 | Контракт | DTO памяти из WP-BACKEND-06; создаёт `shared/src/memory/` (запросы к графу) для WP-API-MEMORY-01; реализует `ProjectMemoryProvider` |
-| Зависит от | WP-BACKEND-06 (в main). Слот слияния: после WP-INFRA-01 (CI с Neo4j) и WP-WORKER-01 (слот `<project_memory>`) |
+| Зависит от | WP-BACKEND-06 (в main) |
 | Размер | L |
 | Спецификация | FR-006; UC-300 |
 | Граф | системный UC памяти проекта; сущности графа памяти — через `/nacl-sa-feature` |

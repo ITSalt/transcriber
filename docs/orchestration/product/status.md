@@ -21,9 +21,9 @@ CANCELLED (причина).
 <!-- orch:wp -->
 | WP | Модуль | Название | Статус | Сессия | PR | Обновлено |
 |----|--------|----------|--------|--------|----|-----------|
-| [WP-BACKEND-01](work-packages/WP-BACKEND-01-auth-workspaces.md) | backend | Вход по PIN, рабочие пространства и изоляция данных (API+worker) | READY | product-backend | — | 2026-10-07 |
+| [WP-BACKEND-01](work-packages/WP-BACKEND-01-auth-workspaces.md) | backend | Вход по PIN, рабочие пространства и изоляция данных (API+worker) | DISPATCHING | product-backend | — | 2026-10-07 |
 | [WP-FRONTEND-01](work-packages/WP-FRONTEND-01-design-system.md) | frontend | Дизайн-система ITSALT и каркас приложения | PROD | product-frontend | https://github.com/ITSalt/transcriber/pull/9 (accepted 364b6b9fb8) | 2026-10-07 |
-| [WP-FRONTEND-02](work-packages/WP-FRONTEND-02-login-tasks.md) | frontend | Экран входа, переключатель пространств, список задач | READY | product-frontend | — | 2026-10-07 |
+| [WP-FRONTEND-02](work-packages/WP-FRONTEND-02-login-tasks.md) | frontend | Экран входа, переключатель пространств, список задач | DISPATCHING | product-frontend | — | 2026-10-07 |
 | [WP-BACKEND-02](work-packages/WP-BACKEND-02-projects-context.md) | backend | Проекты и контекст встречи: в распознавание и в протокол | CANCELLED (заменён WP-API-PROJECTS-01 (D-15, поток api-projects)) | product-backend | — | 2026-10-07 |
 | [WP-FRONTEND-03](work-packages/WP-FRONTEND-03-projects-context-ui.md) | frontend | Проекты и форма контекста перед распознаванием | CANCELLED (заменён WP-WEB-PROJECTS-01 (D-15)) | product-frontend | — | 2026-10-07 |
 | [WP-BACKEND-03](work-packages/WP-BACKEND-03-feedback.md) | backend | История версий протокола и приём обратной связи | CANCELLED (заменён WP-API-FEEDBACK-01 (D-15, поток api-feedback)) | product-backend | — | 2026-10-07 |
@@ -32,12 +32,12 @@ CANCELLED (причина).
 | [WP-FRONTEND-05](work-packages/WP-FRONTEND-05-project-memory-ui.md) | frontend | Реестр задач и решений проекта, очередь подтверждений | CANCELLED (заменён WP-WEB-MEMORY-01 (D-15)) | product-frontend | — | 2026-10-07 |
 | [WP-BACKEND-05](work-packages/WP-BACKEND-05-neo4j-prod.md) | backend | Neo4j для памяти проекта: сервис, лимиты памяти, бэкап, CI | CANCELLED (заменён WP-INFRA-01 и WP-WORKER-MEMORY-01 (D-15)) | product-backend | — | 2026-10-07 |
 | [WP-BACKEND-06](work-packages/WP-BACKEND-06-contract.md) | backend | Контракт программы: схема БД, контракты shared, зависимости | PROD | product-backend | https://github.com/ITSalt/transcriber/pull/12 (accepted 3fa3500f47) | 2026-10-07 |
-| [WP-WORKER-01](work-packages/WP-WORKER-01-context-asr-llm.md) | worker | Контекст встречи в Deepgram и в промпт протокола, метаданные генерации | READY | product-worker | — | 2026-10-07 |
+| [WP-WORKER-01](work-packages/WP-WORKER-01-context-asr-llm.md) | worker | Контекст встречи в Deepgram и в промпт протокола, метаданные генерации | DISPATCHING | product-worker | — | 2026-10-07 |
 | [WP-WORKER-02](work-packages/WP-WORKER-02-project-memory.md) | worker | Память проекта в Neo4j: извлечение, сопоставление, сводка | CANCELLED (создан в неверном потоке; заменён WP-WORKER-MEMORY-01 (D-15)) | product-worker | — | 2026-10-07 |
 | [WP-INFRA-01](work-packages/WP-INFRA-01-neo4j.md) | infra | Neo4j памяти проекта: сервис, лимиты, бэкап, CI, шаг деплоя | PROD | product-infra | https://github.com/ITSalt/transcriber/pull/10 (accepted 0e7ebe85d3) | 2026-10-07 |
-| [WP-WEB-PROJECTS-01](work-packages/WP-WEB-PROJECTS-01-projects-context.md) | web-projects | Проекты и форма контекста перед распознаванием | READY | product-web-projects | — | 2026-10-07 |
-| [WP-WEB-FEEDBACK-01](work-packages/WP-WEB-FEEDBACK-01-feedback.md) | web-feedback | Режим обратной связи по протоколу | READY | product-web-feedback | — | 2026-10-07 |
-| [WP-WEB-MEMORY-01](work-packages/WP-WEB-MEMORY-01-registry.md) | web-memory | Реестр задач и решений проекта, очередь подтверждений | READY | product-web-memory | — | 2026-10-07 |
+| [WP-WEB-PROJECTS-01](work-packages/WP-WEB-PROJECTS-01-projects-context.md) | web-projects | Проекты и форма контекста перед распознаванием | DISPATCHING | product-web-projects | — | 2026-10-07 |
+| [WP-WEB-FEEDBACK-01](work-packages/WP-WEB-FEEDBACK-01-feedback.md) | web-feedback | Режим обратной связи по протоколу | DISPATCHING | product-web-feedback | — | 2026-10-07 |
+| [WP-WEB-MEMORY-01](work-packages/WP-WEB-MEMORY-01-registry.md) | web-memory | Реестр задач и решений проекта, очередь подтверждений | DISPATCHING | product-web-memory | — | 2026-10-07 |
 | [WP-API-PROJECTS-01](work-packages/WP-API-PROJECTS-01-projects-context.md) | api-projects | API проектов и контекста встречи, запуск распознавания | READY | product-api-projects | — | 2026-10-07 |
 | [WP-API-FEEDBACK-01](work-packages/WP-API-FEEDBACK-01-feedback.md) | api-feedback | API версий протокола и обратной связи, разбор docx | READY | product-api-feedback | — | 2026-10-07 |
 | [WP-API-MEMORY-01](work-packages/WP-API-MEMORY-01-registry.md) | api-memory | API памяти проекта: задачи, решения, подтверждения | READY | product-api-memory | — | 2026-10-07 |
@@ -76,7 +76,7 @@ R-n — действие: точная команда одной строкой 
 | ~~R-8~~ | ~~Бэкап БД прода перед merge WP-BACKEND-06 — блокирует доставку (D-4: пакет с миграцией; первая миграция программы с бэкфиллами): ssh deploy@transcriber.itsalt.ru 'cd /opt/transcrib/api && set -a && . ./.env && set +a && mkdir -p ~/backup && pg_dump "$DATABASE_URL" -Fc -f ~/backup/transcrib-before-backend06-$(date +%Y%m%d-%H%M).dump && ls -la ~/backup \| tail -3 && df -h / \| tail -1' ; expected: файл transcrib-before-backend06-<дата>.dump ненулевого размера в /home/deploy/backup, свободное место на диске не ниже 6 GB ; then: оркестратор сверит имя и размер файла, закроет пункт и выполнит доставку после ACCEPTED~~ | work-packages/WP-BACKEND-06-contract.md | 2026-10-07 | 2026-10-07 dropped: на хосте нет pg_dump: Postgres прода живёт в контейнере learn-postgres (PG 17.9, .tl/deploy-plan.md:17); заменён на R-9 через docker exec |
 | ~~R-9~~ | ~~Бэкап БД прода перед merge WP-BACKEND-06 — блокирует доставку (D-4; Postgres в контейнере learn-postgres, PG 17.9, БД transcrib): ssh deploy@transcriber.itsalt.ru 'mkdir -p ~/backup && docker exec learn-postgres pg_dump -U postgres -d transcrib -Fc > ~/backup/transcrib-before-backend06-$(date +%Y%m%d-%H%M).dump && ls -la ~/backup \| tail -3 && df -h / \| tail -1' ; expected: файл transcrib-before-backend06-<дата>.dump ненулевого размера (сотни KB — единицы MB), свободно на диске не меньше 6 GB ; then: оркестратор сверит имя и размер, закроет пункт и доставит BACKEND-06 после ACCEPTED (восстановление, если понадобится: docker exec -i learn-postgres pg_restore -U postgres -d transcrib --clean --if-exists < файл)~~ | work-packages/WP-BACKEND-06-contract.md | 2026-10-07 | 2026-10-07: ssh 2026-10-07 22:44 (время VM): docker exec learn-postgres pg_dump -U postgres -d transcrib -Fc → /home/deploy/backup/transcrib-before-backend06-20261007-2244.dump, 943839 байт; df /: 7.4G avail |
 | ~~R-10~~ | ~~Освободить диск прод-VM, шаг 4 (последний): ужать pnpm store (удаляет только пакеты, на которые не ссылается ни один node_modules; деплой их переустановит при необходимости) и проверить, что осталось в кэше snap : ssh deploy@transcriber.itsalt.ru 'bash -lc "pnpm store prune"; sudo du -sh /var/lib/snapd/cache; sudo snap list --all \| grep -c disabled; df -h /' ; expected: pnpm сообщит число удалённых пакетов, кэш snap близок к нулю, df ≈ 8–9 GB свободно ; then: оркестратор закрывает тему диска (цель 8 GB) или оставляет её в backlog, если выигрыш мал~~ | work-packages/WP-INFRA-01-neo4j.md | 2026-10-07 | 2026-10-07: ssh 2026-10-07: pnpm не в PATH неинтерактивного ssh (живёт в nvm, деплой грузит nvm.sh явно); /var/lib/snapd/cache всё ещё 3.3G — rm с глобом под sudo не удалил (глоб раскрывает non-root shell); 6 выключенных ревизий snap; df 7.4G avail |
-| R-11 | Освободить диск прод-VM, шаг 4 (повтор с исправленными командами): кэш snap удаляется под root целиком, выключенные ревизии snap удаляются, pnpm грузится через nvm как в деплое : ssh deploy@transcriber.itsalt.ru 'sudo sh -c "rm -rf /var/lib/snapd/cache/*"; sudo snap list --all \| awk "/disabled/{print \$1, \$3}" \| while read n r; do sudo snap remove "$n" --revision="$r"; done; export NVM_DIR=$HOME/.nvm; . $NVM_DIR/nvm.sh; nvm use 22 >/dev/null; pnpm store prune \| tail -2; sudo du -sh /var/lib/snapd/cache; df -h / \| tail -1' ; expected: кэш snap ~0, несколько строк «<snap> (revision N) removed», pnpm сообщит число удалённых пакетов, df ≈ 10–11 GB свободно ; then: оркестратор закрывает тему диска | work-packages/WP-INFRA-01-neo4j.md | 2026-10-07 |  |
+| ~~R-11~~ | ~~Освободить диск прод-VM, шаг 4 (повтор с исправленными командами): кэш snap удаляется под root целиком, выключенные ревизии snap удаляются, pnpm грузится через nvm как в деплое : ssh deploy@transcriber.itsalt.ru 'sudo sh -c "rm -rf /var/lib/snapd/cache/*"; sudo snap list --all \| awk "/disabled/{print \$1, \$3}" \| while read n r; do sudo snap remove "$n" --revision="$r"; done; export NVM_DIR=$HOME/.nvm; . $NVM_DIR/nvm.sh; nvm use 22 >/dev/null; pnpm store prune \| tail -2; sudo du -sh /var/lib/snapd/cache; df -h / \| tail -1' ; expected: кэш snap ~0, несколько строк «<snap> (revision N) removed», pnpm сообщит число удалённых пакетов, df ≈ 10–11 GB свободно ; then: оркестратор закрывает тему диска~~ | work-packages/WP-INFRA-01-neo4j.md | 2026-10-07 | 2026-10-07: ssh 2026-10-07: кэш snap 4.0K, удалены 6 выключенных ревизий snap, pnpm store prune: 2910 файлов / 37 пакетов; df /: 19G used, 10G avail (65%) — цель 8 GB достигнута |
 
 ## Замки
 
@@ -87,6 +87,10 @@ R-n — действие: точная команда одной строкой 
 <!-- orch:locks -->
 | Замок | Репозиторий | Держатель | С | Ждут | Примечание |
 |-------|-------------|-----------|---|------|------------|
+| transcriber:api/prisma/** | transcriber | WP-BACKEND-01 | 2026-10-07 20:10Z | — | dispatch |
+| transcriber:.tl/** | transcriber | WP-BACKEND-01 | 2026-10-07 20:10Z | — | dispatch |
+| transcriber:migrations | transcriber | WP-BACKEND-01 | 2026-10-07 20:10Z | — | dispatch |
+| transcriber:shared/ | transcriber | WP-WORKER-01 | 2026-10-07 20:10Z | WP-WORKER-MEMORY-01 | dispatch |
 
 ## Очередь слияний
 
@@ -108,6 +112,15 @@ R-n — действие: точная команда одной строкой 
 <!-- orch:journal -->
 | Дата | WP | Событие | Подтверждение |
 |------|----|---------|---------------|
+| 2026-10-07 20:10Z | WP-WEB-MEMORY-01 | WP-WEB-MEMORY-01: READY -> DISPATCHING | start command handed to the owner; model sonnet |
+| 2026-10-07 20:10Z | WP-WEB-FEEDBACK-01 | WP-WEB-FEEDBACK-01: READY -> DISPATCHING | start command handed to the owner; model sonnet |
+| 2026-10-07 20:10Z | WP-WEB-PROJECTS-01 | WP-WEB-PROJECTS-01: READY -> DISPATCHING | start command handed to the owner; model sonnet |
+| 2026-10-07 20:10Z | WP-WORKER-MEMORY-01 | dispatch of WP-WORKER-MEMORY-01 refused: lock transcriber:shared/ is held by WP-WORKER-01 (overlaps shared/**) | orch.py dispatch |
+| 2026-10-07 20:10Z | WP-WORKER-01 | WP-WORKER-01: READY -> DISPATCHING | start command handed to the owner; model opus, effort high; locks transcriber:shared/ |
+| 2026-10-07 20:10Z | WP-FRONTEND-02 | WP-FRONTEND-02: READY -> DISPATCHING | TASK message to live session; model sonnet |
+| 2026-10-07 20:10Z | WP-BACKEND-01 | WP-BACKEND-01: READY -> DISPATCHING | TASK message to live session; model opus, effort high; locks transcriber:api/prisma/**, transcriber:.tl/**, transcriber:migrations |
+| 2026-10-07 20:10Z | — | Волна 2: у WP-WORKER-MEMORY-01, WP-WEB-PROJECTS-01, WP-WEB-FEEDBACK-01, WP-WEB-MEMORY-01 текст «Слот слияния: после …» перенесён из строки «Зависит от» в строку «Слот слияния» — dispatch читал порядок merge как зависимость разработки; факты не менялись | dispatch --dry-run: refused: depends on WP-WORKER-01/WP-API-* |
+| 2026-10-07 20:10Z | — | R-11 closed | ssh 2026-10-07: кэш snap 4.0K, удалены 6 выключенных ревизий snap, pnpm store prune: 2910 файлов / 37 пакетов; df /: 19G used, 10G avail (65%) — цель 8 GB достигнута |
 | 2026-10-07 20:09Z | WP-BACKEND-06 | lock transcriber:migrations released | orch.py lock |
 | 2026-10-07 20:09Z | WP-BACKEND-06 | WP-BACKEND-06: доставлен на прод — merge 2570d0a669 (squash), миграция program_product_schema применена (лог деплоя), Deploy success, verify --env prod PASS, health/meetings 200 (записей: 26) | reports/verify-WP-BACKEND-06-prod-20261007.md; gh run 37679417337 |
 | 2026-10-07 20:08Z | WP-BACKEND-06 | WP-BACKEND-06: VERIFIED_TEST -> PROD | verify --env prod 2570d0a669: reports/verify-WP-BACKEND-06-prod-20261007.md |
