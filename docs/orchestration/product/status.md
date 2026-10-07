@@ -42,7 +42,7 @@ CANCELLED (причина).
 | [WP-API-FEEDBACK-01](work-packages/WP-API-FEEDBACK-01-feedback.md) | api-feedback | API версий протокола и обратной связи, разбор docx | READY | product-api-feedback | — | 2026-10-07 |
 | [WP-API-MEMORY-01](work-packages/WP-API-MEMORY-01-registry.md) | api-memory | API памяти проекта: задачи, решения, подтверждения | READY | product-api-memory | — | 2026-10-07 |
 | [WP-WORKER-MEMORY-01](work-packages/WP-WORKER-MEMORY-01-pipeline.md) | worker-memory | Память проекта в Neo4j: слой графа, извлечение, сопоставление, сводка | READY | product-worker-memory | — | 2026-10-07 |
-| [WP-INFRA-02](work-packages/WP-INFRA-02-deploy-migrate-first.md) | infra | Порядок деплоя: миграции Postgres до сборки и замены dist | DISPATCHING | product-infra | — | 2026-10-07 |
+| [WP-INFRA-02](work-packages/WP-INFRA-02-deploy-migrate-first.md) | infra | Порядок деплоя: миграции Postgres до сборки и замены dist | REVISE | product-infra | https://github.com/ITSalt/transcriber/pull/11 | 2026-10-07 |
 
 ## Ждёт владельца
 
@@ -116,6 +116,9 @@ R-n — действие: точная команда одной строкой 
 <!-- orch:journal -->
 | Дата | WP | Событие | Подтверждение |
 |------|----|---------|---------------|
+| 2026-10-07 18:13Z | WP-INFRA-02 | WP-INFRA-02: REVIEW -> REVISE | reports/wp-infra-02-review-20261007.md: 1 пункт — подсказка отката (строки 126-128): Prisma-клиент уже новый до миграции, откат нужен и должен включать db:generate |
+| 2026-10-07 18:08Z | WP-INFRA-02 | WP-INFRA-02: IN_PROGRESS -> REVIEW | 8253fece3d; report reports/wp-infra-02-review-20261007.md |
+| 2026-10-07 18:08Z | WP-INFRA-02 | WP-INFRA-02: DISPATCHING -> IN_PROGRESS | PR #11 открыт сессией product-infra, sha 8253fece3d1265e61547391e81d1f42a195d7192 |
 | 2026-10-07 18:07Z | WP-BACKEND-06 | WP-BACKEND-06: QUESTION — риск порядка деплоя (dist и Prisma-клиент заменяются до db:migrate:deploy; pm2 max_memory_restart в окне или упавшая миграция = новый код на старой схеме). ANSWER: отдельный пакет WP-INFRA-02 (migrate до сборок), мерж до BACKEND-06; BACKEND-06 подтверждает в PR совместимость миграции со старым кодом | сообщение product-backend; deploy-production.yml:49-58 на main 9e5d534 |
 | 2026-10-07 18:06Z | WP-INFRA-02 | WP-INFRA-02: READY -> DISPATCHING | TASK message to live session; model sonnet |
 | 2026-10-07 18:06Z | WP-INFRA-02 | dispatch of WP-INFRA-02 refused: depends on WP-BACKEND-06 (IN_PROGRESS), not merged yet | orch.py dispatch |
