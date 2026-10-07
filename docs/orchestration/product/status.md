@@ -31,7 +31,7 @@ CANCELLED (причина).
 | [WP-BACKEND-04](work-packages/WP-BACKEND-04-project-memory.md) | backend | Память проекта: граф задач и решений, сводка, перенос между встречами | CANCELLED (заменён WP-API-MEMORY-01 (D-15, поток api-memory)) | product-backend | — | 2026-10-07 |
 | [WP-FRONTEND-05](work-packages/WP-FRONTEND-05-project-memory-ui.md) | frontend | Реестр задач и решений проекта, очередь подтверждений | CANCELLED (заменён WP-WEB-MEMORY-01 (D-15)) | product-frontend | — | 2026-10-07 |
 | [WP-BACKEND-05](work-packages/WP-BACKEND-05-neo4j-prod.md) | backend | Neo4j для памяти проекта: сервис, лимиты памяти, бэкап, CI | CANCELLED (заменён WP-INFRA-01 и WP-WORKER-MEMORY-01 (D-15)) | product-backend | — | 2026-10-07 |
-| [WP-BACKEND-06](work-packages/WP-BACKEND-06-contract.md) | backend | Контракт программы: схема БД, контракты shared, зависимости | ACCEPTED | product-backend | https://github.com/ITSalt/transcriber/pull/12 (accepted 3fa3500f47) | 2026-10-07 |
+| [WP-BACKEND-06](work-packages/WP-BACKEND-06-contract.md) | backend | Контракт программы: схема БД, контракты shared, зависимости | MERGED | product-backend | https://github.com/ITSalt/transcriber/pull/12 (accepted 3fa3500f47) | 2026-10-07 |
 | [WP-WORKER-01](work-packages/WP-WORKER-01-context-asr-llm.md) | worker | Контекст встречи в Deepgram и в промпт протокола, метаданные генерации | READY | product-worker | — | 2026-10-07 |
 | [WP-WORKER-02](work-packages/WP-WORKER-02-project-memory.md) | worker | Память проекта в Neo4j: извлечение, сопоставление, сводка | CANCELLED (создан в неверном потоке; заменён WP-WORKER-MEMORY-01 (D-15)) | product-worker | — | 2026-10-07 |
 | [WP-INFRA-01](work-packages/WP-INFRA-01-neo4j.md) | infra | Neo4j памяти проекта: сервис, лимиты, бэкап, CI, шаг деплоя | PROD | product-infra | https://github.com/ITSalt/transcriber/pull/10 (accepted 0e7ebe85d3) | 2026-10-07 |
@@ -75,7 +75,8 @@ R-n — действие: точная команда одной строкой 
 | ~~R-7~~ | ~~Какие .env есть на прод-VM (шаг деплоя читает /opt/transcrib/.env, а pm2 и воркер — api/.env и worker/.env; если корневого .env нет, шаг graph:migrate будет молча пропускаться) : ssh deploy@transcriber.itsalt.ru 'ls -la /opt/transcrib/.env /opt/transcrib/api/.env /opt/transcrib/worker/.env 2>&1; ls -la /opt/transcrib/ecosystem.config.cjs' ; expected: какие из трёх файлов существуют (содержимое не нужно) ; then: оркестратор впишет точный файл в README-neo4j и в пункт REVISE WP-INFRA-01~~ | reports/wp-infra-01-review-20261007.md | 2026-10-07 | 2026-10-07: ssh 2026-10-07: /opt/transcrib/.env — обычный файл (1285 B, 0600); /opt/transcrib/api/.env и /opt/transcrib/worker/.env — симлинки на ../.env; ecosystem.config.cjs есть. Все три читателя (compose, шаг деплоя, воркер/graph:migrate) видят один и тот же файл; таблица в README-neo4j верна, править не нужно |
 | ~~R-8~~ | ~~Бэкап БД прода перед merge WP-BACKEND-06 — блокирует доставку (D-4: пакет с миграцией; первая миграция программы с бэкфиллами): ssh deploy@transcriber.itsalt.ru 'cd /opt/transcrib/api && set -a && . ./.env && set +a && mkdir -p ~/backup && pg_dump "$DATABASE_URL" -Fc -f ~/backup/transcrib-before-backend06-$(date +%Y%m%d-%H%M).dump && ls -la ~/backup \| tail -3 && df -h / \| tail -1' ; expected: файл transcrib-before-backend06-<дата>.dump ненулевого размера в /home/deploy/backup, свободное место на диске не ниже 6 GB ; then: оркестратор сверит имя и размер файла, закроет пункт и выполнит доставку после ACCEPTED~~ | work-packages/WP-BACKEND-06-contract.md | 2026-10-07 | 2026-10-07 dropped: на хосте нет pg_dump: Postgres прода живёт в контейнере learn-postgres (PG 17.9, .tl/deploy-plan.md:17); заменён на R-9 через docker exec |
 | ~~R-9~~ | ~~Бэкап БД прода перед merge WP-BACKEND-06 — блокирует доставку (D-4; Postgres в контейнере learn-postgres, PG 17.9, БД transcrib): ssh deploy@transcriber.itsalt.ru 'mkdir -p ~/backup && docker exec learn-postgres pg_dump -U postgres -d transcrib -Fc > ~/backup/transcrib-before-backend06-$(date +%Y%m%d-%H%M).dump && ls -la ~/backup \| tail -3 && df -h / \| tail -1' ; expected: файл transcrib-before-backend06-<дата>.dump ненулевого размера (сотни KB — единицы MB), свободно на диске не меньше 6 GB ; then: оркестратор сверит имя и размер, закроет пункт и доставит BACKEND-06 после ACCEPTED (восстановление, если понадобится: docker exec -i learn-postgres pg_restore -U postgres -d transcrib --clean --if-exists < файл)~~ | work-packages/WP-BACKEND-06-contract.md | 2026-10-07 | 2026-10-07: ssh 2026-10-07 22:44 (время VM): docker exec learn-postgres pg_dump -U postgres -d transcrib -Fc → /home/deploy/backup/transcrib-before-backend06-20261007-2244.dump, 943839 байт; df /: 7.4G avail |
-| R-10 | Освободить диск прод-VM, шаг 4 (последний): ужать pnpm store (удаляет только пакеты, на которые не ссылается ни один node_modules; деплой их переустановит при необходимости) и проверить, что осталось в кэше snap : ssh deploy@transcriber.itsalt.ru 'bash -lc "pnpm store prune"; sudo du -sh /var/lib/snapd/cache; sudo snap list --all \| grep -c disabled; df -h /' ; expected: pnpm сообщит число удалённых пакетов, кэш snap близок к нулю, df ≈ 8–9 GB свободно ; then: оркестратор закрывает тему диска (цель 8 GB) или оставляет её в backlog, если выигрыш мал | work-packages/WP-INFRA-01-neo4j.md | 2026-10-07 |  |
+| ~~R-10~~ | ~~Освободить диск прод-VM, шаг 4 (последний): ужать pnpm store (удаляет только пакеты, на которые не ссылается ни один node_modules; деплой их переустановит при необходимости) и проверить, что осталось в кэше snap : ssh deploy@transcriber.itsalt.ru 'bash -lc "pnpm store prune"; sudo du -sh /var/lib/snapd/cache; sudo snap list --all \| grep -c disabled; df -h /' ; expected: pnpm сообщит число удалённых пакетов, кэш snap близок к нулю, df ≈ 8–9 GB свободно ; then: оркестратор закрывает тему диска (цель 8 GB) или оставляет её в backlog, если выигрыш мал~~ | work-packages/WP-INFRA-01-neo4j.md | 2026-10-07 | 2026-10-07: ssh 2026-10-07: pnpm не в PATH неинтерактивного ssh (живёт в nvm, деплой грузит nvm.sh явно); /var/lib/snapd/cache всё ещё 3.3G — rm с глобом под sudo не удалил (глоб раскрывает non-root shell); 6 выключенных ревизий snap; df 7.4G avail |
+| R-11 | Освободить диск прод-VM, шаг 4 (повтор с исправленными командами): кэш snap удаляется под root целиком, выключенные ревизии snap удаляются, pnpm грузится через nvm как в деплое : ssh deploy@transcriber.itsalt.ru 'sudo sh -c "rm -rf /var/lib/snapd/cache/*"; sudo snap list --all \| awk "/disabled/{print \$1, \$3}" \| while read n r; do sudo snap remove "$n" --revision="$r"; done; export NVM_DIR=$HOME/.nvm; . $NVM_DIR/nvm.sh; nvm use 22 >/dev/null; pnpm store prune \| tail -2; sudo du -sh /var/lib/snapd/cache; df -h / \| tail -1' ; expected: кэш snap ~0, несколько строк «<snap> (revision N) removed», pnpm сообщит число удалённых пакетов, df ≈ 10–11 GB свободно ; then: оркестратор закрывает тему диска | work-packages/WP-INFRA-01-neo4j.md | 2026-10-07 |  |
 
 ## Замки
 
@@ -86,20 +87,7 @@ R-n — действие: точная команда одной строкой 
 <!-- orch:locks -->
 | Замок | Репозиторий | Держатель | С | Ждут | Примечание |
 |-------|-------------|-----------|---|------|------------|
-| transcriber:api/prisma/** | transcriber | WP-BACKEND-06 | 2026-10-07 16:47Z | — | dispatch |
-| transcriber:shared/** | transcriber | WP-BACKEND-06 | 2026-10-07 16:47Z | — | dispatch |
-| transcriber:package.json | transcriber | WP-BACKEND-06 | 2026-10-07 16:47Z | — | dispatch |
-| transcriber:pnpm-lock.yaml | transcriber | WP-BACKEND-06 | 2026-10-07 16:47Z | — | dispatch |
-| transcriber:api/src/server.ts | transcriber | WP-BACKEND-06 | 2026-10-07 16:47Z | — | dispatch |
-| transcriber:worker/src/job-processor.ts | transcriber | WP-BACKEND-06 | 2026-10-07 16:47Z | — | dispatch |
-| transcriber:worker/src/queues.ts | transcriber | WP-BACKEND-06 | 2026-10-07 16:47Z | — | dispatch |
-| transcriber:worker/src/index.ts | transcriber | WP-BACKEND-06 | 2026-10-07 16:47Z | — | dispatch |
-| transcriber:.tl/** | transcriber | WP-BACKEND-06 | 2026-10-07 16:47Z | — | dispatch |
 | transcriber:migrations | transcriber | WP-BACKEND-06 | 2026-10-07 16:47Z | — | dispatch |
-| transcriber:api/package.json | transcriber | WP-BACKEND-06 | 2026-10-07 16:48Z | — | narrowed from **/package.json: the package edits only the workspace manifests |
-| transcriber:worker/package.json | transcriber | WP-BACKEND-06 | 2026-10-07 16:48Z | — | narrowed from **/package.json: the package edits only the workspace manifests |
-| transcriber:web/package.json | transcriber | WP-BACKEND-06 | 2026-10-07 16:48Z | — | narrowed from **/package.json: the package edits only the workspace manifests |
-| transcriber:shared/package.json | transcriber | WP-BACKEND-06 | 2026-10-07 16:48Z | — | narrowed from **/package.json: the package edits only the workspace manifests |
 
 ## Очередь слияний
 
@@ -112,7 +100,7 @@ R-n — действие: точная команда одной строкой 
 | 1 | transcriber | WP-FRONTEND-01 | https://github.com/ITSalt/transcriber/pull/9 | — | merged |
 | 2 | transcriber | WP-INFRA-01 | https://github.com/ITSalt/transcriber/pull/10 | WP-FRONTEND-01 | merged |
 | 3 | transcriber | WP-INFRA-02 | https://github.com/ITSalt/transcriber/pull/11 | — | merged |
-| 4 | transcriber | WP-BACKEND-06 | https://github.com/ITSalt/transcriber/pull/12 | — | queued |
+| 4 | transcriber | WP-BACKEND-06 | https://github.com/ITSalt/transcriber/pull/12 | — | merged |
 
 ## Журнал
 
@@ -121,6 +109,11 @@ R-n — действие: точная команда одной строкой 
 <!-- orch:journal -->
 | Дата | WP | Событие | Подтверждение |
 |------|----|---------|---------------|
+| 2026-10-07 20:08Z | — | R-11 opened for owner | work-packages/WP-INFRA-01-neo4j.md |
+| 2026-10-07 20:08Z | — | R-10 closed | ssh 2026-10-07: pnpm не в PATH неинтерактивного ssh (живёт в nvm, деплой грузит nvm.sh явно); /var/lib/snapd/cache всё ещё 3.3G — rm с глобом под sudo не удалил (глоб раскрывает non-root shell); 6 выключенных ревизий snap; df 7.4G avail |
+| 2026-10-07 20:05Z | WP-BACKEND-06 | WP-BACKEND-06 merged in the merge queue; released transcriber:api/prisma/**, transcriber:shared/**, transcriber:package.json, transcriber:pnpm-lock.yaml, transcriber:api/src/server.ts, transcriber:worker/src/job-processor.ts, transcriber:worker/src/queues.ts, transcriber:worker/src/index.ts, transcriber:.tl/**, transcriber:api/package.json, transcriber:worker/package.json, transcriber:web/package.json, transcriber:shared/package.json | orch.py deliver: 2570d0a669 |
+| 2026-10-07 20:05Z | WP-BACKEND-06 | WP-BACKEND-06: ACCEPTED -> MERGED | gh pr merge --squash: 2570d0a669 (https://github.com/ITSalt/transcriber/pull/12) |
+| 2026-10-07 20:05Z | — | Сетевой сбой на машине оркестратора ~19:50–20:05Z: TCP 443/22 недоступны к GitHub, своей VM, Google, npm, mail.ru; traceroute обрывался на шлюзе провайдера 83.147.36.1; владелец с Mac в это же время достигал VM по ssh → проблема аплинка этой машины, не GitHub. Восстановилось само; push и гейты BACKEND-06 зелёные | tasks b5j4acfuc, b9psygmub, диагностика curl/traceroute 20:04Z |
 | 2026-10-07 19:45Z | — | R-9 closed | ssh 2026-10-07 22:44 (время VM): docker exec learn-postgres pg_dump -U postgres -d transcrib -Fc → /home/deploy/backup/transcrib-before-backend06-20261007-2244.dump, 943839 байт; df /: 7.4G avail |
 | 2026-10-07 19:45Z | — | P-13 closed | answered by D-19 |
 | 2026-10-07 19:45Z | — | D-19 recorded | answer to P-13 |
