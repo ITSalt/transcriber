@@ -57,6 +57,9 @@ R-n — действие: точная команда одной строкой 
 <!-- orch:journal -->
 | Дата | WP | Событие | Подтверждение |
 |------|----|---------|---------------|
+| 2026-10-07 15:49Z | — | delivery stand: orchestrator by D-4 | D-4 |
+| 2026-10-07 15:49Z | — | delivery merge: orchestrator by D-4 | D-4 |
+| 2026-10-07 15:48Z | — | D-4 recorded | — |
 | 2026-10-07 15:48Z | — | P-3 closed | answered by D-3 |
 | 2026-10-07 15:48Z | — | D-3 recorded | answer to P-3 |
 | 2026-10-07 15:48Z | — | P-2 closed | answered by D-2 |

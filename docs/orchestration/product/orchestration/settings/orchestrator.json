@@ -28,7 +28,10 @@
       "Bash(gh run list *)",
       "Bash(gh run view *)",
       "Read(//home/cloudpc/projects/transcriber-orch/**)",
-      "Bash(git push origin orch/product)"
+      "Bash(git push origin orch/product)",
+      "Bash(gh run watch *)",
+      "Bash(curl -fsS https://transcriber.itsalt.ru/api/health)",
+      "Bash(curl -fsS -o /dev/null -w '%{http_code}' https://transcriber.itsalt.ru/api/meetings)"
     ],
     "ask": [],
     "deny": [

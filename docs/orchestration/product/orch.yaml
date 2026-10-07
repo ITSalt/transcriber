@@ -54,8 +54,12 @@ repos:
     resources: [migrations, {name: graph, mode: on-demand}, {name: dev-stack, mode: on-demand}]
     checks: []
     review_setup: ["pnpm install --frozen-lockfile", "pnpm --filter @transcrib/api run db:generate"]
-    deploy_workflows: {prod: [deploy-production.yml]}
+    deploy_workflows: [deploy-production.yml]
+    integration_branch: main
     prod_branch: main
+    delete_branch: true
+    run_timeout: 1800
+    verify_test: ["curl -fsS https://transcriber.itsalt.ru/api/health", "curl -fsS -o /dev/null -w '%{http_code}' https://transcriber.itsalt.ru/api/meetings"]
     merge_method: squash
     base_deploys: prod
     verify_prod: ["curl -fsS https://transcriber.itsalt.ru/api/health", "curl -fsS -o /dev/null -w '%{http_code}' https://transcriber.itsalt.ru/api/meetings"]
@@ -115,7 +119,7 @@ modules:
     session: product-backend
     tests: {scoped: ["pnpm --filter @transcrib/api test", "pnpm --filter @transcrib/worker test"], full: ["pnpm -r typecheck", "pnpm test"]}
     methodology: {name: nacl, allowed: [nacl-tl-dev-be, nacl-tl-dev, nacl-tl-fix, nacl-tl-review, nacl-tl-regression-test, nacl-tl-verify-code, nacl-tl-sync, nacl-tl-docs, nacl-tl-stubs, nacl-sa-uc, nacl-sa-domain, nacl-sa-feature, nacl-sa-validate, nacl-tl-plan, nacl-tl-status], forbidden: [nacl-tl-release, nacl-tl-deploy, nacl-tl-deliver, nacl-tl-hotfix, nacl-tl-ship, nacl-tl-conductor, nacl-tl-full, nacl-goal, nacl-publish]}
-    web_urls: {prod: "https://transcriber.itsalt.ru"}
+    web_urls: {test: "https://transcriber.itsalt.ru", prod: "https://transcriber.itsalt.ru"}
   - id: frontend
     kind: area
     repo: transcriber
@@ -123,7 +127,7 @@ modules:
     session: product-frontend
     tests: {scoped: ["pnpm --filter @transcrib/web test"], full: ["pnpm -r typecheck", "pnpm test"]}
     methodology: {name: nacl, allowed: [nacl-tl-dev-fe, nacl-tl-fix, nacl-tl-review, nacl-tl-regression-test, nacl-tl-verify-code, nacl-tl-sync, nacl-tl-docs, nacl-tl-stubs, nacl-tl-qa, nacl-sa-ui, nacl-tl-status], forbidden: [nacl-tl-release, nacl-tl-deploy, nacl-tl-deliver, nacl-tl-hotfix, nacl-tl-ship, nacl-tl-conductor, nacl-tl-full, nacl-goal, nacl-publish]}
-    web_urls: {prod: "https://transcriber.itsalt.ru"}
+    web_urls: {test: "https://transcriber.itsalt.ru", prod: "https://transcriber.itsalt.ru"}
 # Example module that is a whole repository:
 #  - id: db
 #    repo: ~/projects/example-database
@@ -170,3 +174,8 @@ e2e: none
 numbering:
   scope: program-cdb126e7-beec-44b8-8b7d-146583adf01c
   version: 1
+
+delivery:
+  merge: orchestrator
+  enabled_by: D-4
+  stand: orchestrator
