@@ -41,7 +41,7 @@ CANCELLED (причина).
 | [WP-API-PROJECTS-01](work-packages/WP-API-PROJECTS-01-projects-context.md) | api-projects | API проектов и контекста встречи, запуск распознавания | READY | product-api-projects | — | 2026-10-07 |
 | [WP-API-FEEDBACK-01](work-packages/WP-API-FEEDBACK-01-feedback.md) | api-feedback | API версий протокола и обратной связи, разбор docx | READY | product-api-feedback | — | 2026-10-07 |
 | [WP-API-MEMORY-01](work-packages/WP-API-MEMORY-01-registry.md) | api-memory | API памяти проекта: задачи, решения, подтверждения | READY | product-api-memory | — | 2026-10-07 |
-| [WP-WORKER-MEMORY-01](work-packages/WP-WORKER-MEMORY-01-pipeline.md) | worker-memory | Память проекта в Neo4j: слой графа, извлечение, сопоставление, сводка | REVIEW | product-worker-memory | https://github.com/ITSalt/transcriber/pull/16 | 2026-10-07 |
+| [WP-WORKER-MEMORY-01](work-packages/WP-WORKER-MEMORY-01-pipeline.md) | worker-memory | Память проекта в Neo4j: слой графа, извлечение, сопоставление, сводка | ACCEPTED | product-worker-memory | https://github.com/ITSalt/transcriber/pull/16 (accepted b6561a5cf7) | 2026-10-07 |
 | [WP-INFRA-02](work-packages/WP-INFRA-02-deploy-migrate-first.md) | infra | Порядок деплоя: миграции Postgres до сборки и замены dist | PROD | product-infra | https://github.com/ITSalt/transcriber/pull/11 (accepted 6694e5e172) | 2026-10-07 |
 
 ## Ждёт владельца
@@ -114,6 +114,7 @@ R-n — действие: точная команда одной строкой 
 | 5 | transcriber | WP-FRONTEND-02 | https://github.com/ITSalt/transcriber/pull/13 | — | queued |
 | 6 | transcriber | WP-WEB-MEMORY-01 | https://github.com/ITSalt/transcriber/pull/14 | WP-FRONTEND-02 | queued |
 | 7 | transcriber | WP-WORKER-01 | https://github.com/ITSalt/transcriber/pull/17 | WP-WEB-MEMORY-01 | queued |
+| 8 | transcriber | WP-WORKER-MEMORY-01 | https://github.com/ITSalt/transcriber/pull/16 | WP-WORKER-01 | queued |
 
 ## Журнал
 
@@ -122,6 +123,9 @@ R-n — действие: точная команда одной строкой 
 <!-- orch:journal -->
 | Дата | WP | Событие | Подтверждение |
 |------|----|---------|---------------|
+| 2026-10-07 22:22Z | WP-WORKER-MEMORY-01 | WP-WORKER-MEMORY-01 queued for merge (sequential) | https://github.com/ITSalt/transcriber/pull/16 |
+| 2026-10-07 22:22Z | WP-WORKER-MEMORY-01 | WP-WORKER-MEMORY-01: accepted at b6561a5cf7ffe8ec9a98d4576e87b8a98aa060d1 | report reports/wp-worker-memory-01-review-20261007-r2.md |
+| 2026-10-07 22:22Z | WP-WORKER-MEMORY-01 | WP-WORKER-MEMORY-01: REVIEW -> ACCEPTED | b6561a5cf7; reports/wp-worker-memory-01-review-20261007-r2.md |
 | 2026-10-07 22:19Z | WP-WORKER-MEMORY-01 | WP-WORKER-MEMORY-01: REVISE -> REVIEW | b6561a5cf7; report reports/wp-worker-memory-01-review-20261007-r2.md |
 | 2026-10-07 22:19Z | WP-WORKER-01 | WP-WORKER-01 queued for merge (sequential) | https://github.com/ITSalt/transcriber/pull/17 |
 | 2026-10-07 22:19Z | WP-WORKER-01 | WP-WORKER-01: accepted at 830af93698b27ef103f40983dd437fd14b2b0444 | report reports/wp-worker-01-review-20261007-r2.md |
