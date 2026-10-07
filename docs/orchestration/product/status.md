@@ -31,7 +31,7 @@ CANCELLED (причина).
 | [WP-BACKEND-04](work-packages/WP-BACKEND-04-project-memory.md) | backend | Память проекта: граф задач и решений, сводка, перенос между встречами | CANCELLED (заменён WP-API-MEMORY-01 (D-15, поток api-memory)) | product-backend | — | 2026-10-07 |
 | [WP-FRONTEND-05](work-packages/WP-FRONTEND-05-project-memory-ui.md) | frontend | Реестр задач и решений проекта, очередь подтверждений | CANCELLED (заменён WP-WEB-MEMORY-01 (D-15)) | product-frontend | — | 2026-10-07 |
 | [WP-BACKEND-05](work-packages/WP-BACKEND-05-neo4j-prod.md) | backend | Neo4j для памяти проекта: сервис, лимиты памяти, бэкап, CI | CANCELLED (заменён WP-INFRA-01 и WP-WORKER-MEMORY-01 (D-15)) | product-backend | — | 2026-10-07 |
-| [WP-BACKEND-06](work-packages/WP-BACKEND-06-contract.md) | backend | Контракт программы: схема БД, контракты shared, зависимости | REVIEW | product-backend | https://github.com/ITSalt/transcriber/pull/12 | 2026-10-07 |
+| [WP-BACKEND-06](work-packages/WP-BACKEND-06-contract.md) | backend | Контракт программы: схема БД, контракты shared, зависимости | REVISE | product-backend | https://github.com/ITSalt/transcriber/pull/12 | 2026-10-07 |
 | [WP-WORKER-01](work-packages/WP-WORKER-01-context-asr-llm.md) | worker | Контекст встречи в Deepgram и в промпт протокола, метаданные генерации | READY | product-worker | — | 2026-10-07 |
 | [WP-WORKER-02](work-packages/WP-WORKER-02-project-memory.md) | worker | Память проекта в Neo4j: извлечение, сопоставление, сводка | CANCELLED (создан в неверном потоке; заменён WP-WORKER-MEMORY-01 (D-15)) | product-worker | — | 2026-10-07 |
 | [WP-INFRA-01](work-packages/WP-INFRA-01-neo4j.md) | infra | Neo4j памяти проекта: сервис, лимиты, бэкап, CI, шаг деплоя | PROD | product-infra | https://github.com/ITSalt/transcriber/pull/10 (accepted 0e7ebe85d3) | 2026-10-07 |
@@ -118,6 +118,7 @@ R-n — действие: точная команда одной строкой 
 <!-- orch:journal -->
 | Дата | WP | Событие | Подтверждение |
 |------|----|---------|---------------|
+| 2026-10-07 18:44Z | WP-BACKEND-06 | WP-BACKEND-06: REVIEW -> REVISE | reports/wp-backend-06-review-20261007.md: 1 пункт — down.sql и правило восстановления для нетранзакционной миграции (условие merge по D-3); остальное принято, миграция и совместимость подтверждены на postgres:16 |
 | 2026-10-07 18:25Z | WP-BACKEND-06 | WP-BACKEND-06: READY 8de4cd4, PR #12 (40 файлов, +3810/−44; миграция 20261007120000_program_product_schema); review-start: 3 файла вне путей (api/src/features/index.ts — разрешён шапкой пакета; worker/src/job-processor.modules.test.ts; worker/tsconfig.json); ревьюер запущен; R-8 бэкап БД (блокирует доставку) | orch.py review-start; gh pr view 12; CI 37666044596 pass |
 | 2026-10-07 18:25Z | — | R-8 opened for owner | work-packages/WP-BACKEND-06-contract.md |
 | 2026-10-07 18:23Z | WP-BACKEND-06 | WP-BACKEND-06: review round 1 started at 8de4cd4b93 | reports/wp-backend-06-review-20261007.md |
