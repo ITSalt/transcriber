@@ -23,18 +23,29 @@ interface TaskEditFormProps {
   projectId: string;
   task: MemoryTask;
   participants: ParticipantOption[];
+  /** Owned by the parent: the form is re-keyed (remounted) after a refetch. */
+  saved: boolean;
+  onSaved: () => void;
+  onEdit: () => void;
 }
 
 /** Manual edit of status / assignee / due date → PATCH (event source USER). */
-export function TaskEditForm({ projectId, task, participants }: TaskEditFormProps) {
+export function TaskEditForm({
+  projectId,
+  task,
+  participants,
+  saved,
+  onSaved,
+  onEdit,
+}: TaskEditFormProps) {
   const { t } = useTranslation("memory");
-  const patch = usePatchTask(projectId, task.code);
+  // onSaved is a hook-level callback: it still fires if the refetch remounts this form.
+  const patch = usePatchTask(projectId, task.code, onSaved);
 
   const currentAssignee = task.assignee?.participant_id ?? (task.assignee ? KEEP : NONE);
   const [status, setStatus] = useState<MemoryTaskStatus>(task.status);
   const [assignee, setAssignee] = useState<string>(currentAssignee);
   const [due, setDue] = useState<string>(task.due_date ?? "");
-  const [saved, setSaved] = useState(false);
 
   const statusOptions = STATUSES.filter(
     (s) => s === task.status || canTransitionTaskStatus(task.status, s),
@@ -49,8 +60,8 @@ export function TaskEditForm({ projectId, task, participants }: TaskEditFormProp
     }
     if (due !== (task.due_date ?? "")) body.due_date = due === "" ? null : due;
     if (Object.keys(body).length === 0) return;
-    setSaved(false);
-    patch.mutate(body, { onSuccess: () => setSaved(true) });
+    onEdit();
+    patch.mutate(body);
   };
 
   return (

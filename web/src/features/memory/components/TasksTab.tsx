@@ -113,6 +113,7 @@ export function TasksTab({ projectId, selectedCode, onSelect }: TasksTabProps) {
 
       {selectedCode && (
         <TaskDetail
+          key={selectedCode}
           projectId={projectId}
           code={selectedCode}
           participants={participants}

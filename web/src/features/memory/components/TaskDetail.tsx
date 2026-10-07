@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Link } from "react-router";
 import { useTranslation } from "react-i18next";
 import { Badge } from "@/components/ui/badge";
@@ -17,6 +18,8 @@ interface TaskDetailProps {
 export function TaskDetail({ projectId, code, participants, onClose }: TaskDetailProps) {
   const { t } = useTranslation("memory");
   const { data, isLoading, error } = useTaskDetail(projectId, code);
+  // Lives here, above the form: the form is re-keyed when a refetch brings a new updated_at.
+  const [saved, setSaved] = useState(false);
 
   return (
     <section data-testid="task-detail" aria-label={t("detail.title", { code })} className="flex flex-col gap-4 rounded-md border p-4">
@@ -98,6 +101,9 @@ export function TaskDetail({ projectId, code, participants, onClose }: TaskDetai
               projectId={projectId}
               task={data.task}
               participants={participants}
+              saved={saved}
+              onSaved={() => setSaved(true)}
+              onEdit={() => setSaved(false)}
             />
           </>
         )}

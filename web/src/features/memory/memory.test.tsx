@@ -206,16 +206,28 @@ describe("task history", () => {
 
 describe("manual edit", () => {
   it("PATCHes only the changed fields and offers only legal status transitions", async () => {
+    const updated = TaskDetailResponse.parse({
+      ...detail,
+      task: { ...T1, status: "DONE", due_date: "2026-06-01", updated_at: "2026-05-02T10:00:00.000Z" },
+    });
+    let patched = false;
     const calls = mockApi([
       queueRoute([]),
-      {
-        method: "PATCH",
-        match: /tasks\/T-1$/,
-        body: { ...detail, task: { ...T1, status: "DONE", due_date: "2026-06-01" } },
-      },
-      { match: /tasks\/T-1$/, body: detail },
+      { method: "PATCH", match: /tasks\/T-1$/, body: updated },
       tasksRoute([T1]),
     ]);
+    // GET detail returns the updated task (new updated_at) once patched, as the real API does.
+    const base = globalThis.fetch as unknown as (u: string, i?: RequestInit) => Promise<Response>;
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (url: string, init?: RequestInit) => {
+        if (init?.method === "PATCH") patched = true;
+        if (/tasks\/T-1$/.test(url) && (init?.method ?? "GET") === "GET") {
+          return new Response(JSON.stringify(patched ? updated : detail), { status: 200 });
+        }
+        return base(url, init);
+      }),
+    );
     renderTabs();
     await userEvent.click(await screen.findByTestId("task-row-T-1"));
     const status = await screen.findByTestId("task-edit-status");
@@ -231,6 +243,11 @@ describe("manual edit", () => {
       expect(patch?.body).toEqual({ status: "DONE", due_date: "2026-06-01" });
     });
     expect(await screen.findByText("Saved")).toBeInTheDocument();
+    // The refetch brought a new updated_at (form remounted) — the message must survive it.
+    await waitFor(() =>
+      expect(screen.getByTestId("task-edit-status")).toHaveValue("DONE"),
+    );
+    expect(screen.getByText("Saved")).toBeInTheDocument();
   });
 
   it("restricts a DONE task to reopening", async () => {
@@ -344,6 +361,35 @@ describe("review queue (D-14)", () => {
     await waitFor(() =>
       expect(calls.some((c) => c.method === "POST" && c.url.endsWith("/reject"))).toBe(true),
     );
+  });
+
+  it("refetches the queue after a 409 so the handled item and counter go away", async () => {
+    let conflicted = false;
+    const calls = mockApi([
+      { method: "POST", match: /confirm$/, body: { message: "TASK_EVENT_ALREADY_REVIEWED" }, status: 409 },
+      tasksRoute([T1]),
+    ]);
+    const base = globalThis.fetch as unknown as (u: string, i?: RequestInit) => Promise<Response>;
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (url: string, init?: RequestInit) => {
+        if (/review-queue$/.test(url)) {
+          const items = conflicted ? [] : [queueItem];
+          calls.push({ url, method: "GET", body: undefined });
+          return new Response(
+            JSON.stringify(ReviewQueueResponse.parse({ items, count: items.length })),
+            { status: 200 },
+          );
+        }
+        if (init?.method === "POST") conflicted = true;
+        return base(url, init);
+      }),
+    );
+    renderTabs(`/projects/${P}?mem=review`);
+    await userEvent.click(await screen.findByRole("button", { name: "Confirm" }));
+    expect(await screen.findByTestId("review-empty")).toBeInTheDocument();
+    await waitFor(() => expect(screen.queryByTestId("review-counter")).not.toBeInTheDocument());
+    expect(calls.filter((c) => /review-queue$/.test(c.url)).length).toBeGreaterThanOrEqual(2);
   });
 
   it("shows the conflict message on 409 (already reviewed)", async () => {

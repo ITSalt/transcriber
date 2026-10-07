@@ -88,12 +88,18 @@ export function useMeetingMemoryRefs(meetingId: string) {
   });
 }
 
-export function usePatchTask(projectId: string, code: string) {
+export function usePatchTask(
+  projectId: string,
+  code: string,
+  onSaved?: () => void,
+) {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (body: TaskPatchRequest) =>
       apiPatch(`${base(projectId)}/tasks/${code}`, body, TaskDetailResponse),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["memory", projectId] }),
+    onSuccess: () => onSaved?.(),
+    // onSettled: a 409/404 means the server state moved on — refetch either way.
+    onSettled: () => qc.invalidateQueries({ queryKey: ["memory", projectId] }),
   });
 }
 
@@ -111,6 +117,7 @@ export function useReviewEvent(projectId: string) {
         `/api/task-events/${eventId}/${action}`,
         ReviewDecisionResponse,
       ),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["memory", projectId] }),
+    // onSettled: a 409/404 means the server state moved on — refetch either way.
+    onSettled: () => qc.invalidateQueries({ queryKey: ["memory", projectId] }),
   });
 }
