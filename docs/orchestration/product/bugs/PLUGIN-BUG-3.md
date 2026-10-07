@@ -6,7 +6,8 @@
 | Окружение | pepper-orchestrator 0.11.0, Claude Code 2.1.292, Ubuntu 24.04, Python 3.12 |
 | Модуль | плагин: orch.py dispatch / lock (collision by glob) |
 | Серьёзность | low |
-| Статус | открыт; Issue: см. ниже |
+| Статус | открыт |
+| Issue | https://github.com/ITSalt/PepperSkills/issues/34 |
 
 ## Симптом
 `dispatch WP-FRONTEND-01` отказан: замок `**/package.json` (держит WP-BACKEND-06) «пересекается» с `web/src/i18n/**`, хотя файла `web/src/i18n/package.json` нет и никто его не создаёт. `--dry-run` обоих пакетов до первого dispatch проходил.

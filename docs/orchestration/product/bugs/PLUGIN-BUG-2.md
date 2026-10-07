@@ -6,7 +6,8 @@
 | Окружение | pepper-orchestrator 0.11.0, Claude Code 2.1.292, Ubuntu 24.04, Python 3.12 |
 | Модуль | плагин: orch.py report --check / plugin_report.leaks |
 | Серьёзность | medium |
-| Статус | открыт; Issue: см. ниже |
+| Статус | открыт |
+| Issue | https://github.com/ITSalt/PepperSkills/issues/33 |
 
 ## Симптом
 `report --check` отказывает: «the report still looks private after anonymization (name from orch.yaml (6 characters))» при любом логе, даже однострочном без имён.

@@ -6,7 +6,8 @@
 | Окружение | pepper-orchestrator 0.11.0, Claude Code 2.1.292, Ubuntu 24.04, Python 3.12 |
 | Модуль | плагин: orch.py dispatch (project_instructions.GUIDANCE) |
 | Серьёзность | medium |
-| Статус | открыт; Issue: см. ниже |
+| Статус | открыт |
+| Issue | https://github.com/ITSalt/PepperSkills/issues/32 |
 
 ## Симптом
 Хвост стартового промпта велит сессии создать/обновить общий блок в CLAUDE.md и AGENTS.md через `orch.py instructions sync`. Концепция §2: оркестратор никогда не просит сессию менять CLAUDE.md; CLAUDE.md — общий путь репозитория, пакетом не объявленный.
