@@ -1,32 +1,66 @@
 @import "tailwindcss";
+@import "./fonts.css";
 
+/*
+ * ITSALT design tokens (source: itsalt-site tokens.css).
+ * Light theme only. Contrast (WCAG): foreground on background 15.8:1,
+ * muted-foreground on background 7.5:1, primary-foreground on primary 4.9:1.
+ */
 @theme {
-  /* shadcn/ui CSS variables — light theme */
-  --color-background: hsl(0 0% 100%);
-  --color-foreground: hsl(222.2 84% 4.9%);
-  --color-card: hsl(0 0% 100%);
-  --color-card-foreground: hsl(222.2 84% 4.9%);
-  --color-popover: hsl(0 0% 100%);
-  --color-popover-foreground: hsl(222.2 84% 4.9%);
-  --color-primary: hsl(221.2 83.2% 53.3%);
-  --color-primary-foreground: hsl(210 40% 98%);
-  --color-secondary: hsl(210 40% 96.1%);
-  --color-secondary-foreground: hsl(222.2 47.4% 11.2%);
-  --color-muted: hsl(210 40% 96.1%);
-  --color-muted-foreground: hsl(215.4 16.3% 46.9%);
-  --color-accent: hsl(210 40% 96.1%);
-  --color-accent-foreground: hsl(222.2 47.4% 11.2%);
-  --color-destructive: hsl(0 84.2% 60.2%);
-  --color-destructive-foreground: hsl(210 40% 98%);
-  --color-border: hsl(214.3 31.8% 91.4%);
-  --color-input: hsl(214.3 31.8% 91.4%);
-  --color-ring: hsl(221.2 83.2% 53.3%);
-  --radius: 0.5rem;
+  /* surfaces & ink */
+  --color-background: #f7f3ea; /* paper-warm */
+  --color-foreground: #161a1d; /* graphite */
+  --color-card: #ffffff;
+  --color-card-foreground: #161a1d;
+  --color-popover: #ffffff;
+  --color-popover-foreground: #161a1d;
+
+  /* primary — orange-burnt: white text on brand orange #f4510b is only 3.5:1 */
+  --color-primary: #c84312;
+  --color-primary-hover: #a93810;
+  --color-primary-foreground: #ffffff;
+  --color-brand: #f4510b; /* signal orange: rule, focus ring, accents (not text bg) */
+
+  --color-secondary: #efe8dc; /* paper-soft */
+  --color-secondary-foreground: #263238; /* slate-deep */
+  --color-muted: #f1ebdf; /* surface-sunk */
+  --color-muted-foreground: #4a4f52; /* ink-muted */
+  --color-accent: #efe8dc;
+  --color-accent-foreground: #161a1d;
+  --color-petrol: #0e4b53;
+  --color-destructive: #b42318;
+  --color-destructive-foreground: #ffffff;
+  --color-border: #e2d8ca; /* border-paper */
+  --color-border-strong: #c9bdac;
+  --color-input: #c9bdac;
+  --color-ring: #f4510b;
+
+  /* radii: sm controls 10, md cards/CTA 14, lg panels 20 */
+  --radius-sm: 10px;
+  --radius-md: 14px;
+  --radius-lg: 20px;
+  --radius-xl: 20px;
+  --radius-pill: 999px;
+
+  /* shadows */
+  --shadow-soft: 0 8px 20px rgba(22, 26, 29, 0.06);
+  --shadow-card: 0 18px 40px rgba(22, 26, 29, 0.08);
+  --shadow-lift: 0 28px 60px rgba(22, 26, 29, 0.14);
+  --shadow-orange: 0 12px 28px rgba(244, 81, 11, 0.28);
+
+  /* fonts */
+  --font-sans: "Inter", "IBM Plex Sans", system-ui, sans-serif;
+  --font-display: "Inter Tight", "Manrope", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, "SF Mono", monospace;
 }
 
 @layer base {
   * {
     border-color: var(--color-border);
+  }
+
+  html {
+    font-family: var(--font-sans);
   }
 
   body {
@@ -36,5 +70,13 @@
     text-rendering: optimizeLegibility;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    overflow-x: hidden;
+  }
+
+  h1,
+  h2,
+  h3 {
+    font-family: var(--font-display);
+    letter-spacing: -0.01em;
   }
 }

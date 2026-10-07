@@ -4,6 +4,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { apiGet } from "@/lib/api";
 import { MeetingDetailResponse } from "@transcrib/shared";
+import { SlotOutlet } from "@/components/layout/slot";
 import { MetadataCard } from "./components/MetadataCard";
 import { StatusSection } from "./components/StatusSection";
 import { JobErrorBanner } from "./components/JobErrorBanner";
@@ -86,6 +87,14 @@ export default function MeetingDetailPage() {
             isDeleting={deleteMutation.isPending}
             onDelete={() => deleteMutation.mutate()}
           />
+
+          {/* meeting.actions slot — features add actions without editing this page */}
+          <div
+            className="flex flex-wrap items-center gap-2 empty:hidden"
+            data-testid="slot-meeting-actions"
+          >
+            <SlotOutlet name="meeting.actions" meetingId={meetingId} />
+          </div>
         </div>
       )}
     </div>
