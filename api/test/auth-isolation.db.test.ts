@@ -199,8 +199,12 @@ describe.skipIf(!DATABASE_URL)('FR-003 — login, isolation of every /api route,
       const ip = nextIp()
       for (let i = 0; i < 9; i++) expect((await login('999997', ip)).statusCode).toBe(401)
       expect((await login(PIN.a, ip)).statusCode).toBe(200)
-      expect((await login('999997', ip)).statusCode).toBe(423) // the 10th failure, not the 1st
+      // A-6: 9 failures -> own successful login -> 2 more failures = blocked
+      expect((await login('999997', ip)).statusCode).toBe(423) // already the 10th failure, not the 1st
+      expect((await login('999997', ip)).statusCode).toBe(423)
+      expect((await login(PIN.a, ip)).statusCode).toBe(423) // and the right PIN too
       await cli(['unblock', '--client', ip])
+      expect((await login(PIN.a, ip)).statusCode).toBe(200)
     })
 
     it('two users cannot share a PIN; no PIN is stored in clear', async () => {
