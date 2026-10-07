@@ -44,7 +44,7 @@ models:
 # Repositories shared by several modules (streams). One writing session per worktree and branch.
 repos:
   - id: transcriber
-    path: .
+    path: /home/cloudpc/projects/transcriber
     base: main
     branch_prefix: feature/
     worktree_root: .claude/worktrees

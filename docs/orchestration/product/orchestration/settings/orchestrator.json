@@ -27,7 +27,7 @@
       "Bash(gh pr diff *)",
       "Bash(gh run list *)",
       "Bash(gh run view *)",
-      "Read(//home/cloudpc/projects/transcriber-orch/**)",
+      "Read(//home/cloudpc/projects/transcriber/**)",
       "Bash(git push origin orch/product)",
       "Bash(gh run watch *)",
       "Bash(curl -fsS https://transcriber.itsalt.ru/api/health)",

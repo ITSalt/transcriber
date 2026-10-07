@@ -1,7 +1,7 @@
 {
   "permissions": {
     "allow": [
-      "Read(//home/cloudpc/projects/transcriber-orch/**)",
+      "Read(//home/cloudpc/projects/transcriber/**)",
       "Read(//home/cloudpc/projects/transcriber-orch/docs/orchestration/product/**)",
       "Bash(cat *)",
       "Bash(grep *)",
@@ -26,10 +26,10 @@
       "Bash(gh pr list *)",
       "Bash(gh pr checks *)",
       "Bash(gh pr diff *)",
-      "Read(//home/cloudpc/projects/transcriber-orch/docker-compose.yml)",
-      "Read(//home/cloudpc/projects/transcriber-orch/.github/**)",
-      "Read(//home/cloudpc/projects/transcriber-orch/scripts/**)",
-      "Read(//home/cloudpc/projects/transcriber-orch/.env.example)",
+      "Read(//home/cloudpc/projects/transcriber/docker-compose.yml)",
+      "Read(//home/cloudpc/projects/transcriber/.github/**)",
+      "Read(//home/cloudpc/projects/transcriber/scripts/**)",
+      "Read(//home/cloudpc/projects/transcriber/.env.example)",
       "Bash(gh pr create *)",
       "Bash(pnpm -r typecheck)",
       "Bash(pnpm test)",

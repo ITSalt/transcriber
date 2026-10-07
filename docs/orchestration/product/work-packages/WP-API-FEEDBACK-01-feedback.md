@@ -96,7 +96,7 @@ Only the module session edits its repository's instructions; the coordinator nev
 Команда запуска (владельцу, в новом терминале):
 
 ```bash
-cd /home/cloudpc/projects/transcriber-orch && claude -w wp-api-feedback-01-feedback --model sonnet --name product-api-feedback "Прочитай /home/cloudpc/projects/transcriber-orch/docs/orchestration/product/work-packages/WP-API-FEEDBACK-01-feedback.md и выполни. Сначала раздел 0 (подготовка worktree). Ветка feature/wp-api-feedback-01-feedback от origin/main, PR в main, не мержить. По готовности — сообщение product-coord: [PRODUCT] READY WP-API-FEEDBACK-01 :: <sha> :: ref=<PR URL>
+cd /home/cloudpc/projects/transcriber && claude -w wp-api-feedback-01-feedback --model sonnet --name product-api-feedback "Прочитай /home/cloudpc/projects/transcriber-orch/docs/orchestration/product/work-packages/WP-API-FEEDBACK-01-feedback.md и выполни. Сначала раздел 0 (подготовка worktree). Ветка feature/wp-api-feedback-01-feedback от origin/main, PR в main, не мержить. По готовности — сообщение product-coord: [PRODUCT] READY WP-API-FEEDBACK-01 :: <sha> :: ref=<PR URL>
 
 Before implementing, read both CLAUDE.md and AGENTS.md (including existing case variants)
 and the applicable nested instruction files. Preserve all existing client-specific text.

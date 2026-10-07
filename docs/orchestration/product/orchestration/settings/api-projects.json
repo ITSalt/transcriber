@@ -1,7 +1,7 @@
 {
   "permissions": {
     "allow": [
-      "Read(//home/cloudpc/projects/transcriber-orch/**)",
+      "Read(//home/cloudpc/projects/transcriber/**)",
       "Read(//home/cloudpc/projects/transcriber-orch/docs/orchestration/product/**)",
       "Bash(cat *)",
       "Bash(grep *)",
@@ -26,8 +26,8 @@
       "Bash(gh pr list *)",
       "Bash(gh pr checks *)",
       "Bash(gh pr diff *)",
-      "Read(//home/cloudpc/projects/transcriber-orch/api/src/features/projects/**)",
-      "Read(//home/cloudpc/projects/transcriber-orch/api/src/features/context/**)",
+      "Read(//home/cloudpc/projects/transcriber/api/src/features/projects/**)",
+      "Read(//home/cloudpc/projects/transcriber/api/src/features/context/**)",
       "Bash(gh pr create *)",
       "Bash(pnpm --filter @transcrib/api test)",
       "Bash(pnpm -r typecheck)",

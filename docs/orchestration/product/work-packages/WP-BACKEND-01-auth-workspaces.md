@@ -106,7 +106,7 @@ Only the module session edits its repository's instructions; the coordinator nev
 Команда запуска (владельцу, в новом терминале):
 
 ```bash
-cd /home/cloudpc/projects/transcriber-orch && claude -w wp-backend-01-auth-workspaces --model opus --effort high --name product-backend "Прочитай /home/cloudpc/projects/transcriber-orch/docs/orchestration/product/work-packages/WP-BACKEND-01-auth-workspaces.md и выполни. Сначала раздел 0 (подготовка worktree). Ветка feature/wp-backend-01-auth-workspaces от origin/main, PR в main, не мержить. По готовности — сообщение product-coord: [PRODUCT] READY WP-BACKEND-01 :: <sha> :: ref=<PR URL>
+cd /home/cloudpc/projects/transcriber && claude -w wp-backend-01-auth-workspaces --model opus --effort high --name product-backend "Прочитай /home/cloudpc/projects/transcriber-orch/docs/orchestration/product/work-packages/WP-BACKEND-01-auth-workspaces.md и выполни. Сначала раздел 0 (подготовка worktree). Ветка feature/wp-backend-01-auth-workspaces от origin/main, PR в main, не мержить. По готовности — сообщение product-coord: [PRODUCT] READY WP-BACKEND-01 :: <sha> :: ref=<PR URL>
 
 Before implementing, read both CLAUDE.md and AGENTS.md (including existing case variants)
 and the applicable nested instruction files. Preserve all existing client-specific text.

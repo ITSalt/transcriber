@@ -92,6 +92,7 @@ R-n — действие: точная команда одной строкой 
 <!-- orch:journal -->
 | Дата | WP | Событие | Подтверждение |
 |------|----|---------|---------------|
+| 2026-10-07 16:38Z | — | repo path fixed to the main checkout /home/cloudpc/projects/transcriber; start commands of active WPs updated | dispatch --dry-run WP-BACKEND-06/FRONTEND-01/INFRA-01: ok |
 | 2026-10-07 16:36Z | WP-WEB-MEMORY-01 | WP-WEB-MEMORY-01: DRAFT -> READY | разделы заполнены; D-11..D-15 |
 | 2026-10-07 16:36Z | WP-WEB-FEEDBACK-01 | WP-WEB-FEEDBACK-01: DRAFT -> READY | разделы заполнены; D-11..D-15 |
 | 2026-10-07 16:36Z | WP-WEB-PROJECTS-01 | WP-WEB-PROJECTS-01: DRAFT -> READY | разделы заполнены; D-11..D-15 |
