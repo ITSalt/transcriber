@@ -2,7 +2,7 @@
 
 Раунд 2. Дифф: 9 files changed, 855 insertions(+), 2 deletions(-) (файлов: 9).
 
-**Решение: `<ACCEPTED | REVISE> WP-API-PROJECTS-01`** — <одна строка: почему>.
+**Решение: `ACCEPTED WP-API-PROJECTS-01`** — пункт 1 раунда 1 закрыт кодом (+3 строки service.ts, +3 errors.ts) и тестами (50 001 → 422 с откатом; +27 строк тестов), граф и документы дополнены; CI PR #20 на `17bdd3261e` зелёный (Lint + Typecheck + Test, run 37766507835, 2m28s); сессия: api 278/278, shared 122/122, typecheck 4/4. Перед доставкой — ещё одно слияние с main (в main влит API-FEEDBACK-01), сверяется как rebase.
 
 ## Пункты REVISE
 
