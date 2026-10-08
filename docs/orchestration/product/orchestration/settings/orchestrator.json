@@ -31,7 +31,8 @@
       "Bash(git push origin orch/product)",
       "Bash(gh run watch *)",
       "Bash(curl -fsS https://transcriber.itsalt.ru/api/health)",
-      "Bash(curl -fsS -o /dev/null -w '%{http_code}' https://transcriber.itsalt.ru/api/meetings)"
+      "Bash(test \"$(curl -s -o /dev/null -w '%{http_code}' https://transcriber.itsalt.ru/api/meetings)\" = 401)",
+      "Bash(echo 'meetings without session -> 401 (AUTH_REQUIRED=true, R-16)')"
     ],
     "ask": [],
     "deny": [

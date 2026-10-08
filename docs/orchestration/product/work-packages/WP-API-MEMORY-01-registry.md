@@ -17,7 +17,7 @@
 | Команды методологии: разрешены | nacl: `nacl-tl-dev-be`, `nacl-tl-dev`, `nacl-tl-fix`, `nacl-tl-review`, `nacl-tl-regression-test`, `nacl-tl-verify-code`, `nacl-tl-sync`, `nacl-tl-docs`, `nacl-tl-stubs`, `nacl-sa-uc`, `nacl-sa-domain`, `nacl-sa-feature`, `nacl-sa-validate`, `nacl-tl-plan`, `nacl-tl-status` |
 | Команды методологии: запрещены | `nacl-tl-release`, `nacl-tl-deploy`, `nacl-tl-deliver`, `nacl-tl-hotfix`, `nacl-tl-ship`, `nacl-tl-conductor`, `nacl-tl-full`, `nacl-goal`, `nacl-publish` |
 | Разрешённые пути | `api/src/features/memory/**` |
-| Общие пути, которые трогает пакет | нет (маршруты подключаются автоматически из api/src/features/<фича>/routes.ts через реестр WP-BACKEND-06) |
+| Общие пути, которые трогает пакет | `.tl/external-contracts/neo4j.md` (п. 8, под замком `.tl/external-contracts/**`; объявлено оркестратором при сверке 2026-10-08 — правка сделана в окне замка 12:14–12:31Z, коммит 9c2ce48 12:23Z). Маршруты подключаются автоматически из api/src/features/<фича>/routes.ts через реестр WP-BACKEND-06. Вне разрешённых путей по A-10: хендлер DELETE в `api/src/features/projects/routes.ts`, классификация маршрутов в `api/test/auth-isolation.db.test.ts` |
 | Миграции | нет |
 | Ресурсы (замки) | `graph` по запросу |
 | Тестовая БД и порты | нет; нет |

@@ -143,6 +143,7 @@ R-n — действие: точная команда одной строкой 
 <!-- orch:journal -->
 | Дата | WP | Событие | Подтверждение |
 |------|----|---------|---------------|
+| 2026-10-08 12:54Z | WP-API-MEMORY-01 | resume: сверка с реальностью — расхождений нет: PR 23 open, CI pass на fb632c5, замков нет, очередь владельца пуста, все пакеты кроме API-MEMORY-01 в PROD; граф-контейнер спецификации был остановлен (exit 0), перезапущен для проверки графа (875 узлов); рецензент round 1 запущен | gh pr view 23; gh pr checks 23 (run 37777007848 pass); orch.py lock list/queue/worktrees; docker compose up в ~/projects/.graphs/transcriber |
 | 2026-10-08 12:31Z | WP-API-MEMORY-01 | WP-API-MEMORY-01: DISPATCHING -> REVIEW | fb632c5091; report reports/wp-api-memory-01-review-20261008.md |
 | 2026-10-08 12:31Z | WP-API-MEMORY-01 | lock transcriber:.tl/external-contracts/** released | orch.py lock |
 | 2026-10-08 12:31Z | WP-API-MEMORY-01 | lock transcriber:graph released | orch.py lock |
