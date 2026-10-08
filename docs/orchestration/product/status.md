@@ -50,7 +50,7 @@ CANCELLED (причина).
 | [WP-WORKER-05](work-packages/WP-WORKER-05-openrouter-reasoning.md) | worker | OpenRouter: reasoning выключен по умолчанию, лимит выхода и диагностика пустого ответа (LLM_REASONING, LLM_MAX_TOKENS) | PROD | product-worker | https://github.com/ITSalt/transcriber/pull/26 (accepted b31b2d946d) | 2026-10-08 |
 | [WP-BACKEND-07](work-packages/WP-BACKEND-07-speakers.md) | backend | Подтверждение спикеров: контракт, статус AWAITING_SPEAKERS, API карты спикеров | PROD | product-backend | https://github.com/ITSalt/transcriber/pull/29 (accepted 3f3e6b0583) | 2026-10-08 |
 | [WP-WORKER-06](work-packages/WP-WORKER-06-speakers-gate.md) | worker | Воркер: остановка на AWAITING_SPEAKERS, имена спикеров в транскрипте и промпте | DISPATCHING | product-worker | — | 2026-10-08 |
-| [WP-FRONTEND-06](work-packages/WP-FRONTEND-06-speakers.md) | frontend | Экран подтверждения спикеров перед генерацией протокола | READY | product-frontend | — | 2026-10-08 |
+| [WP-FRONTEND-06](work-packages/WP-FRONTEND-06-speakers.md) | frontend | Экран подтверждения спикеров перед генерацией протокола | DISPATCHING | product-frontend | — | 2026-10-08 |
 | [WP-WORKER-07](work-packages/WP-WORKER-07-memory-leak-guard.md) | worker | Защита протокола от утечки памяти проекта и чужих участников | PROD | product-worker | https://github.com/ITSalt/transcriber/pull/27 (accepted ade44c9c31) | 2026-10-08 |
 | [WP-WORKER-MEMORY-02](work-packages/WP-WORKER-MEMORY-02-hygiene.md) | worker-memory | Гигиена памяти проекта: дедуп решений, валидация исполнителей, сводка по продуктам | PROD | product-worker-memory | https://github.com/ITSalt/transcriber/pull/28 (accepted adc8af0791) | 2026-10-08 |
 
@@ -117,6 +117,7 @@ R-n — действие: точная команда одной строкой 
 | transcriber:shared/src/api/speakers.ts | transcriber | — | 2026-10-08 19:47Z | WP-WORKER-MEMORY-02 | released by WP-BACKEND-07 |
 | transcriber:shared/src/api/uc002.ts | transcriber | — | 2026-10-08 19:47Z | WP-WORKER-MEMORY-02 | released by WP-BACKEND-07 |
 | transcriber:worker/src/job-processor.ts | transcriber | WP-WORKER-06 | 2026-10-08 19:51Z | — | dispatch |
+| transcriber:web/src/i18n/** | transcriber | WP-FRONTEND-06 | 2026-10-08 19:52Z | — | dispatch |
 
 ## Очередь слияний
 
@@ -168,6 +169,7 @@ R-n — действие: точная команда одной строкой 
 <!-- orch:journal -->
 | Дата | WP | Событие | Подтверждение |
 |------|----|---------|---------------|
+| 2026-10-08 19:52Z | WP-FRONTEND-06 | WP-FRONTEND-06: READY -> DISPATCHING | start command handed to the owner; model sonnet; locks transcriber:web/src/i18n/** |
 | 2026-10-08 19:52Z | WP-FRONTEND-06 | dispatch of WP-FRONTEND-06 refused: depends on WP-WORKER-06 (DISPATCHING), not merged yet | orch.py dispatch |
 | 2026-10-08 19:52Z | WP-BACKEND-07 | lock transcriber:migrations released | orch.py lock |
 | 2026-10-08 19:51Z | WP-BACKEND-07 | WP-BACKEND-07 доставлен: merge 2e131fe287, deploy success с миграцией 20261009120000_awaiting_speakers (enum MeetingStatus содержит AWAITING_SPEAKERS, колонки transcripts.speaker_mapping/speakers_confirmed_at), api/worker online, verify test/prod PASS; WP-WORKER-06 → TASK в product-worker, WP-FRONTEND-06 → команда владельцу | chain deliver_b07.sh; psql _prisma_migrations, enum_range |
