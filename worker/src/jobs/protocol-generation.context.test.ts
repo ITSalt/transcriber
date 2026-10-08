@@ -15,6 +15,7 @@ vi.mock('../lib/prisma.js', () => ({
   prisma: {
     protocolGenerationJob: { findUnique: vi.fn(), updateMany: vi.fn() },
     meeting: { updateMany: vi.fn() },
+    transcript: { update: vi.fn() },
     $transaction: vi.fn(),
   },
 }))
@@ -399,5 +400,52 @@ describe('WP-WORKER-07 memory-leak guard in the pipeline', () => {
     const { tx, llm, storage } = setup()
     await processProtocolGenerationJob(job, logger() as never, { llm, storage, memory: noMemory, redisUrl: 'redis://x', env: {} })
     expect(tx.protocol.create.mock.calls[0]![0].data.markdownContent).toBe(RU_MD)
+  })
+})
+
+describe('WP-WORKER-06 speaker names in the prompt text', () => {
+  const SEGMENTS = [
+    { start: 0, end: 4, text: 'Начнём встречу.', speaker: 'SPEAKER_0' },
+    { start: 65, end: 70, text: 'Согласен.', speaker: 'SPEAKER_1' },
+    { start: 80, end: 90, text: 'Тогда пишу задачу.', speaker: 'SPEAKER_0' },
+  ]
+  const transcriptRow = (speakerMap: unknown, segmentsBlob: unknown) => ({
+    id: 'tr-1', rawText: TRANSCRIPT, speakerMap, segmentsBlob,
+  })
+
+  it('builds the text from segments_blob and the confirmed speaker_map, and stores it as raw_text', async () => {
+    const { llm, storage } = setup({ transcript: transcriptRow({ SPEAKER_0: 'Антон', SPEAKER_1: null }, SEGMENTS) })
+    await processProtocolGenerationJob(job, logger() as never, { llm, storage, memory: noMemory, redisUrl: 'redis://x', env: {} })
+
+    const prompt = llm.generate.mock.calls[0]![0].prompt
+    expect(prompt).toBe('[00:00] Антон: Начнём встречу.\n[01:05] Speaker 2: Согласен.\n[01:20] Антон: Тогда пишу задачу.')
+    expect(mockPrisma.transcript.update).toHaveBeenCalledWith({ where: { id: 'tr-1' }, data: { rawText: prompt } })
+  })
+
+  it('merged labels share one name', async () => {
+    const { llm, storage } = setup({ transcript: transcriptRow({ SPEAKER_0: 'Антон', SPEAKER_1: 'Антон' }, SEGMENTS) })
+    await processProtocolGenerationJob(job, logger() as never, { llm, storage, memory: noMemory, redisUrl: 'redis://x', env: {} })
+    expect(llm.generate.mock.calls[0]![0].prompt).not.toContain('Speaker')
+  })
+
+  it('no segments_blob → the stored raw_text is used and not rewritten', async () => {
+    const { llm, storage } = setup({ transcript: transcriptRow({ SPEAKER_0: 'Антон' }, null) })
+    await processProtocolGenerationJob(job, logger() as never, { llm, storage, memory: noMemory, redisUrl: 'redis://x', env: {} })
+    expect(llm.generate.mock.calls[0]![0].prompt).toBe(TRANSCRIPT)
+    expect(mockPrisma.transcript.update).not.toHaveBeenCalled()
+  })
+
+  it('text already equal to the stored raw_text is not rewritten', async () => {
+    const same = '[00:00] Speaker 1: Начнём встречу.\n[01:05] Speaker 2: Согласен.\n[01:20] Speaker 1: Тогда пишу задачу.'
+    const { llm, storage } = setup({ transcript: { ...transcriptRow({ SPEAKER_0: null, SPEAKER_1: null }, SEGMENTS), rawText: same } })
+    await processProtocolGenerationJob(job, logger() as never, { llm, storage, memory: noMemory, redisUrl: 'redis://x', env: {} })
+    expect(mockPrisma.transcript.update).not.toHaveBeenCalled()
+  })
+
+  it('a failing raw_text refresh does not cost the protocol', async () => {
+    mockPrisma.transcript.update.mockRejectedValueOnce(new Error('db hiccup'))
+    const { tx, llm, storage } = setup({ transcript: transcriptRow({ SPEAKER_0: 'Антон' }, SEGMENTS) })
+    await processProtocolGenerationJob(job, logger() as never, { llm, storage, memory: noMemory, redisUrl: 'redis://x', env: {} })
+    expect(tx.protocol.create).toHaveBeenCalled()
   })
 })

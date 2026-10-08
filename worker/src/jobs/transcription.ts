@@ -34,6 +34,7 @@ import { publishMeetingEvent } from '../lib/publisher.js'
 import { prisma } from '../lib/prisma.js'
 import { createStorage } from '../lib/storage.js'
 import { normalizeLanguageTag } from '../lib/language.js'
+import { buildFullText } from '../lib/transcript-text.js'
 import { createQueues, QueueName } from '../queues.js'
 
 // ─── Retry configuration (RC-UC-200 FR-001) ──────────────────────────────────
@@ -108,36 +109,7 @@ export function resolveSpeakers(
   return speakerMap
 }
 
-/**
- * Build full_text markdown from ASR segments and resolved speaker_map.
- * Format: "[MM:SS] SpeakerName: text"
- * Unresolved labels remain as 'Speaker N' (BRQ-021).
- */
-export function buildFullText(
-  segments: AsrSegment[],
-  speakerMap: Record<string, string | null>,
-): string {
-  return segments
-    .map((seg) => {
-      const resolvedName = speakerMap[seg.speaker]
-      // Map SPEAKER_0 → Speaker 1, SPEAKER_1 → Speaker 2, etc. when unresolved
-      const displayLabel = resolvedName ?? speakerLabelToDisplay(seg.speaker)
-      const minutes = Math.floor(seg.start / 60)
-      const seconds = Math.floor(seg.start % 60)
-      const timestamp = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`
-      return `[${timestamp}] ${displayLabel}: ${seg.text}`
-    })
-    .join('\n')
-}
-
-function speakerLabelToDisplay(label: string): string {
-  // SPEAKER_0 → Speaker 1, SPEAKER_1 → Speaker 2
-  const match = /SPEAKER_(\d+)/i.exec(label)
-  if (match?.[1] !== undefined) {
-    return `Speaker ${parseInt(match[1], 10) + 1}`
-  }
-  return label
-}
+export { buildFullText } from '../lib/transcript-text.js'
 
 // ─── AudioInput collector ─────────────────────────────────────────────────────
 
@@ -288,6 +260,12 @@ export async function processTranscriptionJob(
     // records what the provider actually said. Meeting.language is left untouched.
     const detectedLanguage = normalizeLanguageTag(asrResult.detectedLanguage)
 
+    // WP-WORKER-06 / D-38: a meeting started with a frozen context waits for the author to
+    // confirm the speakers; the confirmation (api) creates the ProtocolGenerationJob. The
+    // raw column is checked, not the parsed snapshot: the contract keys on snapshot_hash.
+    const awaitingSpeakers = Boolean(meeting.context?.snapshotHash)
+    const nextStatus = awaitingSpeakers ? 'AWAITING_SPEAKERS' : 'TRANSCRIBED'
+
     // ── Step 7+8+9: Persist Transcript + update Meeting + mark DONE ───────
     // All writes in a single transaction (BRQ-008: Meeting.status mirror)
     const transcript = await prisma.$transaction(async (tx) => {
@@ -310,10 +288,10 @@ export async function processTranscriptionJob(
         })
       }
 
-      // BRQ-008: Transition Meeting.status → TRANSCRIBED
+      // BRQ-008: Transition Meeting.status → TRANSCRIBED (AWAITING_SPEAKERS with a context)
       await tx.meeting.update({
         where: { id: meeting.id },
-        data: { status: 'TRANSCRIBED' },
+        data: { status: nextStatus },
       })
 
       // RQ-014: Mark job DONE (terminal immutable per BRQ-009)
@@ -331,27 +309,29 @@ export async function processTranscriptionJob(
       'Transcript persisted',
     )
 
-    // ── Step 10: Auto-create ProtocolGenerationJob (RQ-016) ───────────────
-    // BRQ-007: exactly one ProtocolGenerationJob per completed TranscriptionJob
-    const protoJob = await prisma.protocolGenerationJob.create({
-      data: {
-        meetingId: meeting.id,
-        status: 'PENDING',
-      },
-    })
+    if (!awaitingSpeakers) {
+      // ── Step 10: Auto-create ProtocolGenerationJob (RQ-016) ───────────────
+      // BRQ-007: exactly one ProtocolGenerationJob per completed TranscriptionJob
+      const protoJob = await prisma.protocolGenerationJob.create({
+        data: {
+          meetingId: meeting.id,
+          status: 'PENDING',
+        },
+      })
 
-    log.info({ meetingId: meeting.id, protoJobId: protoJob.id }, 'ProtocolGenerationJob created (RQ-016)')
+      log.info({ meetingId: meeting.id, protoJobId: protoJob.id }, 'ProtocolGenerationJob created (RQ-016)')
 
-    // Enqueue to BullMQ so UC-300 worker picks it up (after-commit side effect)
-    const queues = createQueues(redisUrl)
-    const payload: ProtocolGenerationJobPayload = { protocol_generation_job_id: protoJob.id }
-    try {
-      await queues[QueueName.Protocol].add('generateProtocol', payload)
-    } finally {
-      await queues[QueueName.Protocol].close()
+      // Enqueue to BullMQ so UC-300 worker picks it up (after-commit side effect)
+      const queues = createQueues(redisUrl)
+      const payload: ProtocolGenerationJobPayload = { protocol_generation_job_id: protoJob.id }
+      try {
+        await queues[QueueName.Protocol].add('generateProtocol', payload)
+      } finally {
+        await queues[QueueName.Protocol].close()
+      }
+
+      log.info({ protoJobId: protoJob.id }, 'ProtocolGenerationJob enqueued to BullMQ (RQ-016)')
     }
-
-    log.info({ protoJobId: protoJob.id }, 'ProtocolGenerationJob enqueued to BullMQ (RQ-016)')
 
     // ── Step 11: Publish SSE 'meeting.status' event (TECH-012) ────────────
     await publishMeetingEvent(
@@ -359,13 +339,13 @@ export async function processTranscriptionJob(
       {
         type: 'meeting.status',
         meeting_id: meeting.id,
-        status: 'TRANSCRIBED',
+        status: nextStatus,
         error_reason: null,
       },
       meeting.id,
     )
 
-    log.info({ jobId: job.id, transcription_job_id }, 'transcriptionJob completed')
+    log.info({ jobId: job.id, transcription_job_id, status: nextStatus }, 'transcriptionJob completed')
   } catch (err) {
     // ── ALT: Failure path (RQ-015, FR-001) ───────────────────────────────────
     //

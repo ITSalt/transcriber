@@ -292,3 +292,12 @@ describe('WP-WORKER-07 — memory of another meeting reaches the prompt only as 
     }
   })
 })
+
+describe('WP-WORKER-06 — confirmed names on transcript lines', () => {
+  it('the context templates carry the rule; the no-context templates do not', () => {
+    expect(loadProtocolSystemPrompt('RU', true).text).toContain('was confirmed by the author')
+    expect(loadProtocolSystemPrompt('EN', true).text).toContain('was confirmed by the author')
+    expect(loadProtocolSystemPrompt('RU', false).text).not.toContain('confirmed by the author')
+    expect(loadProtocolSystemPrompt('EN', false).text).not.toContain('confirmed by the author')
+  })
+})
