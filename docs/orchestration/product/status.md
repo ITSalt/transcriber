@@ -46,7 +46,7 @@ CANCELLED (причина).
 | [WP-INFRA-03](work-packages/WP-INFRA-03-neo4j-ports.md) | infra | Порты Neo4j памяти проекта 7476/7689 (D-26) | PROD | product-infra | https://github.com/ITSalt/transcriber/pull/22 (accepted 5d27d4a320) | 2026-10-08 |
 | [WP-WORKER-03](work-packages/WP-WORKER-03-openrouter-llm.md) | worker | LLM-провайдер OpenRouter (anthropic/claude-haiku-5.5) за ILlmProvider, переключение провайдера по env | VERIFYING | product-worker | https://github.com/ITSalt/transcriber/pull/24 (accepted 33f870eacd) | 2026-10-08 |
 | [WP-WORKER-04](work-packages/WP-WORKER-04-outbound-proxy.md) | worker | Исходящий прокси для OpenRouter (OUTBOUND_PROXY_URL, undici ProxyAgent, только LLM-трафик) | PROD | product-worker | https://github.com/ITSalt/transcriber/pull/25 (accepted 83f42ec2b1) | 2026-10-08 |
-| [WP-WORKER-05](work-packages/WP-WORKER-05-openrouter-reasoning.md) | worker | OpenRouter: reasoning выключен по умолчанию, лимит выхода и диагностика пустого ответа (LLM_REASONING, LLM_MAX_TOKENS) | REVIEW | product-worker | https://github.com/ITSalt/transcriber/pull/26 | 2026-10-08 |
+| [WP-WORKER-05](work-packages/WP-WORKER-05-openrouter-reasoning.md) | worker | OpenRouter: reasoning выключен по умолчанию, лимит выхода и диагностика пустого ответа (LLM_REASONING, LLM_MAX_TOKENS) | REVISE | product-worker | https://github.com/ITSalt/transcriber/pull/26 | 2026-10-08 |
 
 ## Ждёт владельца
 
@@ -153,6 +153,7 @@ R-n — действие: точная команда одной строкой 
 <!-- orch:journal -->
 | Дата | WP | Событие | Подтверждение |
 |------|----|---------|---------------|
+| 2026-10-08 17:46Z | WP-WORKER-05 | WP-WORKER-05: REVIEW -> REVISE | reports/wp-worker-05-review-20261008.md: 1 пункт — тест связки env→фабрика→запрос (M6/M6b выжили) |
 | 2026-10-08 17:38Z | WP-WORKER-05 | WP-WORKER-05: READY 4267b4bb57 (PR 26); ревью r1 запущено | сообщение product-worker; review-start |
 | 2026-10-08 17:37Z | WP-WORKER-05 | WP-WORKER-05: DISPATCHING -> REVIEW | 4267b4bb57; report reports/wp-worker-05-review-20261008.md |
 | 2026-10-08 17:35Z | WP-WORKER-04 | Живой сценарий WP-WORKER-04 (прод на OpenRouter через прокси): прокси и ключ работают (нет 403), но длинные протоколы 12.05/20.05 → «empty or missing completion text»: reasoning haiku-5.5 съедает max_tokens 4096 — D-35, WP-WORKER-05 (TASK в живую сессию product-worker); WP-WORKER-04 остаётся VERIFIED/PROD по своему объёму (транспорт через прокси доказан) | pm2 logs 20:30 +03; results/or-probe-4096.json finish=length reasoning_tokens=4096 |
