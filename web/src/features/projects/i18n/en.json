@@ -1,0 +1,46 @@
+{
+  "nav": "Projects",
+  "title": "Projects",
+  "loading": "Loading…",
+  "loadError": "Failed to load projects.",
+  "notFound": "Project not found.",
+  "empty": "No projects yet. Create one to reuse participants and terms across meetings.",
+  "meetingCount_one": "{{count}} meeting",
+  "meetingCount_other": "{{count}} meetings",
+  "save": "Save",
+  "delete": "Delete project",
+  "deleteConfirm": "Delete this project? Meetings are kept.",
+  "remove": "Remove",
+  "create": {
+    "name": "Project name",
+    "description": "Description (optional)",
+    "submit": "Create project",
+    "error": "Could not create the project."
+  },
+  "side": {
+    "OURS": "Our side",
+    "CLIENT": "Client",
+    "CONTRACTOR": "Contractor",
+    "OTHER": "Other"
+  },
+  "participants": {
+    "title": "Participants",
+    "empty": "No participants yet.",
+    "add": "Add participant",
+    "name": "Name",
+    "aliases": "Spelling variants (comma-separated)",
+    "role": "Role",
+    "organization": "Organization",
+    "side": "Side"
+  },
+  "glossary": {
+    "title": "Glossary",
+    "empty": "No terms yet.",
+    "add": "Add term",
+    "term": "Term",
+    "variants": "Variants (comma-separated)",
+    "definition": "Explanation",
+    "asrKeyterm": "For recognition",
+    "forAsr": "for recognition"
+  }
+}

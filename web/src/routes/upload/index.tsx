@@ -11,6 +11,14 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
+import { ContextForm } from "@/features/context/ContextForm";
+import { startWithContext } from "@/features/context/start";
+import {
+  emptyDraft,
+  isDraftEmpty,
+  type ContextDraft,
+} from "@/features/context/draft";
+import { useLastProtocol } from "@/features/projects/api";
 import {
   Select,
   SelectContent,
@@ -27,7 +35,15 @@ const ACCEPTED_MIME_TYPES: readonly string[] = ACCEPTED_UPLOAD_MIME_TYPES;
 
 const CONCURRENCY = 4; // parallel S3 part uploads
 
-type UploadState = "idle" | "uploading" | "finalizing" | "done" | "error";
+// "uploaded" = the file is in storage and the meeting waits for «Начать распознавание»
+// (defer_start, D-9); recognition begins only on POST /api/meetings/:id/start.
+type UploadState =
+  | "idle"
+  | "uploading"
+  | "finalizing"
+  | "uploaded"
+  | "starting"
+  | "error";
 
 interface MultipartState {
   s3_key: string;
@@ -36,6 +52,7 @@ interface MultipartState {
 
 export default function UploadPage() {
   const { t } = useTranslation();
+  const { t: tc } = useTranslation("context");
   const navigate = useNavigate();
 
   const [file, setFile] = useState<File | null>(null);
@@ -45,6 +62,9 @@ export default function UploadPage() {
   const [progress, setProgress] = useState(0);
   const [uploadState, setUploadState] = useState<UploadState>("idle");
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [draft, setDraft] = useState<ContextDraft>(emptyDraft);
+  const [meetingId, setMeetingId] = useState<string | null>(null);
+  const lastProtocol = useLastProtocol(draft.projectId);
   const abortControllerRef = useRef<AbortController | null>(null);
   const multipartStateRef = useRef<MultipartState | null>(null);
 
@@ -82,7 +102,10 @@ export default function UploadPage() {
       multipartStateRef.current = null;
       apiPost(
         "/api/uploads/abort",
-        { s3_key: state.s3_key, s3_upload_id: state.s3_upload_id },
+        {
+          s3_key: state.s3_key,
+          s3_upload_id: state.s3_upload_id,
+        },
         UploadFinalizeResponse,
       ).catch(() => {});
     }
@@ -190,13 +213,20 @@ export default function UploadPage() {
           language: language || null,
           speaker_count: speakerCount,
           parts: completedParts,
+          defer_start: true,
         },
         UploadFinalizeResponse,
       );
 
       multipartStateRef.current = null;
-      setUploadState("done");
-      void navigate(`/meetings/${result.meeting_id}`);
+      // A backend that ignores defer_start already started recognition (A-5 allows both):
+      // there is nothing to wait for, go straight to the card.
+      if (result.status === "TRANSCRIBING") {
+        void navigate(`/meetings/${result.meeting_id}`);
+        return;
+      }
+      setMeetingId(result.meeting_id);
+      setUploadState("uploaded");
     } catch (err: unknown) {
       if (controller.signal.aborted) return; // user cancelled — don't show error
       const msg = err instanceof Error ? err.message : t("common.error");
@@ -205,11 +235,27 @@ export default function UploadPage() {
     }
   }
 
+  // Context is optional and only sent when the user filled something (skip = start as is).
+  async function handleStart() {
+    if (!meetingId) return;
+    setErrorMsg(null);
+    setUploadState("starting");
+    try {
+      // "already-started" (409) is fine too: the card shows the running meeting.
+      await startWithContext(meetingId, draft, lastProtocol.data?.meeting_id);
+      void navigate(`/meetings/${meetingId}`);
+    } catch (err: unknown) {
+      setErrorMsg(err instanceof Error ? err.message : t("common.error"));
+      setUploadState("uploaded");
+    }
+  }
+
   const isUploading =
     uploadState === "uploading" || uploadState === "finalizing";
+  const canStart = uploadState === "uploaded";
 
   return (
-    <div data-testid="upload-page" className="container mx-auto py-8 px-4 max-w-lg">
+    <div data-testid="upload-page" className="container mx-auto py-8 px-4 max-w-2xl">
       <h1 className="text-2xl font-bold mb-6">{t("upload.heading")}</h1>
 
       <form onSubmit={(e) => void handleSubmit(e)} noValidate>
@@ -303,6 +349,12 @@ export default function UploadPage() {
           </p>
         </div>
 
+        <ContextForm
+          draft={draft}
+          onChange={setDraft}
+          disabled={uploadState === "starting"}
+        />
+
         {/* Error message */}
         {errorMsg && (
           <p
@@ -330,7 +382,7 @@ export default function UploadPage() {
         <div className="flex gap-3">
           <Button
             type="submit"
-            disabled={!file || isUploading}
+            disabled={!file || isUploading || canStart || uploadState === "starting"}
             data-testid="upload-submit"
           >
             {t("common.upload")}
@@ -344,7 +396,28 @@ export default function UploadPage() {
           >
             {t("common.cancel")}
           </Button>
+          <Button
+            type="button"
+            variant="default"
+            onClick={() => void handleStart()}
+            disabled={!canStart}
+            data-testid="upload-start"
+          >
+            {uploadState === "starting"
+              ? tc("start.starting")
+              : tc("start.button")}
+          </Button>
         </div>
+        <p
+          className="mt-2 text-xs text-muted-foreground"
+          data-testid="upload-start-hint"
+        >
+          {!canStart && uploadState !== "starting"
+            ? tc("start.hintWaiting")
+            : isDraftEmpty(draft)
+              ? tc("start.hintSkip")
+              : tc("start.hintReady")}
+        </p>
       </form>
     </div>
   );

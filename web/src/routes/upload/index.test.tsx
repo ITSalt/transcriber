@@ -31,10 +31,33 @@ const FAKE_INIT_RESPONSE = {
   parts: [{ part_number: 1, url: "http://localhost:9000/presigned-part-1" }],
 };
 
+const MEETING_ID = "a1b2c3d4-1234-4abc-8def-a1b2c3d4e5f6";
+
+// FR-004 / D-9: the upload completes with defer_start, recognition starts on /start.
 const FAKE_COMPLETE_RESPONSE = {
-  meeting_id: "a1b2c3d4-1234-4abc-8def-a1b2c3d4e5f6",
-  status: "TRANSCRIBING",
+  meeting_id: MEETING_ID,
+  status: "AWAITING_START",
 };
+
+// Responses for the context/start endpoints, shared by every fetch mock below.
+function contextApiResponse(urlStr: string): Response | null {
+  if (urlStr.includes("/api/projects?")) {
+    return makeJsonResponse({ items: [] });
+  }
+  if (urlStr.endsWith(`/api/meetings/${MEETING_ID}/start`)) {
+    return makeJsonResponse({
+      meeting_id: MEETING_ID,
+      status: "TRANSCRIBING",
+      snapshot_hash: null,
+    });
+  }
+  return null;
+}
+
+async function clickStart() {
+  await waitFor(() => expect(screen.getByTestId("upload-start")).not.toBeDisabled());
+  await userEvent.click(screen.getByTestId("upload-start"));
+}
 
 function mockSuccessfulUpload() {
   vi.spyOn(globalThis, "fetch").mockImplementation(async (url, init) => {
@@ -51,7 +74,7 @@ function mockSuccessfulUpload() {
     if (urlStr.includes("/api/uploads/abort")) {
       return new Response("", { status: 204 });
     }
-    return new Response("Not found", { status: 404 });
+    return contextApiResponse(urlStr) ?? new Response("Not found", { status: 404 });
   });
 }
 
@@ -173,7 +196,8 @@ describe("UploadPage", () => {
       expect(screen.getByTestId("upload-error")).toBeInTheDocument();
       expect(screen.getByTestId("upload-error").textContent).toContain("2.5 GB");
     });
-  });
+    // allocates a 2.5 GiB ArrayBuffer: needs more than the default 5 s on a loaded host
+  }, 30_000);
 
   it("RQ-009: shows error for unsupported MIME type", async () => {
     renderUpload();
@@ -210,12 +234,13 @@ describe("UploadPage", () => {
     expect(screen.getByTestId("upload-submit")).not.toBeDisabled();
   });
 
-  it("navigates to /meetings/:id on successful upload", async () => {
+  it("navigates to /meetings/:id after upload and «Start recognition»", async () => {
     mockSuccessfulUpload();
     renderUpload();
     const file = makeVideoFile("meeting.mp4", "video/mp4", 1024);
     await userEvent.upload(screen.getByTestId("upload-input-file"), file);
     await userEvent.click(screen.getByTestId("upload-submit"));
+    await clickStart();
     await waitFor(() => {
       expect(screen.getByTestId("meeting-detail")).toBeInTheDocument();
     });
@@ -234,7 +259,7 @@ describe("UploadPage", () => {
         if (urlStr.includes("/api/uploads/complete")) {
           return makeJsonResponse(FAKE_COMPLETE_RESPONSE);
         }
-        return new Response("", { status: 204 });
+        return contextApiResponse(urlStr) ?? new Response("", { status: 204 });
       },
     );
 
@@ -242,6 +267,7 @@ describe("UploadPage", () => {
     const file = makeVideoFile("my-meeting.mp4", "video/mp4", 2048);
     await userEvent.upload(screen.getByTestId("upload-input-file"), file);
     await userEvent.click(screen.getByTestId("upload-submit"));
+    await clickStart();
     await waitFor(() => {
       expect(screen.getByTestId("meeting-detail")).toBeInTheDocument();
     });
@@ -305,7 +331,7 @@ describe("UploadPage", () => {
         if (urlStr.includes("/api/uploads/complete")) {
           return makeJsonResponse(FAKE_COMPLETE_RESPONSE);
         }
-        return new Response("", { status: 204 });
+        return contextApiResponse(urlStr) ?? new Response("", { status: 204 });
       },
     );
 
@@ -314,6 +340,7 @@ describe("UploadPage", () => {
     await userEvent.upload(screen.getByTestId("upload-input-file"), file);
     // Do not select any language (leave as auto-detect / blank)
     await userEvent.click(screen.getByTestId("upload-submit"));
+    await clickStart();
     await waitFor(() => {
       expect(screen.getByTestId("meeting-detail")).toBeInTheDocument();
     });
@@ -357,7 +384,7 @@ describe("UploadPage", () => {
         if (urlStr.includes("/api/uploads/complete")) {
           return makeJsonResponse(FAKE_COMPLETE_RESPONSE);
         }
-        return new Response("", { status: 204 });
+        return contextApiResponse(urlStr) ?? new Response("", { status: 204 });
       },
     );
 
@@ -365,6 +392,7 @@ describe("UploadPage", () => {
     const file = makeVideoFile("my-meeting.mp4", "video/mp4", 2048);
     await userEvent.upload(screen.getByTestId("upload-input-file"), file);
     await userEvent.click(screen.getByTestId("upload-submit"));
+    await clickStart();
     await waitFor(() => {
       expect(screen.getByTestId("meeting-detail")).toBeInTheDocument();
     });
