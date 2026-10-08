@@ -23,7 +23,7 @@ CANCELLED (причина).
 |----|--------|----------|--------|--------|----|-----------|
 | [WP-BACKEND-01](work-packages/WP-BACKEND-01-auth-workspaces.md) | backend | Вход по PIN, рабочие пространства и изоляция данных (API+worker) | PROD | product-backend | https://github.com/ITSalt/transcriber/pull/15 (accepted ba75536568) | 2026-10-08 |
 | [WP-FRONTEND-01](work-packages/WP-FRONTEND-01-design-system.md) | frontend | Дизайн-система ITSALT и каркас приложения | PROD | product-frontend | https://github.com/ITSalt/transcriber/pull/9 (accepted 364b6b9fb8) | 2026-10-07 |
-| [WP-FRONTEND-02](work-packages/WP-FRONTEND-02-login-tasks.md) | frontend | Экран входа, переключатель пространств, список задач | ACCEPTED | product-frontend | https://github.com/ITSalt/transcriber/pull/13 | 2026-10-08 |
+| [WP-FRONTEND-02](work-packages/WP-FRONTEND-02-login-tasks.md) | frontend | Экран входа, переключатель пространств, список задач | ACCEPTED | product-frontend | https://github.com/ITSalt/transcriber/pull/13 (accepted 4b4d74a970) | 2026-10-08 |
 | [WP-BACKEND-02](work-packages/WP-BACKEND-02-projects-context.md) | backend | Проекты и контекст встречи: в распознавание и в протокол | CANCELLED (заменён WP-API-PROJECTS-01 (D-15, поток api-projects)) | product-backend | — | 2026-10-07 |
 | [WP-FRONTEND-03](work-packages/WP-FRONTEND-03-projects-context-ui.md) | frontend | Проекты и форма контекста перед распознаванием | CANCELLED (заменён WP-WEB-PROJECTS-01 (D-15)) | product-frontend | — | 2026-10-07 |
 | [WP-BACKEND-03](work-packages/WP-BACKEND-03-feedback.md) | backend | История версий протокола и приём обратной связи | CANCELLED (заменён WP-API-FEEDBACK-01 (D-15, поток api-feedback)) | product-backend | — | 2026-10-07 |
@@ -127,6 +127,8 @@ R-n — действие: точная команда одной строкой 
 <!-- orch:journal -->
 | Дата | WP | Событие | Подтверждение |
 |------|----|---------|---------------|
+| 2026-10-08 10:22Z | WP-FRONTEND-02 | WP-FRONTEND-02: accepted at 4b4d74a97053accbbd0d2d4a11b452fc16c0f91b | report reports/wp-frontend-02-review-20261008-r2.md |
+| 2026-10-08 10:21Z | WP-FRONTEND-02 | WP-FRONTEND-02: ACCEPTED -> ACCEPTED | reports/wp-frontend-02-review-20261008-r2.md: rebase на main, diff по web/ пуст, CI run 37762486203 pass на 4b4d74a970; graph: checked |
 | 2026-10-08 10:21Z | WP-FRONTEND-02 | WP-FRONTEND-02 раунд 2 (rebase) ACCEPTED на 4b4d74a970; graph: checked | reports/wp-frontend-02-review-20261008-r2.md |
 | 2026-10-08 10:21Z | WP-API-PROJECTS-01 | WP-API-PROJECTS-01 waits for lock transcriber:shared/src/api/program-contract.test.ts (WP-WORKER-MEMORY-01) | orch.py lock acquire |
 | 2026-10-08 10:21Z | WP-API-PROJECTS-01 | WP-API-PROJECTS-01 waits for lock transcriber:shared/src/api/context.ts (WP-WORKER-MEMORY-01) | orch.py lock acquire |
