@@ -2,7 +2,7 @@
 
 Раунд 3. Дифф: 21 files changed, 1962 insertions(+), 52 deletions(-) (файлов: 21).
 
-**Решение: `<ACCEPTED | REVISE> WP-WORKER-01`** — <одна строка: почему>.
+**Решение: `ACCEPTED WP-WORKER-01`** — пересдача только rebase: `d0728e2380` = merge-коммит `830af93698` (принятая ревизия раунда 2) + `ae76dda3e3` (main после FRONTEND-02); `git diff 830af93698..d0728e2380 -- worker/ shared/` пустой, вне них относительно main ничего; CI PR #17 на `d0728e2380` зелёный (Lint + Typecheck + Test, run 37763673761, 2m19s); сессия: worker 316/316, typecheck 4/4. Обязательство п. 8 (миграция NOT NULL + сверка версий) в main с BACKEND-01. Граф перепроверен (ниже).
 
 ## Пункты REVISE
 

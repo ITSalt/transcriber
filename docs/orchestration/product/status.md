@@ -32,7 +32,7 @@ CANCELLED (причина).
 | [WP-FRONTEND-05](work-packages/WP-FRONTEND-05-project-memory-ui.md) | frontend | Реестр задач и решений проекта, очередь подтверждений | CANCELLED (заменён WP-WEB-MEMORY-01 (D-15)) | product-frontend | — | 2026-10-07 |
 | [WP-BACKEND-05](work-packages/WP-BACKEND-05-neo4j-prod.md) | backend | Neo4j для памяти проекта: сервис, лимиты памяти, бэкап, CI | CANCELLED (заменён WP-INFRA-01 и WP-WORKER-MEMORY-01 (D-15)) | product-backend | — | 2026-10-07 |
 | [WP-BACKEND-06](work-packages/WP-BACKEND-06-contract.md) | backend | Контракт программы: схема БД, контракты shared, зависимости | PROD | product-backend | https://github.com/ITSalt/transcriber/pull/12 (accepted 3fa3500f47) | 2026-10-07 |
-| [WP-WORKER-01](work-packages/WP-WORKER-01-context-asr-llm.md) | worker | Контекст встречи в Deepgram и в промпт протокола, метаданные генерации | ACCEPTED | product-worker | https://github.com/ITSalt/transcriber/pull/17 | 2026-10-08 |
+| [WP-WORKER-01](work-packages/WP-WORKER-01-context-asr-llm.md) | worker | Контекст встречи в Deepgram и в промпт протокола, метаданные генерации | ACCEPTED | product-worker | https://github.com/ITSalt/transcriber/pull/17 (accepted d0728e2380) | 2026-10-08 |
 | [WP-WORKER-02](work-packages/WP-WORKER-02-project-memory.md) | worker | Память проекта в Neo4j: извлечение, сопоставление, сводка | CANCELLED (создан в неверном потоке; заменён WP-WORKER-MEMORY-01 (D-15)) | product-worker | — | 2026-10-07 |
 | [WP-INFRA-01](work-packages/WP-INFRA-01-neo4j.md) | infra | Neo4j памяти проекта: сервис, лимиты, бэкап, CI, шаг деплоя | PROD | product-infra | https://github.com/ITSalt/transcriber/pull/10 (accepted 0e7ebe85d3) | 2026-10-07 |
 | [WP-WEB-PROJECTS-01](work-packages/WP-WEB-PROJECTS-01-projects-context.md) | web-projects | Проекты и форма контекста перед распознаванием | ACCEPTED | product-web-projects | https://github.com/ITSalt/transcriber/pull/19 | 2026-10-07 |
@@ -95,8 +95,9 @@ R-n — действие: точная команда одной строкой 
 <!-- orch:locks -->
 | Замок | Репозиторий | Держатель | С | Ждут | Примечание |
 |-------|-------------|-----------|---|------|------------|
-| transcriber:shared/** | transcriber | WP-WORKER-MEMORY-01 | 2026-10-07 20:11Z | WP-API-PROJECTS-01 | dispatch |
+| transcriber:shared/** | transcriber | WP-WORKER-MEMORY-01 | 2026-10-07 20:11Z | — | dispatch |
 | transcriber:worker/package.json | transcriber | WP-WORKER-MEMORY-01 | 2026-10-07 20:11Z | — | dispatch |
+| transcriber:graph | transcriber | WP-API-PROJECTS-01 | 2026-10-08 10:31Z | — | — |
 
 ## Очередь слияний
 
@@ -127,6 +128,8 @@ R-n — действие: точная команда одной строкой 
 <!-- orch:journal -->
 | Дата | WP | Событие | Подтверждение |
 |------|----|---------|---------------|
+| 2026-10-08 10:31Z | WP-WORKER-01 | WP-WORKER-01: accepted at d0728e2380daf34e218ceb00748294616d13ad3d | report reports/wp-worker-01-review-20261008-r3.md |
+| 2026-10-08 10:31Z | WP-API-PROJECTS-01 | lock transcriber:graph acquired | orch.py lock |
 | 2026-10-08 10:30Z | WP-API-FEEDBACK-01 | WP-API-FEEDBACK-01: DISPATCHING -> REVIEW | a7798d4fc4; report reports/wp-api-feedback-01-review-20261008.md |
 | 2026-10-08 10:30Z | WP-API-PROJECTS-01 | WP-API-PROJECTS-01: DISPATCHING -> REVIEW | 1c05fcbbdc; report reports/wp-api-projects-01-review-20261008.md |
 | 2026-10-08 10:28Z | WP-WORKER-01 | WP-WORKER-01: review round 3 started at d0728e2380 | reports/wp-worker-01-review-20261008-r3.md |
