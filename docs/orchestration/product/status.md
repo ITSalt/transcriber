@@ -35,7 +35,7 @@ CANCELLED (причина).
 | [WP-WORKER-01](work-packages/WP-WORKER-01-context-asr-llm.md) | worker | Контекст встречи в Deepgram и в промпт протокола, метаданные генерации | PROD | product-worker | https://github.com/ITSalt/transcriber/pull/17 (accepted d0728e2380) | 2026-10-08 |
 | [WP-WORKER-02](work-packages/WP-WORKER-02-project-memory.md) | worker | Память проекта в Neo4j: извлечение, сопоставление, сводка | CANCELLED (создан в неверном потоке; заменён WP-WORKER-MEMORY-01 (D-15)) | product-worker | — | 2026-10-07 |
 | [WP-INFRA-01](work-packages/WP-INFRA-01-neo4j.md) | infra | Neo4j памяти проекта: сервис, лимиты, бэкап, CI, шаг деплоя | PROD | product-infra | https://github.com/ITSalt/transcriber/pull/10 (accepted 0e7ebe85d3) | 2026-10-07 |
-| [WP-WEB-PROJECTS-01](work-packages/WP-WEB-PROJECTS-01-projects-context.md) | web-projects | Проекты и форма контекста перед распознаванием | ACCEPTED | product-web-projects | https://github.com/ITSalt/transcriber/pull/19 (accepted 79d01c1853) | 2026-10-08 |
+| [WP-WEB-PROJECTS-01](work-packages/WP-WEB-PROJECTS-01-projects-context.md) | web-projects | Проекты и форма контекста перед распознаванием | PROD | product-web-projects | https://github.com/ITSalt/transcriber/pull/19 (accepted 79d01c1853) | 2026-10-08 |
 | [WP-WEB-FEEDBACK-01](work-packages/WP-WEB-FEEDBACK-01-feedback.md) | web-feedback | Режим обратной связи по протоколу | ACCEPTED | product-web-feedback | https://github.com/ITSalt/transcriber/pull/18 | 2026-10-07 |
 | [WP-WEB-MEMORY-01](work-packages/WP-WEB-MEMORY-01-registry.md) | web-memory | Реестр задач и решений проекта, очередь подтверждений | ACCEPTED | product-web-memory | https://github.com/ITSalt/transcriber/pull/14 (accepted b404424afc) | 2026-10-07 |
 | [WP-API-PROJECTS-01](work-packages/WP-API-PROJECTS-01-projects-context.md) | api-projects | API проектов и контекста встречи, запуск распознавания | PROD | product-api-projects | https://github.com/ITSalt/transcriber/pull/20 (accepted 109c71f00f) | 2026-10-08 |
@@ -128,7 +128,7 @@ R-n — действие: точная команда одной строкой 
 | 16 | transcriber | WP-WEB-MEMORY-01 | — | WP-WORKER-MEMORY-01 | dropped |
 | 17 | transcriber | WP-API-PROJECTS-01 | — | WP-WEB-MEMORY-01 | merged |
 | 18 | transcriber | WP-WEB-FEEDBACK-01 | — | WP-API-PROJECTS-01 | dropped |
-| 19 | transcriber | WP-WEB-PROJECTS-01 | — | WP-WEB-FEEDBACK-01 | queued |
+| 19 | transcriber | WP-WEB-PROJECTS-01 | — | WP-WEB-FEEDBACK-01 | merged |
 | 20 | transcriber | WP-WORKER-MEMORY-01 | — | WP-WEB-PROJECTS-01 | dropped |
 | 21 | transcriber | WP-WEB-MEMORY-01 | — | WP-WORKER-MEMORY-01 | dropped |
 | 22 | transcriber | WP-WEB-FEEDBACK-01 | — | WP-WEB-PROJECTS-01 | queued |
@@ -142,6 +142,11 @@ R-n — действие: точная команда одной строкой 
 <!-- orch:journal -->
 | Дата | WP | Событие | Подтверждение |
 |------|----|---------|---------------|
+| 2026-10-08 11:15Z | WP-WEB-PROJECTS-01 | WP-WEB-PROJECTS-01 PROD: живой сценарий (навигация «Проекты», страница проектов, форма контекста при загрузке) со скриншотами | reports/verify-WP-WEB-PROJECTS-01-prod-20261008.md |
+| 2026-10-08 11:14Z | WP-WEB-PROJECTS-01 | WP-WEB-PROJECTS-01: VERIFIED_TEST -> PROD | verify --env prod 7a2b25a135: reports/verify-WP-WEB-PROJECTS-01-prod-20261008.md |
+| 2026-10-08 11:14Z | WP-WEB-PROJECTS-01 | WP-WEB-PROJECTS-01: MERGED -> VERIFIED_TEST | verify --env test 7a2b25a135: reports/verify-WP-WEB-PROJECTS-01-test-20261008.md |
+| 2026-10-08 11:10Z | WP-WEB-PROJECTS-01 | WP-WEB-PROJECTS-01 merged in the merge queue | orch.py deliver: 7a2b25a135 |
+| 2026-10-08 11:10Z | WP-WEB-PROJECTS-01 | WP-WEB-PROJECTS-01: ACCEPTED -> MERGED | gh pr merge --squash: 7a2b25a135 (https://github.com/ITSalt/transcriber/pull/19) |
 | 2026-10-08 11:10Z | WP-API-PROJECTS-01 | WP-API-PROJECTS-01 PROD: живой сценарий (проекты 200/401, контекст 404, last-protocol 404, start 409) | reports/verify-WP-API-PROJECTS-01-prod-20261008.md |
 | 2026-10-08 11:09Z | WP-API-PROJECTS-01 | WP-API-PROJECTS-01: VERIFIED_TEST -> PROD | verify --env prod bf75f694f2: reports/verify-WP-API-PROJECTS-01-prod-20261008.md |
 | 2026-10-08 11:09Z | WP-API-PROJECTS-01 | WP-API-PROJECTS-01: MERGED -> VERIFIED_TEST | verify --env test bf75f694f2: reports/verify-WP-API-PROJECTS-01-test-20261008-2.md |
