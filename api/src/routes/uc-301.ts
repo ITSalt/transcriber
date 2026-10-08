@@ -4,7 +4,8 @@
  * GET  /api/meetings/:id/protocol  → ProtocolResponse (JSON)
  * PUT  /api/meetings/:id/protocol  → ProtocolSaveResponse (JSON)
  *
- * NFR-007: No authentication at MVP — endpoints are open.
+ * FR-003 / RQ-044: workspace membership is checked by the auth plugin before validation
+ * and the handler (features/auth/routes.ts); foreign or nonexistent meeting → 404 NOT_FOUND.
  * RQ-029: GET gates on Meeting.status in {PROTOCOL_READY, EDITED}.
  * RQ-027/028/029/030: PUT atomically saves edits and transitions status.
  */
@@ -32,7 +33,7 @@ export async function protocolRoutes(app: FastifyInstance): Promise<void> {
       },
     },
     async (request, reply) => {
-      // NFR-007: no ownership filter at MVP
+      // FR-003: access already checked by the auth plugin (request.meetingAccess)
       const { id } = request.params
       const result = await getProtocol(id)
       return reply.status(200).send(result)
@@ -55,10 +56,10 @@ export async function protocolRoutes(app: FastifyInstance): Promise<void> {
       },
     },
     async (request, reply) => {
-      // NFR-007: no ownership filter at MVP
+      // FR-003: membership already checked by the auth plugin (foreign → 404)
       const { id } = request.params
       const { markdown_content } = request.body
-      const result = await saveProtocol(id, markdown_content)
+      const result = await saveProtocol(id, markdown_content, request.auth?.userId ?? null)
       return reply.status(200).send(result)
     },
   )

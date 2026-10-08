@@ -81,10 +81,18 @@ describe("TranscriptPage", () => {
   });
 
   it("shows error state when fetch fails", async () => {
-    mockFetch({ message: "Not Found" }, 404);
+    mockFetch({ message: "boom" }, 500);
     renderTranscriptPage();
     await waitFor(() => {
       expect(screen.getByTestId("transcript-error")).toBeInTheDocument();
+    });
+  });
+
+  it("shows the Not found page for a foreign or nonexistent meeting (404)", async () => {
+    mockFetch({ code: "NOT_FOUND", message: "Не найдено" }, 404);
+    renderTranscriptPage();
+    await waitFor(() => {
+      expect(screen.getByTestId("not-found-page")).toBeInTheDocument();
     });
   });
 

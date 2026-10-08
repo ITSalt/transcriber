@@ -19,7 +19,8 @@
  * ({ code, msg }) — see .tl/external-contracts/kie-anthropic.md § 5.1. All
  * classification therefore runs on the EFFECTIVE status, not the HTTP status.
  *
- * Prompt templates: worker/src/llm/prompts/{en,ru}/protocol.md
+ * Prompt templates: worker/src/llm/prompts/{en,ru}/protocol.md, and protocol-context.md
+ * when LlmInput.context carries a non-empty section (see ./protocol-prompt.ts).
  *
  * GPT-5.4 is intentionally not wired here yet — kie.ai exposes a separate
  * endpoint family for OpenAI-style models, and the spec was not provided.
@@ -27,11 +28,13 @@
  * (and any future model-router) gets a clean signal instead of a 404.
  */
 
-import { readFileSync } from 'node:fs';
-import { fileURLToPath } from 'node:url';
-import { join, dirname } from 'node:path';
 import type { ILlmProvider, LlmInput, LlmResult, LlmModel } from '@transcrib/shared';
 import { LLM_MODEL_DEFAULT } from '@transcrib/shared';
+import {
+  hasProtocolContext,
+  loadProtocolSystemPrompt,
+  renderProtocolUserMessage,
+} from './protocol-prompt.js';
 
 // ─── Error type ───────────────────────────────────────────────────────────────
 
@@ -128,18 +131,6 @@ const MODEL_ALIAS: Record<LlmModel, string> = {
 /** Max output tokens. kie.ai default is 4096; we keep that explicitly. */
 const DEFAULT_MAX_TOKENS = 4096;
 
-// ─── Prompt loader ────────────────────────────────────────────────────────────
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
-const PROMPTS_DIR = join(__dirname, 'prompts');
-
-function loadSystemPrompt(language: 'RU' | 'EN'): string {
-  const langDir = language === 'RU' ? 'ru' : 'en';
-  const promptPath = join(PROMPTS_DIR, langDir, 'protocol.md');
-  return readFileSync(promptPath, 'utf-8');
-}
-
 // ─── kie.ai response shape (Anthropic-compatible) ─────────────────────────────
 
 interface KieAiContentBlock {
@@ -187,12 +178,14 @@ export class KieAiLlmProvider implements ILlmProvider {
       );
     }
     const modelAlias = MODEL_ALIAS[model];
-    const systemPrompt = loadSystemPrompt(input.language);
+    // RQ-049 / RQ-060: no non-empty context section → protocol.md + the raw transcript,
+    // i.e. the pre-FR-004 request byte for byte.
+    const systemPrompt = loadProtocolSystemPrompt(input.language, hasProtocolContext(input.context)).text;
 
     const requestBody = {
       model: modelAlias,
       system: systemPrompt,
-      messages: [{ role: 'user', content: input.prompt }],
+      messages: [{ role: 'user', content: renderProtocolUserMessage(input.prompt, input.context) }],
       stream: false,
       max_tokens: DEFAULT_MAX_TOKENS,
     };
