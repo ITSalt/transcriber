@@ -14,7 +14,7 @@ import type { LlmContextSections, MeetingContextSnapshot } from '@transcrib/shar
 
 import { KieAiLlmProvider } from './kieai.js'
 import { loadProtocolSystemPrompt, renderProtocolUserMessage } from './protocol-prompt.js'
-import { buildProtocolContext } from './protocol-context.js'
+import { buildProtocolContext, stripProjectSummary } from './protocol-context.js'
 
 const HERE = dirname(fileURLToPath(import.meta.url))
 const FIXTURES = join(HERE, '..', '..', 'test', 'fixtures')
@@ -225,5 +225,70 @@ describe('buildProtocolContext — what each section says', () => {
     })!
     expect(ctx.previous_protocol).toBeNull()
     expect(ctx.meeting_meta).toBe('Title: Созвон\nRecording uploaded: 2026-10-07')
+  })
+})
+
+describe('WP-WORKER-07 — memory of another meeting reaches the prompt only as tasks/decisions', () => {
+  const MEMORY_B = [
+    'Сводка проекта:',
+    'Встреча TCB 26.05: дедлайн 22 мая, раскатка 5→100 %, backlink, лендинги. Участники: Ильнур, Павел.',
+    '',
+    'Открытые задачи (код | задача | исполнитель | срок | статус):',
+    'T-1 | Раскатать 5→100 % | Ильнур | до 22.05 | open',
+    '',
+    'Последние решения:',
+    'D-1 | Запускаем лендинги (встреча 4)',
+  ].join('\n')
+  const TRANSCRIPT_A = '[00:00] Мария: Обсуждаем договор с Ромашкой.'
+  const meeting = { title: 'Созвон 12.05', createdAt: new Date('2026-05-12T09:30:00Z') }
+  const PREV_B = '## Участники\n- Ильнур\n- Павел\n\n## Обсуждение\n- раскатка TCB'
+
+  it('drops the summary, keeps open tasks and decisions', () => {
+    const ctx = buildProtocolContext({ snapshot: null, memory: MEMORY_B, meeting, language: 'RU' })!
+    expect(ctx.project_memory).toBe(
+      [
+        'Открытые задачи (код | задача | исполнитель | срок | статус):',
+        'T-1 | Раскатать 5→100 % | Ильнур | до 22.05 | open',
+        '',
+        'Последние решения:',
+        'D-1 | Запускаем лендинги (встреча 4)',
+      ].join('\n'),
+    )
+    const message = renderProtocolUserMessage(TRANSCRIPT_A, ctx)
+    expect(message).not.toContain('Сводка проекта')
+    expect(message).not.toContain('дедлайн 22 мая')
+    expect(message).toContain('<project_memory>')
+    expect(message).toContain('T-1 | Раскатать')
+  })
+
+  it('works when only decisions or only tasks follow the summary, and when nothing does', () => {
+    expect(stripProjectSummary('Сводка проекта:\nS\n\nПоследние решения:\nD-1 | x')).toBe('Последние решения:\nD-1 | x')
+    expect(stripProjectSummary('Сводка проекта:\nS\n\nОткрытые задачи (код):\nT-1 | x')).toBe('Открытые задачи (код):\nT-1 | x')
+    expect(stripProjectSummary('Сводка проекта:\nтолько сводка')).toBeNull()
+    expect(stripProjectSummary('T-42 | задача')).toBe('T-42 | задача')
+    expect(stripProjectSummary(null)).toBeNull()
+  })
+
+  it('a summary-only memory with no snapshot leaves the request without context (byte-for-byte pre-program)', () => {
+    expect(
+      buildProtocolContext({ snapshot: null, memory: 'Сводка проекта:\nтолько сводка', meeting, language: 'RU' }),
+    ).toBeUndefined()
+  })
+
+  it('the previous protocol of meeting B is still passed whole (it is carried-task data)', () => {
+    const snapshot: MeetingContextSnapshot = {
+      meeting_type: null, goal: null, agenda: null, participants: [], glossary: [],
+      previous_protocol: { source: 'upload', text: PREV_B }, notes: null,
+    }
+    const ctx = buildProtocolContext({ snapshot, memory: MEMORY_B, meeting, language: 'RU' })!
+    expect(ctx.previous_protocol).toBe(PREV_B)
+  })
+
+  it('the context templates tell the model to list only people from the transcript', () => {
+    for (const lang of ['RU', 'EN'] as const) {
+      const { text } = loadProtocolSystemPrompt(lang, true)
+      expect(text).toMatch(/ONLY people who speak in the transcript/)
+      expect(text).not.toMatch(/project summary/)
+    }
   })
 })
