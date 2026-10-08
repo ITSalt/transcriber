@@ -20,7 +20,8 @@ import { ParticipantSide, PARTICIPANT_NAME_MAX, PARTICIPANT_ALIASES_MAX, GLOSSAR
 export const MeetingType = z.enum(['NEGOTIATION', 'STATUS', 'PLANNING', 'INTERVIEW', 'OTHER']);
 export type MeetingType = z.infer<typeof MeetingType>;
 
-export const PREVIOUS_PROTOCOL_MAX_CHARS = 200_000;
+/** D-25: limit of the previous-protocol text; no truncation in the worker. */
+export const PREVIOUS_PROTOCOL_MAX_CHARS = 50_000;
 export const CONTEXT_GOAL_MAX = 2_000;
 export const CONTEXT_AGENDA_MAX = 10_000;
 export const CONTEXT_NOTES_MAX = 20_000;
