@@ -54,7 +54,7 @@ describe('resolveLlmSettings', () => {
 
   it('startup line', () => {
     expect(describeLlmSettings(resolveLlmSettings({ OPENROUTER_API_KEY: 'or' }))).toBe(
-      'llm provider: openrouter model: anthropic/claude-haiku-5.5 proxy: direct',
+      'llm provider: openrouter model: anthropic/claude-haiku-5.5 proxy: direct reasoning: off max_tokens: 8192',
     )
   })
 
@@ -63,7 +63,7 @@ describe('resolveLlmSettings', () => {
     const s = resolveLlmSettings({ OPENROUTER_API_KEY: 'or', OUTBOUND_PROXY_URL: 'http://user:s3cret@proxy.test:3128' })
     expect(s).toMatchObject({ useProxy: true, proxy: 'http://***:***@proxy.test:3128' })
     const line = describeLlmSettings(s)
-    expect(line).toBe('llm provider: openrouter model: anthropic/claude-haiku-5.5 proxy: http://***:***@proxy.test:3128')
+    expect(line).toBe('llm provider: openrouter model: anthropic/claude-haiku-5.5 proxy: http://***:***@proxy.test:3128 reasoning: off max_tokens: 8192')
     expect(line).not.toContain('s3cret')
   })
 
@@ -84,6 +84,33 @@ describe('resolveLlmSettings', () => {
         expect((err as Error).message).not.toContain('s3cret')
       }
     }
+  })
+})
+
+describe('LLM_REASONING / LLM_MAX_TOKENS (WP-WORKER-05)', () => {
+  const or = { OPENROUTER_API_KEY: 'or' }
+
+  it('defaults: reasoning off, 8192; blank = unset', () => {
+    expect(resolveLlmSettings(or)).toMatchObject({ reasoning: 'off', maxTokens: 8192 })
+    expect(resolveLlmSettings({ ...or, LLM_REASONING: '', LLM_MAX_TOKENS: '' })).toMatchObject({ reasoning: 'off', maxTokens: 8192 })
+  })
+
+  it('valid values are taken; the startup line shows them', () => {
+    const s = resolveLlmSettings({ ...or, LLM_REASONING: 'low', LLM_MAX_TOKENS: '16000' })
+    expect(s).toMatchObject({ reasoning: 'low', maxTokens: 16000 })
+    expect(describeLlmSettings(s)).toContain('reasoning: low max_tokens: 16000')
+  })
+
+  it('invalid values are configuration errors at start', () => {
+    for (const bad of [{ LLM_REASONING: 'max' }, { LLM_REASONING: 'on' }, { LLM_MAX_TOKENS: '255' }, { LLM_MAX_TOKENS: 'lots' }, { LLM_MAX_TOKENS: '1.5' }]) {
+      expect(() => resolveLlmSettings({ ...or, ...bad })).toThrowError(LlmConfigError)
+    }
+    expect(() => resolveLlmSettings({ ...or, LLM_REASONING: 'max' })).toThrowError(/LLM_REASONING/)
+    expect(() => resolveLlmSettings({ ...or, LLM_MAX_TOKENS: '255' })).toThrowError(/LLM_MAX_TOKENS/)
+  })
+
+  it('the kie.ai startup line has no reasoning / max_tokens', () => {
+    expect(describeLlmSettings(resolveLlmSettings({ KIE_API_KEY: 'k' }))).toBe('llm provider: kieai model: claude-sonnet-4-6 proxy: direct')
   })
 })
 

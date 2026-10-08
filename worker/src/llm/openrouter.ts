@@ -11,6 +11,7 @@
  *   Authorization: Bearer {OPENROUTER_API_KEY}
  *   HTTP-Referer: https://transcriber.itsalt.ru, X-Title: Transcrib   (OpenRouter's attribution headers)
  *   { model, messages:[{role:'system',content},{role:'user',content}], max_tokens,
+ *     reasoning: {enabled:false} | {effort}                (WP-WORKER-05, LLM_REASONING; default off),
  *     response_format?: {type:'json_object'} }          (only for responseFormat 'json')
  *
  * Response:
@@ -41,7 +42,10 @@ import { hasProtocolContext, loadProtocolSystemPrompt, renderProtocolUserMessage
 export const OPENROUTER_API_BASE_URL = 'https://openrouter.ai/api/v1'
 export const OPENROUTER_DEFAULT_MODEL = 'anthropic/claude-haiku-5.5'
 export const OPENROUTER_DEFAULT_TIMEOUT_MS = 180_000
-const DEFAULT_MAX_TOKENS = 4096
+/** LLM_MAX_TOKENS default: room for the answer of a long protocol (WP-WORKER-05) */
+export const OPENROUTER_DEFAULT_MAX_TOKENS = 8192
+/** LLM_REASONING values: off = `reasoning: { enabled: false }`, else `{ effort }` */
+export type OpenRouterReasoning = 'off' | 'low' | 'medium' | 'high'
 const REFERER = 'https://transcriber.itsalt.ru'
 const TITLE = 'Transcrib'
 /** how much of an error body goes to the message / logs */
@@ -60,8 +64,8 @@ export function isTransientOpenRouterStatus(status: number): boolean {
 
 interface OpenRouterResponse {
   model?: string
-  choices?: Array<{ message?: { content?: unknown } }>
-  usage?: { prompt_tokens?: number; completion_tokens?: number }
+  choices?: Array<{ message?: { content?: unknown }; finish_reason?: unknown }>
+  usage?: { prompt_tokens?: number; completion_tokens?: number; completion_tokens_details?: { reasoning_tokens?: number } }
   error?: { code?: unknown; message?: unknown }
 }
 
@@ -83,8 +87,23 @@ export class OpenRouterLlmProvider implements ILlmProvider, ILlmCompletionProvid
   private readonly model: string
   private readonly timeoutMs: number
   private readonly useProxy: boolean
+  private readonly reasoning: OpenRouterReasoning
+  private readonly maxTokens: number
+  private readonly log?: (msg: string, ctx: Record<string, unknown>) => void
 
-  constructor(opts?: { apiKey?: string; baseUrl?: string; model?: string; timeoutMs?: number; useProxy?: boolean }) {
+  constructor(opts?: {
+    apiKey?: string
+    baseUrl?: string
+    model?: string
+    timeoutMs?: number
+    useProxy?: boolean
+    /** WP-WORKER-05: default off (the model otherwise "thinks" away the whole output limit) */
+    reasoning?: OpenRouterReasoning
+    /** WP-WORKER-05: max_tokens of protocol generation; complete() uses input.maxTokens ?? this */
+    maxTokens?: number
+    /** info line with the token usage (incl. reasoning tokens) per call */
+    log?: (msg: string, ctx: Record<string, unknown>) => void
+  }) {
     const key = opts?.apiKey ?? process.env['OPENROUTER_API_KEY']
     if (!key) {
       throw new OpenRouterLlmError('OPENROUTER_API_KEY is not set. Provide it as a constructor option or via process.env.')
@@ -95,6 +114,9 @@ export class OpenRouterLlmProvider implements ILlmProvider, ILlmCompletionProvid
     this.timeoutMs = opts?.timeoutMs ?? OPENROUTER_DEFAULT_TIMEOUT_MS
     // WP-WORKER-04: through OUTBOUND_PROXY_URL when it is set (no-op while it is unset)
     this.useProxy = opts?.useProxy ?? true
+    this.reasoning = opts?.reasoning ?? 'off'
+    this.maxTokens = opts?.maxTokens ?? OPENROUTER_DEFAULT_MAX_TOKENS
+    this.log = opts?.log
   }
 
   /** ILlmProvider — protocol generation. Same prompt builders as kie.ai. */
@@ -102,7 +124,7 @@ export class OpenRouterLlmProvider implements ILlmProvider, ILlmCompletionProvid
     return this.chat({
       system: loadProtocolSystemPrompt(input.language, hasProtocolContext(input.context)).text,
       user: renderProtocolUserMessage(input.prompt, input.context),
-      maxTokens: DEFAULT_MAX_TOKENS,
+      maxTokens: this.maxTokens,
       json: false,
     })
   }
@@ -113,7 +135,7 @@ export class OpenRouterLlmProvider implements ILlmProvider, ILlmCompletionProvid
     const res = await this.chat({
       system: input.system,
       user: input.user,
-      maxTokens: input.maxTokens ?? DEFAULT_MAX_TOKENS,
+      maxTokens: input.maxTokens ?? this.maxTokens,
       json,
     })
     return json ? { ...res, text: stripCodeFence(res.text) } : res
@@ -132,6 +154,7 @@ export class OpenRouterLlmProvider implements ILlmProvider, ILlmCompletionProvid
         { role: 'user', content: req.user },
       ],
       max_tokens: req.maxTokens,
+      reasoning: this.reasoning === 'off' ? { enabled: false } : { effort: this.reasoning },
       ...(req.json ? { response_format: { type: 'json_object' } } : {}),
     }
 
@@ -183,14 +206,34 @@ export class OpenRouterLlmProvider implements ILlmProvider, ILlmCompletionProvid
     }
     const content = data.choices?.[0]?.message?.content
     const text = typeof content === 'string' ? content.trim() : ''
+    const finishReason = data.choices?.[0]?.finish_reason
+    const reasoningTokens = data.usage?.completion_tokens_details?.reasoning_tokens ?? 0
+    const completionTokens = data.usage?.completion_tokens ?? 0
+    this.log?.('openrouter completion', {
+      model: data.model ?? this.model,
+      finishReason,
+      tokensIn: data.usage?.prompt_tokens ?? 0,
+      tokensOut: completionTokens,
+      reasoningTokens,
+    })
     if (!text) {
-      throw new OpenRouterLlmError('OpenRouter API returned an empty or missing completion text', { status: response.status })
+      if (finishReason === 'length') {
+        // the limit went to reasoning: retrying the same request cannot help
+        throw new OpenRouterLlmError(
+          `OpenRouter: max_tokens (${req.maxTokens}) exhausted before any content (reasoning_tokens=${reasoningTokens}, completion_tokens=${completionTokens}) — lower LLM_REASONING or raise LLM_MAX_TOKENS`,
+          { status: response.status },
+        )
+      }
+      throw new OpenRouterLlmError(
+        `OpenRouter API returned an empty or missing completion text (finish_reason=${typeof finishReason === 'string' ? finishReason : 'unknown'})`,
+        { status: response.status },
+      )
     }
     return {
       text,
       model: typeof data.model === 'string' && data.model ? data.model : this.model,
       tokensIn: data.usage?.prompt_tokens ?? 0,
-      tokensOut: data.usage?.completion_tokens ?? 0,
+      tokensOut: completionTokens,
     }
   }
 }
