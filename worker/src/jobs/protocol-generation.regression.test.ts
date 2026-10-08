@@ -67,6 +67,7 @@ vi.mock('../lib/storage.js', () => ({
 import { processProtocolGenerationJob } from './protocol-generation.js'
 import { prisma } from '../lib/prisma.js'
 import { KieAiLlmProvider, KieAiLlmError } from '../llm/kieai.js'
+import { OpenRouterLlmError } from '../llm/openrouter.js'
 import { publishMeetingEvent } from '../lib/publisher.js'
 
 // ── Typed mock helpers ────────────────────────────────────────────────────────
@@ -409,6 +410,47 @@ describe('REGR-P4 — FR-001 transient-retry semantics (RC-UC-300)', () => {
 
     // NO FAILED write — BullMQ will retry
     expect(fp.$transaction).not.toHaveBeenCalled()
+  })
+
+  it('P4a-or: transient OpenRouter error (503) with attempts remaining — re-throws WITHOUT writing FAILED (WP-WORKER-03)', async () => {
+    const transientErr = new OpenRouterLlmError('OpenRouter API error: HTTP 503', { status: 503, isTransient: true })
+    const mockLlm = { generate: vi.fn().mockRejectedValue(transientErr) }
+    fp.protocolGenerationJob.findUnique.mockResolvedValue(BASE_PG_JOB as any)
+    fp.protocolGenerationJob.updateMany.mockResolvedValue({ count: 1 })
+    ;(publishMeetingEvent as MockedFunction<AnyFn>).mockResolvedValue(undefined)
+
+    await expect(
+      processProtocolGenerationJob(makeJob('rp-or-1', PGJOB, 0) as any, makeLogger(), { llm: mockLlm }),
+    ).rejects.toThrow('HTTP 503')
+    expect(fp.$transaction).not.toHaveBeenCalled()
+  })
+
+  it('P4c-or: permanent OpenRouter error (402) → writes FAILED on the first attempt (WP-WORKER-03)', async () => {
+    const permanentErr = new OpenRouterLlmError('OpenRouter API error: HTTP 402', { status: 402, isTransient: false })
+    const mockLlm = { generate: vi.fn().mockRejectedValue(permanentErr) }
+    fp.protocolGenerationJob.findUnique.mockResolvedValue(BASE_PG_JOB as any)
+    fp.protocolGenerationJob.updateMany.mockResolvedValue({ count: 1 })
+    ;(publishMeetingEvent as MockedFunction<AnyFn>).mockResolvedValue(undefined)
+    let failJobArgs: any
+    fp.$transaction.mockImplementation(async (cb: any) =>
+      cb({
+        protocolGeneration: { create: vi.fn().mockResolvedValue({}) },
+        protocolVersion: { create: vi.fn().mockResolvedValue({}) },
+        protocolGenerationJob: {
+          updateMany: vi.fn().mockImplementation(async (args: any) => {
+            failJobArgs = args
+            return { count: 1 }
+          }),
+          findUnique: vi.fn().mockResolvedValue({ meetingId: MTG }),
+        },
+        meeting: { updateMany: vi.fn().mockResolvedValue({ count: 1 }) },
+      }),
+    )
+
+    await expect(
+      processProtocolGenerationJob(makeJob('rp-or-2', PGJOB, 0) as any, makeLogger(), { llm: mockLlm }),
+    ).rejects.toThrow('HTTP 402')
+    expect(failJobArgs.data.status).toBe('FAILED')
   })
 
   it('P4b: transient LLM error on FINAL attempt (attemptsMade=2) → writes FAILED (FR-001 exhaustion)', async () => {

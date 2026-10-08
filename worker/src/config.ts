@@ -5,7 +5,20 @@
 import 'dotenv/config'
 import { z } from 'zod'
 
-const EnvSchema = z.object({
+/** `VAR=` in a .env file means "unset" */
+const blankAsUnset = (v: unknown) => (typeof v === 'string' && v.trim() === '' ? undefined : v)
+
+/** WP-WORKER-03 (D-32): LLM provider selection. Resolved (defaults by key presence) in llm/provider.ts. */
+export const LlmEnvSchema = z.object({
+  LLM_PROVIDER: z.preprocess(blankAsUnset, z.enum(['openrouter', 'kieai']).optional()),
+  LLM_MODEL: z.preprocess(blankAsUnset, z.string().optional()),
+  OPENROUTER_API_KEY: z.preprocess(blankAsUnset, z.string().optional()),
+  KIE_API_KEY: z.preprocess(blankAsUnset, z.string().optional()),
+  /** per-request timeout of the LLM call; a timeout is a transient failure */
+  LLM_TIMEOUT_MS: z.preprocess(blankAsUnset, z.coerce.number().int().min(1000).default(180_000)),
+})
+
+const EnvSchema = LlmEnvSchema.extend({
   REDIS_URL: z.string().min(1).default('redis://localhost:6379'),
   LOG_LEVEL: z
     .enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace', 'silent'])

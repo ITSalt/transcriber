@@ -35,6 +35,7 @@ import {
   loadProtocolSystemPrompt,
   renderProtocolUserMessage,
 } from './protocol-prompt.js';
+import { LlmProviderError, bodyExcerpt, isTransientLlmError } from './errors.js';
 
 // ─── Error type ───────────────────────────────────────────────────────────────
 
@@ -52,25 +53,15 @@ import {
  *
  * `status` carries the effective status (so an in-envelope 429 reports 429, not 200).
  */
-export class KieAiLlmError extends Error {
-  public readonly status?: number;
-  public readonly reason?: unknown;
-  /** True when the error is transient (429/5xx) and safe to retry with BullMQ backoff. */
-  public readonly isTransient: boolean;
-
+export class KieAiLlmError extends LlmProviderError {
   constructor(message: string, opts?: { status?: number; reason?: unknown; isTransient?: boolean }) {
-    super(message);
+    super(message, opts);
     this.name = 'KieAiLlmError';
-    this.status = opts?.status;
-    this.reason = opts?.reason;
-    this.isTransient = opts?.isTransient ?? false;
   }
 }
 
-/** Returns true if the error should be retried. RC-UC-300 FR-001 / DEC-001. */
-export function isTransientLlmError(err: unknown): boolean {
-  return err instanceof KieAiLlmError && err.isTransient;
-}
+// Re-exported: callers import the retry check from here since TECH-011; it now covers every provider.
+export { isTransientLlmError };
 
 /**
  * Is this (effective) status worth retrying? RC-UC-300 / DEC-001.
@@ -108,20 +99,13 @@ export function effectiveStatus(httpStatus: number, body: unknown): number {
   return httpStatus;
 }
 
-/** Short, log-safe excerpt of a response body, for the error message. */
-function bodyExcerpt(body: unknown, max = 200): string {
-  const raw = typeof body === 'string' ? body : JSON.stringify(body);
-  if (!raw) return '';
-  return raw.length > max ? `${raw.slice(0, max)}…` : raw;
-}
-
 // ─── kie.ai API constants ─────────────────────────────────────────────────────
 
 /** Base URL for kie.ai Claude messages endpoint. The full endpoint is `${BASE}/messages`. */
 const KIE_API_BASE_URL = 'https://api.kie.ai/claude/v1';
 
 /** Model alias to send in the kie.ai request body. */
-const MODEL_ALIAS: Record<LlmModel, string> = {
+const MODEL_ALIAS: Record<string, string> = {
   'claude-sonnet-4-6': 'claude-sonnet-4-6',
   // GPT-5.4 lives on a different (OpenAI-style) endpoint family on kie.ai
   // and is not wired up yet. See the file header for details.
