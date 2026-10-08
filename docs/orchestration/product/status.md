@@ -38,8 +38,8 @@ CANCELLED (причина).
 | [WP-WEB-PROJECTS-01](work-packages/WP-WEB-PROJECTS-01-projects-context.md) | web-projects | Проекты и форма контекста перед распознаванием | ACCEPTED | product-web-projects | https://github.com/ITSalt/transcriber/pull/19 | 2026-10-07 |
 | [WP-WEB-FEEDBACK-01](work-packages/WP-WEB-FEEDBACK-01-feedback.md) | web-feedback | Режим обратной связи по протоколу | ACCEPTED | product-web-feedback | https://github.com/ITSalt/transcriber/pull/18 | 2026-10-07 |
 | [WP-WEB-MEMORY-01](work-packages/WP-WEB-MEMORY-01-registry.md) | web-memory | Реестр задач и решений проекта, очередь подтверждений | ACCEPTED | product-web-memory | https://github.com/ITSalt/transcriber/pull/14 (accepted b404424afc) | 2026-10-07 |
-| [WP-API-PROJECTS-01](work-packages/WP-API-PROJECTS-01-projects-context.md) | api-projects | API проектов и контекста встречи, запуск распознавания | REVISE | product-api-projects | https://github.com/ITSalt/transcriber/pull/20 | 2026-10-08 |
-| [WP-API-FEEDBACK-01](work-packages/WP-API-FEEDBACK-01-feedback.md) | api-feedback | API версий протокола и обратной связи, разбор docx | ACCEPTED | product-api-feedback | https://github.com/ITSalt/transcriber/pull/21 (accepted e420bd0f93) | 2026-10-08 |
+| [WP-API-PROJECTS-01](work-packages/WP-API-PROJECTS-01-projects-context.md) | api-projects | API проектов и контекста встречи, запуск распознавания | REVIEW | product-api-projects | https://github.com/ITSalt/transcriber/pull/20 | 2026-10-08 |
+| [WP-API-FEEDBACK-01](work-packages/WP-API-FEEDBACK-01-feedback.md) | api-feedback | API версий протокола и обратной связи, разбор docx | MERGED | product-api-feedback | https://github.com/ITSalt/transcriber/pull/21 (accepted e420bd0f93) | 2026-10-08 |
 | [WP-API-MEMORY-01](work-packages/WP-API-MEMORY-01-registry.md) | api-memory | API памяти проекта: задачи, решения, подтверждения | READY | product-api-memory | — | 2026-10-07 |
 | [WP-WORKER-MEMORY-01](work-packages/WP-WORKER-MEMORY-01-pipeline.md) | worker-memory | Память проекта в Neo4j: слой графа, извлечение, сопоставление, сводка | ACCEPTED | product-worker-memory | https://github.com/ITSalt/transcriber/pull/16 (accepted b6561a5cf7) | 2026-10-07 |
 | [WP-INFRA-02](work-packages/WP-INFRA-02-deploy-migrate-first.md) | infra | Порядок деплоя: миграции Postgres до сборки и замены dist | PROD | product-infra | https://github.com/ITSalt/transcriber/pull/11 (accepted 6694e5e172) | 2026-10-07 |
@@ -100,8 +100,6 @@ R-n — действие: точная команда одной строкой 
 | transcriber:shared/** | transcriber | WP-WORKER-MEMORY-01 | 2026-10-07 20:11Z | — | dispatch |
 | transcriber:worker/package.json | transcriber | WP-WORKER-MEMORY-01 | 2026-10-07 20:11Z | — | dispatch |
 | transcriber:.tl/changelog.md | transcriber | WP-API-PROJECTS-01 | 2026-10-08 10:33Z | — | — |
-| transcriber:.tl/status.json | transcriber | WP-API-FEEDBACK-01 | 2026-10-08 10:39Z | — | — |
-| transcriber:graph | transcriber | WP-API-PROJECTS-01 | 2026-10-08 10:50Z | — | — |
 
 ## Очередь слияний
 
@@ -124,7 +122,7 @@ R-n — действие: точная команда одной строкой 
 | 11 | transcriber | WP-WORKER-01 | https://github.com/ITSalt/transcriber/pull/17 | WP-FRONTEND-02 | merged |
 | 12 | transcriber | WP-WORKER-MEMORY-01 | https://github.com/ITSalt/transcriber/pull/16 | WP-WORKER-01 | dropped |
 | 13 | transcriber | WP-WEB-MEMORY-01 | https://github.com/ITSalt/transcriber/pull/14 | WP-WORKER-MEMORY-01 | dropped |
-| 14 | transcriber | WP-API-FEEDBACK-01 | — | — | queued |
+| 14 | transcriber | WP-API-FEEDBACK-01 | — | — | merged |
 | 15 | transcriber | WP-WORKER-MEMORY-01 | — | WP-API-FEEDBACK-01 | queued |
 | 16 | transcriber | WP-WEB-MEMORY-01 | — | WP-WORKER-MEMORY-01 | queued |
 
@@ -135,6 +133,10 @@ R-n — действие: точная команда одной строкой 
 <!-- orch:journal -->
 | Дата | WP | Событие | Подтверждение |
 |------|----|---------|---------------|
+| 2026-10-08 10:56Z | WP-API-PROJECTS-01 | WP-API-PROJECTS-01: REVISE -> REVIEW | 17bdd3261e; report reports/wp-api-projects-01-review-20261008-r2.md |
+| 2026-10-08 10:56Z | WP-API-FEEDBACK-01 | WP-API-FEEDBACK-01 merged in the merge queue; released transcriber:.tl/status.json | orch.py deliver: 7f3b99b622 |
+| 2026-10-08 10:56Z | WP-API-FEEDBACK-01 | WP-API-FEEDBACK-01: ACCEPTED -> MERGED | gh pr merge --squash: 7f3b99b622 (https://github.com/ITSalt/transcriber/pull/21) |
+| 2026-10-08 10:55Z | WP-API-PROJECTS-01 | lock transcriber:graph released | orch.py lock |
 | 2026-10-08 10:53Z | WP-API-FEEDBACK-01 | WP-API-FEEDBACK-01: ACCEPTED -> ACCEPTED | reports/wp-api-feedback-01-review-20261008-r2.md: docs+rebase, код без изменений, CI run 37766184266 pass на e420bd0f93 |
 | 2026-10-08 10:53Z | WP-API-FEEDBACK-01 | WP-API-FEEDBACK-01: accepted at e420bd0f93b4c6dda41967f3f9b7f1bb26b64aa6 | report reports/wp-api-feedback-01-review-20261008-r2.md |
 | 2026-10-08 10:51Z | WP-API-FEEDBACK-01 | WP-API-FEEDBACK-01: review round 2 started at e420bd0f93 | reports/wp-api-feedback-01-review-20261008-r2.md |

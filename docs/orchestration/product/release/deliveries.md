@@ -14,6 +14,7 @@
 | 2026-10-08 10:09Z | WP-BACKEND-01 | https://github.com/ITSalt/transcriber/pull/15 | fd9ca659f0f8 | deploy-production.yml: run https://github.com/ITSalt/transcriber/actions/runs/37761646839 succeeded | PASS | — | — | — | влит --squash |
 | 2026-10-08 10:22Z | WP-FRONTEND-02 | https://github.com/ITSalt/transcriber/pull/13 | ae76dda3e36c | deploy-production.yml: run https://github.com/ITSalt/transcriber/actions/runs/37763064027 succeeded | PASS | — | — | — | влит --squash |
 | 2026-10-08 10:33Z | WP-WORKER-01 | https://github.com/ITSalt/transcriber/pull/17 | 40d6ba5bc2ec | deploy-production.yml: run https://github.com/ITSalt/transcriber/actions/runs/37764296577 succeeded | PASS | — | — | — | влит --squash |
+| 2026-10-08 10:56Z | WP-API-FEEDBACK-01 | https://github.com/ITSalt/transcriber/pull/21 | 7f3b99b62263 | — | — | — | — | — | влит --squash |
 
 ## Релизы
 
