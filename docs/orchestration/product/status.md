@@ -45,7 +45,7 @@ CANCELLED (причина).
 | [WP-INFRA-02](work-packages/WP-INFRA-02-deploy-migrate-first.md) | infra | Порядок деплоя: миграции Postgres до сборки и замены dist | PROD | product-infra | https://github.com/ITSalt/transcriber/pull/11 (accepted 6694e5e172) | 2026-10-07 |
 | [WP-INFRA-03](work-packages/WP-INFRA-03-neo4j-ports.md) | infra | Порты Neo4j памяти проекта 7476/7689 (D-26) | PROD | product-infra | https://github.com/ITSalt/transcriber/pull/22 (accepted 5d27d4a320) | 2026-10-08 |
 | [WP-WORKER-03](work-packages/WP-WORKER-03-openrouter-llm.md) | worker | LLM-провайдер OpenRouter (anthropic/claude-haiku-5.5) за ILlmProvider, переключение провайдера по env | VERIFYING | product-worker | https://github.com/ITSalt/transcriber/pull/24 (accepted 33f870eacd) | 2026-10-08 |
-| [WP-WORKER-04](work-packages/WP-WORKER-04-outbound-proxy.md) | worker | Исходящий прокси для OpenRouter (OUTBOUND_PROXY_URL, undici ProxyAgent, только LLM-трафик) | ACCEPTED | product-worker | https://github.com/ITSalt/transcriber/pull/25 (accepted 83f42ec2b1) | 2026-10-08 |
+| [WP-WORKER-04](work-packages/WP-WORKER-04-outbound-proxy.md) | worker | Исходящий прокси для OpenRouter (OUTBOUND_PROXY_URL, undici ProxyAgent, только LLM-трафик) | PROD | product-worker | https://github.com/ITSalt/transcriber/pull/25 (accepted 83f42ec2b1) | 2026-10-08 |
 
 ## Ждёт владельца
 
@@ -105,9 +105,6 @@ R-n — действие: точная команда одной строкой 
 <!-- orch:locks -->
 | Замок | Репозиторий | Держатель | С | Ждут | Примечание |
 |-------|-------------|-----------|---|------|------------|
-| transcriber:**/package.json | transcriber | WP-WORKER-04 | 2026-10-08 16:55Z | — | dispatch |
-| transcriber:worker/package.json | transcriber | WP-WORKER-04 | 2026-10-08 16:55Z | — | dispatch |
-| transcriber:pnpm-lock.yaml | transcriber | WP-WORKER-04 | 2026-10-08 16:55Z | — | dispatch |
 
 ## Очередь слияний
 
@@ -146,7 +143,7 @@ R-n — действие: точная команда одной строкой 
 | 27 | transcriber | WP-WEB-MEMORY-01 | — | WP-WORKER-MEMORY-01 | merged |
 | 28 | transcriber | WP-API-MEMORY-01 | https://github.com/ITSalt/transcriber/pull/23 | — | merged |
 | 29 | transcriber | WP-WORKER-03 | https://github.com/ITSalt/transcriber/pull/24 | — | merged |
-| 30 | transcriber | WP-WORKER-04 | https://github.com/ITSalt/transcriber/pull/25 | — | queued |
+| 30 | transcriber | WP-WORKER-04 | https://github.com/ITSalt/transcriber/pull/25 | — | merged |
 
 ## Журнал
 
@@ -155,6 +152,11 @@ R-n — действие: точная команда одной строкой 
 <!-- orch:journal -->
 | Дата | WP | Событие | Подтверждение |
 |------|----|---------|---------------|
+| 2026-10-08 17:30Z | WP-WORKER-04 | WP-WORKER-04 доставлен (merge 0f14bc7de3, deploy success, verify test/prod PASS); прод переключён на OpenRouter через прокси владельца: LLM_PROVIDER=openrouter, LLM_MODEL=anthropic/claude-haiku-5.5, воркер online 17:29:42Z со строкой «proxy: <маскированный адрес прокси>»; живой сценарий — повтор протоколов 12.05 и 20.05 (проход A) | pm2 logs transcrib-worker; orch.py verify prod PASS |
+| 2026-10-08 17:29Z | WP-WORKER-04 | WP-WORKER-04: VERIFIED_TEST -> PROD | verify --env prod 0f14bc7de3: reports/verify-WP-WORKER-04-prod-20261008.md |
+| 2026-10-08 17:29Z | WP-WORKER-04 | WP-WORKER-04: MERGED -> VERIFIED_TEST | verify --env test 0f14bc7de3: reports/verify-WP-WORKER-04-test-20261008.md |
+| 2026-10-08 17:25Z | WP-WORKER-04 | WP-WORKER-04 merged in the merge queue; released transcriber:**/package.json, transcriber:worker/package.json, transcriber:pnpm-lock.yaml | orch.py deliver: 0f14bc7de3 |
+| 2026-10-08 17:25Z | WP-WORKER-04 | WP-WORKER-04: ACCEPTED -> MERGED | gh pr merge --squash: 0f14bc7de3 (https://github.com/ITSalt/transcriber/pull/25); after failure by D-34 |
 | 2026-10-08 17:24Z | WP-WORKER-04 | WP-WORKER-04 queued for merge (sequential) | https://github.com/ITSalt/transcriber/pull/25 |
 | 2026-10-08 17:24Z | WP-WORKER-04 | WP-WORKER-04: accepted at 83f42ec2b13e9280ff68b5719bda18370fe01ab9 | report reports/wp-worker-04-review-20261008.md |
 | 2026-10-08 17:24Z | WP-WORKER-04 | WP-WORKER-04: REVIEW -> ACCEPTED | 83f42ec2b1; reports/wp-worker-04-review-20261008.md |

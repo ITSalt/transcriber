@@ -23,6 +23,7 @@
 | 2026-10-08 11:58Z | WP-WEB-MEMORY-01 | https://github.com/ITSalt/transcriber/pull/14 | d97912108e87 | deploy-production.yml: run https://github.com/ITSalt/transcriber/actions/runs/37773584532 succeeded | PASS | — | — | — | влит --squash |
 | 2026-10-08 13:13Z | WP-API-MEMORY-01 | https://github.com/ITSalt/transcriber/pull/23 | b17ab2303fd0 | deploy-production.yml: run https://github.com/ITSalt/transcriber/actions/runs/37782612239 succeeded | PASS | — | — | — | влит --squash |
 | 2026-10-08 16:39Z | WP-WORKER-03 | https://github.com/ITSalt/transcriber/pull/24 | 65e01137061f | deploy-production.yml: run https://github.com/ITSalt/transcriber/actions/runs/37810537159 succeeded | PASS | — | — | — | влит --squash |
+| 2026-10-08 17:25Z | WP-WORKER-04 | https://github.com/ITSalt/transcriber/pull/25 | 0f14bc7de397 | deploy-production.yml: run https://github.com/ITSalt/transcriber/actions/runs/37816432764 succeeded | PASS | — | — | — | влит --squash; после сбоя по D-34 |
 
 ## Релизы
 
