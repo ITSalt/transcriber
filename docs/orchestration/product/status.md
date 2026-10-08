@@ -39,7 +39,7 @@ CANCELLED (причина).
 | [WP-WEB-FEEDBACK-01](work-packages/WP-WEB-FEEDBACK-01-feedback.md) | web-feedback | Режим обратной связи по протоколу | ACCEPTED | product-web-feedback | https://github.com/ITSalt/transcriber/pull/18 | 2026-10-07 |
 | [WP-WEB-MEMORY-01](work-packages/WP-WEB-MEMORY-01-registry.md) | web-memory | Реестр задач и решений проекта, очередь подтверждений | ACCEPTED | product-web-memory | https://github.com/ITSalt/transcriber/pull/14 (accepted b404424afc) | 2026-10-07 |
 | [WP-API-PROJECTS-01](work-packages/WP-API-PROJECTS-01-projects-context.md) | api-projects | API проектов и контекста встречи, запуск распознавания | REVIEW | product-api-projects | https://github.com/ITSalt/transcriber/pull/20 | 2026-10-08 |
-| [WP-API-FEEDBACK-01](work-packages/WP-API-FEEDBACK-01-feedback.md) | api-feedback | API версий протокола и обратной связи, разбор docx | REVIEW | product-api-feedback | https://github.com/ITSalt/transcriber/pull/21 | 2026-10-08 |
+| [WP-API-FEEDBACK-01](work-packages/WP-API-FEEDBACK-01-feedback.md) | api-feedback | API версий протокола и обратной связи, разбор docx | ACCEPTED | product-api-feedback | https://github.com/ITSalt/transcriber/pull/21 (accepted a7798d4fc4) | 2026-10-08 |
 | [WP-API-MEMORY-01](work-packages/WP-API-MEMORY-01-registry.md) | api-memory | API памяти проекта: задачи, решения, подтверждения | READY | product-api-memory | — | 2026-10-07 |
 | [WP-WORKER-MEMORY-01](work-packages/WP-WORKER-MEMORY-01-pipeline.md) | worker-memory | Память проекта в Neo4j: слой графа, извлечение, сопоставление, сводка | ACCEPTED | product-worker-memory | https://github.com/ITSalt/transcriber/pull/16 (accepted b6561a5cf7) | 2026-10-07 |
 | [WP-INFRA-02](work-packages/WP-INFRA-02-deploy-migrate-first.md) | infra | Порядок деплоя: миграции Postgres до сборки и замены dist | PROD | product-infra | https://github.com/ITSalt/transcriber/pull/11 (accepted 6694e5e172) | 2026-10-07 |
@@ -121,8 +121,11 @@ R-n — действие: точная команда одной строкой 
 | 9 | transcriber | WP-BACKEND-01 | https://github.com/ITSalt/transcriber/pull/15 | — | merged |
 | 10 | transcriber | WP-FRONTEND-02 | https://github.com/ITSalt/transcriber/pull/13 | WP-BACKEND-01 | merged |
 | 11 | transcriber | WP-WORKER-01 | https://github.com/ITSalt/transcriber/pull/17 | WP-FRONTEND-02 | merged |
-| 12 | transcriber | WP-WORKER-MEMORY-01 | https://github.com/ITSalt/transcriber/pull/16 | WP-WORKER-01 | queued |
-| 13 | transcriber | WP-WEB-MEMORY-01 | https://github.com/ITSalt/transcriber/pull/14 | WP-WORKER-MEMORY-01 | queued |
+| 12 | transcriber | WP-WORKER-MEMORY-01 | https://github.com/ITSalt/transcriber/pull/16 | WP-WORKER-01 | dropped |
+| 13 | transcriber | WP-WEB-MEMORY-01 | https://github.com/ITSalt/transcriber/pull/14 | WP-WORKER-MEMORY-01 | dropped |
+| 14 | transcriber | WP-API-FEEDBACK-01 | — | — | queued |
+| 15 | transcriber | WP-WORKER-MEMORY-01 | — | WP-API-FEEDBACK-01 | queued |
+| 16 | transcriber | WP-WEB-MEMORY-01 | — | WP-WORKER-MEMORY-01 | queued |
 
 ## Журнал
 
@@ -131,6 +134,14 @@ R-n — действие: точная команда одной строкой 
 <!-- orch:journal -->
 | Дата | WP | Событие | Подтверждение |
 |------|----|---------|---------------|
+| 2026-10-08 10:48Z | WP-WEB-MEMORY-01 | WP-WEB-MEMORY-01 queued for merge (sequential) | — |
+| 2026-10-08 10:48Z | WP-WORKER-MEMORY-01 | WP-WORKER-MEMORY-01 queued for merge (sequential) | — |
+| 2026-10-08 10:48Z | WP-API-FEEDBACK-01 | WP-API-FEEDBACK-01 queued for merge (sequential) | — |
+| 2026-10-08 10:48Z | WP-WEB-MEMORY-01 | WP-WEB-MEMORY-01 dropped in the merge queue | — |
+| 2026-10-08 10:48Z | WP-WORKER-MEMORY-01 | WP-WORKER-MEMORY-01 dropped in the merge queue | — |
+| 2026-10-08 10:48Z | WP-API-FEEDBACK-01 | WP-API-FEEDBACK-01: ACCEPTED -> ACCEPTED | reports/wp-api-feedback-01-review-20261008.md: ACCEPTED (low/info в backlog), CI run 37763860894 pass; условия: .tl-правки + merge main → новый SHA; P-17 до WEB-FEEDBACK-01 |
+| 2026-10-08 10:48Z | WP-API-FEEDBACK-01 | WP-API-FEEDBACK-01: accepted at a7798d4fc4531d0a7dd6709a486626a66d1af29e | report reports/wp-api-feedback-01-review-20261008.md |
+| 2026-10-08 10:48Z | WP-API-FEEDBACK-01 | WP-API-FEEDBACK-01: REVIEW -> ACCEPTED | a7798d4fc4; reports/wp-api-feedback-01-review-20261008.md |
 | 2026-10-08 10:40Z | WP-WORKER-MEMORY-01 | R-15 закрыт по ssh с cloudpc (владелец открыл доступ, только чтение по правилу 1): 7475/7688 заняты fc-neo4j; открыт P-18 (порты) | ssh deploy@transcriber.itsalt.ru ss -ltnp / docker ps |
 | 2026-10-08 10:40Z | — | P-18 opened for owner | work-packages/WP-WORKER-MEMORY-01-pipeline.md |
 | 2026-10-08 10:40Z | — | R-15 closed | 2026-10-08 ssh learn-prod: 127.0.0.1:7475 и :7688 слушает docker-proxy контейнера fc-neo4j (7475->7474, 7688->7687); MEMORY_NEO4J_ в /opt/transcrib/.env = 4 строки (дописаны один раз); свободно 4.6 GiB |
