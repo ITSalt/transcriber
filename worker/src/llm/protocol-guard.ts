@@ -7,10 +7,13 @@
  * Name matching is deliberately simple and errs on keeping a line (a stray extra
  * participant is cheaper than deleting a real one):
  *   - lower-case, ё → е, split into words of ≥ 3 letters/digits;
- *   - a word is reduced to a stem: its first max(3, length − 2) characters, which folds the
- *     common Russian case endings (Павел/Павла/Павлу, Ильнур/Ильнура, Мария/Марии/Марию);
- *   - a participant line is kept when ANY word of its name has the same stem as ANY word of
- *     the transcript text or of a speaker_map value;
+ *   - two words are the same name when their lengths differ by at most 3 (case endings) and
+ *     their common prefix is at least max(3, shorter length − 2) characters, so
+ *     Павел/Павла, Антон/Антону, Максим/Максимом, Ильнур/Ильнура match in either direction
+ *     while a short word never matches a longer name that merely starts with it; words of
+ *     3 letters must be equal;
+ *   - a participant line is kept when ANY word of its name matches ANY word of the
+ *     transcript text or of a speaker_map value;
  *   - lines whose name is a bare "Speaker N" label are never touched.
  */
 
@@ -19,7 +22,14 @@ const ANY_HEADING = /^##\s+\S/
 const BULLET = /^\s*[-*•]\s+(.*)$/
 const SPEAKER_LABEL = /^speaker\s*\d+\b/i
 
-const stemOf = (word: string): string => word.slice(0, Math.max(3, word.length - 2))
+function sameName(a: string, b: string): boolean {
+  const min = Math.min(a.length, b.length)
+  if (Math.abs(a.length - b.length) > 3) return false
+  if (min < 4) return a === b
+  let p = 0
+  while (p < min && a[p] === b[p]) p++
+  return p >= Math.max(3, min - 2)
+}
 
 function words(text: string): string[] {
   return text
@@ -46,9 +56,9 @@ export function guardProtocolParticipants(
   transcriptText: string,
   speakerMap: Record<string, string | null> | null | undefined,
 ): ProtocolGuardResult {
-  const known = new Set(
-    words([transcriptText, ...Object.values(speakerMap ?? {}).filter((v): v is string => !!v)].join('\n')).map(stemOf),
-  )
+  const known = [
+    ...new Set(words([transcriptText, ...Object.values(speakerMap ?? {}).filter((v): v is string => !!v)].join('\n'))),
+  ]
 
   const removed: string[] = []
   const out: string[] = []
@@ -59,7 +69,7 @@ export function guardProtocolParticipants(
     if (bullet) {
       const name = nameOf(bullet[1] ?? '')
       const nameWords = words(name)
-      if (!SPEAKER_LABEL.test(name) && nameWords.length > 0 && !nameWords.some((w) => known.has(stemOf(w)))) {
+      if (!SPEAKER_LABEL.test(name) && nameWords.length > 0 && !nameWords.some((w) => known.some((k) => sameName(w, k)))) {
         removed.push(line.trim())
         continue
       }

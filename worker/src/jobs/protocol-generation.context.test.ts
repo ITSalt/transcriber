@@ -372,6 +372,29 @@ describe('WP-WORKER-07 memory-leak guard in the pipeline', () => {
     )
   })
 
+  it('a participant present in the frozen snapshot but not in the transcript is still removed', async () => {
+    const snapshotWithIlnur = {
+      ...FROZEN_CONTEXT,
+      participants: [
+        ...FROZEN_CONTEXT.participants,
+        { name: 'Ильнур', aliases: [], role: 'разработчик', organization: null, side: 'OTHER' },
+      ],
+    }
+    const { tx, llm, storage } = setup({ context: snapshotWithIlnur })
+    llm.generate.mockResolvedValueOnce({
+      text: '## Участники\n- Мария\n- Ильнур — разработчик\n\n## Обсуждение\n- x\n\n## Решения\n- y\n\n## Задачи\n- z',
+      model: 'claude-sonnet-4-6' as const,
+      tokensIn: 1,
+      tokensOut: 1,
+    })
+    await processProtocolGenerationJob(job, logger() as never, { llm, storage, memory: noMemory, redisUrl: 'redis://x', env: {} })
+
+    expect(llm.generate.mock.calls[0]![0].context?.participants).toContain('Ильнур')
+    const saved = tx.protocol.create.mock.calls[0]![0].data.markdownContent as string
+    expect(saved).toContain('- Мария')
+    expect(saved).not.toContain('Ильнур')
+  })
+
   it('leaves a clean protocol byte-for-byte', async () => {
     const { tx, llm, storage } = setup()
     await processProtocolGenerationJob(job, logger() as never, { llm, storage, memory: noMemory, redisUrl: 'redis://x', env: {} })
