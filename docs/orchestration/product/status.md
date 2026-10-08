@@ -142,6 +142,7 @@ R-n — действие: точная команда одной строкой 
 <!-- orch:journal -->
 | Дата | WP | Событие | Подтверждение |
 |------|----|---------|---------------|
+| 2026-10-08 11:10Z | WP-API-PROJECTS-01 | WP-API-PROJECTS-01 PROD: живой сценарий (проекты 200/401, контекст 404, last-protocol 404, start 409) | reports/verify-WP-API-PROJECTS-01-prod-20261008.md |
 | 2026-10-08 11:09Z | WP-API-PROJECTS-01 | WP-API-PROJECTS-01: VERIFIED_TEST -> PROD | verify --env prod bf75f694f2: reports/verify-WP-API-PROJECTS-01-prod-20261008.md |
 | 2026-10-08 11:09Z | WP-API-PROJECTS-01 | WP-API-PROJECTS-01: MERGED -> VERIFIED_TEST | verify --env test bf75f694f2: reports/verify-WP-API-PROJECTS-01-test-20261008-2.md |
 | 2026-10-08 11:09Z | — | delivery resumed: ложный FAIL: команда проверки GET /api/meetings без cookie после включения входа (R-16) отвечает 401 по контракту; деплой run 37767836347 success, health ok; команды verify_test/verify_prod в orch.yaml заменены на ожидание 401 | orch.py unhold |

@@ -19,7 +19,7 @@
 ## Принято как есть / backlog
 
 - Backlog раундов 1–2 без изменений. Сообщение `PREVIOUS_PROTOCOL_TOO_LONG` (A-9) показывается текстом ошибки API — отдельной правки нет.
-- graph: не требуется (UC-500..503 обновлял API-PROJECTS-01; формы UC — backlog `/nacl-sa-ui`).
+- graph: checked — спецификация пакета (UC-100, UC проектов, FR-004) в графе: `FR-004` spec-complete, `UC-100` v5, `UC-502`/`UC-503` v2 (read-cypher 2026-10-08 при сверке API-PROJECTS-01); пакет граф не менял по условию; формы UC (has_ui) — backlog `/nacl-sa-ui`.
 - Слот слияния: после WP-API-PROJECTS-01 (следующий). Если API-PROJECTS-01 сольётся раньше — ещё один `git merge origin/main` не нужен, если нет конфликтов (web-only).
 
 ## Автоматические находки
