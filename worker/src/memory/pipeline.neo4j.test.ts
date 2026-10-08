@@ -39,8 +39,8 @@ const uuid = () => crypto.randomUUID()
 describe.skipIf(!URI)('project memory pipeline on Neo4j', { timeout: 60_000 }, () => {
   let driver: Driver
   let graph: MemoryGraph
-  const ids = { workspaceId: uuid(), projectId: uuid(), m1: uuid(), m2: uuid() }
-  const { m1, m2 } = meetingSources(ids)
+  const ids = { workspaceId: uuid(), projectId: uuid(), m1: uuid(), m2: uuid(), m3: uuid() }
+  const { m1, m2, m3: hygiene } = meetingSources(ids)
   const generations: GenerationRecord[] = []
   const llmCalls: LlmCompletionInput[] = []
   const log = pino({ level: 'silent' })
@@ -57,7 +57,7 @@ describe.skipIf(!URI)('project memory pipeline on Neo4j', { timeout: 60_000 }, (
     deps = {
       graph,
       llm: () => llm,
-      loadMeeting: async (id) => (id === m1.meetingId ? m1 : id === m2.meetingId ? m2 : null),
+      loadMeeting: async (id) => (id === m1.meetingId ? m1 : id === m2.meetingId ? m2 : id === hygiene.meetingId ? hygiene : null),
       recordGeneration: async (r) => {
         generations.push(r)
       },
@@ -170,5 +170,19 @@ describe.skipIf(!URI)('project memory pipeline on Neo4j', { timeout: 60_000 }, (
   it('a meeting that no longer belongs to the project is skipped', async () => {
     const other = { ...payload(m1.meetingId), project_id: uuid() }
     expect(await runMemoryUpdate(deps, other)).toMatchObject({ status: 'SKIPPED' })
+  })
+
+  it('WP-WORKER-MEMORY-02 meeting 3: a re-worded decision adds a mention, not D-2; an unknown assignee → null + PENDING', async () => {
+    const out = await runMemoryUpdate(deps, payload(hygiene.meetingId))
+    expect(out).toMatchObject({ status: 'APPLIED', createdTasks: 1, createdDecisions: 0, pendingEvents: 1 })
+
+    const decisions = await listDecisions(graph, scope())
+    expect(decisions.map((d) => d.code)).toEqual(['D-1'])
+
+    const t3 = (await getTaskDetail(graph, scope(), 'T-3'))!
+    expect(t3.task.assignee).toBeNull()
+    expect(t3.events.filter((e) => e.field === 'assignee')).toEqual([
+      expect.objectContaining({ new_value: 'Сергей', review_state: 'PENDING', quote: 'исполнитель: Сергей' }),
+    ])
   })
 })

@@ -204,3 +204,8 @@ export function createQuoteVerifier(segments: readonly MemorySegment[]) {
   const index = indexSegments(segments)
   return (quote: string, hint?: number | null) => verifyQuote(quote, segments, hint, index)
 }
+
+/** Names the speaker_map gave to this meeting's speakers (unmapped speakers keep «Speaker N»). */
+export function mappedSpeakerNames(segments: readonly MemorySegment[]): string[] {
+  return [...new Set(segments.filter((s) => s.label !== speakerDisplay(s.speaker)).map((s) => s.label))]
+}
