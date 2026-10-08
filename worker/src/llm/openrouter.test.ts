@@ -2,6 +2,8 @@
  * WP-WORKER-03 — OpenRouter adapter. fetch is stubbed; no key or network needed.
  */
 import { afterEach, describe, expect, it, vi } from 'vitest'
+import { ProxyAgent } from 'undici'
+import { resetOutboundDispatcher } from '../lib/outbound-proxy.js'
 import { isTransientLlmError } from './errors.js'
 import { KieAiLlmProvider } from './kieai.js'
 import { OpenRouterCompletionProvider, OpenRouterLlmError, OpenRouterLlmProvider } from './openrouter.js'
@@ -194,5 +196,48 @@ describe('prompt parity with kie.ai (only the transport differs)', () => {
     expect(or.messages[0].content).toBe(kie.system)
     expect(or.messages[1].content).toBe(kie.messages[0].content)
     expect(or.max_tokens).toBe(kie.max_tokens)
+  })
+})
+
+describe('outbound proxy (WP-WORKER-04)', () => {
+  afterEach(() => {
+    vi.unstubAllEnvs()
+    resetOutboundDispatcher()
+  })
+
+  it('with OUTBOUND_PROXY_URL set, fetch gets the ProxyAgent as dispatcher (both interfaces)', async () => {
+    vi.stubEnv('OUTBOUND_PROXY_URL', 'http://user:pw@proxy.test:3128')
+    const f = reply(200, ok())
+    vi.stubGlobal('fetch', f)
+    await provider().generate({ prompt: 'p', language: 'EN' })
+    await provider().complete({ system: 's', user: 'u' })
+    expect(f).toHaveBeenCalledTimes(2)
+    for (const call of f.mock.calls as unknown as Array<[string, { dispatcher?: unknown }]>) {
+      expect(call[1].dispatcher).toBeInstanceOf(ProxyAgent)
+    }
+  })
+
+  it('without the variable, or with useProxy=false, fetch gets no dispatcher key', async () => {
+    const f = reply(200, ok())
+    vi.stubGlobal('fetch', f)
+    vi.stubEnv('OUTBOUND_PROXY_URL', '')
+    await provider().generate({ prompt: 'p', language: 'EN' })
+    vi.stubEnv('OUTBOUND_PROXY_URL', 'http://proxy.test:3128')
+    await new OpenRouterLlmProvider({ apiKey: KEY, baseUrl: 'https://or.test/api/v1', useProxy: false }).generate({ prompt: 'p', language: 'EN' })
+    expect(f).toHaveBeenCalledTimes(2)
+    for (const call of f.mock.calls as unknown as Array<[string, RequestInit]>) {
+      expect('dispatcher' in call[1]).toBe(false)
+    }
+  })
+
+  it('kie.ai never gets a dispatcher, whatever OUTBOUND_PROXY_URL says', async () => {
+    vi.stubEnv('OUTBOUND_PROXY_URL', 'http://proxy.test:3128')
+    const f = reply(200, { content: [{ type: 'text', text: 'x' }], usage: {} })
+    vi.stubGlobal('fetch', f)
+    await new KieAiLlmProvider({ apiKey: 'k', baseUrl: 'https://kie.test' }).generate({ prompt: 'p', language: 'EN' })
+    expect(f).toHaveBeenCalled()
+    for (const call of f.mock.calls as unknown as Array<[string, RequestInit]>) {
+      expect('dispatcher' in (call[1] ?? {})).toBe(false)
+    }
   })
 })

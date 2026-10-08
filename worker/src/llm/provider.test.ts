@@ -53,7 +53,37 @@ describe('resolveLlmSettings', () => {
   })
 
   it('startup line', () => {
-    expect(describeLlmSettings(resolveLlmSettings({ OPENROUTER_API_KEY: 'or' }))).toBe('llm provider: openrouter model: anthropic/claude-haiku-5.5')
+    expect(describeLlmSettings(resolveLlmSettings({ OPENROUTER_API_KEY: 'or' }))).toBe(
+      'llm provider: openrouter model: anthropic/claude-haiku-5.5 proxy: direct',
+    )
+  })
+
+  // WP-WORKER-04
+  it('OUTBOUND_PROXY_URL: the startup line shows the masked address, never the credentials', () => {
+    const s = resolveLlmSettings({ OPENROUTER_API_KEY: 'or', OUTBOUND_PROXY_URL: 'http://user:s3cret@proxy.test:3128' })
+    expect(s).toMatchObject({ useProxy: true, proxy: 'http://***:***@proxy.test:3128' })
+    const line = describeLlmSettings(s)
+    expect(line).toBe('llm provider: openrouter model: anthropic/claude-haiku-5.5 proxy: http://***:***@proxy.test:3128')
+    expect(line).not.toContain('s3cret')
+  })
+
+  it('blank OUTBOUND_PROXY_URL = direct; the kie.ai line is always direct', () => {
+    expect(resolveLlmSettings({ OPENROUTER_API_KEY: 'or', OUTBOUND_PROXY_URL: '' })).toMatchObject({ useProxy: false, proxy: null })
+    const kie = resolveLlmSettings({ KIE_API_KEY: 'k', OUTBOUND_PROXY_URL: 'http://proxy.test:3128' })
+    expect(describeLlmSettings(kie)).toBe('llm provider: kieai model: claude-sonnet-4-6 proxy: direct')
+  })
+
+  it('an invalid OUTBOUND_PROXY_URL (socks, garbage) is a configuration error at start, credentials masked', () => {
+    for (const bad of ['socks5://user:s3cret@proxy.test:1080', 'user:s3cret@not a url']) {
+      const call = () => resolveLlmSettings({ OPENROUTER_API_KEY: 'or', OUTBOUND_PROXY_URL: bad })
+      expect(call).toThrowError(LlmConfigError)
+      expect(call).toThrowError(/OUTBOUND_PROXY_URL/)
+      try {
+        call()
+      } catch (err) {
+        expect((err as Error).message).not.toContain('s3cret')
+      }
+    }
   })
 })
 
@@ -66,5 +96,11 @@ describe('factories', () => {
     expect(createLlmProvider(kie)).toBeInstanceOf(KieAiLlmProvider)
     expect(createCompletionProvider(kie)).toBeInstanceOf(KieAiCompletionProvider)
     expect(createLlmProvider({ ...or, ...kie, LLM_PROVIDER: 'kieai' })).toBeInstanceOf(KieAiLlmProvider)
+  })
+
+  it('an invalid OUTBOUND_PROXY_URL stops both factories', () => {
+    const bad = { OPENROUTER_API_KEY: 'or', OUTBOUND_PROXY_URL: 'socks5://p:1080' }
+    expect(() => createLlmProvider(bad)).toThrowError(LlmConfigError)
+    expect(() => createCompletionProvider(bad)).toThrowError(LlmConfigError)
   })
 })
