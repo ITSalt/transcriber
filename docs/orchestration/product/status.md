@@ -38,8 +38,8 @@ CANCELLED (причина).
 | [WP-WEB-PROJECTS-01](work-packages/WP-WEB-PROJECTS-01-projects-context.md) | web-projects | Проекты и форма контекста перед распознаванием | ACCEPTED | product-web-projects | https://github.com/ITSalt/transcriber/pull/19 | 2026-10-07 |
 | [WP-WEB-FEEDBACK-01](work-packages/WP-WEB-FEEDBACK-01-feedback.md) | web-feedback | Режим обратной связи по протоколу | ACCEPTED | product-web-feedback | https://github.com/ITSalt/transcriber/pull/18 | 2026-10-07 |
 | [WP-WEB-MEMORY-01](work-packages/WP-WEB-MEMORY-01-registry.md) | web-memory | Реестр задач и решений проекта, очередь подтверждений | ACCEPTED | product-web-memory | https://github.com/ITSalt/transcriber/pull/14 (accepted b404424afc) | 2026-10-07 |
-| [WP-API-PROJECTS-01](work-packages/WP-API-PROJECTS-01-projects-context.md) | api-projects | API проектов и контекста встречи, запуск распознавания | READY | product-api-projects | — | 2026-10-07 |
-| [WP-API-FEEDBACK-01](work-packages/WP-API-FEEDBACK-01-feedback.md) | api-feedback | API версий протокола и обратной связи, разбор docx | READY | product-api-feedback | — | 2026-10-07 |
+| [WP-API-PROJECTS-01](work-packages/WP-API-PROJECTS-01-projects-context.md) | api-projects | API проектов и контекста встречи, запуск распознавания | DISPATCHING | product-api-projects | — | 2026-10-08 |
+| [WP-API-FEEDBACK-01](work-packages/WP-API-FEEDBACK-01-feedback.md) | api-feedback | API версий протокола и обратной связи, разбор docx | DISPATCHING | product-api-feedback | — | 2026-10-08 |
 | [WP-API-MEMORY-01](work-packages/WP-API-MEMORY-01-registry.md) | api-memory | API памяти проекта: задачи, решения, подтверждения | READY | product-api-memory | — | 2026-10-07 |
 | [WP-WORKER-MEMORY-01](work-packages/WP-WORKER-MEMORY-01-pipeline.md) | worker-memory | Память проекта в Neo4j: слой графа, извлечение, сопоставление, сводка | ACCEPTED | product-worker-memory | https://github.com/ITSalt/transcriber/pull/16 (accepted b6561a5cf7) | 2026-10-07 |
 | [WP-INFRA-02](work-packages/WP-INFRA-02-deploy-migrate-first.md) | infra | Порядок деплоя: миграции Postgres до сборки и замены dist | PROD | product-infra | https://github.com/ITSalt/transcriber/pull/11 (accepted 6694e5e172) | 2026-10-07 |
@@ -127,6 +127,8 @@ R-n — действие: точная команда одной строкой 
 <!-- orch:journal -->
 | Дата | WP | Событие | Подтверждение |
 |------|----|---------|---------------|
+| 2026-10-08 10:15Z | WP-API-FEEDBACK-01 | WP-API-FEEDBACK-01: READY -> DISPATCHING | start command handed to the owner; model sonnet |
+| 2026-10-08 10:15Z | WP-API-PROJECTS-01 | WP-API-PROJECTS-01: READY -> DISPATCHING | start command handed to the owner; model sonnet |
 | 2026-10-08 10:15Z | WP-BACKEND-01 | WP-BACKEND-01 PROD: живой сценарий записан; R-14 упал на порту 7475 (переменные уже в .env), открыт R-15 | reports/verify-WP-BACKEND-01-prod-20261008.md |
 | 2026-10-08 10:15Z | WP-BACKEND-01 | lock transcriber:migrations released | orch.py lock |
 | 2026-10-08 10:14Z | — | R-15 opened for owner | work-packages/WP-WORKER-MEMORY-01-pipeline.md |
