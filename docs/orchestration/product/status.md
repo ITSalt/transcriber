@@ -44,7 +44,7 @@ CANCELLED (причина).
 | [WP-WORKER-MEMORY-01](work-packages/WP-WORKER-MEMORY-01-pipeline.md) | worker-memory | Память проекта в Neo4j: слой графа, извлечение, сопоставление, сводка | PROD | product-worker-memory | https://github.com/ITSalt/transcriber/pull/16 (accepted 69f3715e3d) | 2026-10-08 |
 | [WP-INFRA-02](work-packages/WP-INFRA-02-deploy-migrate-first.md) | infra | Порядок деплоя: миграции Postgres до сборки и замены dist | PROD | product-infra | https://github.com/ITSalt/transcriber/pull/11 (accepted 6694e5e172) | 2026-10-07 |
 | [WP-INFRA-03](work-packages/WP-INFRA-03-neo4j-ports.md) | infra | Порты Neo4j памяти проекта 7476/7689 (D-26) | PROD | product-infra | https://github.com/ITSalt/transcriber/pull/22 (accepted 5d27d4a320) | 2026-10-08 |
-| [WP-WORKER-03](work-packages/WP-WORKER-03-openrouter-llm.md) | worker | LLM-провайдер OpenRouter (anthropic/claude-haiku-5.5) за ILlmProvider, переключение провайдера по env | DISPATCHING | product-worker | — | 2026-10-08 |
+| [WP-WORKER-03](work-packages/WP-WORKER-03-openrouter-llm.md) | worker | LLM-провайдер OpenRouter (anthropic/claude-haiku-5.5) за ILlmProvider, переключение провайдера по env | REVIEW | product-worker | https://github.com/ITSalt/transcriber/pull/24 | 2026-10-08 |
 
 ## Ждёт владельца
 
@@ -150,6 +150,8 @@ R-n — действие: точная команда одной строкой 
 <!-- orch:journal -->
 | Дата | WP | Событие | Подтверждение |
 |------|----|---------|---------------|
+| 2026-10-08 16:25Z | WP-WORKER-03 | WP-WORKER-03: READY 33f870eacd (PR 24); QUESTION про AGENTS.md → ANSWER (c) по D-17; ревью r1 запущено; факт: json_object для anthropic/claude-haiku-5.5 через OpenRouter — 200 | сообщения product-worker; curl openrouter с response_format |
+| 2026-10-08 16:22Z | WP-WORKER-03 | WP-WORKER-03: DISPATCHING -> REVIEW | 33f870eacd; report reports/wp-worker-03-review-20261008.md |
 | 2026-10-08 16:20Z | WP-WORKER-03 | D-32: ключ OpenRouter из materials/transcriber.txt (вне git) проверен (/auth/key: платный тариф, лимит 50 USD, расход 0) и дописан в /opt/transcrib/.env как OPENROUTER_API_KEY + LLM_MODEL=anthropic/claude-haiku-5.5 (chmod 600; код использует после доставки WP-WORKER-03). Проба модели через OpenRouter: 200 за 1,4 с (kie.ai — 35 с); kie.ai повтор 12.05 упал второй раз 16:05Z | ssh grep -c OPENROUTER_API_KEY /opt/transcrib/.env → 1; curl openrouter chat/completions 200 |
 | 2026-10-08 16:09Z | WP-WORKER-03 | WP-WORKER-03: READY -> DISPATCHING | start command handed to the owner; model sonnet; locks transcriber:shared/**, transcriber:shared/src/llm/ILlmProvider.ts |
 | 2026-10-08 16:09Z | WP-WORKER-03 | WP-WORKER-03: DRAFT -> READY | пакет написан по фактам kie.ai 500 ×7, D-32, A-11 |
