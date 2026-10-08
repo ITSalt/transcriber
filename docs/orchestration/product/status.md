@@ -99,6 +99,8 @@ R-n — действие: точная команда одной строкой 
 <!-- orch:locks -->
 | Замок | Репозиторий | Держатель | С | Ждут | Примечание |
 |-------|-------------|-----------|---|------|------------|
+| transcriber:graph | transcriber | WP-API-MEMORY-01 | 2026-10-08 12:14Z | — | — |
+| transcriber:.tl/external-contracts/** | transcriber | WP-API-MEMORY-01 | 2026-10-08 12:14Z | — | — |
 
 ## Очередь слияний
 
@@ -143,6 +145,10 @@ R-n — действие: точная команда одной строкой 
 <!-- orch:journal -->
 | Дата | WP | Событие | Подтверждение |
 |------|----|---------|---------------|
+| 2026-10-08 12:14Z | WP-API-MEMORY-01 | WP-API-MEMORY-01: LOCK graph + .tl/external-contracts/** выдан; A-10 (DELETE project outbox, memory-refs) | сообщение сессии |
+| 2026-10-08 12:14Z | — | A-10 recorded | — |
+| 2026-10-08 12:14Z | WP-API-MEMORY-01 | lock transcriber:.tl/external-contracts/** acquired | orch.py lock |
+| 2026-10-08 12:14Z | WP-API-MEMORY-01 | lock transcriber:graph acquired | orch.py lock |
 | 2026-10-08 12:03Z | WP-WEB-MEMORY-01 | WP-WEB-MEMORY-01 PROD: сборка с фичей memory, панель протокола цела; вкладка памяти — при доставке API-MEMORY-01 | reports/verify-WP-WEB-MEMORY-01-prod-20261008.md |
 | 2026-10-08 12:01Z | WP-WEB-MEMORY-01 | WP-WEB-MEMORY-01: VERIFIED_TEST -> PROD | verify --env prod d97912108e: reports/verify-WP-WEB-MEMORY-01-prod-20261008.md |
 | 2026-10-08 12:01Z | WP-WEB-MEMORY-01 | WP-WEB-MEMORY-01: MERGED -> VERIFIED_TEST | verify --env test d97912108e: reports/verify-WP-WEB-MEMORY-01-test-20261008.md |
