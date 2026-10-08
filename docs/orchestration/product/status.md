@@ -39,7 +39,7 @@ CANCELLED (причина).
 | [WP-WEB-FEEDBACK-01](work-packages/WP-WEB-FEEDBACK-01-feedback.md) | web-feedback | Режим обратной связи по протоколу | ACCEPTED | product-web-feedback | https://github.com/ITSalt/transcriber/pull/18 | 2026-10-07 |
 | [WP-WEB-MEMORY-01](work-packages/WP-WEB-MEMORY-01-registry.md) | web-memory | Реестр задач и решений проекта, очередь подтверждений | ACCEPTED | product-web-memory | https://github.com/ITSalt/transcriber/pull/14 (accepted b404424afc) | 2026-10-07 |
 | [WP-API-PROJECTS-01](work-packages/WP-API-PROJECTS-01-projects-context.md) | api-projects | API проектов и контекста встречи, запуск распознавания | REVISE | product-api-projects | https://github.com/ITSalt/transcriber/pull/20 | 2026-10-08 |
-| [WP-API-FEEDBACK-01](work-packages/WP-API-FEEDBACK-01-feedback.md) | api-feedback | API версий протокола и обратной связи, разбор docx | ACCEPTED | product-api-feedback | https://github.com/ITSalt/transcriber/pull/21 (accepted a7798d4fc4) | 2026-10-08 |
+| [WP-API-FEEDBACK-01](work-packages/WP-API-FEEDBACK-01-feedback.md) | api-feedback | API версий протокола и обратной связи, разбор docx | ACCEPTED | product-api-feedback | https://github.com/ITSalt/transcriber/pull/21 (accepted e420bd0f93) | 2026-10-08 |
 | [WP-API-MEMORY-01](work-packages/WP-API-MEMORY-01-registry.md) | api-memory | API памяти проекта: задачи, решения, подтверждения | READY | product-api-memory | — | 2026-10-07 |
 | [WP-WORKER-MEMORY-01](work-packages/WP-WORKER-MEMORY-01-pipeline.md) | worker-memory | Память проекта в Neo4j: слой графа, извлечение, сопоставление, сводка | ACCEPTED | product-worker-memory | https://github.com/ITSalt/transcriber/pull/16 (accepted b6561a5cf7) | 2026-10-07 |
 | [WP-INFRA-02](work-packages/WP-INFRA-02-deploy-migrate-first.md) | infra | Порядок деплоя: миграции Postgres до сборки и замены dist | PROD | product-infra | https://github.com/ITSalt/transcriber/pull/11 (accepted 6694e5e172) | 2026-10-07 |
@@ -135,6 +135,9 @@ R-n — действие: точная команда одной строкой 
 <!-- orch:journal -->
 | Дата | WP | Событие | Подтверждение |
 |------|----|---------|---------------|
+| 2026-10-08 10:53Z | WP-API-FEEDBACK-01 | WP-API-FEEDBACK-01: ACCEPTED -> ACCEPTED | reports/wp-api-feedback-01-review-20261008-r2.md: docs+rebase, код без изменений, CI run 37766184266 pass на e420bd0f93 |
+| 2026-10-08 10:53Z | WP-API-FEEDBACK-01 | WP-API-FEEDBACK-01: accepted at e420bd0f93b4c6dda41967f3f9b7f1bb26b64aa6 | report reports/wp-api-feedback-01-review-20261008-r2.md |
+| 2026-10-08 10:51Z | WP-API-FEEDBACK-01 | WP-API-FEEDBACK-01: review round 2 started at e420bd0f93 | reports/wp-api-feedback-01-review-20261008-r2.md |
 | 2026-10-08 10:51Z | — | PLUGIN-BUG-4: столкновение одноразовых клонов двух параллельных сверок (review_clone.sh); Issue https://github.com/ITSalt/PepperSkills/issues/35 (D-18); orch.yaml review_setup += shared build | bugs/PLUGIN-BUG-4.md |
 | 2026-10-08 10:50Z | WP-API-PROJECTS-01 | lock transcriber:graph acquired | orch.py lock |
 | 2026-10-08 10:50Z | WP-API-PROJECTS-01 | WP-API-PROJECTS-01: REVIEW -> REVISE | reports/wp-api-projects-01-review-20261008.md: 1 пункт (500 при протоколе проекта > 50 000 → 422 PREVIOUS_PROTOCOL_TOO_LONG, A-9) + .tl-правки + merge main |
