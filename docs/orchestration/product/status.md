@@ -35,7 +35,7 @@ CANCELLED (причина).
 | [WP-WORKER-01](work-packages/WP-WORKER-01-context-asr-llm.md) | worker | Контекст встречи в Deepgram и в промпт протокола, метаданные генерации | PROD | product-worker | https://github.com/ITSalt/transcriber/pull/17 (accepted d0728e2380) | 2026-10-08 |
 | [WP-WORKER-02](work-packages/WP-WORKER-02-project-memory.md) | worker | Память проекта в Neo4j: извлечение, сопоставление, сводка | CANCELLED (создан в неверном потоке; заменён WP-WORKER-MEMORY-01 (D-15)) | product-worker | — | 2026-10-07 |
 | [WP-INFRA-01](work-packages/WP-INFRA-01-neo4j.md) | infra | Neo4j памяти проекта: сервис, лимиты, бэкап, CI, шаг деплоя | PROD | product-infra | https://github.com/ITSalt/transcriber/pull/10 (accepted 0e7ebe85d3) | 2026-10-07 |
-| [WP-WEB-PROJECTS-01](work-packages/WP-WEB-PROJECTS-01-projects-context.md) | web-projects | Проекты и форма контекста перед распознаванием | ACCEPTED | product-web-projects | https://github.com/ITSalt/transcriber/pull/19 | 2026-10-07 |
+| [WP-WEB-PROJECTS-01](work-packages/WP-WEB-PROJECTS-01-projects-context.md) | web-projects | Проекты и форма контекста перед распознаванием | ACCEPTED | product-web-projects | https://github.com/ITSalt/transcriber/pull/19 (accepted 79d01c1853) | 2026-10-08 |
 | [WP-WEB-FEEDBACK-01](work-packages/WP-WEB-FEEDBACK-01-feedback.md) | web-feedback | Режим обратной связи по протоколу | ACCEPTED | product-web-feedback | https://github.com/ITSalt/transcriber/pull/18 | 2026-10-07 |
 | [WP-WEB-MEMORY-01](work-packages/WP-WEB-MEMORY-01-registry.md) | web-memory | Реестр задач и решений проекта, очередь подтверждений | ACCEPTED | product-web-memory | https://github.com/ITSalt/transcriber/pull/14 (accepted b404424afc) | 2026-10-07 |
 | [WP-API-PROJECTS-01](work-packages/WP-API-PROJECTS-01-projects-context.md) | api-projects | API проектов и контекста встречи, запуск распознавания | ACCEPTED | product-api-projects | https://github.com/ITSalt/transcriber/pull/20 (accepted 109c71f00f) | 2026-10-08 |
@@ -143,6 +143,9 @@ R-n — действие: точная команда одной строкой 
 <!-- orch:journal -->
 | Дата | WP | Событие | Подтверждение |
 |------|----|---------|---------------|
+| 2026-10-08 11:04Z | WP-WEB-PROJECTS-01 | WP-WEB-PROJECTS-01: ACCEPTED -> ACCEPTED | reports/wp-web-projects-01-review-20261008-r3.md: rebase + п.4 + start.error, CI run 37767243317 pass на 79d01c18535d |
+| 2026-10-08 11:04Z | WP-WEB-PROJECTS-01 | WP-WEB-PROJECTS-01: accepted at 79d01c18535d7e6fe131b18f1b44d8cbe011c896 | report reports/wp-web-projects-01-review-20261008-r3.md |
+| 2026-10-08 11:04Z | WP-WEB-PROJECTS-01 | WP-WEB-PROJECTS-01: review round 3 started at 79d01c1853 | reports/wp-web-projects-01-review-20261008-r3.md |
 | 2026-10-08 11:03Z | WP-INFRA-03 | WP-INFRA-03: READY -> DISPATCHING | start command handed to the owner; model sonnet; locks transcriber:.tl/deploy-plan.md |
 | 2026-10-08 11:03Z | WP-API-FEEDBACK-01 | WP-API-FEEDBACK-01 PROD: живой сценарий (версии 200, отзывы 200, POST без входа 401, карточка 200) | reports/verify-WP-API-FEEDBACK-01-prod-20261008.md |
 | 2026-10-08 11:03Z | WP-API-PROJECTS-01 | WP-API-PROJECTS-01: ACCEPTED -> ACCEPTED | reports/wp-api-projects-01-review-20261008-r3.md: rebase 2, файлы пакета без изменений, CI run 37767034041 pass на 109c71f00f |
