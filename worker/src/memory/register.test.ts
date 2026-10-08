@@ -38,6 +38,23 @@ vi.mock('bullmq', async (importOriginal) => {
   return { ...real, Queue, Worker }
 })
 
+// WP-WORKER-04 (Low-1 of the WP-WORKER-03 review): capture the deps register() builds. Real
+// pipeline unless a test sets `captureDeps`.
+let captureDeps: ((deps: { llm: () => unknown }) => void) | null = null
+vi.mock('./pipeline.js', async (importOriginal) => {
+  const real = await importOriginal<Record<string, unknown> & { runMemoryUpdate: (deps: never, payload: never) => Promise<unknown> }>()
+  return {
+    ...real,
+    runMemoryUpdate: (deps: never, payload: never) => {
+      if (captureDeps) {
+        captureDeps(deps as never)
+        return Promise.resolve({})
+      }
+      return real.runMemoryUpdate(deps, payload)
+    },
+  }
+})
+
 const { register, processMemoryJob, memoryJobId } = await import('./index.js')
 const { loadWorkerModules, WorkerEventBus } = await import('../job-processor.js')
 const { getProjectMemoryProvider, setProjectMemoryProvider, NoProjectMemoryProvider, PROJECT_MEMORY_QUEUE } = await import('@transcrib/shared')
@@ -166,6 +183,27 @@ describe('memory module register(ctx)', () => {
       previousJob = null
       for (const h of c.hooks) await h()
     }
+  })
+
+  it('with OPENROUTER_API_KEY in env (no llm override) the memory pipeline gets the OpenRouter provider', async () => {
+    const { OpenRouterLlmProvider } = await import('../llm/openrouter.js')
+    const c = ctx()
+    await register(c.value, {
+      env: { MEMORY_NEO4J_URI: 'bolt://x:1', MEMORY_OUTBOX_POLL_MS: '60000', OPENROUTER_API_KEY: 'or-key' },
+      prisma: fakePrisma(null),
+      connect: fakeConnection().connect,
+    })
+    let llm: unknown
+    captureDeps = (deps) => {
+      llm = deps.llm()
+    }
+    try {
+      await workers[0]!.processor({ id: 'j', data: { meeting_id: MEETING, project_id: PROJECT, workspace_id: WS } })
+    } finally {
+      captureDeps = null
+      for (const h of c.hooks) await h()
+    }
+    expect(llm).toBeInstanceOf(OpenRouterLlmProvider)
   })
 
   it('is picked up by loadWorkerModules from worker/src/memory (auto-registration)', async () => {

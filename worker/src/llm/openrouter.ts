@@ -3,7 +3,7 @@
  *
  * Implements ILlmProvider (protocol generation) and ILlmCompletionProvider (project-memory
  * steps) on OpenRouter's OpenAI-compatible chat endpoint. Node 20 built-in fetch, no new
- * dependency. Only the transport differs from kie.ai: the system/user texts come from the
+ * dependency (WP-WORKER-04: undici ProxyAgent as `dispatcher` when OUTBOUND_PROXY_URL is set). Only the transport differs from kie.ai: the system/user texts come from the
  * same builders (./protocol-prompt.ts), so the prompt is byte-for-byte the one kie.ai gets.
  *
  * Request:
@@ -34,6 +34,7 @@ import type {
   LlmResult,
 } from '@transcrib/shared'
 import { stripCodeFence } from '../memory/kieai-completion.js'
+import { outboundDispatcherFor } from '../lib/outbound-proxy.js'
 import { LlmProviderError, bodyExcerpt } from './errors.js'
 import { hasProtocolContext, loadProtocolSystemPrompt, renderProtocolUserMessage } from './protocol-prompt.js'
 
@@ -71,13 +72,19 @@ interface ChatRequest {
   json: boolean
 }
 
+/** `{ dispatcher }` only when there is one, so direct mode passes exactly the options it did before. */
+function withDispatcher(dispatcher: ReturnType<typeof outboundDispatcherFor>): Record<string, unknown> {
+  return dispatcher ? { dispatcher } : {}
+}
+
 export class OpenRouterLlmProvider implements ILlmProvider, ILlmCompletionProvider {
   private readonly apiKey: string
   private readonly baseUrl: string
   private readonly model: string
   private readonly timeoutMs: number
+  private readonly useProxy: boolean
 
-  constructor(opts?: { apiKey?: string; baseUrl?: string; model?: string; timeoutMs?: number }) {
+  constructor(opts?: { apiKey?: string; baseUrl?: string; model?: string; timeoutMs?: number; useProxy?: boolean }) {
     const key = opts?.apiKey ?? process.env['OPENROUTER_API_KEY']
     if (!key) {
       throw new OpenRouterLlmError('OPENROUTER_API_KEY is not set. Provide it as a constructor option or via process.env.')
@@ -86,6 +93,8 @@ export class OpenRouterLlmProvider implements ILlmProvider, ILlmCompletionProvid
     this.baseUrl = opts?.baseUrl ?? OPENROUTER_API_BASE_URL
     this.model = opts?.model ?? OPENROUTER_DEFAULT_MODEL
     this.timeoutMs = opts?.timeoutMs ?? OPENROUTER_DEFAULT_TIMEOUT_MS
+    // WP-WORKER-04: through OUTBOUND_PROXY_URL when it is set (no-op while it is unset)
+    this.useProxy = opts?.useProxy ?? true
   }
 
   /** ILlmProvider — protocol generation. Same prompt builders as kie.ai. */
@@ -139,6 +148,8 @@ export class OpenRouterLlmProvider implements ILlmProvider, ILlmCompletionProvid
         },
         body: JSON.stringify(requestBody),
         signal: AbortSignal.timeout(this.timeoutMs),
+        // undici dispatcher; undefined = direct. Not in the DOM RequestInit type
+        ...withDispatcher(outboundDispatcherFor(this.useProxy)),
       })
       const raw = await response.text()
       try {
