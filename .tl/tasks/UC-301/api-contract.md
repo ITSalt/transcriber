@@ -9,8 +9,8 @@
 
 | Method | Path | Auth | Description |
 |--------|------|------|-------------|
-| GET | `/api/meetings/:id/protocol` | none (NFR-007) | Get protocol Markdown |
-| PUT | `/api/meetings/:id/protocol` | none (NFR-007) | Save protocol edits |
+| GET | `/api/meetings/:id/protocol` | session (FR-003) | Get protocol Markdown |
+| PUT | `/api/meetings/:id/protocol` | session (FR-003) | Save protocol edits |
 
 ## Shared types (Zod schemas in `@transcrib/shared`)
 
@@ -74,5 +74,9 @@ All errors are `AppError` (see TECH-005). Stable codes returned in body `{code, 
 
 ## Authentication
 
-MVP runs without auth per **NFR-007**. All endpoints are open. Ownership scope (RQ-003) is semantically 'all' at MVP — to be re-enabled when auth is added.
+**Access (FR-003, WP-BACKEND-01; supersedes NFR-007).** Every endpoint needs a session (cookie `transcrib_session`) when `AUTH_REQUIRED=true`; with the default `false` a request without a session is served by the legacy principal, restricted to the workspace «Роман» (D-20). Meeting-scoped endpoints check workspace membership before validation and the handler: someone else's and a nonexistent meeting answer the same `404 {code: NOT_FOUND, message: «Не найдено»}` (RQ-044). See `api/README.md` and `shared/src/api/{auth,workspace,errors}.ts`.
 
+
+## WP-BACKEND-01 additions (FR-005 / RQ-050)
+
+`PUT /api/meetings/:id/protocol` also appends an immutable `ProtocolVersion(kind USER_EDIT, authorUserId)` in the same transaction (the replaced text is first recorded as v1 `GENERATED`/`LEGACY` or the next `LEGACY` version when the history lacks it). Two saves racing for the same version number → `409 PROTOCOL_EDIT_CONFLICT` (reload and retry). `authorUserId` is null for the legacy principal (D-20).

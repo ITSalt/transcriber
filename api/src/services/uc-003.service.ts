@@ -14,7 +14,7 @@
  *
  * BRQ-009: Already-terminal jobs (DONE/FAILED) preserve immutability — we only
  *          mutate PROCESSING (IN_PROGRESS) jobs.
- * NFR-007: No auth at MVP — ownership is unchecked (RQ-003 deferred).
+ * FR-003 / RQ-044: ownership is checked by the auth plugin before the route runs.
  */
 import type { IStorage } from '@transcrib/shared'
 import { StorageError, StorageNotFoundError } from '@transcrib/shared'
@@ -92,6 +92,17 @@ export async function deleteMeeting(
             status: 'FAILED',
             errorMsg: 'deleted by user',
             finishedAt: new Date(),
+          },
+        })
+      }
+
+      // FR-006 / RQ-056: a meeting of a project lives on in the project-memory graph —
+      // queue its removal there in the SAME transaction (drained by the worker).
+      if (meeting.projectId) {
+        await tx.graphOutbox.create({
+          data: {
+            op: 'DELETE_MEETING',
+            payload: { meeting_id: meeting.id, project_id: meeting.projectId, workspace_id: meeting.workspaceId },
           },
         })
       }

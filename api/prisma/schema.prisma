@@ -112,16 +112,17 @@ model Meeting {
   createdAt DateTime        @default(now()) @map("created_at")
   updatedAt DateTime        @updatedAt @map("updated_at")
 
-  /// FR-003 / D-6, D-7: owning workspace. NULLABLE in WP-BACKEND-06 (contract package);
-  /// WP-BACKEND-01 drops the DB default and sets NOT NULL. The DB default is the fixed id of
-  /// the legacy personal workspace «Роман» so meetings inserted by the pre-program code
-  /// (still running while `migrate deploy` executes, and until WP-BACKEND-01 ships) never
-  /// end up without an owner.
-  workspaceId String? @default(dbgenerated("'00000000-0000-4000-8000-000000000001'::uuid")) @map("workspace_id") @db.Uuid
+  /// FR-003 / D-6, D-7: owning workspace — every meeting has exactly one. WP-BACKEND-06 added
+  /// it nullable with a temporary DB default («Роман»); WP-BACKEND-01 re-backfilled and set
+  /// NOT NULL. The default STAYS for now (D-22): the previous release keeps running between
+  /// `migrate deploy` and `pm2 start` and inserts meetings without workspace_id. A later
+  /// clean-up migration drops it once only new code runs; until then new code must always
+  /// pass workspaceId explicitly (finalizeUpload does).
+  workspaceId String  @default(dbgenerated("'00000000-0000-4000-8000-000000000001'::uuid")) @map("workspace_id") @db.Uuid
   /// FR-004: optional project inside the workspace.
   projectId   String? @map("project_id") @db.Uuid
 
-  workspace Workspace? @relation(fields: [workspaceId], references: [id], onDelete: Restrict)
+  workspace Workspace  @relation(fields: [workspaceId], references: [id], onDelete: Restrict)
   project   Project?   @relation(fields: [projectId], references: [id], onDelete: SetNull)
 
   recording           Recording?
@@ -163,6 +164,10 @@ model TranscriptionJob {
   finishedAt   DateTime? @map("finished_at")
   errorMsg     String?   @map("error_msg")
   attemptCount Int       @default(0) @map("attempt_count")
+  /// A-5 (WP-BACKEND-01): the author's speaker-count hint from upload complete. Kept on the
+  /// job so a deferred start (POST /api/meetings/:id/start) can enqueue
+  /// {transcription_job_id, speaker_count} exactly like finalizeUpload. NULL = auto-detect.
+  speakerCount Int?      @map("speaker_count")
   createdAt    DateTime  @default(now()) @map("created_at")
   updatedAt    DateTime  @updatedAt @map("updated_at")
 

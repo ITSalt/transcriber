@@ -1,42 +1,44 @@
 import { useTranslation } from "react-i18next";
-import { useNavigate } from "react-router";
+import { Link, useNavigate } from "react-router";
 import { TableRow, TableCell } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { StatusBadge } from "./StatusBadge";
-import type { MeetingListItem } from "@transcrib/shared";
+import type { WorkspaceMeetingListItem } from "@transcrib/shared";
 
 interface MeetingRowProps {
-  meeting: MeetingListItem;
-}
-
-function formatDuration(seconds: number): string {
-  const m = Math.floor(seconds / 60);
-  const s = seconds % 60;
-  return `${m}:${s.toString().padStart(2, "0")}`;
+  meeting: WorkspaceMeetingListItem;
 }
 
 function formatDate(iso: string): string {
   return new Date(iso).toLocaleString();
 }
 
+/** The protocol exists once generation finished (see StatusBadge statuses). */
+const HAS_PROTOCOL = new Set(["PROTOCOL_READY", "EDITED"]);
+
 export function MeetingRow({ meeting }: MeetingRowProps) {
   const { t } = useTranslation();
   const navigate = useNavigate();
 
-  const displayTitle = meeting.title ?? meeting.filename;
-
   return (
     <TableRow data-testid={`meeting-row-${meeting.id}`}>
-      <TableCell className="font-medium">{displayTitle}</TableCell>
+      <TableCell className="font-medium">{meeting.filename}</TableCell>
+      <TableCell>{formatDate(meeting.uploaded_at)}</TableCell>
       <TableCell>
         <StatusBadge status={meeting.status} />
       </TableCell>
-      <TableCell>{meeting.language ?? "—"}</TableCell>
-      <TableCell>{formatDate(meeting.uploaded_at)}</TableCell>
       <TableCell>
-        {meeting.duration_sec != null
-          ? formatDuration(meeting.duration_sec)
-          : "—"}
+        {HAS_PROTOCOL.has(meeting.status) ? (
+          <Link
+            to={`/meetings/${meeting.id}/protocol`}
+            className="font-medium text-primary underline-offset-4 hover:underline"
+            data-testid={`protocol-link-${meeting.id}`}
+          >
+            {t("catalog.openProtocol")}
+          </Link>
+        ) : (
+          "—"
+        )}
       </TableCell>
       <TableCell>
         <Button

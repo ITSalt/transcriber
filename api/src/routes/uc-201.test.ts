@@ -10,7 +10,7 @@
  *   T03 — 404 TRANSCRIPT_NOT_FOUND when no meeting exists
  *   T04 — 404 TRANSCRIPT_NOT_FOUND when meeting has no transcript row
  *   T05 — 409 STATUS_NOT_READY when Meeting.status < TRANSCRIBED
- *   T06 — NFR-007: endpoints reachable without Authorization header
+ *   T06 — D-20 (AUTH_REQUIRED=false): endpoints reachable without Authorization header
  *   T07 — DB failure maps to 500 INTERNAL_ERROR
  *   T08 — invalid UUID in :id returns 400 VALIDATION_ERROR
  *   T09 — download filename uses meeting title when available
@@ -51,6 +51,8 @@ const { mockFindUnique } = vi.hoisted(() => ({
 vi.mock('../db.js', () => ({
   prisma: {
     meeting: {
+      // FR-003 access check of the auth plugin (meeting is in workspace «Роман»)
+      findFirst: vi.fn().mockResolvedValue({ id: '00000000-0000-4000-8000-0000000000ff', workspaceId: '00000000-0000-4000-8000-000000000001', projectId: null }),
       findMany: vi.fn(),
       findUnique: mockFindUnique,
     },
@@ -222,9 +224,9 @@ describe('UC-201-BE — GET /api/meetings/:id/transcript', () => {
     expect(res.json<{ code: string }>().code).toBe('STATUS_NOT_READY')
   })
 
-  // ─── T06: NFR-007 no auth required ───────────────────────────────────────────
+  // ─── T06: D-20 — no session needed while AUTH_REQUIRED=false ───────────────────────────────────────────
 
-  it('T06 — NFR-007: endpoint reachable without Authorization header', async () => {
+  it('T06 — D-20 (AUTH_REQUIRED=false): endpoint reachable without Authorization header', async () => {
     mockFindUnique.mockResolvedValue(makeDbMeeting())
 
     const res = await app.inject({

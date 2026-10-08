@@ -12,7 +12,8 @@
  * Returns 409 RETRY_ALREADY_IN_FLIGHT when the stage is already PENDING/PROCESSING.
  * Returns 404 MEETING_NOT_FOUND    when no such meeting exists.
  *
- * NFR-007: No authentication at MVP — endpoint is open.
+ * FR-003 / RQ-044: workspace membership is checked by the auth plugin before validation
+ * and the handler (features/auth/routes.ts); foreign or nonexistent meeting → 404 NOT_FOUND.
  */
 import type { FastifyInstance } from 'fastify'
 import type { ZodTypeProvider } from '@fastify/type-provider-zod'
@@ -50,7 +51,7 @@ export async function retryMeetingRoutes(app: FastifyInstance): Promise<void> {
       },
     },
     async (request, reply) => {
-      // NFR-007: no ownership filter at MVP
+      // FR-003: access already checked by the auth plugin (request.meetingAccess)
       const { id } = request.params
       const result = await retryMeetingProcessing(id)
       return reply.status(200).send({

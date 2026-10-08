@@ -2,7 +2,8 @@ import { useEffect } from "react";
 import { useParams } from "react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
-import { apiGet } from "@/lib/api";
+import { apiGet, isNotFound } from "@/lib/api";
+import { NotFound } from "@/components/NotFound";
 import { MeetingDetailResponse } from "@transcrib/shared";
 import { Button } from "@/components/ui/button";
 import { SlotOutlet } from "@/components/layout/slot";
@@ -25,7 +26,8 @@ export default function MeetingDetailPage() {
   const queryClient = useQueryClient();
 
   const meetingId = id ?? "";
-  const { data, isLoading, isError, refetch } = useMeetingDetail(meetingId);
+  const { data, error, isLoading, isError, refetch } =
+    useMeetingDetail(meetingId);
   const deleteMutation = useDeleteMeeting(meetingId);
 
   // RQ-002 — SSE subscribe for real-time status updates
@@ -49,6 +51,8 @@ export default function MeetingDetailPage() {
   const jobInProgress =
     data?.latest_transcription_job?.status === "PROCESSING" ||
     data?.latest_protocol_job?.status === "PROCESSING";
+
+  if (isNotFound(error)) return <NotFound />;
 
   return (
     <div data-testid="meeting-detail-page" className="container mx-auto py-8 px-4 max-w-3xl">

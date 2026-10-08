@@ -7,8 +7,8 @@
  *   - ProtocolGenerationJob (latest status, error)
  *   - Transcript / Protocol existence flags
  *
- * RQ-003: AUTHOR sees only own meetings; deferred until auth (NFR-007), so
- *         MVP returns any meeting by id.
+ * RQ-003 / RQ-044: AUTHOR sees only meetings of their workspaces — enforced by the auth plugin
+ *         before this runs (FR-003), so the service itself looks the meeting up by id.
  * RQ-004: error_reason is surfaced from the latest job when Meeting.status=ERROR.
  */
 import type { MeetingDetailResponse } from '@transcrib/shared'
@@ -26,7 +26,7 @@ function filenameFromUri(storageUri: string): string {
 /**
  * Return full meeting detail for the given meeting id.
  * Throws AppError('MEETING_NOT_FOUND', 404) if the meeting does not exist.
- * RQ-004, RQ-003/NFR-007
+ * RQ-004, RQ-003 (access: auth plugin)
  */
 export async function getMeetingDetail(id: string): Promise<MeetingDetailResponse> {
   try {
