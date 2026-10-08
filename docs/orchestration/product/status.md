@@ -43,7 +43,7 @@ CANCELLED (причина).
 | [WP-API-MEMORY-01](work-packages/WP-API-MEMORY-01-registry.md) | api-memory | API памяти проекта: задачи, решения, подтверждения | READY | product-api-memory | — | 2026-10-07 |
 | [WP-WORKER-MEMORY-01](work-packages/WP-WORKER-MEMORY-01-pipeline.md) | worker-memory | Память проекта в Neo4j: слой графа, извлечение, сопоставление, сводка | ACCEPTED | product-worker-memory | https://github.com/ITSalt/transcriber/pull/16 (accepted b6561a5cf7) | 2026-10-07 |
 | [WP-INFRA-02](work-packages/WP-INFRA-02-deploy-migrate-first.md) | infra | Порядок деплоя: миграции Postgres до сборки и замены dist | PROD | product-infra | https://github.com/ITSalt/transcriber/pull/11 (accepted 6694e5e172) | 2026-10-07 |
-| [WP-INFRA-03](work-packages/WP-INFRA-03-neo4j-ports.md) | infra | Порты Neo4j памяти проекта 7476/7689 (D-26) | ACCEPTED | product-infra | https://github.com/ITSalt/transcriber/pull/22 (accepted 5d27d4a320) | 2026-10-08 |
+| [WP-INFRA-03](work-packages/WP-INFRA-03-neo4j-ports.md) | infra | Порты Neo4j памяти проекта 7476/7689 (D-26) | PROD | product-infra | https://github.com/ITSalt/transcriber/pull/22 (accepted 5d27d4a320) | 2026-10-08 |
 
 ## Ждёт владельца
 
@@ -88,6 +88,7 @@ R-n — действие: точная команда одной строкой 
 | ~~R-16~~ | ~~Включить вход по PIN (после FRONTEND-02 в проде; не блокирует доставку; делать, когда готовы — до этого всё работает как раньше в пространстве «Роман»). Три шага на VM (api/.env — симлинк на /opt/transcrib/.env): (1) ssh deploy@transcriber.itsalt.ru 'cd /opt/transcrib && echo PIN_PEPPER=cf4bba3deff4e0ae4a8a8d97bf2007fc4b17e00314ba3b96bec6afad5cfbc383 >> .env && grep -c ^PIN_PEPPER= .env' → 1 ; (2) ssh -t deploy@transcriber.itsalt.ru 'cd /opt/transcrib && pnpm --filter @transcrib/api run user:create -- --name "Роман" --pin <6 цифр> --workspace "Роман"' → пользователь создан, PIN в выводе не печатается; при необходимости ещё пользователи той же командой; (3) ssh deploy@transcriber.itsalt.ru 'cd /opt/transcrib && sed -i "s/^AUTH_REQUIRED=.*/AUTH_REQUIRED=true/" .env && grep -q ^AUTH_REQUIRED=true .env \|\| echo AUTH_REQUIRED=true >> .env; pm2 restart transcrib-api && sleep 5 && curl -s -o /dev/null -w "%{http_code}" https://transcriber.itsalt.ru/api/meetings' → 401 ; then: откройте https://transcriber.itsalt.ru — экран PIN; оркестратор проверит /me без cookie → 401 и закроет пункт. Откат: AUTH_REQUIRED=false + pm2 restart transcrib-api~~ | work-packages/WP-FRONTEND-02-login-tasks.md | 2026-10-08 | 2026-10-08: выполнено оркестратором по D-28 2026-10-08: PIN_PEPPER добавлен в /opt/transcrib/.env; user:create → Роман (f5fc588d…) в пространстве «Роман»; AUTH_REQUIRED=true, pm2 restart transcrib-api (online); проверки: health 200, /api/meetings и /api/auth/me без cookie 401, login верным PIN 200 + cookie, /me 200, неверный PIN 401 INVALID_PIN, logout 204 → /me 401 |
 | ~~P-17~~ | ~~Отзывы на протокол (WP-API-FEEDBACK-01, DEC-012/RQ-065): сессия решила, что отзыв принимает только вошедший пользователь — при выключенном входе (AUTH_REQUIRED=false, сейчас на проде) кнопка «Отзыв» получит 401 и обратная связь не заработает до R-16. Варианты: (a) оставить — включить вход (R-16) до доставки WEB-FEEDBACK-01, отзывы всегда с автором; (b) при легаси-принципале записывать отзыв от синтетического «Романа» (nullable/служебный user_id) — работает без входа, но автор условный и схема сложнее. Рекомендую (a): R-16 всё равно в очереди, а WEB-FEEDBACK-01 доставляется после API-FEEDBACK-01. Ответ нужен до доставки WEB-FEEDBACK-01; при (a) R-16 становится условием её доставки~~ | reports/wp-api-feedback-01-review-20261008.md | 2026-10-08 | 2026-10-08: answered by D-27 |
 | ~~P-18~~ | ~~Порты Neo4j памяти проекта: compose Transcrib (memory-neo4j 127.0.0.1:7475/7688) целиком конфликтует с контейнером fc-neo4j другого проекта на той же VM, а MEMORY_NEO4J_URI в /opt/transcrib/.env сейчас указывает на 7688 = fc-neo4j (чужой граф; пароль случайный, подключение упадёт по auth, но адрес нужно исправить). Варианты: (a) сменить порты Transcrib на 127.0.0.1:7476/7689 — маленький пакет INFRA-03 (docker-compose.yml, scripts/README-neo4j.md, .tl/deploy-plan.md §9, .env.example), затем вы правите MEMORY_NEO4J_URI=bolt://127.0.0.1:7689 в .env и запускаете memory-neo4j (новый R-14 без дописывания .env); (b) остановить fc-neo4j, если он больше не нужен — тогда ничего в коде не меняется, R-14 повторяется как есть; (c) общий Neo4j с fc — нет: community edition одна БД, чужие данные. Рекомендую (a), если fc-neo4j нужен; (b), если нет. Доставка WORKER-MEMORY-01/WEB-MEMORY-01 и запуск API-MEMORY-01 ждут ответа~~ | work-packages/WP-WORKER-MEMORY-01-pipeline.md | 2026-10-08 | 2026-10-08: answered by D-26 |
+| ~~R-17~~ | ~~Запуск Neo4j памяти на прод-VM после INFRA-03 (D-26, D-28 — выполняет оркестратор по ssh): MEMORY_NEO4J_URI в /opt/transcrib/.env → bolt://127.0.0.1:7689; docker compose up -d memory-neo4j; ожидание healthy; проверка cypher-shell RETURN 1; memory=1610612736 ; expected: healthy, 7476/7689 слушают, RETURN 1 ok ; then: доставка WORKER-MEMORY-01 (graph:migrate в её деплое)~~ | work-packages/WP-INFRA-03-neo4j-ports.md | 2026-10-08 | 2026-10-08: 2026-10-08 ssh learn-prod: URI → bolt://127.0.0.1:7689; docker compose up -d memory-neo4j → Recreated/Started, healthy через ~30 с; 127.0.0.1:7476 и :7689 слушают; HostConfig.Memory=1610612736; cypher-shell RETURN 1 → ok; свободно 3.8 GiB |
 
 ## Замки
 
@@ -100,7 +101,6 @@ R-n — действие: точная команда одной строкой 
 |-------|-------------|-----------|---|------|------------|
 | transcriber:shared/** | transcriber | WP-WORKER-MEMORY-01 | 2026-10-07 20:11Z | — | dispatch |
 | transcriber:worker/package.json | transcriber | WP-WORKER-MEMORY-01 | 2026-10-07 20:11Z | — | dispatch |
-| transcriber:.tl/deploy-plan.md | transcriber | WP-INFRA-03 | 2026-10-08 11:03Z | — | dispatch |
 
 ## Очередь слияний
 
@@ -134,7 +134,7 @@ R-n — действие: точная команда одной строкой 
 | 22 | transcriber | WP-WEB-FEEDBACK-01 | — | WP-WEB-PROJECTS-01 | merged |
 | 23 | transcriber | WP-WORKER-MEMORY-01 | — | WP-WEB-FEEDBACK-01 | dropped |
 | 24 | transcriber | WP-WEB-MEMORY-01 | — | WP-WORKER-MEMORY-01 | dropped |
-| 25 | transcriber | WP-INFRA-03 | — | WP-WEB-MEMORY-01 | queued |
+| 25 | transcriber | WP-INFRA-03 | — | WP-WEB-MEMORY-01 | merged |
 | 26 | transcriber | WP-WORKER-MEMORY-01 | — | WP-INFRA-03 | queued |
 | 27 | transcriber | WP-WEB-MEMORY-01 | — | WP-WORKER-MEMORY-01 | queued |
 
@@ -145,6 +145,13 @@ R-n — действие: точная команда одной строкой 
 <!-- orch:journal -->
 | Дата | WP | Событие | Подтверждение |
 |------|----|---------|---------------|
+| 2026-10-08 11:47Z | WP-INFRA-03 | WP-INFRA-03 PROD; R-17: memory-neo4j поднят на 7476/7689, healthy, cypher ok; graph:migrate — при деплое WORKER-MEMORY-01 | reports/verify-WP-INFRA-03-prod-20261008.md |
+| 2026-10-08 11:47Z | — | R-17 closed | 2026-10-08 ssh learn-prod: URI → bolt://127.0.0.1:7689; docker compose up -d memory-neo4j → Recreated/Started, healthy через ~30 с; 127.0.0.1:7476 и :7689 слушают; HostConfig.Memory=1610612736; cypher-shell RETURN 1 → ok; свободно 3.8 GiB |
+| 2026-10-08 11:47Z | — | R-17 opened for owner | work-packages/WP-INFRA-03-neo4j-ports.md |
+| 2026-10-08 11:47Z | WP-INFRA-03 | WP-INFRA-03: VERIFIED_TEST -> PROD | verify --env prod 392ed2b8ac: reports/verify-WP-INFRA-03-prod-20261008.md |
+| 2026-10-08 11:46Z | WP-INFRA-03 | WP-INFRA-03: MERGED -> VERIFIED_TEST | verify --env test 392ed2b8ac: reports/verify-WP-INFRA-03-test-20261008.md |
+| 2026-10-08 11:42Z | WP-INFRA-03 | WP-INFRA-03 merged in the merge queue; released transcriber:.tl/deploy-plan.md | orch.py deliver: 392ed2b8ac |
+| 2026-10-08 11:42Z | WP-INFRA-03 | WP-INFRA-03: ACCEPTED -> MERGED | gh pr merge --squash: 392ed2b8ac (https://github.com/ITSalt/transcriber/pull/22) |
 | 2026-10-08 11:42Z | WP-WEB-MEMORY-01 | WP-WEB-MEMORY-01 queued for merge (sequential) | — |
 | 2026-10-08 11:42Z | WP-WORKER-MEMORY-01 | WP-WORKER-MEMORY-01 queued for merge (sequential) | — |
 | 2026-10-08 11:42Z | WP-WEB-MEMORY-01 | WP-WEB-MEMORY-01 dropped in the merge queue | — |
