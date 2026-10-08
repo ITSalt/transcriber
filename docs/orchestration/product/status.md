@@ -49,7 +49,7 @@ CANCELLED (причина).
 | [WP-WORKER-04](work-packages/WP-WORKER-04-outbound-proxy.md) | worker | Исходящий прокси для OpenRouter (OUTBOUND_PROXY_URL, undici ProxyAgent, только LLM-трафик) | PROD | product-worker | https://github.com/ITSalt/transcriber/pull/25 (accepted 83f42ec2b1) | 2026-10-08 |
 | [WP-WORKER-05](work-packages/WP-WORKER-05-openrouter-reasoning.md) | worker | OpenRouter: reasoning выключен по умолчанию, лимит выхода и диагностика пустого ответа (LLM_REASONING, LLM_MAX_TOKENS) | PROD | product-worker | https://github.com/ITSalt/transcriber/pull/26 (accepted b31b2d946d) | 2026-10-08 |
 | [WP-BACKEND-07](work-packages/WP-BACKEND-07-speakers.md) | backend | Подтверждение спикеров: контракт, статус AWAITING_SPEAKERS, API карты спикеров | PROD | product-backend | https://github.com/ITSalt/transcriber/pull/29 (accepted 3f3e6b0583) | 2026-10-08 |
-| [WP-WORKER-06](work-packages/WP-WORKER-06-speakers-gate.md) | worker | Воркер: остановка на AWAITING_SPEAKERS, имена спикеров в транскрипте и промпте | ACCEPTED | product-worker | https://github.com/ITSalt/transcriber/pull/30 (accepted a87e135916) | 2026-10-08 |
+| [WP-WORKER-06](work-packages/WP-WORKER-06-speakers-gate.md) | worker | Воркер: остановка на AWAITING_SPEAKERS, имена спикеров в транскрипте и промпте | PROD | product-worker | https://github.com/ITSalt/transcriber/pull/30 (accepted a87e135916) | 2026-10-08 |
 | [WP-FRONTEND-06](work-packages/WP-FRONTEND-06-speakers.md) | frontend | Экран подтверждения спикеров перед генерацией протокола | DISPATCHING | product-frontend | — | 2026-10-08 |
 | [WP-WORKER-07](work-packages/WP-WORKER-07-memory-leak-guard.md) | worker | Защита протокола от утечки памяти проекта и чужих участников | PROD | product-worker | https://github.com/ITSalt/transcriber/pull/27 (accepted ade44c9c31) | 2026-10-08 |
 | [WP-WORKER-MEMORY-02](work-packages/WP-WORKER-MEMORY-02-hygiene.md) | worker-memory | Гигиена памяти проекта: дедуп решений, валидация исполнителей, сводка по продуктам | PROD | product-worker-memory | https://github.com/ITSalt/transcriber/pull/28 (accepted adc8af0791) | 2026-10-08 |
@@ -116,7 +116,6 @@ R-n — действие: точная команда одной строкой 
 | transcriber:shared/** | transcriber | — | 2026-10-08 19:47Z | WP-WORKER-MEMORY-02 | released by WP-BACKEND-07 |
 | transcriber:shared/src/api/speakers.ts | transcriber | — | 2026-10-08 19:47Z | WP-WORKER-MEMORY-02 | released by WP-BACKEND-07 |
 | transcriber:shared/src/api/uc002.ts | transcriber | — | 2026-10-08 19:47Z | WP-WORKER-MEMORY-02 | released by WP-BACKEND-07 |
-| transcriber:worker/src/job-processor.ts | transcriber | WP-WORKER-06 | 2026-10-08 19:51Z | — | dispatch |
 | transcriber:web/src/i18n/** | transcriber | WP-FRONTEND-06 | 2026-10-08 19:52Z | — | dispatch |
 
 ## Очередь слияний
@@ -161,7 +160,7 @@ R-n — действие: точная команда одной строкой 
 | 32 | transcriber | WP-WORKER-07 | https://github.com/ITSalt/transcriber/pull/27 | — | merged |
 | 33 | transcriber | WP-WORKER-MEMORY-02 | https://github.com/ITSalt/transcriber/pull/28 | — | merged |
 | 34 | transcriber | WP-BACKEND-07 | https://github.com/ITSalt/transcriber/pull/29 | — | merged |
-| 35 | transcriber | WP-WORKER-06 | https://github.com/ITSalt/transcriber/pull/30 | — | queued |
+| 35 | transcriber | WP-WORKER-06 | https://github.com/ITSalt/transcriber/pull/30 | — | merged |
 
 ## Журнал
 
@@ -170,6 +169,11 @@ R-n — действие: точная команда одной строкой 
 <!-- orch:journal -->
 | Дата | WP | Событие | Подтверждение |
 |------|----|---------|---------------|
+| 2026-10-08 20:09Z | WP-WORKER-06 | WP-WORKER-06 доставлен (merge a50f44d6b6, verify test/prod PASS → PROD); живой сценарий подтверждения спикеров через API на проде прошёл полностью: AWAITING_SPEAKERS за 21 с → GET/PUT /speakers → PROTOCOL_READY с именами 4 участников, транскрипт с именами (0 меток Speaker N); осталась WP-FRONTEND-06 (экран) | chain deliver_w06.sh; results/mtcb-D-protocol-new.md; GET /transcript full_text |
+| 2026-10-08 20:07Z | WP-WORKER-06 | WP-WORKER-06: VERIFIED_TEST -> PROD | verify --env prod a50f44d6b6: reports/verify-WP-WORKER-06-prod-20261008.md |
+| 2026-10-08 20:07Z | WP-WORKER-06 | WP-WORKER-06: MERGED -> VERIFIED_TEST | verify --env test a50f44d6b6: reports/verify-WP-WORKER-06-test-20261008.md |
+| 2026-10-08 20:03Z | WP-WORKER-06 | WP-WORKER-06 merged in the merge queue; released transcriber:worker/src/job-processor.ts | orch.py deliver: a50f44d6b6 |
+| 2026-10-08 20:03Z | WP-WORKER-06 | WP-WORKER-06: ACCEPTED -> MERGED | gh pr merge --squash: a50f44d6b6 (https://github.com/ITSalt/transcriber/pull/30) |
 | 2026-10-08 20:02Z | WP-WORKER-06 | WP-WORKER-06 queued for merge (sequential) | https://github.com/ITSalt/transcriber/pull/30 |
 | 2026-10-08 20:02Z | WP-WORKER-06 | WP-WORKER-06: accepted at a87e1359168062685cd2c7b083ed84acc441f8cc | report reports/wp-worker-06-review-20261008.md |
 | 2026-10-08 20:02Z | WP-WORKER-06 | WP-WORKER-06: REVIEW -> ACCEPTED | a87e135916; reports/wp-worker-06-review-20261008.md |
