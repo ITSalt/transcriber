@@ -12,12 +12,13 @@ import {
   StartMeetingResponse,
 } from "@transcrib/shared";
 import i18n from "@/i18n/config";
+import { WithSession, WS_PERSONAL } from "@/lib/test-utils";
 import UploadPage from "./index";
 
 // FR-004 / D-9: project + context form before recognition. Every mocked API answer is
 // parsed through the shared Zod schema of the contract, so the mocks cannot drift from it.
 
-const WS = "00000000-0000-4000-8000-000000000001";
+const WS = WS_PERSONAL;
 const PROJECT_ID = "11111111-1111-4111-8111-111111111111";
 const MEETING_ID = "a1b2c3d4-1234-4abc-8def-a1b2c3d4e5f6";
 const PREV_MEETING_ID = "22222222-2222-4222-8222-222222222222";
@@ -160,7 +161,9 @@ function renderUpload() {
   );
   return render(
     <QueryClientProvider client={client}>
-      <RouterProvider router={router} />
+      <WithSession>
+        <RouterProvider router={router} />
+      </WithSession>
     </QueryClientProvider>,
   );
 }

@@ -5,10 +5,11 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { createMemoryRouter, RouterProvider } from "react-router";
 import { ProjectDetailResponse, ProjectListResponse, ProjectParticipant } from "@transcrib/shared";
 import i18n from "@/i18n/config";
+import { WithSession, WS_PERSONAL } from "@/lib/test-utils";
 import { featureRegistry } from "@/lib/features";
 import { routes } from "./index";
 
-const WS = "00000000-0000-4000-8000-000000000001";
+const WS = WS_PERSONAL;
 const PID = "11111111-1111-4111-8111-111111111111";
 const NOW = "2026-10-07T10:00:00.000Z";
 const SUMMARY = {
@@ -48,7 +49,9 @@ function renderAt(path: string) {
   const router = createMemoryRouter(routes, { initialEntries: [path] });
   return render(
     <QueryClientProvider client={client}>
-      <RouterProvider router={router} />
+      <WithSession>
+        <RouterProvider router={router} />
+      </WithSession>
     </QueryClientProvider>,
   );
 }

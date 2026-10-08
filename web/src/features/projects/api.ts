@@ -13,7 +13,7 @@ import {
   type ProjectUpdateRequest,
 } from "@transcrib/shared";
 import { ApiError, apiDelete, apiGet, apiPatch, apiPost } from "@/lib/api";
-import { currentWorkspaceId } from "./workspace";
+import { useWorkspaceId } from "@/lib/session";
 
 export const projectKeys = {
   list: (workspaceId: string) => ["projects", "list", workspaceId] as const,
@@ -22,11 +22,15 @@ export const projectKeys = {
 };
 
 export function useProjects() {
-  const workspaceId = currentWorkspaceId();
+  const workspaceId = useWorkspaceId();
   return useQuery({
-    queryKey: projectKeys.list(workspaceId),
+    queryKey: projectKeys.list(workspaceId ?? ""),
     queryFn: () =>
-      apiGet(`/api/projects?workspace_id=${workspaceId}`, ProjectListResponse),
+      apiGet(
+        `/api/projects?workspace_id=${encodeURIComponent(workspaceId ?? "")}`,
+        ProjectListResponse,
+      ),
+    enabled: !!workspaceId,
   });
 }
 
@@ -69,10 +73,11 @@ function useInvalidateProjects() {
 
 export function useCreateProject() {
   const invalidate = useInvalidateProjects();
+  const workspaceId = useWorkspaceId();
   return useMutation({
     mutationFn: (input: { name: string; description?: string | null }) => {
       const body: ProjectCreateRequest = {
-        workspace_id: currentWorkspaceId(),
+        workspace_id: workspaceId ?? "",
         name: input.name,
         description: input.description ?? null,
       };

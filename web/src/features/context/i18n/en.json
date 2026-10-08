@@ -46,7 +46,8 @@
     "hintWaiting": "Available once the file is uploaded.",
     "hintReady": "File uploaded. Fill in the context if needed and start recognition.",
     "hintSkip": "The context is empty — recognition will start without it.",
-    "starting": "Starting…"
+    "starting": "Starting…",
+    "error": "Could not start recognition. Try again."
   },
   "snapshot": {
     "open": "Used context",

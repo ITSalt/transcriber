@@ -19,7 +19,6 @@ import {
   type ContextDraft,
 } from "@/features/context/draft";
 import { useLastProtocol } from "@/features/projects/api";
-import { currentWorkspaceId } from "@/features/projects/workspace";
 import {
   Select,
   SelectContent,
@@ -106,7 +105,6 @@ export default function UploadPage() {
         {
           s3_key: state.s3_key,
           s3_upload_id: state.s3_upload_id,
-          workspace_id: currentWorkspaceId(),
         },
         UploadFinalizeResponse,
       ).catch(() => {});
@@ -161,7 +159,6 @@ export default function UploadPage() {
           filetype: file.type,
           title: effectiveTitle,
           language: language || null,
-          workspace_id: currentWorkspaceId(),
         },
         UploadInitResponse,
       );
@@ -216,7 +213,6 @@ export default function UploadPage() {
           language: language || null,
           speaker_count: speakerCount,
           parts: completedParts,
-          workspace_id: currentWorkspaceId(),
           defer_start: true,
         },
         UploadFinalizeResponse,
