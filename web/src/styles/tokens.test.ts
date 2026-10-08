@@ -3,7 +3,7 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 
 const css = readFileSync(
-  resolve(process.cwd(), "src/styles/globals.css"),
+  resolve(__dirname, "globals.css"),
   "utf8",
 );
 
