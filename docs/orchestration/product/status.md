@@ -50,7 +50,7 @@ CANCELLED (причина).
 | [WP-WORKER-05](work-packages/WP-WORKER-05-openrouter-reasoning.md) | worker | OpenRouter: reasoning выключен по умолчанию, лимит выхода и диагностика пустого ответа (LLM_REASONING, LLM_MAX_TOKENS) | PROD | product-worker | https://github.com/ITSalt/transcriber/pull/26 (accepted b31b2d946d) | 2026-10-08 |
 | [WP-BACKEND-07](work-packages/WP-BACKEND-07-speakers.md) | backend | Подтверждение спикеров: контракт, статус AWAITING_SPEAKERS, API карты спикеров | PROD | product-backend | https://github.com/ITSalt/transcriber/pull/29 (accepted 3f3e6b0583) | 2026-10-08 |
 | [WP-WORKER-06](work-packages/WP-WORKER-06-speakers-gate.md) | worker | Воркер: остановка на AWAITING_SPEAKERS, имена спикеров в транскрипте и промпте | PROD | product-worker | https://github.com/ITSalt/transcriber/pull/30 (accepted a87e135916) | 2026-10-08 |
-| [WP-FRONTEND-06](work-packages/WP-FRONTEND-06-speakers.md) | frontend | Экран подтверждения спикеров перед генерацией протокола | ACCEPTED | product-frontend | https://github.com/ITSalt/transcriber/pull/31 (accepted 53b3ca8906) | 2026-10-08 |
+| [WP-FRONTEND-06](work-packages/WP-FRONTEND-06-speakers.md) | frontend | Экран подтверждения спикеров перед генерацией протокола | PROD | product-frontend | https://github.com/ITSalt/transcriber/pull/31 (accepted 53b3ca8906) | 2026-10-08 |
 | [WP-WORKER-07](work-packages/WP-WORKER-07-memory-leak-guard.md) | worker | Защита протокола от утечки памяти проекта и чужих участников | PROD | product-worker | https://github.com/ITSalt/transcriber/pull/27 (accepted ade44c9c31) | 2026-10-08 |
 | [WP-WORKER-MEMORY-02](work-packages/WP-WORKER-MEMORY-02-hygiene.md) | worker-memory | Гигиена памяти проекта: дедуп решений, валидация исполнителей, сводка по продуктам | PROD | product-worker-memory | https://github.com/ITSalt/transcriber/pull/28 (accepted adc8af0791) | 2026-10-08 |
 
@@ -116,7 +116,6 @@ R-n — действие: точная команда одной строкой 
 | transcriber:shared/** | transcriber | — | 2026-10-08 19:47Z | WP-WORKER-MEMORY-02 | released by WP-BACKEND-07 |
 | transcriber:shared/src/api/speakers.ts | transcriber | — | 2026-10-08 19:47Z | WP-WORKER-MEMORY-02 | released by WP-BACKEND-07 |
 | transcriber:shared/src/api/uc002.ts | transcriber | — | 2026-10-08 19:47Z | WP-WORKER-MEMORY-02 | released by WP-BACKEND-07 |
-| transcriber:web/src/i18n/** | transcriber | WP-FRONTEND-06 | 2026-10-08 19:52Z | — | dispatch |
 
 ## Очередь слияний
 
@@ -161,7 +160,7 @@ R-n — действие: точная команда одной строкой 
 | 33 | transcriber | WP-WORKER-MEMORY-02 | https://github.com/ITSalt/transcriber/pull/28 | — | merged |
 | 34 | transcriber | WP-BACKEND-07 | https://github.com/ITSalt/transcriber/pull/29 | — | merged |
 | 35 | transcriber | WP-WORKER-06 | https://github.com/ITSalt/transcriber/pull/30 | — | merged |
-| 36 | transcriber | WP-FRONTEND-06 | https://github.com/ITSalt/transcriber/pull/31 | — | queued |
+| 36 | transcriber | WP-FRONTEND-06 | https://github.com/ITSalt/transcriber/pull/31 | — | merged |
 
 ## Журнал
 
@@ -170,6 +169,11 @@ R-n — действие: точная команда одной строкой 
 <!-- orch:journal -->
 | Дата | WP | Событие | Подтверждение |
 |------|----|---------|---------------|
+| 2026-10-08 20:44Z | WP-FRONTEND-06 | WP-FRONTEND-06 доставлен (merge 5392bbe5e1, verify test/prod PASS → PROD); экран подтверждения проверен в браузере на проде: 4 метки с цитатами, выбор участников, объединение Speaker 4 → Speaker 2, PUT confirm → GENERATING_PROTOCOL → PROTOCOL_READY с именами, 0 меток Speaker N; волна 4 целиком в PROD | reports/verify-WP-FRONTEND-06-prod-20261008.md; reports/screenshots/frontend-06-prod-*.png |
+| 2026-10-08 20:40Z | WP-FRONTEND-06 | WP-FRONTEND-06: VERIFIED_TEST -> PROD | verify --env prod 5392bbe5e1: reports/verify-WP-FRONTEND-06-prod-20261008.md |
+| 2026-10-08 20:40Z | WP-FRONTEND-06 | WP-FRONTEND-06: MERGED -> VERIFIED_TEST | verify --env test 5392bbe5e1: reports/verify-WP-FRONTEND-06-test-20261008.md |
+| 2026-10-08 20:36Z | WP-FRONTEND-06 | WP-FRONTEND-06 merged in the merge queue; released transcriber:web/src/i18n/** | orch.py deliver: 5392bbe5e1 |
+| 2026-10-08 20:36Z | WP-FRONTEND-06 | WP-FRONTEND-06: ACCEPTED -> MERGED | gh pr merge --squash: 5392bbe5e1 (https://github.com/ITSalt/transcriber/pull/31) |
 | 2026-10-08 20:34Z | WP-FRONTEND-06 | WP-FRONTEND-06 queued for merge (sequential) | https://github.com/ITSalt/transcriber/pull/31 |
 | 2026-10-08 20:34Z | WP-FRONTEND-06 | WP-FRONTEND-06: accepted at 53b3ca8906da0fa402e6d185055012889ed1a2df | report reports/wp-frontend-06-review-20261008-r2.md |
 | 2026-10-08 20:34Z | WP-FRONTEND-06 | WP-FRONTEND-06: REVIEW -> ACCEPTED | 53b3ca8906; reports/wp-frontend-06-review-20261008-r2.md |
