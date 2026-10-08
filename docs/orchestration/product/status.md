@@ -37,7 +37,7 @@ CANCELLED (причина).
 | [WP-INFRA-01](work-packages/WP-INFRA-01-neo4j.md) | infra | Neo4j памяти проекта: сервис, лимиты, бэкап, CI, шаг деплоя | PROD | product-infra | https://github.com/ITSalt/transcriber/pull/10 (accepted 0e7ebe85d3) | 2026-10-07 |
 | [WP-WEB-PROJECTS-01](work-packages/WP-WEB-PROJECTS-01-projects-context.md) | web-projects | Проекты и форма контекста перед распознаванием | PROD | product-web-projects | https://github.com/ITSalt/transcriber/pull/19 (accepted 79d01c1853) | 2026-10-08 |
 | [WP-WEB-FEEDBACK-01](work-packages/WP-WEB-FEEDBACK-01-feedback.md) | web-feedback | Режим обратной связи по протоколу | PROD | product-web-feedback | https://github.com/ITSalt/transcriber/pull/18 (accepted 79cca617f4) | 2026-10-08 |
-| [WP-WEB-MEMORY-01](work-packages/WP-WEB-MEMORY-01-registry.md) | web-memory | Реестр задач и решений проекта, очередь подтверждений | ACCEPTED | product-web-memory | https://github.com/ITSalt/transcriber/pull/14 (accepted bd0ce7d0c5) | 2026-10-08 |
+| [WP-WEB-MEMORY-01](work-packages/WP-WEB-MEMORY-01-registry.md) | web-memory | Реестр задач и решений проекта, очередь подтверждений | PROD | product-web-memory | https://github.com/ITSalt/transcriber/pull/14 (accepted bd0ce7d0c5) | 2026-10-08 |
 | [WP-API-PROJECTS-01](work-packages/WP-API-PROJECTS-01-projects-context.md) | api-projects | API проектов и контекста встречи, запуск распознавания | PROD | product-api-projects | https://github.com/ITSalt/transcriber/pull/20 (accepted 109c71f00f) | 2026-10-08 |
 | [WP-API-FEEDBACK-01](work-packages/WP-API-FEEDBACK-01-feedback.md) | api-feedback | API версий протокола и обратной связи, разбор docx | PROD | product-api-feedback | https://github.com/ITSalt/transcriber/pull/21 (accepted e420bd0f93) | 2026-10-08 |
 | [WP-API-MEMORY-01](work-packages/WP-API-MEMORY-01-registry.md) | api-memory | API памяти проекта: задачи, решения, подтверждения | DISPATCHING | product-api-memory | — | 2026-10-08 |
@@ -134,7 +134,7 @@ R-n — действие: точная команда одной строкой 
 | 24 | transcriber | WP-WEB-MEMORY-01 | — | WP-WORKER-MEMORY-01 | dropped |
 | 25 | transcriber | WP-INFRA-03 | — | WP-WEB-MEMORY-01 | merged |
 | 26 | transcriber | WP-WORKER-MEMORY-01 | — | WP-INFRA-03 | merged |
-| 27 | transcriber | WP-WEB-MEMORY-01 | — | WP-WORKER-MEMORY-01 | queued |
+| 27 | transcriber | WP-WEB-MEMORY-01 | — | WP-WORKER-MEMORY-01 | merged |
 
 ## Журнал
 
@@ -143,6 +143,11 @@ R-n — действие: точная команда одной строкой 
 <!-- orch:journal -->
 | Дата | WP | Событие | Подтверждение |
 |------|----|---------|---------------|
+| 2026-10-08 12:03Z | WP-WEB-MEMORY-01 | WP-WEB-MEMORY-01 PROD: сборка с фичей memory, панель протокола цела; вкладка памяти — при доставке API-MEMORY-01 | reports/verify-WP-WEB-MEMORY-01-prod-20261008.md |
+| 2026-10-08 12:01Z | WP-WEB-MEMORY-01 | WP-WEB-MEMORY-01: VERIFIED_TEST -> PROD | verify --env prod d97912108e: reports/verify-WP-WEB-MEMORY-01-prod-20261008.md |
+| 2026-10-08 12:01Z | WP-WEB-MEMORY-01 | WP-WEB-MEMORY-01: MERGED -> VERIFIED_TEST | verify --env test d97912108e: reports/verify-WP-WEB-MEMORY-01-test-20261008.md |
+| 2026-10-08 11:58Z | WP-WEB-MEMORY-01 | WP-WEB-MEMORY-01 merged in the merge queue | orch.py deliver: d97912108e |
+| 2026-10-08 11:58Z | WP-WEB-MEMORY-01 | WP-WEB-MEMORY-01: ACCEPTED -> MERGED | gh pr merge --squash: d97912108e (https://github.com/ITSalt/transcriber/pull/14) |
 | 2026-10-08 11:57Z | WP-WEB-MEMORY-01 | WP-WEB-MEMORY-01: ACCEPTED -> ACCEPTED | reports/wp-web-memory-01-review-20261008-r3.md: rebase, CI run 37773187401 pass на bd0ce7d0c5 |
 | 2026-10-08 11:57Z | WP-WEB-MEMORY-01 | WP-WEB-MEMORY-01: accepted at bd0ce7d0c5119e9c6c4c1282965d9c762c3e5db6 | report reports/wp-web-memory-01-review-20261008-r3.md |
 | 2026-10-08 11:55Z | WP-WEB-MEMORY-01 | WP-WEB-MEMORY-01: review round 3 started at bd0ce7d0c5 | reports/wp-web-memory-01-review-20261008-r3.md |
