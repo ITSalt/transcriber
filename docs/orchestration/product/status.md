@@ -116,7 +116,6 @@ R-n — действие: точная команда одной строкой 
 | transcriber:shared/** | transcriber | — | 2026-10-08 19:47Z | WP-WORKER-MEMORY-02 | released by WP-BACKEND-07 |
 | transcriber:shared/src/api/speakers.ts | transcriber | — | 2026-10-08 19:47Z | WP-WORKER-MEMORY-02 | released by WP-BACKEND-07 |
 | transcriber:shared/src/api/uc002.ts | transcriber | — | 2026-10-08 19:47Z | WP-WORKER-MEMORY-02 | released by WP-BACKEND-07 |
-| transcriber:migrations | transcriber | WP-BACKEND-07 | 2026-10-08 19:02Z | — | dispatch |
 | transcriber:worker/src/job-processor.ts | transcriber | WP-WORKER-06 | 2026-10-08 19:51Z | — | dispatch |
 
 ## Очередь слияний
@@ -169,6 +168,8 @@ R-n — действие: точная команда одной строкой 
 <!-- orch:journal -->
 | Дата | WP | Событие | Подтверждение |
 |------|----|---------|---------------|
+| 2026-10-08 19:52Z | WP-FRONTEND-06 | dispatch of WP-FRONTEND-06 refused: depends on WP-WORKER-06 (DISPATCHING), not merged yet | orch.py dispatch |
+| 2026-10-08 19:52Z | WP-BACKEND-07 | lock transcriber:migrations released | orch.py lock |
 | 2026-10-08 19:51Z | WP-BACKEND-07 | WP-BACKEND-07 доставлен: merge 2e131fe287, deploy success с миграцией 20261009120000_awaiting_speakers (enum MeetingStatus содержит AWAITING_SPEAKERS, колонки transcripts.speaker_mapping/speakers_confirmed_at), api/worker online, verify test/prod PASS; WP-WORKER-06 → TASK в product-worker, WP-FRONTEND-06 → команда владельцу | chain deliver_b07.sh; psql _prisma_migrations, enum_range |
 | 2026-10-08 19:51Z | WP-FRONTEND-06 | dispatch of WP-FRONTEND-06 refused: depends on WP-WORKER-06 (DISPATCHING), not merged yet | orch.py dispatch |
 | 2026-10-08 19:51Z | WP-WORKER-06 | WP-WORKER-06: READY -> DISPATCHING | TASK message to live session; model sonnet; locks transcriber:worker/src/job-processor.ts |

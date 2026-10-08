@@ -14,7 +14,4 @@
 
 ## Живой сценарий
 
-<Заполняет режим verify после PASS проверок выше: критерии приёмки пакета, пройденные на этом
-окружении. По каждому критерию: шаги, ожидалось, получено, доказательство (вывод команды, путь к
-скриншоту). Сбой инструмента проверки (браузер, MCP) помечается как сбой инструмента с
-использованным запасным путём, а не как дефект продукта.>
+Стенда нет (merge = прод). Деплой 2e131fe287 с миграцией `20261009120000_awaiting_speakers`: `_prisma_migrations` — применена (finished_at не NULL), `enum_range(MeetingStatus)` содержит `AWAITING_SPEAKERS` перед `GENERATING_PROTOCOL`, колонки `transcripts.speaker_mapping`, `speakers_confirmed_at` есть; api и worker online. Read-only проба маршрутов под «Тест» (19:52Z): `GET /api/meetings/d5a4ef93…/speakers` без сессии → 401; с сессией → 200: status PROTOCOL_READY, 8 меток с длительностью/числом сегментов/образцами (SPEAKER_1: 1335 с, 375 сегментов), 9 участников проекта, confirmed_at null; `PUT … {action: skip}` на PROTOCOL_READY → 409 `MEETING_NOT_AWAITING_SPEAKERS`, статус встречи не изменился. Полный цикл confirm → GENERATING_PROTOCOL проверяется после WP-WORKER-06 (воркер начнёт ставить AWAITING_SPEAKERS) в итоговой живой проверке волны 4. Бэкап БД перед миграцией — R-21 (D-39).
