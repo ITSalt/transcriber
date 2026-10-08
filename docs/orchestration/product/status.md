@@ -38,7 +38,7 @@ CANCELLED (причина).
 | [WP-WEB-PROJECTS-01](work-packages/WP-WEB-PROJECTS-01-projects-context.md) | web-projects | Проекты и форма контекста перед распознаванием | ACCEPTED | product-web-projects | https://github.com/ITSalt/transcriber/pull/19 | 2026-10-07 |
 | [WP-WEB-FEEDBACK-01](work-packages/WP-WEB-FEEDBACK-01-feedback.md) | web-feedback | Режим обратной связи по протоколу | ACCEPTED | product-web-feedback | https://github.com/ITSalt/transcriber/pull/18 | 2026-10-07 |
 | [WP-WEB-MEMORY-01](work-packages/WP-WEB-MEMORY-01-registry.md) | web-memory | Реестр задач и решений проекта, очередь подтверждений | ACCEPTED | product-web-memory | https://github.com/ITSalt/transcriber/pull/14 (accepted b404424afc) | 2026-10-07 |
-| [WP-API-PROJECTS-01](work-packages/WP-API-PROJECTS-01-projects-context.md) | api-projects | API проектов и контекста встречи, запуск распознавания | REVIEW | product-api-projects | https://github.com/ITSalt/transcriber/pull/20 | 2026-10-08 |
+| [WP-API-PROJECTS-01](work-packages/WP-API-PROJECTS-01-projects-context.md) | api-projects | API проектов и контекста встречи, запуск распознавания | REVISE | product-api-projects | https://github.com/ITSalt/transcriber/pull/20 | 2026-10-08 |
 | [WP-API-FEEDBACK-01](work-packages/WP-API-FEEDBACK-01-feedback.md) | api-feedback | API версий протокола и обратной связи, разбор docx | ACCEPTED | product-api-feedback | https://github.com/ITSalt/transcriber/pull/21 (accepted a7798d4fc4) | 2026-10-08 |
 | [WP-API-MEMORY-01](work-packages/WP-API-MEMORY-01-registry.md) | api-memory | API памяти проекта: задачи, решения, подтверждения | READY | product-api-memory | — | 2026-10-07 |
 | [WP-WORKER-MEMORY-01](work-packages/WP-WORKER-MEMORY-01-pipeline.md) | worker-memory | Память проекта в Neo4j: слой графа, извлечение, сопоставление, сводка | ACCEPTED | product-worker-memory | https://github.com/ITSalt/transcriber/pull/16 (accepted b6561a5cf7) | 2026-10-07 |
@@ -97,7 +97,7 @@ R-n — действие: точная команда одной строкой 
 <!-- orch:locks -->
 | Замок | Репозиторий | Держатель | С | Ждут | Примечание |
 |-------|-------------|-----------|---|------|------------|
-| transcriber:shared/** | transcriber | WP-WORKER-MEMORY-01 | 2026-10-07 20:11Z | — | dispatch |
+| transcriber:shared/** | transcriber | WP-WORKER-MEMORY-01 | 2026-10-07 20:11Z | WP-API-PROJECTS-01 | dispatch |
 | transcriber:worker/package.json | transcriber | WP-WORKER-MEMORY-01 | 2026-10-07 20:11Z | — | dispatch |
 | transcriber:.tl/changelog.md | transcriber | WP-API-PROJECTS-01 | 2026-10-08 10:33Z | — | — |
 | transcriber:.tl/status.json | transcriber | WP-API-FEEDBACK-01 | 2026-10-08 10:39Z | — | — |
@@ -134,6 +134,9 @@ R-n — действие: точная команда одной строкой 
 <!-- orch:journal -->
 | Дата | WP | Событие | Подтверждение |
 |------|----|---------|---------------|
+| 2026-10-08 10:50Z | WP-API-PROJECTS-01 | WP-API-PROJECTS-01: REVIEW -> REVISE | reports/wp-api-projects-01-review-20261008.md: 1 пункт (500 при протоколе проекта > 50 000 → 422 PREVIOUS_PROTOCOL_TOO_LONG, A-9) + .tl-правки + merge main |
+| 2026-10-08 10:50Z | WP-API-PROJECTS-01 | WP-API-PROJECTS-01 waits for lock transcriber:shared/src/api/errors.ts (WP-WORKER-MEMORY-01) | orch.py lock acquire |
+| 2026-10-08 10:50Z | — | A-9 recorded | — |
 | 2026-10-08 10:48Z | WP-WEB-MEMORY-01 | WP-WEB-MEMORY-01 queued for merge (sequential) | — |
 | 2026-10-08 10:48Z | WP-WORKER-MEMORY-01 | WP-WORKER-MEMORY-01 queued for merge (sequential) | — |
 | 2026-10-08 10:48Z | WP-API-FEEDBACK-01 | WP-API-FEEDBACK-01 queued for merge (sequential) | — |
