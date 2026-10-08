@@ -40,7 +40,7 @@ CANCELLED (причина).
 | [WP-WEB-MEMORY-01](work-packages/WP-WEB-MEMORY-01-registry.md) | web-memory | Реестр задач и решений проекта, очередь подтверждений | PROD | product-web-memory | https://github.com/ITSalt/transcriber/pull/14 (accepted bd0ce7d0c5) | 2026-10-08 |
 | [WP-API-PROJECTS-01](work-packages/WP-API-PROJECTS-01-projects-context.md) | api-projects | API проектов и контекста встречи, запуск распознавания | PROD | product-api-projects | https://github.com/ITSalt/transcriber/pull/20 (accepted 109c71f00f) | 2026-10-08 |
 | [WP-API-FEEDBACK-01](work-packages/WP-API-FEEDBACK-01-feedback.md) | api-feedback | API версий протокола и обратной связи, разбор docx | PROD | product-api-feedback | https://github.com/ITSalt/transcriber/pull/21 (accepted e420bd0f93) | 2026-10-08 |
-| [WP-API-MEMORY-01](work-packages/WP-API-MEMORY-01-registry.md) | api-memory | API памяти проекта: задачи, решения, подтверждения | REVIEW | product-api-memory | https://github.com/ITSalt/transcriber/pull/23 | 2026-10-08 |
+| [WP-API-MEMORY-01](work-packages/WP-API-MEMORY-01-registry.md) | api-memory | API памяти проекта: задачи, решения, подтверждения | ACCEPTED | product-api-memory | https://github.com/ITSalt/transcriber/pull/23 (accepted fb632c5091) | 2026-10-08 |
 | [WP-WORKER-MEMORY-01](work-packages/WP-WORKER-MEMORY-01-pipeline.md) | worker-memory | Память проекта в Neo4j: слой графа, извлечение, сопоставление, сводка | PROD | product-worker-memory | https://github.com/ITSalt/transcriber/pull/16 (accepted 69f3715e3d) | 2026-10-08 |
 | [WP-INFRA-02](work-packages/WP-INFRA-02-deploy-migrate-first.md) | infra | Порядок деплоя: миграции Postgres до сборки и замены dist | PROD | product-infra | https://github.com/ITSalt/transcriber/pull/11 (accepted 6694e5e172) | 2026-10-07 |
 | [WP-INFRA-03](work-packages/WP-INFRA-03-neo4j-ports.md) | infra | Порты Neo4j памяти проекта 7476/7689 (D-26) | PROD | product-infra | https://github.com/ITSalt/transcriber/pull/22 (accepted 5d27d4a320) | 2026-10-08 |
@@ -135,6 +135,7 @@ R-n — действие: точная команда одной строкой 
 | 25 | transcriber | WP-INFRA-03 | — | WP-WEB-MEMORY-01 | merged |
 | 26 | transcriber | WP-WORKER-MEMORY-01 | — | WP-INFRA-03 | merged |
 | 27 | transcriber | WP-WEB-MEMORY-01 | — | WP-WORKER-MEMORY-01 | merged |
+| 28 | transcriber | WP-API-MEMORY-01 | https://github.com/ITSalt/transcriber/pull/23 | — | queued |
 
 ## Журнал
 
@@ -143,6 +144,9 @@ R-n — действие: точная команда одной строкой 
 <!-- orch:journal -->
 | Дата | WP | Событие | Подтверждение |
 |------|----|---------|---------------|
+| 2026-10-08 13:11Z | WP-API-MEMORY-01 | WP-API-MEMORY-01 queued for merge (sequential) | https://github.com/ITSalt/transcriber/pull/23 |
+| 2026-10-08 13:11Z | WP-API-MEMORY-01 | WP-API-MEMORY-01: accepted at fb632c5091add0ba514eceb8196e1647d6fdef43 | report reports/wp-api-memory-01-review-20261008.md |
+| 2026-10-08 13:11Z | WP-API-MEMORY-01 | WP-API-MEMORY-01: REVIEW -> ACCEPTED | fb632c5091; reports/wp-api-memory-01-review-20261008.md |
 | 2026-10-08 12:54Z | WP-API-MEMORY-01 | resume: сверка с реальностью — расхождений нет: PR 23 open, CI pass на fb632c5, замков нет, очередь владельца пуста, все пакеты кроме API-MEMORY-01 в PROD; граф-контейнер спецификации был остановлен (exit 0), перезапущен для проверки графа (875 узлов); рецензент round 1 запущен | gh pr view 23; gh pr checks 23 (run 37777007848 pass); orch.py lock list/queue/worktrees; docker compose up в ~/projects/.graphs/transcriber |
 | 2026-10-08 12:31Z | WP-API-MEMORY-01 | WP-API-MEMORY-01: DISPATCHING -> REVIEW | fb632c5091; report reports/wp-api-memory-01-review-20261008.md |
 | 2026-10-08 12:31Z | WP-API-MEMORY-01 | lock transcriber:.tl/external-contracts/** released | orch.py lock |
