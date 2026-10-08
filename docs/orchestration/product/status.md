@@ -118,6 +118,7 @@ R-n — действие: точная команда одной строкой 
 | transcriber:api/prisma/** | transcriber | WP-BACKEND-07 | 2026-10-08 19:02Z | — | dispatch |
 | transcriber:.tl/external-contracts/** | transcriber | WP-BACKEND-07 | 2026-10-08 19:02Z | — | dispatch |
 | transcriber:migrations | transcriber | WP-BACKEND-07 | 2026-10-08 19:02Z | — | dispatch |
+| transcriber:graph | transcriber | WP-BACKEND-07 | 2026-10-08 19:07Z | — | — |
 
 ## Очередь слияний
 
@@ -166,6 +167,7 @@ R-n — действие: точная команда одной строкой 
 <!-- orch:journal -->
 | Дата | WP | Событие | Подтверждение |
 |------|----|---------|---------------|
+| 2026-10-08 19:07Z | WP-BACKEND-07 | lock transcriber:graph acquired | orch.py lock |
 | 2026-10-08 19:03Z | WP-WORKER-07 | WP-WORKER-07: READY -> DISPATCHING | start command handed to the owner; model sonnet |
 | 2026-10-08 19:03Z | WP-WORKER-07 | WP-WORKER-07: DISPATCHING -> READY | сессия product-worker закрыта (сокет недоступен) — TASK не доставлен; запуск новой сессии командой dispatch |
 | 2026-10-08 19:03Z | WP-WORKER-MEMORY-02 | WP-WORKER-MEMORY-02: READY -> DISPATCHING | start command handed to the owner; model sonnet |
