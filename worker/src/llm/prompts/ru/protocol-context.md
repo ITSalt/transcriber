@@ -43,6 +43,7 @@ The protocol must contain exactly four sections, in this exact order and with th
 </context>
 
 <speaker_mapping>
+A name already present on a transcript line ("[MM:SS] Имя: …") was confirmed by the author: use it as is, never replace it with another participant and never doubt it. Only the remaining "Speaker N" labels are handled by the rules below.
 Replace a label "Speaker N" with a participant from <participants> only when the transcript gives explicit evidence for that specific speaker:
 - the speaker introduces themselves ("меня зовут Мария", "это Иван из Ромашки");
 - another speaker addresses them by name and they answer in the next turn;

@@ -23,7 +23,7 @@ import type { Job } from 'bullmq'
 import type { Logger } from 'pino'
 
 import type { ProtocolGenerationJobPayload, ProjectMemoryProvider } from '@transcrib/shared'
-import type { ILlmProvider, LlmModel } from '@transcrib/shared'
+import type { AsrSegment, ILlmProvider, LlmModel } from '@transcrib/shared'
 import {
   LLM_MODEL_DEFAULT,
   JOB_RETRY_ATTEMPTS,
@@ -40,6 +40,7 @@ import {
 } from '../llm/protocol-prompt.js'
 import { buildProtocolContext } from '../llm/protocol-context.js'
 import { guardProtocolParticipants } from '../llm/protocol-guard.js'
+import { buildFullText } from '../lib/transcript-text.js'
 import { buildAsrKeyterms, frozenContextSnapshot, isAsrKeytermsEnabled } from '../asr/keyterms.js'
 import { DEEPGRAM_MODEL } from '../asr/deepgram-adapter.js'
 import { publishMeetingEvent } from '../lib/publisher.js'
@@ -205,6 +206,41 @@ async function archivePrompt(
   }
 }
 
+// ─── Speaker names in the transcript text (WP-WORKER-06) ──────────────────────
+
+interface TranscriptRow {
+  id?: string
+  rawText: string | null
+  speakerMap: unknown
+  segmentsBlob: unknown
+}
+
+const isSegment = (s: unknown): s is AsrSegment =>
+  typeof s === 'object' && s !== null &&
+  typeof (s as AsrSegment).text === 'string' &&
+  typeof (s as AsrSegment).speaker === 'string' &&
+  typeof (s as AsrSegment).start === 'number'
+
+async function applySpeakerMap(transcript: TranscriptRow, log: Logger): Promise<string> {
+  const stored = transcript.rawText ?? ''
+  const blob = transcript.segmentsBlob
+  if (!Array.isArray(blob) || blob.length === 0 || !blob.every(isSegment)) return stored
+  const map =
+    transcript.speakerMap && typeof transcript.speakerMap === 'object' && !Array.isArray(transcript.speakerMap)
+      ? (transcript.speakerMap as Record<string, string | null>)
+      : {}
+  const rebuilt = buildFullText(blob, map)
+  if (rebuilt === stored) return stored
+  if (transcript.id) {
+    try {
+      await prisma.transcript.update({ where: { id: transcript.id }, data: { rawText: rebuilt } })
+    } catch (err) {
+      log.warn({ transcriptId: transcript.id, error: err instanceof Error ? err.message : String(err) }, 'raw_text not refreshed with speaker names')
+    }
+  }
+  return rebuilt
+}
+
 // ─── Main pipeline ────────────────────────────────────────────────────────────
 
 /**
@@ -320,7 +356,10 @@ export async function processProtocolGenerationJob(
     // ── Step 3: Build prompt from transcript text ────────────────────────────
     // RQ-022: full transcript text passed as user prompt; system prompt (template) chosen by
     // language and, since FR-004, by whether there is any context (RQ-060).
-    const transcriptText = transcript.rawText ?? ''
+    // WP-WORKER-06: the author's confirmed speaker_map is applied to the segments; the result
+    // is stored back to raw_text so the transcript download and the project memory see the
+    // names too. Without usable segments the stored raw_text stays as it was.
+    const transcriptText = await applySpeakerMap(transcript, log)
     const model: LlmModel = LLM_MODEL_DEFAULT
 
     // ── Step 4: Call LLM provider (TECH-011) ─────────────────────────────────
