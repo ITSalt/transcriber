@@ -282,6 +282,8 @@ describe.skipIf(!DATABASE_URL)('FR-003 — login, isolation of every /api route,
         // checks below; task-events by workspace membership of the event (graph lookup)
         'GET /api/projects/:projectId/tasks', 'PATCH /api/projects/:projectId/tasks/:code',
         'GET /api/projects/:projectId/review-queue', 'GET /api/meetings/:id/memory-refs',
+        // FR-004 / D-38 speaker confirmation (WP-BACKEND-07): meeting-scoped, gated by the same checks
+        'GET /api/meetings/:id/speakers', 'PUT /api/meetings/:id/speakers',
         'POST /api/task-events/:eventId/confirm', 'POST /api/task-events/:eventId/reject',
       ]))
     })

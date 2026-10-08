@@ -29,6 +29,9 @@ export const PROGRAM_ERRORS = {
   PREVIOUS_PROTOCOL_UNAVAILABLE: 422,
   /** D-25: the project's last protocol exceeds PREVIOUS_PROTOCOL_MAX_CHARS — never truncated */
   PREVIOUS_PROTOCOL_TOO_LONG: 422,
+  // FR-004 / D-38 — speaker confirmation (WP-BACKEND-07)
+  MEETING_NOT_AWAITING_SPEAKERS: 409,
+  UNKNOWN_SPEAKER_LABEL: 400,
   // FR-005 — versions / feedback (WP-API-FEEDBACK-01)
   PROTOCOL_VERSION_NOT_FOUND: 404,
   FEEDBACK_FILE_REQUIRED: 400,
@@ -59,6 +62,8 @@ export const PROGRAM_ERROR_MESSAGES: Record<ProgramErrorCode, string> = {
   CONTEXT_FROZEN: 'Контекст нельзя менять после старта распознавания',
   PREVIOUS_PROTOCOL_UNAVAILABLE: 'В проекте ещё нет протокола',
   PREVIOUS_PROTOCOL_TOO_LONG: 'Протокол проекта длиннее 50 000 символов — выберите «без протокола» или вставьте фрагмент',
+  MEETING_NOT_AWAITING_SPEAKERS: 'Спикеры уже подтверждены или ещё не распознаны',
+  UNKNOWN_SPEAKER_LABEL: 'Такой метки спикера нет в записи',
   PROTOCOL_VERSION_NOT_FOUND: 'Такой версии протокола нет',
   FEEDBACK_FILE_REQUIRED: 'Приложите файл',
   FEEDBACK_TEXT_REQUIRED: 'Напишите текст',

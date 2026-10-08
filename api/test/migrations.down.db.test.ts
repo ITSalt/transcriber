@@ -152,6 +152,11 @@ describe.skipIf(!DATABASE_URL)('down.sql of 20261007120000_program_product_schem
  */
 describe.skipIf(!DATABASE_URL)('20261008120000_meeting_workspace_not_null + down.sql', () => {
   const NAME7 = '20261008120000_meeting_workspace_not_null'
+  /** Roll back every NEWER migration (newest first), then this one. */
+  const downToNAME7 = async (db: string): Promise<void> => {
+    for (const m of migrationNames().filter((n) => n > NAME7).reverse()) await runDown(db, m)
+    await runDown(db, NAME7)
+  }
   const suffix = `${process.pid}_${Date.now()}`
   const workDb = `wp01_nn_${suffix}`
   const refDb = `wp01_ref_${suffix}`
@@ -173,7 +178,7 @@ describe.skipIf(!DATABASE_URL)('20261008120000_meeting_workspace_not_null + down
 
   it('AC-4: applies on a DB with a meeting without workspace — backfill, NOT NULL (default kept, D-22), versions reconciled', async () => {
     expect(prismaCli(['migrate', 'deploy'], workDb).status).toBe(0)
-    await runDown(workDb, NAME7) // → the previous release's schema, with its _prisma_migrations rows
+    await downToNAME7(workDb) // → the previous release's schema, with its _prisma_migrations rows
 
     await withDb(workDb, (c) =>
       c.query(`INSERT INTO meetings (id, title, status, language, updated_at, workspace_id) VALUES
@@ -225,10 +230,10 @@ describe.skipIf(!DATABASE_URL)('20261008120000_meeting_workspace_not_null + down
     const count = () =>
       withDb(workDb, async (c) => (await c.query(`SELECT count(*)::int AS n FROM meetings WHERE title LIKE 'nn-%'`)).rows[0].n)
     expect(await count()).toBe(3)
-    await runDown(workDb, NAME7)
+    await downToNAME7(workDb)
     expect(await catalog(workDb)).toEqual(await catalog(refDb))
     expect(await count()).toBe(3)
-    await runDown(workDb, NAME7)
+    await downToNAME7(workDb)
     expect(await catalog(workDb)).toEqual(await catalog(refDb))
     const deploy = prismaCli(['migrate', 'deploy'], workDb)
     expect(deploy.status, deploy.out).toBe(0)
@@ -236,7 +241,7 @@ describe.skipIf(!DATABASE_URL)('20261008120000_meeting_workspace_not_null + down
   }, 180_000)
 
   it('partially applied + failed: deploy blocked → down.sql → catalog = previous → re-apply succeeds', async () => {
-    await runDown(workDb, NAME7)
+    await downToNAME7(workDb)
     const up = migrationSql(NAME7)
     // stop right before step 3: backfill and NOT NULL done, speaker_count missing
     const partial = up.slice(0, up.indexOf('-- AlterTable\nALTER TABLE "transcription_jobs"'))
@@ -249,7 +254,7 @@ describe.skipIf(!DATABASE_URL)('20261008120000_meeting_workspace_not_null + down
                      VALUES (gen_random_uuid()::text, 'failed-midway', $1, now(), 0)`, [NAME7])
     })
     expect(prismaCli(['migrate', 'deploy'], workDb).status).not.toBe(0)
-    await runDown(workDb, NAME7)
+    await downToNAME7(workDb)
     expect(await catalog(workDb)).toEqual(await catalog(refDb))
     const deploy = prismaCli(['migrate', 'deploy'], workDb)
     expect(deploy.status, deploy.out).toBe(0)

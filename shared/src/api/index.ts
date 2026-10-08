@@ -16,3 +16,4 @@ export * from './project.js';
 export * from './context.js';
 export * from './feedback.js';
 export * from './memory.js';
+export * from './speakers.js';
