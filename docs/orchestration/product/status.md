@@ -40,8 +40,8 @@ CANCELLED (причина).
 | [WP-WEB-MEMORY-01](work-packages/WP-WEB-MEMORY-01-registry.md) | web-memory | Реестр задач и решений проекта, очередь подтверждений | ACCEPTED | product-web-memory | https://github.com/ITSalt/transcriber/pull/14 (accepted b404424afc) | 2026-10-07 |
 | [WP-API-PROJECTS-01](work-packages/WP-API-PROJECTS-01-projects-context.md) | api-projects | API проектов и контекста встречи, запуск распознавания | PROD | product-api-projects | https://github.com/ITSalt/transcriber/pull/20 (accepted 109c71f00f) | 2026-10-08 |
 | [WP-API-FEEDBACK-01](work-packages/WP-API-FEEDBACK-01-feedback.md) | api-feedback | API версий протокола и обратной связи, разбор docx | PROD | product-api-feedback | https://github.com/ITSalt/transcriber/pull/21 (accepted e420bd0f93) | 2026-10-08 |
-| [WP-API-MEMORY-01](work-packages/WP-API-MEMORY-01-registry.md) | api-memory | API памяти проекта: задачи, решения, подтверждения | READY | product-api-memory | — | 2026-10-07 |
-| [WP-WORKER-MEMORY-01](work-packages/WP-WORKER-MEMORY-01-pipeline.md) | worker-memory | Память проекта в Neo4j: слой графа, извлечение, сопоставление, сводка | ACCEPTED | product-worker-memory | https://github.com/ITSalt/transcriber/pull/16 (accepted 69f3715e3d) | 2026-10-08 |
+| [WP-API-MEMORY-01](work-packages/WP-API-MEMORY-01-registry.md) | api-memory | API памяти проекта: задачи, решения, подтверждения | DISPATCHING | product-api-memory | — | 2026-10-08 |
+| [WP-WORKER-MEMORY-01](work-packages/WP-WORKER-MEMORY-01-pipeline.md) | worker-memory | Память проекта в Neo4j: слой графа, извлечение, сопоставление, сводка | PROD | product-worker-memory | https://github.com/ITSalt/transcriber/pull/16 (accepted 69f3715e3d) | 2026-10-08 |
 | [WP-INFRA-02](work-packages/WP-INFRA-02-deploy-migrate-first.md) | infra | Порядок деплоя: миграции Postgres до сборки и замены dist | PROD | product-infra | https://github.com/ITSalt/transcriber/pull/11 (accepted 6694e5e172) | 2026-10-07 |
 | [WP-INFRA-03](work-packages/WP-INFRA-03-neo4j-ports.md) | infra | Порты Neo4j памяти проекта 7476/7689 (D-26) | PROD | product-infra | https://github.com/ITSalt/transcriber/pull/22 (accepted 5d27d4a320) | 2026-10-08 |
 
@@ -99,8 +99,6 @@ R-n — действие: точная команда одной строкой 
 <!-- orch:locks -->
 | Замок | Репозиторий | Держатель | С | Ждут | Примечание |
 |-------|-------------|-----------|---|------|------------|
-| transcriber:shared/** | transcriber | WP-WORKER-MEMORY-01 | 2026-10-07 20:11Z | — | dispatch |
-| transcriber:worker/package.json | transcriber | WP-WORKER-MEMORY-01 | 2026-10-07 20:11Z | — | dispatch |
 
 ## Очередь слияний
 
@@ -135,7 +133,7 @@ R-n — действие: точная команда одной строкой 
 | 23 | transcriber | WP-WORKER-MEMORY-01 | — | WP-WEB-FEEDBACK-01 | dropped |
 | 24 | transcriber | WP-WEB-MEMORY-01 | — | WP-WORKER-MEMORY-01 | dropped |
 | 25 | transcriber | WP-INFRA-03 | — | WP-WEB-MEMORY-01 | merged |
-| 26 | transcriber | WP-WORKER-MEMORY-01 | — | WP-INFRA-03 | queued |
+| 26 | transcriber | WP-WORKER-MEMORY-01 | — | WP-INFRA-03 | merged |
 | 27 | transcriber | WP-WEB-MEMORY-01 | — | WP-WORKER-MEMORY-01 | queued |
 
 ## Журнал
@@ -145,6 +143,12 @@ R-n — действие: точная команда одной строкой 
 <!-- orch:journal -->
 | Дата | WP | Событие | Подтверждение |
 |------|----|---------|---------------|
+| 2026-10-08 11:55Z | WP-WORKER-MEMORY-01 | WP-WORKER-MEMORY-01 PROD: graph:migrate applied 1 (0→1), 12 constraints, воркер online | reports/verify-WP-WORKER-MEMORY-01-prod-20261008.md |
+| 2026-10-08 11:54Z | WP-API-MEMORY-01 | WP-API-MEMORY-01: READY -> DISPATCHING | start command handed to the owner; model sonnet |
+| 2026-10-08 11:54Z | WP-WORKER-MEMORY-01 | WP-WORKER-MEMORY-01: VERIFIED_TEST -> PROD | verify --env prod 39555b542b: reports/verify-WP-WORKER-MEMORY-01-prod-20261008.md |
+| 2026-10-08 11:54Z | WP-WORKER-MEMORY-01 | WP-WORKER-MEMORY-01: MERGED -> VERIFIED_TEST | verify --env test 39555b542b: reports/verify-WP-WORKER-MEMORY-01-test-20261008.md |
+| 2026-10-08 11:51Z | WP-WORKER-MEMORY-01 | WP-WORKER-MEMORY-01 merged in the merge queue; released transcriber:shared/**, transcriber:worker/package.json | orch.py deliver: 39555b542b |
+| 2026-10-08 11:51Z | WP-WORKER-MEMORY-01 | WP-WORKER-MEMORY-01: ACCEPTED -> MERGED | gh pr merge --squash: 39555b542b (https://github.com/ITSalt/transcriber/pull/16) |
 | 2026-10-08 11:50Z | WP-WORKER-MEMORY-01 | WP-WORKER-MEMORY-01: ACCEPTED -> ACCEPTED | reports/wp-worker-memory-01-review-20261008-r3.md: rebase, CI run 37772440650 pass на 69f3715e3d |
 | 2026-10-08 11:50Z | WP-WORKER-MEMORY-01 | WP-WORKER-MEMORY-01: accepted at 69f3715e3d19caf24966e664636572da0b041794 | report reports/wp-worker-memory-01-review-20261008-r3.md |
 | 2026-10-08 11:48Z | WP-WORKER-MEMORY-01 | WP-WORKER-MEMORY-01: review round 3 started at 69f3715e3d | reports/wp-worker-memory-01-review-20261008-r3.md |
