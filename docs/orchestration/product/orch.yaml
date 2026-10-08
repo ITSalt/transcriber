@@ -59,10 +59,10 @@ repos:
     prod_branch: main
     delete_branch: true
     run_timeout: 1800
-    verify_test: ["curl -fsS https://transcriber.itsalt.ru/api/health", "curl -fsS -o /dev/null -w '%{http_code}' https://transcriber.itsalt.ru/api/meetings"]
+    verify_test: ["curl -fsS https://transcriber.itsalt.ru/api/health", "test \"$(curl -s -o /dev/null -w '%{http_code}' https://transcriber.itsalt.ru/api/meetings)\" = 401 && echo 'meetings without session -> 401 (AUTH_REQUIRED=true, R-16)'"]
     merge_method: squash
     base_deploys: prod
-    verify_prod: ["curl -fsS https://transcriber.itsalt.ru/api/health", "curl -fsS -o /dev/null -w '%{http_code}' https://transcriber.itsalt.ru/api/meetings"]
+    verify_prod: ["curl -fsS https://transcriber.itsalt.ru/api/health", "test \"$(curl -s -o /dev/null -w '%{http_code}' https://transcriber.itsalt.ru/api/meetings)\" = 401 && echo 'meetings without session -> 401 (AUTH_REQUIRED=true, R-16)'"]
 # Example repository:
 #  - id: mono
 #    path: ~/projects/example-monorepo

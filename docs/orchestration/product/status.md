@@ -38,7 +38,7 @@ CANCELLED (причина).
 | [WP-WEB-PROJECTS-01](work-packages/WP-WEB-PROJECTS-01-projects-context.md) | web-projects | Проекты и форма контекста перед распознаванием | ACCEPTED | product-web-projects | https://github.com/ITSalt/transcriber/pull/19 (accepted 79d01c1853) | 2026-10-08 |
 | [WP-WEB-FEEDBACK-01](work-packages/WP-WEB-FEEDBACK-01-feedback.md) | web-feedback | Режим обратной связи по протоколу | ACCEPTED | product-web-feedback | https://github.com/ITSalt/transcriber/pull/18 | 2026-10-07 |
 | [WP-WEB-MEMORY-01](work-packages/WP-WEB-MEMORY-01-registry.md) | web-memory | Реестр задач и решений проекта, очередь подтверждений | ACCEPTED | product-web-memory | https://github.com/ITSalt/transcriber/pull/14 (accepted b404424afc) | 2026-10-07 |
-| [WP-API-PROJECTS-01](work-packages/WP-API-PROJECTS-01-projects-context.md) | api-projects | API проектов и контекста встречи, запуск распознавания | MERGED | product-api-projects | https://github.com/ITSalt/transcriber/pull/20 (accepted 109c71f00f) | 2026-10-08 |
+| [WP-API-PROJECTS-01](work-packages/WP-API-PROJECTS-01-projects-context.md) | api-projects | API проектов и контекста встречи, запуск распознавания | PROD | product-api-projects | https://github.com/ITSalt/transcriber/pull/20 (accepted 109c71f00f) | 2026-10-08 |
 | [WP-API-FEEDBACK-01](work-packages/WP-API-FEEDBACK-01-feedback.md) | api-feedback | API версий протокола и обратной связи, разбор docx | PROD | product-api-feedback | https://github.com/ITSalt/transcriber/pull/21 (accepted e420bd0f93) | 2026-10-08 |
 | [WP-API-MEMORY-01](work-packages/WP-API-MEMORY-01-registry.md) | api-memory | API памяти проекта: задачи, решения, подтверждения | READY | product-api-memory | — | 2026-10-07 |
 | [WP-WORKER-MEMORY-01](work-packages/WP-WORKER-MEMORY-01-pipeline.md) | worker-memory | Память проекта в Neo4j: слой графа, извлечение, сопоставление, сводка | ACCEPTED | product-worker-memory | https://github.com/ITSalt/transcriber/pull/16 (accepted b6561a5cf7) | 2026-10-07 |
@@ -142,6 +142,12 @@ R-n — действие: точная команда одной строкой 
 <!-- orch:journal -->
 | Дата | WP | Событие | Подтверждение |
 |------|----|---------|---------------|
+| 2026-10-08 11:09Z | WP-API-PROJECTS-01 | WP-API-PROJECTS-01: VERIFIED_TEST -> PROD | verify --env prod bf75f694f2: reports/verify-WP-API-PROJECTS-01-prod-20261008.md |
+| 2026-10-08 11:09Z | WP-API-PROJECTS-01 | WP-API-PROJECTS-01: MERGED -> VERIFIED_TEST | verify --env test bf75f694f2: reports/verify-WP-API-PROJECTS-01-test-20261008-2.md |
+| 2026-10-08 11:09Z | — | delivery resumed: ложный FAIL: команда проверки GET /api/meetings без cookie после включения входа (R-16) отвечает 401 по контракту; деплой run 37767836347 success, health ok; команды verify_test/verify_prod в orch.yaml заменены на ожидание 401 | orch.py unhold |
+| 2026-10-08 11:08Z | WP-API-PROJECTS-01 | WP-API-PROJECTS-01: rollback_test не задан | orch.py deliver |
+| 2026-10-08 11:08Z | WP-API-PROJECTS-01 | delivery on hold: WP-API-PROJECTS-01: stand verification failed | https://github.com/ITSalt/transcriber/pull/20 |
+| 2026-10-08 11:08Z | WP-API-PROJECTS-01 | WP-API-PROJECTS-01: verification on test failed at bf75f694f2: провалено 1 из 3: команда проверки `curl -fsS -o /dev/null -w '%{http_code}' https://transcriber.itsalt.ru/api/meetings` | reports/verify-WP-API-PROJECTS-01-test-20261008.md; bugs/BUG-1-verify-wp-api-projects-01-test.md |
 | 2026-10-08 11:07Z | WP-FRONTEND-02 | WP-FRONTEND-02 PROD: экран входа и вход по PIN проверены в браузере после R-16 (скриншоты) | reports/verify-WP-FRONTEND-02-prod-20261008.md |
 | 2026-10-08 11:06Z | WP-FRONTEND-02 | R-16 выполнен по ssh (D-28): вход по PIN включён на проде; CLI user:create не читает .env сам — нужен set -a; . .env (backlog: README/CLI); PIN владельцу передан вне файлов | ssh learn-prod 2026-10-08; curl login/me/logout |
 | 2026-10-08 11:06Z | — | R-16 closed | выполнено оркестратором по D-28 2026-10-08: PIN_PEPPER добавлен в /opt/transcrib/.env; user:create → Роман (f5fc588d…) в пространстве «Роман»; AUTH_REQUIRED=true, pm2 restart transcrib-api (online); проверки: health 200, /api/meetings и /api/auth/me без cookie 401, login верным PIN 200 + cookie, /me 200, неверный PIN 401 INVALID_PIN, logout 204 → /me 401 |
