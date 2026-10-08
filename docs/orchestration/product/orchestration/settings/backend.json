@@ -48,6 +48,7 @@
       "Read(//home/cloudpc/projects/transcriber/api/src/sse/**)",
       "Read(//home/cloudpc/projects/transcriber/api/src/storage/**)",
       "Read(//home/cloudpc/projects/transcriber/api/src/features/auth/**)",
+      "Read(//home/cloudpc/projects/transcriber/api/src/features/speakers/**)",
       "Bash(gh pr create *)",
       "Bash(pnpm --filter @transcrib/api test)",
       "Bash(pnpm -r typecheck)",

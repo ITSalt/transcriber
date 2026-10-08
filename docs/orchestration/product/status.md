@@ -52,7 +52,7 @@ CANCELLED (причина).
 | [WP-WORKER-06](work-packages/WP-WORKER-06-speakers-gate.md) | worker | Воркер: остановка на AWAITING_SPEAKERS, имена спикеров в транскрипте и промпте | READY | product-worker | — | 2026-10-08 |
 | [WP-FRONTEND-06](work-packages/WP-FRONTEND-06-speakers.md) | frontend | Экран подтверждения спикеров перед генерацией протокола | READY | product-frontend | — | 2026-10-08 |
 | [WP-WORKER-07](work-packages/WP-WORKER-07-memory-leak-guard.md) | worker | Защита протокола от утечки памяти проекта и чужих участников | MERGED | product-worker | https://github.com/ITSalt/transcriber/pull/27 (accepted ade44c9c31) | 2026-10-08 |
-| [WP-WORKER-MEMORY-02](work-packages/WP-WORKER-MEMORY-02-hygiene.md) | worker-memory | Гигиена памяти проекта: дедуп решений, валидация исполнителей, сводка по продуктам | REVISE | product-worker-memory | https://github.com/ITSalt/transcriber/pull/28 | 2026-10-08 |
+| [WP-WORKER-MEMORY-02](work-packages/WP-WORKER-MEMORY-02-hygiene.md) | worker-memory | Гигиена памяти проекта: дедуп решений, валидация исполнителей, сводка по продуктам | ACCEPTED | product-worker-memory | https://github.com/ITSalt/transcriber/pull/28 (accepted adc8af0791) | 2026-10-08 |
 
 ## Ждёт владельца
 
@@ -159,6 +159,7 @@ R-n — действие: точная команда одной строкой 
 | 30 | transcriber | WP-WORKER-04 | https://github.com/ITSalt/transcriber/pull/25 | — | merged |
 | 31 | transcriber | WP-WORKER-05 | https://github.com/ITSalt/transcriber/pull/26 | — | merged |
 | 32 | transcriber | WP-WORKER-07 | https://github.com/ITSalt/transcriber/pull/27 | — | merged |
+| 33 | transcriber | WP-WORKER-MEMORY-02 | https://github.com/ITSalt/transcriber/pull/28 | — | queued |
 
 ## Журнал
 
@@ -167,6 +168,10 @@ R-n — действие: точная команда одной строкой 
 <!-- orch:journal -->
 | Дата | WP | Событие | Подтверждение |
 |------|----|---------|---------------|
+| 2026-10-08 19:32Z | WP-WORKER-MEMORY-02 | WP-WORKER-MEMORY-02 queued for merge (sequential) | https://github.com/ITSalt/transcriber/pull/28 |
+| 2026-10-08 19:32Z | WP-WORKER-MEMORY-02 | WP-WORKER-MEMORY-02: accepted at adc8af0791b3a8180216624efb736ddc6688bcec | report reports/wp-worker-memory-02-review-20261008-r2.md |
+| 2026-10-08 19:32Z | WP-WORKER-MEMORY-02 | WP-WORKER-MEMORY-02: REVIEW -> ACCEPTED | adc8af0791; reports/wp-worker-memory-02-review-20261008-r2.md |
+| 2026-10-08 19:31Z | WP-WORKER-MEMORY-02 | WP-WORKER-MEMORY-02: REVISE -> REVIEW | adc8af0791; report reports/wp-worker-memory-02-review-20261008-r2.md |
 | 2026-10-08 19:31Z | WP-BACKEND-07 | WP-BACKEND-07: READY 3f3e6b0583 (PR 29); ревью r1 запущено (одноразовый PG для миграции); A-15 — features/speakers в области backend | сообщение product-backend; review-start |
 | 2026-10-08 19:31Z | — | A-15 recorded | — |
 | 2026-10-08 19:30Z | WP-WORKER-07 | WP-WORKER-07 merged in the merge queue | orch.py deliver: b23db1bf9f |
