@@ -43,7 +43,7 @@ CANCELLED (причина).
 | [WP-API-MEMORY-01](work-packages/WP-API-MEMORY-01-registry.md) | api-memory | API памяти проекта: задачи, решения, подтверждения | READY | product-api-memory | — | 2026-10-07 |
 | [WP-WORKER-MEMORY-01](work-packages/WP-WORKER-MEMORY-01-pipeline.md) | worker-memory | Память проекта в Neo4j: слой графа, извлечение, сопоставление, сводка | ACCEPTED | product-worker-memory | https://github.com/ITSalt/transcriber/pull/16 (accepted b6561a5cf7) | 2026-10-07 |
 | [WP-INFRA-02](work-packages/WP-INFRA-02-deploy-migrate-first.md) | infra | Порядок деплоя: миграции Postgres до сборки и замены dist | PROD | product-infra | https://github.com/ITSalt/transcriber/pull/11 (accepted 6694e5e172) | 2026-10-07 |
-| [WP-INFRA-03](work-packages/WP-INFRA-03-neo4j-ports.md) | infra | Порты Neo4j памяти проекта 7476/7689 (D-26) | DISPATCHING | product-infra | — | 2026-10-08 |
+| [WP-INFRA-03](work-packages/WP-INFRA-03-neo4j-ports.md) | infra | Порты Neo4j памяти проекта 7476/7689 (D-26) | ACCEPTED | product-infra | https://github.com/ITSalt/transcriber/pull/22 (accepted 5d27d4a320) | 2026-10-08 |
 
 ## Ждёт владельца
 
@@ -132,8 +132,11 @@ R-n — действие: точная команда одной строкой 
 | 20 | transcriber | WP-WORKER-MEMORY-01 | — | WP-WEB-PROJECTS-01 | dropped |
 | 21 | transcriber | WP-WEB-MEMORY-01 | — | WP-WORKER-MEMORY-01 | dropped |
 | 22 | transcriber | WP-WEB-FEEDBACK-01 | — | WP-WEB-PROJECTS-01 | merged |
-| 23 | transcriber | WP-WORKER-MEMORY-01 | — | WP-WEB-FEEDBACK-01 | queued |
-| 24 | transcriber | WP-WEB-MEMORY-01 | — | WP-WORKER-MEMORY-01 | queued |
+| 23 | transcriber | WP-WORKER-MEMORY-01 | — | WP-WEB-FEEDBACK-01 | dropped |
+| 24 | transcriber | WP-WEB-MEMORY-01 | — | WP-WORKER-MEMORY-01 | dropped |
+| 25 | transcriber | WP-INFRA-03 | — | WP-WEB-MEMORY-01 | queued |
+| 26 | transcriber | WP-WORKER-MEMORY-01 | — | WP-INFRA-03 | queued |
+| 27 | transcriber | WP-WEB-MEMORY-01 | — | WP-WORKER-MEMORY-01 | queued |
 
 ## Журнал
 
@@ -142,6 +145,15 @@ R-n — действие: точная команда одной строкой 
 <!-- orch:journal -->
 | Дата | WP | Событие | Подтверждение |
 |------|----|---------|---------------|
+| 2026-10-08 11:42Z | WP-WEB-MEMORY-01 | WP-WEB-MEMORY-01 queued for merge (sequential) | — |
+| 2026-10-08 11:42Z | WP-WORKER-MEMORY-01 | WP-WORKER-MEMORY-01 queued for merge (sequential) | — |
+| 2026-10-08 11:42Z | WP-WEB-MEMORY-01 | WP-WEB-MEMORY-01 dropped in the merge queue | — |
+| 2026-10-08 11:42Z | WP-WORKER-MEMORY-01 | WP-WORKER-MEMORY-01 dropped in the merge queue | — |
+| 2026-10-08 11:42Z | WP-INFRA-03 | WP-INFRA-03 queued for merge (sequential) | — |
+| 2026-10-08 11:42Z | WP-INFRA-03 | WP-INFRA-03: ACCEPTED -> ACCEPTED | reports/wp-infra-03-review-20261008.md: объём по пакету, CI run 37771497352 pass на 5d27d4a320 |
+| 2026-10-08 11:42Z | WP-INFRA-03 | WP-INFRA-03: accepted at 5d27d4a320948b7a058d8d04992c24ab594edd3c | report reports/wp-infra-03-review-20261008.md |
+| 2026-10-08 11:42Z | WP-INFRA-03 | WP-INFRA-03: REVIEW -> ACCEPTED | 5d27d4a320; reports/wp-infra-03-review-20261008.md |
+| 2026-10-08 11:39Z | WP-INFRA-03 | WP-INFRA-03: DISPATCHING -> REVIEW | 5d27d4a320; report reports/wp-infra-03-review-20261008.md |
 | 2026-10-08 11:26Z | WP-WEB-FEEDBACK-01 | WP-WEB-FEEDBACK-01 PROD: живой сценарий (аутлет, история версий, диалог отзыва) со скриншотами | reports/verify-WP-WEB-FEEDBACK-01-prod-20261008.md |
 | 2026-10-08 11:24Z | WP-WEB-FEEDBACK-01 | WP-WEB-FEEDBACK-01: VERIFIED_TEST -> PROD | verify --env prod e8abab753b: reports/verify-WP-WEB-FEEDBACK-01-prod-20261008.md |
 | 2026-10-08 11:24Z | WP-WEB-FEEDBACK-01 | WP-WEB-FEEDBACK-01: MERGED -> VERIFIED_TEST | verify --env test e8abab753b: reports/verify-WP-WEB-FEEDBACK-01-test-20261008.md |
