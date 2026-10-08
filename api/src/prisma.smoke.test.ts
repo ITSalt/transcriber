@@ -8,7 +8,12 @@ import { describe, it, expect, afterAll, beforeAll } from 'vitest'
 const DATABASE_URL = process.env['DATABASE_URL']
 const hasDb = Boolean(DATABASE_URL)
 
-describe.skipIf(!hasDb)('Prisma smoke — round-trip per entity', () => {
+// FR-003 (WP-BACKEND-01): meetings.workspace_id is NOT NULL — the legacy workspace «Роман»
+// is created by migration 20261007120000_program_product_schema
+const LEGACY_WS = '00000000-0000-4000-8000-000000000001'
+
+// 30 s: runs alongside the migration down/re-apply suites, which load the same server
+describe.skipIf(!hasDb)('Prisma smoke — round-trip per entity', { timeout: 30_000 }, () => {
   // eslint-disable-next-line @typescript-eslint/consistent-type-imports
   type PrismaClient = import('@prisma/client').PrismaClient
 
@@ -41,7 +46,7 @@ describe.skipIf(!hasDb)('Prisma smoke — round-trip per entity', () => {
 
   it('Meeting — create + findFirst', async () => {
     const created = await prisma.meeting.create({
-      data: { title: 'Smoke test meeting' },
+      data: { workspaceId: LEGACY_WS, title: 'Smoke test meeting' },
     })
     const found = await prisma.meeting.findFirst({ where: { id: created.id } })
     expect(found?.title).toBe('Smoke test meeting')
@@ -50,7 +55,7 @@ describe.skipIf(!hasDb)('Prisma smoke — round-trip per entity', () => {
 
   it('Recording — create + findFirst', async () => {
     const meeting = await prisma.meeting.create({
-      data: { title: 'Meeting for recording smoke' },
+      data: { workspaceId: LEGACY_WS, title: 'Meeting for recording smoke' },
     })
     const created = await prisma.recording.create({
       data: {
@@ -66,7 +71,7 @@ describe.skipIf(!hasDb)('Prisma smoke — round-trip per entity', () => {
 
   it('TranscriptionJob — create + findFirst', async () => {
     const meeting = await prisma.meeting.create({
-      data: { title: 'Meeting for transcription job smoke' },
+      data: { workspaceId: LEGACY_WS, title: 'Meeting for transcription job smoke' },
     })
     const created = await prisma.transcriptionJob.create({
       data: { meetingId: meeting.id },
@@ -77,7 +82,7 @@ describe.skipIf(!hasDb)('Prisma smoke — round-trip per entity', () => {
 
   it('Transcript — create + findFirst (JSONB fields)', async () => {
     const meeting = await prisma.meeting.create({
-      data: { title: 'Meeting for transcript smoke' },
+      data: { workspaceId: LEGACY_WS, title: 'Meeting for transcript smoke' },
     })
     const speakerMap = { speaker_0: 'Alice', speaker_1: 'Bob' }
     const segments = [{ start: 0, end: 1.5, speaker: 'speaker_0', text: 'Hello' }]
@@ -95,7 +100,7 @@ describe.skipIf(!hasDb)('Prisma smoke — round-trip per entity', () => {
 
   it('ProtocolGenerationJob — create + findFirst', async () => {
     const meeting = await prisma.meeting.create({
-      data: { title: 'Meeting for proto gen job smoke' },
+      data: { workspaceId: LEGACY_WS, title: 'Meeting for proto gen job smoke' },
     })
     const created = await prisma.protocolGenerationJob.create({
       data: { meetingId: meeting.id },
@@ -106,7 +111,7 @@ describe.skipIf(!hasDb)('Prisma smoke — round-trip per entity', () => {
 
   it('Protocol — create + findFirst', async () => {
     const meeting = await prisma.meeting.create({
-      data: { title: 'Meeting for protocol smoke' },
+      data: { workspaceId: LEGACY_WS, title: 'Meeting for protocol smoke' },
     })
     const created = await prisma.protocol.create({
       data: {
@@ -121,7 +126,7 @@ describe.skipIf(!hasDb)('Prisma smoke — round-trip per entity', () => {
 
   it('Cascade delete — deleting Meeting removes all children', async () => {
     const meeting = await prisma.meeting.create({
-      data: { title: 'Meeting for cascade smoke' },
+      data: { workspaceId: LEGACY_WS, title: 'Meeting for cascade smoke' },
     })
     await prisma.recording.create({
       data: {

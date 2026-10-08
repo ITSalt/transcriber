@@ -7,8 +7,9 @@
  * Test coverage (per test-spec.md):
  *   T01 — RQ-001: results sorted by updated_at DESC
  *   T02 — RQ-002: transient-status meetings appear in the list
- *   T03 — RQ-003/NFR-007: no auth required; all meetings returned (MVP scope = all)
- *   T04 — NFR-007: endpoint reachable without authentication header
+ *   T03 — RQ-003/RQ-044 (FR-003): only the workspace's meetings — the legacy principal
+ *         (AUTH_REQUIRED=false, D-20) lists «Роман» (NFR-007 superseded by NFR-011)
+ *   T04 — D-20 (AUTH_REQUIRED=false): endpoint reachable without authentication header
  *   T05 — empty list returns {items: []}
  *   T06 — DB failure maps to 500 INTERNAL_ERROR
  *   T07 — duration_sec is null when Recording is absent
@@ -62,6 +63,7 @@ vi.mock('../db.js', () => ({
 const UUID_A = '123e4567-e89b-12d3-a456-426614174000'
 const UUID_B = '123e4567-e89b-12d3-a456-426614174001'
 const UUID_C = '123e4567-e89b-12d3-a456-426614174002'
+const LEGACY_WS = '00000000-0000-4000-8000-000000000001'
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -73,6 +75,9 @@ function makeDbMeeting(overrides: Partial<{
   createdAt: Date
   updatedAt: Date
   recording: { durationSec: number | null; storageUri: string } | null
+  workspaceId: string
+  projectId: string | null
+  project: { name: string } | null
 }> = {}) {
   const now = new Date('2024-01-15T10:00:00.000Z')
   return {
@@ -83,6 +88,10 @@ function makeDbMeeting(overrides: Partial<{
     createdAt: now,
     updatedAt: now,
     recording: null,
+    // FR-003: every meeting has a workspace (WP-BACKEND-01)
+    workspaceId: LEGACY_WS,
+    projectId: null,
+    project: null,
     ...overrides,
   }
 }
@@ -171,9 +180,9 @@ describe('UC-001-BE — GET /api/meetings', () => {
     expect(returnedStatuses).toContain('GENERATING_PROTOCOL')
   })
 
-  // ─── T03/T04: NFR-007 no auth required ─────────────────────────────────────
+  // ─── T03/T04: D-20 — no session needed while AUTH_REQUIRED=false ─────────────────────────────────────
 
-  it('T04 — NFR-007: endpoint returns 200 with no Authorization header (no auth at MVP)', async () => {
+  it('T04 — D-20 (AUTH_REQUIRED=false): endpoint returns 200 with no Authorization header (legacy principal)', async () => {
     mockFindMany.mockResolvedValue([])
 
     const res = await app.inject({
@@ -185,7 +194,7 @@ describe('UC-001-BE — GET /api/meetings', () => {
     expect(res.statusCode).toBe(200)
   })
 
-  it('T03 — RQ-003/NFR-007: returns all meetings without ownership filtering at MVP', async () => {
+  it('T03 — RQ-003/RQ-044: lists only the workspace\'s meetings (legacy principal → «Роман»)', async () => {
     const rows = [
       makeDbMeeting({ id: UUID_A, title: 'A' }),
       makeDbMeeting({ id: UUID_B, title: 'B' }),
@@ -195,13 +204,23 @@ describe('UC-001-BE — GET /api/meetings', () => {
     const res = await app.inject({ method: 'GET', url: '/api/meetings' })
 
     expect(res.statusCode).toBe(200)
-    const body = res.json<{ items: unknown[] }>()
-    // MVP: no filter applied; all rows returned
+    const body = res.json<{ items: Array<{ workspace_id: string }> }>()
     expect(body.items).toHaveLength(2)
-    // No 'where' clause with author filter should have been sent to Prisma
+    expect(body.items.every((i) => i.workspace_id === LEGACY_WS)).toBe(true)
+    // the query is scoped to the workspace
     expect(mockFindMany).toHaveBeenCalledWith(
-      expect.not.objectContaining({ where: expect.anything() }),
+      expect.objectContaining({ where: { workspaceId: LEGACY_WS } }),
     )
+  })
+
+  it('T03b — RQ-044: a workspace the caller is not a member of → 404, nothing queried', async () => {
+    const res = await app.inject({
+      method: 'GET',
+      url: '/api/meetings?workspace_id=123e4567-e89b-42d3-a456-426614174999',
+    })
+    expect(res.statusCode).toBe(404)
+    expect(res.json<{ code: string }>().code).toBe('NOT_FOUND')
+    expect(mockFindMany).not.toHaveBeenCalled()
   })
 
   // ─── T06: DB failure → 500 INTERNAL_ERROR ──────────────────────────────────

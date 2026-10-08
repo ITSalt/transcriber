@@ -19,3 +19,10 @@ const pool = new Pool({ connectionString: databaseUrl })
 const adapter = new PrismaPg(pool)
 
 export const prisma = new PrismaClient({ adapter })
+
+/** Close Prisma AND its pg pool (the adapter does not own the pool, so $disconnect alone
+ * leaves idle connections open — e.g. the CLI or a test that drops its database). */
+export async function closeDb(): Promise<void> {
+  await prisma.$disconnect()
+  await pool.end()
+}

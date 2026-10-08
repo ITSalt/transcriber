@@ -3,7 +3,8 @@
  *
  * GET /api/meetings/:id → MeetingDetailResponse
  *
- * NFR-007: No authentication at MVP — endpoint is open.
+ * FR-003 / RQ-044: workspace membership is checked by the auth plugin before validation
+ * and the handler (features/auth/routes.ts); foreign or nonexistent meeting → 404 NOT_FOUND.
  * RQ-004: error_reason surfaced from latest job when status=ERROR (delegated to service).
  */
 import type { FastifyInstance } from 'fastify'
@@ -26,7 +27,7 @@ export async function meetingDetailRoutes(app: FastifyInstance): Promise<void> {
       },
     },
     async (request, reply) => {
-      // RQ-003/NFR-007: no ownership filter at MVP
+      // FR-003: access already checked by the auth plugin (request.meetingAccess)
       const { id } = request.params
       const result = await getMeetingDetail(id)
       return reply.status(200).send(result)
