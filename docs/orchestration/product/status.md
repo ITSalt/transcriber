@@ -51,7 +51,7 @@ CANCELLED (причина).
 | [WP-BACKEND-07](work-packages/WP-BACKEND-07-speakers.md) | backend | Подтверждение спикеров: контракт, статус AWAITING_SPEAKERS, API карты спикеров | DISPATCHING | product-backend | — | 2026-10-08 |
 | [WP-WORKER-06](work-packages/WP-WORKER-06-speakers-gate.md) | worker | Воркер: остановка на AWAITING_SPEAKERS, имена спикеров в транскрипте и промпте | READY | product-worker | — | 2026-10-08 |
 | [WP-FRONTEND-06](work-packages/WP-FRONTEND-06-speakers.md) | frontend | Экран подтверждения спикеров перед генерацией протокола | READY | product-frontend | — | 2026-10-08 |
-| [WP-WORKER-07](work-packages/WP-WORKER-07-memory-leak-guard.md) | worker | Защита протокола от утечки памяти проекта и чужих участников | REVISE | product-worker | https://github.com/ITSalt/transcriber/pull/27 | 2026-10-08 |
+| [WP-WORKER-07](work-packages/WP-WORKER-07-memory-leak-guard.md) | worker | Защита протокола от утечки памяти проекта и чужих участников | ACCEPTED | product-worker | https://github.com/ITSalt/transcriber/pull/27 (accepted ade44c9c31) | 2026-10-08 |
 | [WP-WORKER-MEMORY-02](work-packages/WP-WORKER-MEMORY-02-hygiene.md) | worker-memory | Гигиена памяти проекта: дедуп решений, валидация исполнителей, сводка по продуктам | REVIEW | product-worker-memory | https://github.com/ITSalt/transcriber/pull/28 | 2026-10-08 |
 
 ## Ждёт владельца
@@ -158,6 +158,7 @@ R-n — действие: точная команда одной строкой 
 | 29 | transcriber | WP-WORKER-03 | https://github.com/ITSalt/transcriber/pull/24 | — | merged |
 | 30 | transcriber | WP-WORKER-04 | https://github.com/ITSalt/transcriber/pull/25 | — | merged |
 | 31 | transcriber | WP-WORKER-05 | https://github.com/ITSalt/transcriber/pull/26 | — | merged |
+| 32 | transcriber | WP-WORKER-07 | https://github.com/ITSalt/transcriber/pull/27 | — | queued |
 
 ## Журнал
 
@@ -166,6 +167,10 @@ R-n — действие: точная команда одной строкой 
 <!-- orch:journal -->
 | Дата | WP | Событие | Подтверждение |
 |------|----|---------|---------------|
+| 2026-10-08 19:28Z | WP-WORKER-07 | WP-WORKER-07 queued for merge (sequential) | https://github.com/ITSalt/transcriber/pull/27 |
+| 2026-10-08 19:28Z | WP-WORKER-07 | WP-WORKER-07: accepted at ade44c9c31d2ee2aa473a1c90862a43a17083435 | report reports/wp-worker-07-review-20261008-r2.md |
+| 2026-10-08 19:28Z | WP-WORKER-07 | WP-WORKER-07: REVIEW -> ACCEPTED | ade44c9c31; reports/wp-worker-07-review-20261008-r2.md |
+| 2026-10-08 19:27Z | WP-WORKER-07 | WP-WORKER-07: REVISE -> REVIEW | ade44c9c31; report reports/wp-worker-07-review-20261008-r2.md |
 | 2026-10-08 19:25Z | WP-WORKER-07 | WP-WORKER-07: REVIEW -> REVISE | reports/wp-worker-07-review-20261008.md: H1 стемминг + 3 теста |
 | 2026-10-08 19:19Z | WP-BACKEND-07 | WP-BACKEND-07: UNLOCK graph — в граф записаны FR-007 (spec-complete), UC-505 «Подтвердить спикеров», DEC-013, статус AWAITING_SPEAKERS, атрибуты Transcript.speaker_mapping/speakers_confirmed_at, UC-200/300/002 помечены stale с program_delta; файл .tl/feature-requests/FR-007*.md сессия не создавала (путь вне пакета) | сообщение product-backend |
 | 2026-10-08 19:19Z | WP-BACKEND-07 | lock transcriber:graph released | orch.py lock |
