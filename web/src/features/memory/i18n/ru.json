@@ -1,0 +1,91 @@
+{
+  "tabs": {
+    "label": "Память проекта",
+    "tasks": "Задачи",
+    "decisions": "Решения",
+    "summary": "Сводка",
+    "review": "На подтверждение"
+  },
+  "unavailable": "Память проекта временно недоступна. Остальное приложение работает.",
+  "loadError": "Не удалось загрузить данные",
+  "tasks": {
+    "empty": "Задач пока нет.",
+    "filterStatus": "Статус",
+    "filterAssignee": "Исполнитель",
+    "allStatuses": "Все статусы",
+    "allAssignees": "Все исполнители",
+    "unassigned": "Не назначен",
+    "due": "Срок {{date}}",
+    "mergedInto": "объединена с {{code}}",
+    "pending": "ждут подтверждения: {{count}}"
+  },
+  "status": {
+    "OPEN": "Открыта",
+    "IN_PROGRESS": "В работе",
+    "DONE": "Выполнена",
+    "CANCELLED": "Отменена",
+    "POSTPONED": "Отложена"
+  },
+  "detail": {
+    "title": "История {{code}}",
+    "close": "Закрыть",
+    "createdIn": "Создана во встрече",
+    "unknownMeeting": "—",
+    "mentions": "Упоминания",
+    "noMentions": "Упоминаний пока нет.",
+    "openAt": "Открыть транскрипт на {{time}}",
+    "events": "Журнал изменений",
+    "noEvents": "Изменений пока нет.",
+    "source": { "LLM": "ИИ", "USER": "Вручную" },
+    "reviewState": {
+      "AUTO": "применено",
+      "PENDING": "ждёт подтверждения",
+      "CONFIRMED": "подтверждено",
+      "REJECTED": "отклонено"
+    },
+    "empty": "(пусто)"
+  },
+  "field": {
+    "title": "Название",
+    "description": "Описание",
+    "status": "Статус",
+    "assignee": "Исполнитель",
+    "due_date": "Срок",
+    "merged_into": "Объединена с"
+  },
+  "edit": {
+    "title": "Правка задачи",
+    "status": "Статус",
+    "assignee": "Исполнитель",
+    "dueDate": "Срок",
+    "save": "Сохранить",
+    "saved": "Сохранено",
+    "error": "Не удалось сохранить: {{message}}"
+  },
+  "decisions": {
+    "empty": "Решений пока нет.",
+    "supersededBy": "заменено решением {{code}}",
+    "leadsTo": "Привело к задачам"
+  },
+  "summary": {
+    "empty": "Сводка проекта ещё не сформирована.",
+    "current": "Текущая версия v{{version}}",
+    "history": "История версий",
+    "version": "v{{version}} — {{date}}"
+  },
+  "review": {
+    "empty": "Нечего подтверждать.",
+    "was": "Было",
+    "became": "Стало",
+    "confidence": "уверенность {{value}}%",
+    "meeting": "Встреча: {{title}}",
+    "confirm": "Подтвердить",
+    "reject": "Отклонить",
+    "error": "Не удалось применить решение: {{message}}"
+  },
+  "refs": {
+    "title": "Из памяти проекта",
+    "tasks": "Задачи",
+    "decisions": "Решения"
+  }
+}
