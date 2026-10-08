@@ -44,7 +44,7 @@ CANCELLED (причина).
 | [WP-WORKER-MEMORY-01](work-packages/WP-WORKER-MEMORY-01-pipeline.md) | worker-memory | Память проекта в Neo4j: слой графа, извлечение, сопоставление, сводка | PROD | product-worker-memory | https://github.com/ITSalt/transcriber/pull/16 (accepted 69f3715e3d) | 2026-10-08 |
 | [WP-INFRA-02](work-packages/WP-INFRA-02-deploy-migrate-first.md) | infra | Порядок деплоя: миграции Postgres до сборки и замены dist | PROD | product-infra | https://github.com/ITSalt/transcriber/pull/11 (accepted 6694e5e172) | 2026-10-07 |
 | [WP-INFRA-03](work-packages/WP-INFRA-03-neo4j-ports.md) | infra | Порты Neo4j памяти проекта 7476/7689 (D-26) | PROD | product-infra | https://github.com/ITSalt/transcriber/pull/22 (accepted 5d27d4a320) | 2026-10-08 |
-| [WP-WORKER-03](work-packages/WP-WORKER-03-openrouter-llm.md) | worker | LLM-провайдер OpenRouter (anthropic/claude-haiku-5.5) за ILlmProvider, переключение провайдера по env | ACCEPTED | product-worker | https://github.com/ITSalt/transcriber/pull/24 (accepted 33f870eacd) | 2026-10-08 |
+| [WP-WORKER-03](work-packages/WP-WORKER-03-openrouter-llm.md) | worker | LLM-провайдер OpenRouter (anthropic/claude-haiku-5.5) за ILlmProvider, переключение провайдера по env | VERIFYING | product-worker | https://github.com/ITSalt/transcriber/pull/24 (accepted 33f870eacd) | 2026-10-08 |
 
 ## Ждёт владельца
 
@@ -93,6 +93,7 @@ R-n — действие: точная команда одной строкой 
 | ~~R-18~~ | ~~Условие завершения п. 2 — второй пользователь в отдельном пространстве для живой проверки изоляции на проде (все 14 пакетов в PROD; это первый из трёх живых случаев владельца): ssh -t deploy@transcriber.itsalt.ru 'cd /opt/transcrib && pnpm --filter @transcrib/api run user:create -- --name "Тест" --pin <6 цифр> --workspace "Тест"' ; expected: пользователь «Тест» создан в новом пространстве «Тест», PIN в выводе не печатается ; then: сообщите оркестратору этот PIN в чате (в файлы не пишется) — он проверит read-only: вход обоих, чужая встреча по id → 404 на GET/PUT/DELETE/PDF/SSE/скачивании, список задач «Тест» пуст; затем SELECT users/memberships~~ | PLAN.md | 2026-10-08 | 2026-10-08: 2026-10-08 по D-29 оркестратор создал по ssh пользователя «Тест» (261701bb…) в личном пространстве «Тест» (1ea36ef9…), user:create exit 0 (без --workspace: флаг только присоединяет к существующему); SELECT: 2 пользователя, 2 пространства. Живая проверка изоляции под сессией «Тест» (curl, read-only): свой список встреч и проектов 200 пусто; список по workspace «Роман» 404; встреча ff188189… «Романа»: GET, events (SSE), protocol/pdf, transcript/download, protocol/versions, feedback, memory-refs, PUT protocol — все 404; /api/projects?workspace_id=«Роман» 404; DELETE чужого проекта 404; task-events confirm/reject по неизвестному id 404 (api дошёл до Neo4j: не 503); logout 204 → /me 401. DELETE чужой встречи вживую не слался (при сломанной проверке уничтожил бы данные) — покрыт auth-isolation.db.test.ts в CI. Условие завершения п. 2 выполнено |
 | R-19 | Условие завершения п. 3 — первая живая встреча с проектом и контекстом на проде (платно: Deepgram + kie.ai): в https://transcriber.itsalt.ru войти, «Проекты» → «Создать проект» (название, 2–3 участника с ролями, 3–5 терминов глоссария, описание), затем «Загрузить» → выбрать короткий файл (1–3 мин), в блоке «Контекст встречи» выбрать проект, тип и цель, повестку, дождаться загрузки и нажать «Начать распознавание»; дождаться «Протокол готов» ; expected: протокол готов, на карточке проекта появилась вкладка «Память» с задачами/решениями и счётчик «На проверку» (если есть PENDING) ; then: оркестратор проверит SELECT'ом снимок контекста и метаданные генерации (keyterms, модель, версия промпта), архив промпта в S3, граф памяти (Task/Decision/ProjectMemory) и API памяти под вашей сессией не трогая данных | PLAN.md | 2026-10-08 |  |
 | R-20 | Условие завершения п. 4 — обратная связь трёх видов по протоколу живой встречи из R-19 (после неё): страница протокола → «Обратная связь» → (1) вкладка «Замечания»: текст + категория → «Отправить»; (2) «Правильный протокол»: вставить исправленный текст → «Отправить»; (3) «Word с комментариями»: загрузить .docx с 1–2 комментариями → «Отправить» ; expected: в «Отправленные отзывы» три записи, «История версий» по-прежнему показывает исходную сгенерированную версию ; then: оркестратор проверит SELECT'ом protocol_feedback (3 вида), разбор docx в JSON, файлы в S3 и неизменность исходной версии протокола | PLAN.md | 2026-10-08 |  |
+| P-19 | Маршрут к OpenRouter из прод-VM (RU-IP блокируется Cloudflare, 403). Варианты: (a) исходящий HTTPS-прокси вне РФ (свой VPS/арендованный прокси) + маленький пакет WP-WORKER-04: LLM_PROXY_URL → undici ProxyAgent только для вызовов OpenRouter (Node fetch не читает HTTPS_PROXY); (b) перенести прод-VM/воркер за пределы РФ (крупнее, затрагивает Deepgram/S3/latency); (c) остаться на kie.ai (RU-доступный шлюз), эскалировать 500 в их поддержку и ждать; (d) другой RU-доступный шлюз к Claude (нужен кандидат от вас). Рекомендую (a): быстро (пакет S), обратимо, kie.ai остаётся запасным по env; для (a) нужен от вас адрес прокси (хост, порт, логин и пароль) — в чат, не в файлы | reports/verify-WP-WORKER-03-prod-20261008.md | 2026-10-08 |  |
 
 ## Замки
 
@@ -103,8 +104,6 @@ R-n — действие: точная команда одной строкой 
 <!-- orch:locks -->
 | Замок | Репозиторий | Держатель | С | Ждут | Примечание |
 |-------|-------------|-----------|---|------|------------|
-| transcriber:shared/** | transcriber | WP-WORKER-03 | 2026-10-08 16:09Z | — | dispatch |
-| transcriber:shared/src/llm/ILlmProvider.ts | transcriber | WP-WORKER-03 | 2026-10-08 16:09Z | — | dispatch |
 
 ## Очередь слияний
 
@@ -142,7 +141,7 @@ R-n — действие: точная команда одной строкой 
 | 26 | transcriber | WP-WORKER-MEMORY-01 | — | WP-INFRA-03 | merged |
 | 27 | transcriber | WP-WEB-MEMORY-01 | — | WP-WORKER-MEMORY-01 | merged |
 | 28 | transcriber | WP-API-MEMORY-01 | https://github.com/ITSalt/transcriber/pull/23 | — | merged |
-| 29 | transcriber | WP-WORKER-03 | https://github.com/ITSalt/transcriber/pull/24 | — | queued |
+| 29 | transcriber | WP-WORKER-03 | https://github.com/ITSalt/transcriber/pull/24 | — | merged |
 
 ## Журнал
 
@@ -151,6 +150,14 @@ R-n — действие: точная команда одной строкой 
 <!-- orch:journal -->
 | Дата | WP | Событие | Подтверждение |
 |------|----|---------|---------------|
+| 2026-10-08 16:46Z | WP-WORKER-03 | WP-WORKER-03 живой сценарий prod FAIL: OpenRouter 403 Cloudflare с RU-IP VM (и api.anthropic.com 403); D-33 — прод возвращён на kie.ai (LLM_PROVIDER=kieai, LLM_MODEL=claude-sonnet-4-6; первый перезапуск с haiku-моделью дал crash-loop ~2 мин, исправлено); воркер online 16:46Z; P-19 открыт; дефект bugs/BUG-3-verify-wp-worker-03-prod.md | protocol_generation_jobs.error_msg; curl с VM: openrouter /models 403 cf-ray HEL; pm2 logs |
+| 2026-10-08 16:45Z | WP-WORKER-03 | WP-WORKER-03: PROD -> VERIFYING | живой сценарий prod FAIL: 3 retry → OpenRouter HTTP 403 Cloudflare с RU-IP; прод возвращён на kie.ai (D-33); маршрут — P-19 |
+| 2026-10-08 16:45Z | — | P-19 opened for owner | reports/verify-WP-WORKER-03-prod-20261008.md |
+| 2026-10-08 16:45Z | — | D-33 recorded | — |
+| 2026-10-08 16:43Z | WP-WORKER-03 | WP-WORKER-03: VERIFIED_TEST -> PROD | verify --env prod 65e0113706: reports/verify-WP-WORKER-03-prod-20261008.md |
+| 2026-10-08 16:43Z | WP-WORKER-03 | WP-WORKER-03: MERGED -> VERIFIED_TEST | verify --env test 65e0113706: reports/verify-WP-WORKER-03-test-20261008.md |
+| 2026-10-08 16:39Z | WP-WORKER-03 | WP-WORKER-03 merged in the merge queue; released transcriber:shared/**, transcriber:shared/src/llm/ILlmProvider.ts | orch.py deliver: 65e0113706 |
+| 2026-10-08 16:39Z | WP-WORKER-03 | WP-WORKER-03: ACCEPTED -> MERGED | gh pr merge --squash: 65e0113706 (https://github.com/ITSalt/transcriber/pull/24) |
 | 2026-10-08 16:39Z | WP-WORKER-03 | WP-WORKER-03 queued for merge (sequential) | https://github.com/ITSalt/transcriber/pull/24 |
 | 2026-10-08 16:39Z | WP-WORKER-03 | WP-WORKER-03: accepted at 33f870eacd565cdcbacf2f0f06336f2223f664ad | report reports/wp-worker-03-review-20261008.md |
 | 2026-10-08 16:39Z | WP-WORKER-03 | WP-WORKER-03: REVIEW -> ACCEPTED | 33f870eacd; reports/wp-worker-03-review-20261008.md |
