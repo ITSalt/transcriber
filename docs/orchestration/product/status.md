@@ -32,14 +32,14 @@ CANCELLED (причина).
 | [WP-FRONTEND-05](work-packages/WP-FRONTEND-05-project-memory-ui.md) | frontend | Реестр задач и решений проекта, очередь подтверждений | CANCELLED (заменён WP-WEB-MEMORY-01 (D-15)) | product-frontend | — | 2026-10-07 |
 | [WP-BACKEND-05](work-packages/WP-BACKEND-05-neo4j-prod.md) | backend | Neo4j для памяти проекта: сервис, лимиты памяти, бэкап, CI | CANCELLED (заменён WP-INFRA-01 и WP-WORKER-MEMORY-01 (D-15)) | product-backend | — | 2026-10-07 |
 | [WP-BACKEND-06](work-packages/WP-BACKEND-06-contract.md) | backend | Контракт программы: схема БД, контракты shared, зависимости | PROD | product-backend | https://github.com/ITSalt/transcriber/pull/12 (accepted 3fa3500f47) | 2026-10-07 |
-| [WP-WORKER-01](work-packages/WP-WORKER-01-context-asr-llm.md) | worker | Контекст встречи в Deepgram и в промпт протокола, метаданные генерации | ACCEPTED | product-worker | https://github.com/ITSalt/transcriber/pull/17 (accepted 830af93698) | 2026-10-07 |
+| [WP-WORKER-01](work-packages/WP-WORKER-01-context-asr-llm.md) | worker | Контекст встречи в Deepgram и в промпт протокола, метаданные генерации | ACCEPTED | product-worker | https://github.com/ITSalt/transcriber/pull/17 | 2026-10-08 |
 | [WP-WORKER-02](work-packages/WP-WORKER-02-project-memory.md) | worker | Память проекта в Neo4j: извлечение, сопоставление, сводка | CANCELLED (создан в неверном потоке; заменён WP-WORKER-MEMORY-01 (D-15)) | product-worker | — | 2026-10-07 |
 | [WP-INFRA-01](work-packages/WP-INFRA-01-neo4j.md) | infra | Neo4j памяти проекта: сервис, лимиты, бэкап, CI, шаг деплоя | PROD | product-infra | https://github.com/ITSalt/transcriber/pull/10 (accepted 0e7ebe85d3) | 2026-10-07 |
 | [WP-WEB-PROJECTS-01](work-packages/WP-WEB-PROJECTS-01-projects-context.md) | web-projects | Проекты и форма контекста перед распознаванием | ACCEPTED | product-web-projects | https://github.com/ITSalt/transcriber/pull/19 | 2026-10-07 |
 | [WP-WEB-FEEDBACK-01](work-packages/WP-WEB-FEEDBACK-01-feedback.md) | web-feedback | Режим обратной связи по протоколу | ACCEPTED | product-web-feedback | https://github.com/ITSalt/transcriber/pull/18 | 2026-10-07 |
 | [WP-WEB-MEMORY-01](work-packages/WP-WEB-MEMORY-01-registry.md) | web-memory | Реестр задач и решений проекта, очередь подтверждений | ACCEPTED | product-web-memory | https://github.com/ITSalt/transcriber/pull/14 (accepted b404424afc) | 2026-10-07 |
-| [WP-API-PROJECTS-01](work-packages/WP-API-PROJECTS-01-projects-context.md) | api-projects | API проектов и контекста встречи, запуск распознавания | DISPATCHING | product-api-projects | — | 2026-10-08 |
-| [WP-API-FEEDBACK-01](work-packages/WP-API-FEEDBACK-01-feedback.md) | api-feedback | API версий протокола и обратной связи, разбор docx | DISPATCHING | product-api-feedback | — | 2026-10-08 |
+| [WP-API-PROJECTS-01](work-packages/WP-API-PROJECTS-01-projects-context.md) | api-projects | API проектов и контекста встречи, запуск распознавания | REVIEW | product-api-projects | https://github.com/ITSalt/transcriber/pull/20 | 2026-10-08 |
+| [WP-API-FEEDBACK-01](work-packages/WP-API-FEEDBACK-01-feedback.md) | api-feedback | API версий протокола и обратной связи, разбор docx | REVIEW | product-api-feedback | https://github.com/ITSalt/transcriber/pull/21 | 2026-10-08 |
 | [WP-API-MEMORY-01](work-packages/WP-API-MEMORY-01-registry.md) | api-memory | API памяти проекта: задачи, решения, подтверждения | READY | product-api-memory | — | 2026-10-07 |
 | [WP-WORKER-MEMORY-01](work-packages/WP-WORKER-MEMORY-01-pipeline.md) | worker-memory | Память проекта в Neo4j: слой графа, извлечение, сопоставление, сводка | ACCEPTED | product-worker-memory | https://github.com/ITSalt/transcriber/pull/16 (accepted b6561a5cf7) | 2026-10-07 |
 | [WP-INFRA-02](work-packages/WP-INFRA-02-deploy-migrate-first.md) | infra | Порядок деплоя: миграции Postgres до сборки и замены dist | PROD | product-infra | https://github.com/ITSalt/transcriber/pull/11 (accepted 6694e5e172) | 2026-10-07 |
@@ -127,6 +127,9 @@ R-n — действие: точная команда одной строкой 
 <!-- orch:journal -->
 | Дата | WP | Событие | Подтверждение |
 |------|----|---------|---------------|
+| 2026-10-08 10:30Z | WP-API-FEEDBACK-01 | WP-API-FEEDBACK-01: DISPATCHING -> REVIEW | a7798d4fc4; report reports/wp-api-feedback-01-review-20261008.md |
+| 2026-10-08 10:30Z | WP-API-PROJECTS-01 | WP-API-PROJECTS-01: DISPATCHING -> REVIEW | 1c05fcbbdc; report reports/wp-api-projects-01-review-20261008.md |
+| 2026-10-08 10:28Z | WP-WORKER-01 | WP-WORKER-01: review round 3 started at d0728e2380 | reports/wp-worker-01-review-20261008-r3.md |
 | 2026-10-08 10:27Z | WP-FRONTEND-02 | WP-FRONTEND-02 PROD: живой сценарий (шапка, список задач, /login→список, 404) записан; R-16 — включение входа | reports/verify-WP-FRONTEND-02-prod-20261008.md |
 | 2026-10-08 10:27Z | — | R-16 opened for owner | work-packages/WP-FRONTEND-02-login-tasks.md |
 | 2026-10-08 10:27Z | WP-FRONTEND-02 | WP-FRONTEND-02: VERIFIED_TEST -> PROD | verify --env prod ae76dda3e3: reports/verify-WP-FRONTEND-02-prod-20261008.md |
