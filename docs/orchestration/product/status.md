@@ -97,7 +97,8 @@ R-n — действие: точная команда одной строкой 
 |-------|-------------|-----------|---|------|------------|
 | transcriber:shared/** | transcriber | WP-WORKER-MEMORY-01 | 2026-10-07 20:11Z | — | dispatch |
 | transcriber:worker/package.json | transcriber | WP-WORKER-MEMORY-01 | 2026-10-07 20:11Z | — | dispatch |
-| transcriber:graph | transcriber | WP-API-PROJECTS-01 | 2026-10-08 10:31Z | WP-API-FEEDBACK-01 | — |
+| transcriber:graph | transcriber | — | 2026-10-08 10:33Z | WP-API-FEEDBACK-01 | released by WP-API-PROJECTS-01 |
+| transcriber:.tl/changelog.md | transcriber | WP-API-PROJECTS-01 | 2026-10-08 10:33Z | — | — |
 
 ## Очередь слияний
 
@@ -128,6 +129,9 @@ R-n — действие: точная команда одной строкой 
 <!-- orch:journal -->
 | Дата | WP | Событие | Подтверждение |
 |------|----|---------|---------------|
+| 2026-10-08 10:33Z | WP-API-PROJECTS-01 | WP-API-PROJECTS-01 UNLOCK graph: RQ-047/MeetingContext-A08 изменены (лимит 50000, D-25), NEW RQ-064, DEC-011, UC-502/503 spec_version 2; правка .tl md — в раунде REVISE под замками путей | сообщение сессии 2026-10-08; read-cypher ниже |
+| 2026-10-08 10:33Z | WP-API-PROJECTS-01 | lock transcriber:.tl/changelog.md acquired | orch.py lock |
+| 2026-10-08 10:33Z | WP-API-PROJECTS-01 | lock transcriber:graph released | orch.py lock |
 | 2026-10-08 10:32Z | WP-WORKER-01 | WP-WORKER-01 готов к доставке (G1–G10 кроме G5: замок graph у WP-API-PROJECTS-01 на /nacl-sa-feature); доставка после UNLOCK | orch.py deliver --check WP-WORKER-01 |
 | 2026-10-08 10:32Z | WP-API-FEEDBACK-01 | WP-API-FEEDBACK-01 waits for lock transcriber:graph (WP-API-PROJECTS-01) | orch.py lock acquire |
 | 2026-10-08 10:31Z | WP-WORKER-01 | WP-WORKER-01: accepted at d0728e2380daf34e218ceb00748294616d13ad3d | report reports/wp-worker-01-review-20261008-r3.md |
