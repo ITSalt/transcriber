@@ -113,9 +113,6 @@ R-n — действие: точная команда одной строкой 
 <!-- orch:locks -->
 | Замок | Репозиторий | Держатель | С | Ждут | Примечание |
 |-------|-------------|-----------|---|------|------------|
-| transcriber:shared/** | transcriber | — | 2026-10-08 19:47Z | WP-WORKER-MEMORY-02 | released by WP-BACKEND-07 |
-| transcriber:shared/src/api/speakers.ts | transcriber | — | 2026-10-08 19:47Z | WP-WORKER-MEMORY-02 | released by WP-BACKEND-07 |
-| transcriber:shared/src/api/uc002.ts | transcriber | — | 2026-10-08 19:47Z | WP-WORKER-MEMORY-02 | released by WP-BACKEND-07 |
 
 ## Очередь слияний
 
@@ -169,6 +166,12 @@ R-n — действие: точная команда одной строкой 
 <!-- orch:journal -->
 | Дата | WP | Событие | Подтверждение |
 |------|----|---------|---------------|
+| 2026-10-08 20:46Z | WP-WORKER-MEMORY-02 | lock transcriber:shared/src/api/uc002.ts released | orch.py lock |
+| 2026-10-08 20:46Z | WP-WORKER-MEMORY-02 | lock transcriber:shared/src/api/uc002.ts acquired | orch.py lock |
+| 2026-10-08 20:46Z | WP-WORKER-MEMORY-02 | lock transcriber:shared/src/api/speakers.ts released | orch.py lock |
+| 2026-10-08 20:46Z | WP-WORKER-MEMORY-02 | lock transcriber:shared/src/api/speakers.ts acquired | orch.py lock |
+| 2026-10-08 20:46Z | WP-WORKER-MEMORY-02 | lock transcriber:shared/** released | orch.py lock |
+| 2026-10-08 20:46Z | WP-WORKER-MEMORY-02 | lock transcriber:shared/** acquired | orch.py lock |
 | 2026-10-08 20:45Z | WP-WORKER-MEMORY-02 | WP-WORKER-MEMORY-02: PROD -> DONE | verify prod PASS + живой сценарий в отчёте reports/verify-WP-WORKER-MEMORY-02-prod-*.md; волна 4 завершена 2026-10-08 |
 | 2026-10-08 20:45Z | WP-WORKER-07 | WP-WORKER-07: PROD -> DONE | verify prod PASS + живой сценарий в отчёте reports/verify-WP-WORKER-07-prod-*.md; волна 4 завершена 2026-10-08 |
 | 2026-10-08 20:45Z | WP-FRONTEND-06 | WP-FRONTEND-06: PROD -> DONE | verify prod PASS + живой сценарий в отчёте reports/verify-WP-FRONTEND-06-prod-*.md; волна 4 завершена 2026-10-08 |
