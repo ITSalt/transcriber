@@ -190,6 +190,10 @@ describe('meeting context', () => {
     expect(MeetingContextPutRequest.safeParse({ meeting_type: 'STANDUP' }).success).toBe(false);
     expect(PreviousProtocol.safeParse({ source: 'upload', text: '' }).success).toBe(false);
     expect(PreviousProtocol.safeParse({ source: 'upload', text: 'x'.repeat(PREVIOUS_PROTOCOL_MAX_CHARS + 1) }).success).toBe(false);
+    // D-25: exactly 50 000 characters
+    expect(PREVIOUS_PROTOCOL_MAX_CHARS).toBe(50_000);
+    expect(PreviousProtocol.safeParse({ source: 'upload', text: 'x'.repeat(50_000) }).success).toBe(true);
+    expect(PreviousProtocol.safeParse({ source: 'upload', text: 'x'.repeat(50_001) }).success).toBe(false);
     expect(PreviousProtocol.safeParse({ source: 'email' }).success).toBe(false);
     expect(PreviousProtocol.parse({ source: 'project' })).toEqual({ source: 'project', meeting_id: null, text: null });
   });
