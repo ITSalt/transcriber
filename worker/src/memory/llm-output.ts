@@ -90,6 +90,8 @@ export const DecisionResolution = z.object({
   item: z.string().trim().min(1),
   action: z.preprocess((v) => (typeof v === 'string' ? v.trim().toUpperCase() : v), z.enum(['NEW', 'NO_CHANGE'])),
   target_decision_code: optionalText,
+  /** NEW restating an existing decision: its code — no new D-n, only a mention */
+  duplicate_of: optionalText,
   supersedes_code: optionalText,
   leads_to: z.array(z.string()).nullish().transform((v) => v ?? []),
   confidence: z.coerce.number().min(0).max(1).catch(1),

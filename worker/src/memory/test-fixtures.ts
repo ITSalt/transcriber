@@ -12,7 +12,7 @@ import { toMemorySegments } from './transcript.js'
 /** ProjectParticipant rows are per project, so every fixture project gets its own participant id. */
 export const IVANOV = { name: 'Иван Иванов', aliases: ['Иванов', 'Ваня'] }
 
-export function meetingSources(ids: { workspaceId: string; projectId: string; m1: string; m2: string }) {
+export function meetingSources(ids: { workspaceId: string; projectId: string; m1: string; m2: string; m3?: string }) {
   const ivanov = { id: crypto.randomUUID(), ...IVANOV }
   const m1: MeetingSource = {
     meetingId: ids.m1,
@@ -48,7 +48,22 @@ export function meetingSources(ids: { workspaceId: string; projectId: string; m1
     ),
     protocolMarkdown: '## Обсуждение\n- Договор отправлен',
   }
-  return { m1, m2, ivanov }
+  // WP-WORKER-MEMORY-02: a repeat of D-1 in other words + a task for someone who is not a participant
+  const m3: MeetingSource = {
+    ...m1,
+    meetingId: ids.m3 ?? crypto.randomUUID(),
+    title: 'Планёрка 3',
+    occurredAt: '2026-10-15T10:00:00.000Z',
+    segments: toMemorySegments(
+      [
+        { speaker: 'SPEAKER_0', start: 0, end: 5.0, text: 'Подтверждаем, работаем по договору подряда окончательно.' },
+        { speaker: 'SPEAKER_0', start: 5.5, end: 9.0, text: 'Сергей подготовит расчёт рисков к пятнице.' },
+      ],
+      { SPEAKER_0: 'Петров', SPEAKER_1: null },
+    ),
+    protocolMarkdown: '## Решения\n- Договор подряда (подтверждено)\n## Задачи\n- Расчёт рисков',
+  }
+  return { m1, m2, m3, ivanov }
 }
 
 const REPLIES = {
@@ -133,6 +148,27 @@ const REPLIES = {
       decisions: [],
     },
   },
+  m3: {
+    extract: {
+      tasks: [
+        {
+          title: 'Подготовить расчёт рисков',
+          assignee: 'Сергей',
+          due_date: null,
+          status_signal: 'none',
+          related_task_code: null,
+          quote: 'Сергей подготовит расчёт рисков к пятнице',
+          segment: 1,
+        },
+      ],
+      decisions: [{ text: 'Работаем по договору подряда окончательно', quote: 'работаем по договору подряда окончательно', segment: 0 }],
+    },
+    // the scripted model misses the repeat and says NEW — the deterministic similarity guard must catch it
+    resolve: {
+      tasks: [{ item: 'i1', action: 'NEW', target_task_code: null, changes: {}, confidence: 0.9, reason: 'новая задача' }],
+      decisions: [{ item: 'd1', action: 'NEW', supersedes_code: null, leads_to: [], confidence: 0.9, reason: 'решение' }],
+    },
+  },
 } as const
 
 /** Scripted ILlmCompletionProvider: picks the meeting by its transcript, the step by the system prompt. */
@@ -140,12 +176,13 @@ export function scriptedLlm(calls: LlmCompletionInput[] = []): ILlmCompletionPro
   return {
     async complete(input: LlmCompletionInput): Promise<LlmResult> {
       calls.push(input)
-      const isM2 = input.user.includes('договор отправил') || input.user.includes('Договор отправлен')
-      const meeting = isM2 ? REPLIES.m2 : REPLIES.m1
+      const isM3 = input.user.includes('расчёт рисков') || input.user.includes('Расчёт рисков')
+      const isM2 = !isM3 && (input.user.includes('договор отправил') || input.user.includes('Договор отправлен'))
+      const meeting = isM3 ? REPLIES.m3 : isM2 ? REPLIES.m2 : REPLIES.m1
       let text: string
       if (input.system === EXTRACT_SYSTEM) text = '```json\n' + JSON.stringify(meeting.extract) + '\n```'
       else if (input.system === RESOLVE_SYSTEM) text = JSON.stringify(meeting.resolve)
-      else if (input.system === SUMMARY_SYSTEM) text = `# Сводка\nВерсия после: ${meeting === REPLIES.m2 ? 'встречи 2' : 'встречи 1'}`
+      else if (input.system === SUMMARY_SYSTEM) text = `# Сводка\nВерсия после: ${meeting === REPLIES.m3 ? 'встречи 3' : meeting === REPLIES.m2 ? 'встречи 2' : 'встречи 1'}`
       else throw new Error('unexpected system prompt')
       return { text, model: 'claude-sonnet-4-6', tokensIn: 100, tokensOut: 50 }
     },

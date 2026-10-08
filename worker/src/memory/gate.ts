@@ -11,7 +11,16 @@
  *             title, description, status → IN_PROGRESS / POSTPONED / OPEN, first assignee —
  *             when confidence ≥ threshold;
  *   PENDING — status → DONE / CANCELLED, merged_into, a different assignee replacing an
- *             existing one, anything below the threshold or backed by a fuzzy (non-exact) quote.
+ *             existing one, an assignee who is neither a project participant nor a named
+ *             speaker of the meeting (the task keeps assignee null; the event quotes
+ *             «исполнитель: <как сказано>» for a person to confirm), anything below the
+ *             threshold or backed by a fuzzy (non-exact) quote.
+ * Decisions: the main mechanism is the LLM (`duplicate_of` / NO_CHANGE + target). A repeat
+ *   creates no D-n — it only adds a mention (MENTIONED_IN) to the existing decision. The
+ *   deterministic guard (word-set Jaccard ≥ DECISION_DUPLICATE_THRESHOLD) is only for
+ *   near-verbatim repeats the LLM missed: texts that differ in a number/date or a negation are
+ *   never duplicates, a valid `supersedes_code` from the LLM always wins, and a guard hit is
+ *   noted (pending) so the trace stays.
  * Tasks the meeting does not mention get nothing.
  */
 import {
@@ -23,7 +32,7 @@ import {
 } from '@transcrib/shared'
 import type { MeetingUpdatePlan, NewTaskEventInput, TaskMentionInput } from '@transcrib/shared/memory'
 import type { DecisionResolution, ExtractedDecision, ExtractedTask, StatusSignal, TaskResolution } from './llm-output.js'
-import { normalizeText, type VerifiedQuote } from './transcript.js'
+import { NEGATIONS, normalizeText, type VerifiedQuote } from './transcript.js'
 
 export interface VerifiedTaskItem {
   /** i1, i2, … — the quote_ref of MEMORY_RESOLVE */
@@ -53,6 +62,8 @@ export interface GateInput {
   taskResolutions: readonly TaskResolution[]
   decisionResolutions: readonly DecisionResolution[]
   participants: readonly ParticipantRef[]
+  /** names the transcript's speaker_map gives to speakers of this meeting */
+  speakerNames?: readonly string[]
   threshold: number
   counters: { taskSeq: number; decisionSeq: number }
   newId: () => string
@@ -73,6 +84,42 @@ export interface ChangeNote {
 export type GatePlan = Pick<MeetingUpdatePlan, 'newTasks' | 'taskUpdates' | 'newDecisions' | 'decisionMentions'> & {
   rejected: GateRejection[]
   notes: ChangeNote[]
+}
+
+/** Jaccard over normalised word sets at or above which two decisions are the same one. */
+export const DECISION_DUPLICATE_THRESHOLD = 0.6
+
+const wordSet = (text: string) => new Set(normalizeText(text).split(' ').filter(Boolean))
+
+/** Numbers/dates and negations flip the meaning of a decision: «до 19 мая» ≠ «до 26 мая», «подаём» ≠ «не подаём». */
+function meaningTokens(text: string): string {
+  const w = [...wordSet(text)]
+  return [...w.filter((x) => /\p{N}/u.test(x)), '|', ...w.filter((x) => NEGATIONS.has(x))].sort().join(' ')
+}
+
+/** |A∩B| / |A∪B| of the normalised word sets (0 when either is empty). */
+export function wordJaccard(a: string, b: string): number {
+  const x = wordSet(a)
+  const y = wordSet(b)
+  if (x.size === 0 || y.size === 0) return 0
+  let common = 0
+  for (const w of x) if (y.has(w)) common++
+  return common / (x.size + y.size - common)
+}
+
+/** The most similar of `known` to `text` if it reaches the threshold. */
+export function findSimilarDecision(
+  text: string,
+  known: ReadonlyArray<{ code: string; text: string }>,
+  threshold = DECISION_DUPLICATE_THRESHOLD,
+): { code: string; score: number } | null {
+  let best: { code: string; score: number } | null = null
+  for (const k of known) {
+    if (meaningTokens(text) !== meaningTokens(k.text)) continue
+    const score = wordJaccard(text, k.text)
+    if (score >= threshold && (!best || score > best.score)) best = { code: k.code, score }
+  }
+  return best
 }
 
 const CLOSING: readonly MemoryTaskStatus[] = ['DONE', 'CANCELLED']
@@ -156,9 +203,13 @@ export function applyGate(input: GateInput): GatePlan {
     }
     return u
   }
+  const speakers = (input.speakerNames ?? []).map((n) => ({ id: n, name: n, aliases: [] as string[] }))
+  /** participant → known; a named speaker of the meeting → known by name; anyone else → unknown */
   const person = (name: string) => {
     const p = matchParticipant(name, input.participants)
-    return p ? { name: p.name, id: p.id } : { name, id: null }
+    if (p) return { name: p.name, id: p.id, known: true }
+    const s = matchParticipant(name, speakers)
+    return s ? { name: s.name, id: null, known: true } : { name, id: null, known: false }
   }
   const sameAssignee = (t: WorkingTask, next: { name: string; id: string | null }) =>
     t.assigneeParticipantId && next.id ? t.assigneeParticipantId === next.id : normalizeText(t.assigneeName ?? '') === normalizeText(next.name)
@@ -209,7 +260,11 @@ export function applyGate(input: GateInput): GatePlan {
       const assigneeName = r.changes.assignee ?? item.task.assignee
       if (assigneeName) {
         const a = person(assigneeName)
-        events.push(ev('assignee', null, a.name, 'AUTO', { newParticipantId: a.id }))
+        if (a.known) events.push(ev('assignee', null, a.name, 'AUTO', { newParticipantId: a.id }))
+        else {
+          events.push(ev('assignee', null, a.name, 'PENDING', { quote: `исполнитель: ${a.name}` }))
+          plan.notes.push({ code, text: `${code} исполнитель «${a.name}» не найден среди участников`, pending: true })
+        }
       }
       const due = r.changes.due_date ?? item.task.due_date
       if (due) events.push(ev('due_date', null, due, 'AUTO'))
@@ -218,7 +273,7 @@ export function applyGate(input: GateInput): GatePlan {
         plan.notes.push({ code, text: `${code} статус ${initial} → ${statusWish}`, pending: true })
       }
       plan.newTasks.push({ id: input.newId(), code, seq: taskSeq, mention: mentionOf(quote, 'CREATED'), events })
-      plan.notes.push({ code, text: `${code} новая задача: «${title}»${assigneeName ? `, исполнитель ${assigneeName}` : ''}${due ? `, срок ${due}` : ''}`, pending: false })
+      plan.notes.push({ code, text: `${code} новая задача: «${title}»${assigneeName && person(assigneeName).known ? `, исполнитель ${person(assigneeName).name}` : ''}${due ? `, срок ${due}` : ''}`, pending: false })
       itemCode.set(r.item, code)
       newCodes.add(code)
       continue
@@ -270,11 +325,12 @@ export function applyGate(input: GateInput): GatePlan {
       if (c.assignee) {
         const next = person(c.assignee)
         if (!sameAssignee(target, next)) {
-          const auto = target.assigneeName === null && sure
+          const auto = target.assigneeName === null && sure && next.known
           u.events.push(
             ev('assignee', target.assigneeName, next.name, auto ? 'AUTO' : 'PENDING', {
               oldParticipantId: target.assigneeParticipantId,
               newParticipantId: next.id,
+              ...(next.known ? {} : { quote: `исполнитель: ${next.name}` }),
             }),
           )
           plan.notes.push({ code: target.code, text: `${target.code} исполнитель ${target.assigneeName ?? '—'} → ${next.name}`, pending: !auto })
@@ -306,6 +362,8 @@ export function applyGate(input: GateInput): GatePlan {
 
   // decisions
   const recent = new Set(input.recentDecisions.map((d) => d.code))
+  /** existing decisions plus those created by this meeting — a repeat inside one meeting is a duplicate too */
+  const known = [...input.recentDecisions]
   const seenDecisionItems = new Set<string>()
   for (const r of input.decisionResolutions) {
     const item = decisionItems.get(r.item)
@@ -327,6 +385,19 @@ export function applyGate(input: GateInput): GatePlan {
       }
       continue
     }
+    // a repeat of an existing decision: the LLM says so (duplicate_of) or, as a guard, the wording is
+    // nearly verbatim. A valid supersedes_code means the LLM says "replaces", never "repeats".
+    if (!(r.supersedes_code && recent.has(r.supersedes_code))) {
+      const byLlm = r.duplicate_of && recent.has(r.duplicate_of) ? r.duplicate_of : null
+      const byText = byLlm ? null : (findSimilarDecision(item.decision.text, known)?.code ?? null)
+      const dupCode = byLlm ?? byText
+      if (dupCode) {
+        // the code may belong to a decision created earlier in this meeting: the write creates it before the mentions
+        plan.decisionMentions.push({ code: dupCode, mention })
+        if (byText) plan.notes.push({ code: dupCode, text: `${dupCode} повтор решения по тексту: «${item.decision.text}» (новое решение не создано)`, pending: true })
+        continue
+      }
+    }
     decisionSeq += 1
     const code = `D-${decisionSeq}`
     let supersedes: string | null = null
@@ -342,6 +413,7 @@ export function applyGate(input: GateInput): GatePlan {
       ),
     ]
     plan.newDecisions.push({ id: input.newId(), code, seq: decisionSeq, text: item.decision.text, mention, leadsTo, supersedes })
+    known.push({ code, text: item.decision.text })
     plan.notes.push({ code, text: `${code} решение: ${item.decision.text}${supersedes ? ` (заменяет ${supersedes})` : ''}`, pending: false })
   }
   for (const d of input.decisionItems) if (!seenDecisionItems.has(d.id)) reject(d.id, 'no resolution returned — ignored')

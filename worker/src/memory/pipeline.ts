@@ -31,7 +31,7 @@ import {
   TaskResolution,
 } from './llm-output.js'
 import { EXTRACT_SYSTEM, PROMPT_VERSIONS, RESOLVE_SYSTEM, SUMMARY_SYSTEM } from './prompts.js'
-import { createQuoteVerifier, renderNumberedTranscript, type MemorySegment } from './transcript.js'
+import { createQuoteVerifier, mappedSpeakerNames, renderNumberedTranscript, type MemorySegment } from './transcript.js'
 
 export type MemoryStepKind = 'MEMORY_EXTRACT' | 'MEMORY_RESOLVE' | 'MEMORY_SUMMARY'
 
@@ -203,6 +203,7 @@ export async function runMemoryUpdate(deps: MemoryPipelineDeps, payload: Project
     taskResolutions,
     decisionResolutions,
     participants: src.participants,
+    speakerNames: mappedSpeakerNames(src.segments),
     threshold: deps.settings.confidenceThreshold,
     counters: { taskSeq: state.taskSeq, decisionSeq: state.decisionSeq },
     newId,

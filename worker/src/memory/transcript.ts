@@ -40,7 +40,7 @@ const MIN_QUOTE_CHARS = 6
 const MIN_FUZZY_TOKENS = 4
 const MAX_WINDOW = 3
 /** a fuzzy quote may miss a word, but never one of these: "не отправил" ≠ "отправил" */
-const NEGATIONS = new Set(['не', 'ни', 'нет', 'no', 'not', 'never', 'без'])
+export const NEGATIONS = new Set(['не', 'ни', 'нет', 'no', 'not', 'never', 'без'])
 
 function speakerDisplay(label: string): string {
   const m = /SPEAKER_(\d+)/i.exec(label)
@@ -203,4 +203,9 @@ export function verifyQuote(
 export function createQuoteVerifier(segments: readonly MemorySegment[]) {
   const index = indexSegments(segments)
   return (quote: string, hint?: number | null) => verifyQuote(quote, segments, hint, index)
+}
+
+/** Names the speaker_map gave to this meeting's speakers (unmapped speakers keep «Speaker N»). */
+export function mappedSpeakerNames(segments: readonly MemorySegment[]): string[] {
+  return [...new Set(segments.filter((s) => s.label !== speakerDisplay(s.speaker)).map((s) => s.label))]
 }
