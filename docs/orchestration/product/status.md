@@ -154,6 +154,7 @@ R-n — действие: точная команда одной строкой 
 <!-- orch:journal -->
 | Дата | WP | Событие | Подтверждение |
 |------|----|---------|---------------|
+| 2026-10-08 17:03Z | WP-WORKER-03 | Проход A на kie.ai после D-33: TCB (18e14745…) PROTOCOL_READY (claude-sonnet-4-6, 6370 вых. токенов), память проекта APPLIED (3 задачи, 3 решения, сводка v1, очередь 0) — первая живая генерация протокола с контекстом и первая живая память на проде; 12.05 и 20.05 снова FAILED ×3 — kie.ai 500 на длинных генерациях. Транскрипт TCB: 4 голоса (в мае 3), имена спикеров кроме Ильнура в протокол не попали несмотря на участников и заметки в промпте. Метаданные: keyterms=47 записаны по флагу на момент генерации, хотя ASR шёл до включения флага — расхождение для backlog | protocol_generations; pm2 logs memory APPLIED; results/mtcb-A-* |
 | 2026-10-08 16:55Z | WP-WORKER-04 | WP-WORKER-04: READY -> DISPATCHING | start command handed to the owner; model sonnet; locks transcriber:**/package.json, transcriber:worker/package.json, transcriber:pnpm-lock.yaml |
 | 2026-10-08 16:55Z | WP-WORKER-04 | WP-WORKER-04: DRAFT -> READY | пакет по D-34; прокси проверен с VM (200); OUTBOUND_PROXY_URL в прод-.env |
 | 2026-10-08 16:55Z | — | A-12 recorded | — |
