@@ -45,7 +45,7 @@ CANCELLED (причина).
 | [WP-INFRA-02](work-packages/WP-INFRA-02-deploy-migrate-first.md) | infra | Порядок деплоя: миграции Postgres до сборки и замены dist | PROD | product-infra | https://github.com/ITSalt/transcriber/pull/11 (accepted 6694e5e172) | 2026-10-07 |
 | [WP-INFRA-03](work-packages/WP-INFRA-03-neo4j-ports.md) | infra | Порты Neo4j памяти проекта 7476/7689 (D-26) | PROD | product-infra | https://github.com/ITSalt/transcriber/pull/22 (accepted 5d27d4a320) | 2026-10-08 |
 | [WP-WORKER-03](work-packages/WP-WORKER-03-openrouter-llm.md) | worker | LLM-провайдер OpenRouter (anthropic/claude-haiku-5.5) за ILlmProvider, переключение провайдера по env | VERIFYING | product-worker | https://github.com/ITSalt/transcriber/pull/24 (accepted 33f870eacd) | 2026-10-08 |
-| [WP-WORKER-04](work-packages/WP-WORKER-04-outbound-proxy.md) | worker | Исходящий прокси для OpenRouter (OUTBOUND_PROXY_URL, undici ProxyAgent, только LLM-трафик) | DISPATCHING | product-worker | — | 2026-10-08 |
+| [WP-WORKER-04](work-packages/WP-WORKER-04-outbound-proxy.md) | worker | Исходящий прокси для OpenRouter (OUTBOUND_PROXY_URL, undici ProxyAgent, только LLM-трафик) | REVIEW | product-worker | https://github.com/ITSalt/transcriber/pull/25 | 2026-10-08 |
 
 ## Ждёт владельца
 
@@ -154,6 +154,8 @@ R-n — действие: точная команда одной строкой 
 <!-- orch:journal -->
 | Дата | WP | Событие | Подтверждение |
 |------|----|---------|---------------|
+| 2026-10-08 17:09Z | WP-WORKER-04 | WP-WORKER-04: READY 83f42ec2b1 (PR 25); QUESTION про AGENTS.md → ANSWER (b) по D-17; порт outbound-proxy.ts сверен с оригиналом procontent — логика идентична (переводы сообщений, расширены сигнатуры env); ревью r1 запущено | diff порт/оригинал без комментариев; сообщения product-worker |
+| 2026-10-08 17:08Z | WP-WORKER-04 | WP-WORKER-04: DISPATCHING -> REVIEW | 83f42ec2b1; report reports/wp-worker-04-review-20261008.md |
 | 2026-10-08 17:03Z | WP-WORKER-03 | Проход A на kie.ai после D-33: TCB (18e14745…) PROTOCOL_READY (claude-sonnet-4-6, 6370 вых. токенов), память проекта APPLIED (3 задачи, 3 решения, сводка v1, очередь 0) — первая живая генерация протокола с контекстом и первая живая память на проде; 12.05 и 20.05 снова FAILED ×3 — kie.ai 500 на длинных генерациях. Транскрипт TCB: 4 голоса (в мае 3), имена спикеров кроме Ильнура в протокол не попали несмотря на участников и заметки в промпте. Метаданные: keyterms=47 записаны по флагу на момент генерации, хотя ASR шёл до включения флага — расхождение для backlog | protocol_generations; pm2 logs memory APPLIED; results/mtcb-A-* |
 | 2026-10-08 16:55Z | WP-WORKER-04 | WP-WORKER-04: READY -> DISPATCHING | start command handed to the owner; model sonnet; locks transcriber:**/package.json, transcriber:worker/package.json, transcriber:pnpm-lock.yaml |
 | 2026-10-08 16:55Z | WP-WORKER-04 | WP-WORKER-04: DRAFT -> READY | пакет по D-34; прокси проверен с VM (200); OUTBOUND_PROXY_URL в прод-.env |
