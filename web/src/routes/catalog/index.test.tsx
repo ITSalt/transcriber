@@ -4,6 +4,7 @@ import userEvent from "@testing-library/user-event";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { createMemoryRouter, RouterProvider } from "react-router";
 import i18n from "@/i18n/config";
+import { json, mockApi, WithSession, WS_PERSONAL } from "@/lib/test-utils";
 import CatalogPage from "./index";
 
 // i18n must be initialised before rendering; lock to English for predictable assertions
@@ -15,20 +16,6 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 
-function makeJsonResponse(body: unknown, status = 200) {
-  return new Response(JSON.stringify(body), {
-    status,
-    headers: { "Content-Type": "application/json" },
-  });
-}
-
-/** Return a fresh Response on every call so the body stream is never reused. */
-function mockFetch(body: unknown, status = 200) {
-  vi.spyOn(globalThis, "fetch").mockImplementation(() =>
-    Promise.resolve(makeJsonResponse(body, status)),
-  );
-}
-
 function renderCatalog() {
   const client = new QueryClient({
     defaultOptions: { queries: { retry: false } },
@@ -37,50 +24,66 @@ function renderCatalog() {
     [
       { path: "/", element: <CatalogPage /> },
       { path: "/meetings/:id", element: <div data-testid="meeting-detail" /> },
+      { path: "/meetings/:id/protocol", element: <div data-testid="protocol-page" /> },
+      { path: "/upload", element: <div data-testid="upload-page" /> },
     ],
     { initialEntries: ["/"] },
   );
   return render(
     <QueryClientProvider client={client}>
-      <RouterProvider router={router} />
+      <WithSession>
+        <RouterProvider router={router} />
+      </WithSession>
     </QueryClientProvider>,
   );
 }
 
-// Use valid v4 UUIDs — Zod v4 validates uuid format strictly
+/** Answers GET /api/meetings with `body` and records the requested URLs. */
+function mockList(body: unknown, status = 200) {
+  return mockApi((url) =>
+    url.pathname === "/api/meetings" ? json(body, status) : undefined,
+  );
+}
+
 const MEETING_ID_1 = "a1b2c3d4-1234-4abc-8def-a1b2c3d4e5f6";
 const MEETING_ID_2 = "b2c3d4e5-5678-4bcd-9ef0-b2c3d4e5f6a7";
+
+const base = {
+  workspace_id: WS_PERSONAL,
+  project_id: null,
+  project_name: null,
+  language: "RU" as const,
+  updated_at: "2026-05-18T11:00:00.000Z",
+  duration_sec: 125,
+};
 
 const MOCK_MEETINGS = {
   items: [
     {
+      ...base,
       id: MEETING_ID_1,
       title: "Weekly Sync",
       filename: "weekly.mp4",
       status: "PROTOCOL_READY" as const,
-      language: "RU" as const,
       uploaded_at: "2026-05-18T10:00:00.000Z",
-      updated_at: "2026-05-18T11:00:00.000Z",
-      duration_sec: 125,
     },
     {
+      ...base,
       id: MEETING_ID_2,
       title: null,
       filename: "interview.mp4",
       status: "TRANSCRIBING" as const,
-      language: null,
       uploaded_at: "2026-05-18T09:00:00.000Z",
-      updated_at: "2026-05-18T09:30:00.000Z",
-      duration_sec: null,
     },
   ],
 };
 
-describe("CatalogPage", () => {
-  it("renders the catalog page container", () => {
-    mockFetch({ items: [] });
+describe("CatalogPage (Tasks)", () => {
+  it("renders the page container titled Tasks", () => {
+    mockList({ items: [] });
     renderCatalog();
     expect(screen.getByTestId("catalog-page")).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Tasks" })).toBeInTheDocument();
   });
 
   it("shows loading state while fetching", () => {
@@ -89,8 +92,17 @@ describe("CatalogPage", () => {
     expect(screen.getByTestId("catalog-loading")).toBeInTheDocument();
   });
 
-  it("shows empty state when no meetings returned", async () => {
-    mockFetch({ items: [] });
+  it("requests only the current workspace", async () => {
+    const spy = mockList({ items: [] });
+    renderCatalog();
+    await waitFor(() => expect(spy).toHaveBeenCalled());
+    expect(String(spy.mock.calls[0]![0])).toBe(
+      `/api/meetings?workspace_id=${WS_PERSONAL}`,
+    );
+  });
+
+  it("shows empty state when there are no tasks", async () => {
+    mockList({ items: [] });
     renderCatalog();
     await waitFor(() => {
       expect(screen.getByTestId("catalog-empty")).toBeInTheDocument();
@@ -98,205 +110,91 @@ describe("CatalogPage", () => {
   });
 
   it("shows error state when fetch fails", async () => {
-    mockFetch({ message: "Server Error" }, 500);
+    mockList({ message: "Server Error" }, 500);
     renderCatalog();
     await waitFor(() => {
       expect(screen.getByTestId("catalog-error")).toBeInTheDocument();
     });
   });
 
-  it("CT01 — Title column header is rendered", async () => {
-    mockFetch(MOCK_MEETINGS);
+  it("renders the File, Date, Status and Protocol columns", async () => {
+    mockList(MOCK_MEETINGS);
     renderCatalog();
-    await waitFor(() => {
-      expect(screen.getByText("Title")).toBeInTheDocument();
-    });
-  });
-
-  it("CT02 — Status column header is rendered", async () => {
-    mockFetch(MOCK_MEETINGS);
-    renderCatalog();
-    await waitFor(() => {
-      expect(screen.getByText("Status")).toBeInTheDocument();
-    });
-  });
-
-  it("CT03 — Language column header is rendered", async () => {
-    mockFetch(MOCK_MEETINGS);
-    renderCatalog();
-    await waitFor(() => {
-      expect(screen.getByText("Language")).toBeInTheDocument();
-    });
-  });
-
-  it("CT04 — Uploaded column header is rendered", async () => {
-    mockFetch(MOCK_MEETINGS);
-    renderCatalog();
-    await waitFor(() => {
-      expect(screen.getByText("Uploaded")).toBeInTheDocument();
-    });
-  });
-
-  it("CT05 — Duration column header is rendered", async () => {
-    mockFetch(MOCK_MEETINGS);
-    renderCatalog();
-    await waitFor(() => {
-      expect(screen.getByText("Duration")).toBeInTheDocument();
-    });
-  });
-
-  it("renders meeting rows for each item returned", async () => {
-    mockFetch(MOCK_MEETINGS);
-    renderCatalog();
-    await waitFor(() => {
+    for (const name of ["File", "Date", "Status", "Protocol"]) {
       expect(
-        screen.getByTestId(
-          "meeting-row-a1b2c3d4-1234-4abc-8def-a1b2c3d4e5f6",
-        ),
+        await screen.findByRole("columnheader", { name }),
       ).toBeInTheDocument();
-      expect(
-        screen.getByTestId(
-          "meeting-row-b2c3d4e5-5678-4bcd-9ef0-b2c3d4e5f6a7",
-        ),
-      ).toBeInTheDocument();
-    });
+    }
   });
 
-  it("uses filename as fallback when title is null", async () => {
-    mockFetch(MOCK_MEETINGS);
+  it("renders a row per task showing the file name", async () => {
+    mockList(MOCK_MEETINGS);
     renderCatalog();
-    await waitFor(() => {
-      expect(screen.getByText("interview.mp4")).toBeInTheDocument();
-    });
+    expect(await screen.findByText("weekly.mp4")).toBeInTheDocument();
+    expect(screen.getByText("interview.mp4")).toBeInTheDocument();
+    expect(screen.getByTestId(`meeting-row-${MEETING_ID_1}`)).toBeInTheDocument();
+    expect(screen.getByTestId(`meeting-row-${MEETING_ID_2}`)).toBeInTheDocument();
   });
 
-  it("shows title when present", async () => {
-    mockFetch(MOCK_MEETINGS);
+  it("links to the protocol only when it exists", async () => {
+    mockList(MOCK_MEETINGS);
     renderCatalog();
-    await waitFor(() => {
-      expect(screen.getByText("Weekly Sync")).toBeInTheDocument();
-    });
+    const link = await screen.findByTestId(`protocol-link-${MEETING_ID_1}`);
+    expect(link).toHaveAttribute("href", `/meetings/${MEETING_ID_1}/protocol`);
+    expect(
+      screen.queryByTestId(`protocol-link-${MEETING_ID_2}`),
+    ).not.toBeInTheDocument();
   });
 
-  it("renders formatted duration (2:05) for meetings with duration_sec=125", async () => {
-    mockFetch(MOCK_MEETINGS);
+  it("renders status badges for each task", async () => {
+    mockList(MOCK_MEETINGS);
     renderCatalog();
-    await waitFor(() => {
-      expect(screen.getByText("2:05")).toBeInTheDocument();
-    });
+    expect(await screen.findByTestId("status-badge-PROTOCOL_READY")).toBeInTheDocument();
+    expect(screen.getByTestId("status-badge-TRANSCRIBING")).toBeInTheDocument();
   });
 
-  it("renders em-dash for missing duration", async () => {
-    mockFetch(MOCK_MEETINGS);
+  it("a11y — table has an accessible name", async () => {
+    mockList(MOCK_MEETINGS);
     renderCatalog();
-    await waitFor(() => {
-      // At least one "—" should appear (missing language AND missing duration on second row)
-      const dashes = screen.getAllByText("—");
-      expect(dashes.length).toBeGreaterThanOrEqual(1);
-    });
-  });
-
-  it("renders status badges for each meeting", async () => {
-    mockFetch(MOCK_MEETINGS);
-    renderCatalog();
-    await waitFor(() => {
-      expect(
-        screen.getByTestId("status-badge-PROTOCOL_READY"),
-      ).toBeInTheDocument();
-      expect(
-        screen.getByTestId("status-badge-TRANSCRIBING"),
-      ).toBeInTheDocument();
-    });
-  });
-
-  it("a11y — table has aria-label 'Meeting catalog'", async () => {
-    mockFetch(MOCK_MEETINGS);
-    renderCatalog();
-    await waitFor(() => {
-      expect(
-        screen.getByRole("table", { name: /meeting catalog/i }),
-      ).toBeInTheDocument();
-    });
+    expect(
+      await screen.findByRole("table", { name: /task list/i }),
+    ).toBeInTheDocument();
   });
 
   it("a11y — status badge container has aria-live='polite'", async () => {
-    mockFetch(MOCK_MEETINGS);
+    mockList(MOCK_MEETINGS);
     renderCatalog();
     await waitFor(() => {
-      const liveRegions = document.querySelectorAll("[aria-live='polite']");
-      expect(liveRegions.length).toBeGreaterThanOrEqual(1);
+      expect(document.querySelectorAll("[aria-live='polite']").length).toBeGreaterThanOrEqual(1);
     });
   });
 
   it("navigates to /meetings/:id when Open is clicked", async () => {
-    mockFetch(MOCK_MEETINGS);
+    mockList(MOCK_MEETINGS);
     renderCatalog();
-    await waitFor(() => {
-      expect(
-        screen.getByTestId(
-          "open-meeting-a1b2c3d4-1234-4abc-8def-a1b2c3d4e5f6",
-        ),
-      ).toBeInTheDocument();
-    });
-    await userEvent.click(
-      screen.getByTestId(
-        "open-meeting-a1b2c3d4-1234-4abc-8def-a1b2c3d4e5f6",
-      ),
-    );
+    await userEvent.click(await screen.findByTestId(`open-meeting-${MEETING_ID_1}`));
     await waitFor(() => {
       expect(screen.getByTestId("meeting-detail")).toBeInTheDocument();
     });
   });
 
-  it("upload button is visible in catalog header", async () => {
-    mockFetch(MOCK_MEETINGS);
-    const client = new QueryClient({
-      defaultOptions: { queries: { retry: false } },
-    });
-    const router = createMemoryRouter(
-      [
-        { path: "/", element: <CatalogPage /> },
-        { path: "/meetings/:id", element: <div data-testid="meeting-detail" /> },
-        { path: "/upload", element: <div data-testid="upload-page" /> },
-      ],
-      { initialEntries: ["/"] },
+  it("upload button links to /upload", async () => {
+    mockList(MOCK_MEETINGS);
+    renderCatalog();
+    await screen.findByText("weekly.mp4");
+    expect(screen.getByTestId("upload-button").closest("a")).toHaveAttribute(
+      "href",
+      "/upload",
     );
-    render(
-      <QueryClientProvider client={client}>
-        <RouterProvider router={router} />
-      </QueryClientProvider>,
-    );
-    await waitFor(() => {
-      expect(screen.getByText("Weekly Sync")).toBeInTheDocument();
-    });
-    const link = screen.getByTestId("upload-button");
-    expect(link).toBeInTheDocument();
-    expect(link.closest("a")).toHaveAttribute("href", "/upload");
   });
 
   it("upload button is visible in empty state", async () => {
-    mockFetch({ items: [] });
-    const client = new QueryClient({
-      defaultOptions: { queries: { retry: false } },
-    });
-    const router = createMemoryRouter(
-      [
-        { path: "/", element: <CatalogPage /> },
-        { path: "/meetings/:id", element: <div data-testid="meeting-detail" /> },
-        { path: "/upload", element: <div data-testid="upload-page" /> },
-      ],
-      { initialEntries: ["/"] },
+    mockList({ items: [] });
+    renderCatalog();
+    await screen.findByTestId("catalog-empty");
+    expect(screen.getByTestId("upload-button").closest("a")).toHaveAttribute(
+      "href",
+      "/upload",
     );
-    render(
-      <QueryClientProvider client={client}>
-        <RouterProvider router={router} />
-      </QueryClientProvider>,
-    );
-    await waitFor(() => {
-      expect(screen.getByTestId("catalog-empty")).toBeInTheDocument();
-    });
-    const link = screen.getByTestId("upload-button");
-    expect(link).toBeInTheDocument();
-    expect(link.closest("a")).toHaveAttribute("href", "/upload");
   });
 });

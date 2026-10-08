@@ -21,6 +21,7 @@ import {
   DialogDescription,
   DialogFooter,
 } from "@/components/ui/dialog";
+import { SlotOutlet } from "@/components/layout/slot";
 import { ProtocolViewer } from "./components/ProtocolViewer";
 import { ProtocolEditor, type ProtocolEditorHandle } from "./components/ProtocolEditor";
 
@@ -95,6 +96,10 @@ export default function ProtocolPage() {
               }
             : old,
       );
+      // Every save is a new entry in the version history (FR-005)
+      void queryClient.invalidateQueries({
+        queryKey: ["protocol-versions", meetingId],
+      });
       setIsEditing(false);
       setIsDirty(false);
       setSaveSuccess(true);
@@ -296,6 +301,9 @@ export default function ProtocolPage() {
                 {t("protocol.exportPdf")}
               </Button>
             </a>
+
+            {/* Feature slot: feedback, version history (FR-005) */}
+            <SlotOutlet name="protocol.toolbar" meetingId={meetingId} />
           </div>
 
           {/* Protocol content */}

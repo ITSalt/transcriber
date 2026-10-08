@@ -17,7 +17,12 @@
     "db:generate": "prisma generate",
     "db:migrate:dev": "prisma migrate dev",
     "db:migrate:deploy": "prisma migrate deploy",
-    "db:migrate:status": "prisma migrate status"
+    "db:migrate:status": "prisma migrate status",
+    "user:create": "node dist/features/auth/cli.js create",
+    "user:grant": "node dist/features/auth/cli.js grant",
+    "user:reset-pin": "node dist/features/auth/cli.js reset-pin",
+    "user:blocks": "node dist/features/auth/cli.js blocks",
+    "user:unblock": "node dist/features/auth/cli.js unblock"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1048.0",

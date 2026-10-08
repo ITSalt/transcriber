@@ -5,13 +5,29 @@
  * After the browser finishes uploading all parts directly to S3,
  * this endpoint completes the multipart upload and triggers the
  * same finalize flow as the old TUS route (ffprobe → DB → BullMQ).
+ *
+ * FR-003 / RQ-044: both act only on keys of the target workspace (`ws/<workspace_id>/…`,
+ * membership checked); `pending/…` keys of uploads started before WP-BACKEND-01 are
+ * accepted for the legacy workspace «Роман» only.
+ * FR-004 / D-9: `defer_start: true` → the meeting stays AWAITING_START, nothing is enqueued.
  */
 import type { FastifyInstance } from 'fastify'
 import type { ZodTypeProvider } from '@fastify/type-provider-zod'
-import { UploadCompleteRequest, UploadAbortRequest, UploadFinalizeResponse } from '@transcrib/shared'
+import { LEGACY_WORKSPACE_ID, UploadCompleteRequest, UploadAbortRequest, UploadFinalizeResponse } from '@transcrib/shared'
 import { S3StorageProvider, s3ConfigFromEnv } from '../storage/s3-adapter.js'
 import { finalizeUpload } from '../services/uc-100.service.js'
 import { AppError } from '../plugins/errors.js'
+import { resolveWorkspace } from '../features/auth/access.js'
+import { uploadKeyPrefix } from './upload-init.js'
+
+/** The key must belong to the workspace the request targets. */
+function assertKeyInWorkspace(s3Key: string, workspaceId: string): void {
+  const own = s3Key.startsWith(uploadKeyPrefix(workspaceId))
+  const legacyPending = s3Key.startsWith('pending/') && workspaceId === LEGACY_WORKSPACE_ID
+  if (!own && !legacyPending) {
+    throw new AppError('INVALID_REQUEST', 400, 'Invalid s3_key')
+  }
+}
 
 export async function uploadCompleteRoutes(app: FastifyInstance): Promise<void> {
   app.withTypeProvider<ZodTypeProvider>().post(
@@ -35,9 +51,8 @@ export async function uploadCompleteRoutes(app: FastifyInstance): Promise<void> 
         parts,
       } = request.body
 
-      if (!s3_key.startsWith('pending/')) {
-        throw new AppError('INVALID_REQUEST', 400, 'Invalid s3_key')
-      }
+      const workspaceId = resolveWorkspace(request, request.body.workspace_id)
+      assertKeyInWorkspace(s3_key, workspaceId)
 
       const s3Cfg = s3ConfigFromEnv()
       const s3 = new S3StorageProvider(s3Cfg)
@@ -61,6 +76,8 @@ export async function uploadCompleteRoutes(app: FastifyInstance): Promise<void> 
         title,
         language: language ?? undefined,
         speakerCount: speaker_count ?? undefined,
+        workspaceId,
+        deferStart: request.body.defer_start === true,
       })
 
       return reply.status(200).send(result)
@@ -75,9 +92,8 @@ export async function uploadCompleteRoutes(app: FastifyInstance): Promise<void> 
     async (request, reply) => {
       const { s3_key, s3_upload_id } = request.body
 
-      if (!s3_key.startsWith('pending/')) {
-        throw new AppError('INVALID_REQUEST', 400, 'Invalid s3_key')
-      }
+      const workspaceId = resolveWorkspace(request, request.body.workspace_id)
+      assertKeyInWorkspace(s3_key, workspaceId)
 
       const s3 = new S3StorageProvider(s3ConfigFromEnv())
       await s3.abortMultipartUpload(s3_key, s3_upload_id).catch(() => {})

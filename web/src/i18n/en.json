@@ -14,21 +14,20 @@
     "navLabel": "Main navigation"
   },
   "nav": {
-    "catalog": "Meetings",
+    "catalog": "Tasks",
     "upload": "Upload"
   },
   "catalog": {
-    "title": "Meetings",
-    "tableLabel": "Meeting catalog",
-    "empty": "No meetings yet. Upload a recording to get started.",
+    "title": "Tasks",
+    "tableLabel": "Task list",
+    "empty": "No tasks yet. Upload a recording to get started.",
     "search": "Search meetings…",
     "open": "Open",
     "columns": {
-      "title": "Title",
+      "file": "File",
+      "date": "Date",
       "status": "Status",
-      "language": "Language",
-      "uploaded_at": "Uploaded",
-      "duration": "Duration"
+      "protocol": "Protocol"
     },
     "status": {
       "CREATED": "Created",
@@ -40,7 +39,8 @@
       "PROTOCOL_READY": "Protocol Ready",
       "EDITED": "Edited",
       "FAILED": "Failed"
-    }
+    },
+    "openProtocol": "Open protocol"
   },
   "meeting": {
     "transcript": "Transcript",
@@ -155,5 +155,9 @@
     "errorFileTooLarge": "File exceeds 2.5 GB. Please choose a smaller file.",
     "errorUnsupportedMime": "Unsupported file type. Please upload an MP4, MKV, MOV, or WEBM file.",
     "errorRecordingTooLong": "Recording is longer than 4 hours. Split it and upload the parts separately."
+  },
+  "notFound": {
+    "title": "Not found",
+    "back": "Back to tasks"
   }
 }

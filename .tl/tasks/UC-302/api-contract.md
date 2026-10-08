@@ -9,7 +9,7 @@
 
 | Method | Path | Auth | Description |
 |--------|------|------|-------------|
-| GET | `/api/meetings/:id/protocol/pdf` | none (NFR-007) | Export protocol PDF |
+| GET | `/api/meetings/:id/protocol/pdf` | session (FR-003) | Export protocol PDF |
 
 ## Shared types (Zod schemas in `@transcrib/shared`)
 
@@ -50,5 +50,5 @@ All errors are `AppError` (see TECH-005). Stable codes returned in body `{code, 
 
 ## Authentication
 
-MVP runs without auth per **NFR-007**. All endpoints are open. Ownership scope (RQ-003) is semantically 'all' at MVP — to be re-enabled when auth is added.
+**Access (FR-003, WP-BACKEND-01; supersedes NFR-007).** Every endpoint needs a session (cookie `transcrib_session`) when `AUTH_REQUIRED=true`; with the default `false` a request without a session is served by the legacy principal, restricted to the workspace «Роман» (D-20). Meeting-scoped endpoints check workspace membership before validation and the handler: someone else's and a nonexistent meeting answer the same `404 {code: NOT_FOUND, message: «Не найдено»}` (RQ-044). See `api/README.md` and `shared/src/api/{auth,workspace,errors}.ts`.
 

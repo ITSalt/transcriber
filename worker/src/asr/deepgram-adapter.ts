@@ -19,6 +19,7 @@ import type {
   AsrResult,
   AsrSegment,
 } from '@transcrib/shared';
+import { capKeyterms } from './keyterms.js';
 
 // ─── Error Types ─────────────────────────────────────────────────────────────
 
@@ -145,6 +146,11 @@ function resolveLanguage(hint: string | null): {
   return { language: mapped };
 }
 
+// ─── Model ────────────────────────────────────────────────────────────────────
+
+/** Deepgram model sent on every request; also recorded in ProtocolGeneration.asr_options. */
+export const DEEPGRAM_MODEL = 'nova-3';
+
 // ─── Request timeout ──────────────────────────────────────────────────────────
 
 /**
@@ -188,33 +194,40 @@ async function toBuffer(audio: Uint8Array | AsyncIterable<Uint8Array>): Promise<
 export class DeepgramAsrProvider implements IAsrProvider {
   private readonly client: DeepgramClient;
 
-  constructor(apiKey?: string) {
+  /**
+   * @param apiKey - defaults to process.env.DEEPGRAM_API_KEY
+   * @param opts.fetch - transport override (wire tests capture the real request URL with it)
+   */
+  constructor(apiKey?: string, opts?: { fetch?: typeof fetch }) {
     const key = apiKey ?? process.env['DEEPGRAM_API_KEY'];
     if (!key) {
       throw new DeepgramAsrError(
         'DEEPGRAM_API_KEY is not set. Provide it as a constructor argument or via process.env.',
       );
     }
-    this.client = new DeepgramClient({ apiKey: key });
+    this.client = new DeepgramClient(opts?.fetch ? { apiKey: key, fetch: opts.fetch } : { apiKey: key });
   }
 
   async transcribe(input: AudioInput): Promise<AsrResult> {
-    const { audio, languageHint, speakerCount } = input;
+    const { audio, languageHint } = input;
 
     // Collect the audio into a Buffer so we can use transcribeFile()
     const buffer = await toBuffer(audio);
 
     const languageParams = resolveLanguage(languageHint);
 
-    // If the user explicitly told us how many speakers there are, pin the
-    // diarizer to that exact count. Without this hint Deepgram occasionally
-    // collapses two soft-voiced speakers into one (observed on a real meeting
-    // upload: two speakers, returned as a single SPEAKER_0 monologue). Setting
-    // min == max gives the model both bounds.
-    const diarizationParams =
-      typeof speakerCount === 'number' && speakerCount >= 1
-        ? { min_speakers: speakerCount, max_speakers: speakerCount }
-        : {};
+    // input.speakerCount is deliberately NOT sent (Q-2 → D-21). This adapter used to
+    // pass it as min_speakers/max_speakers, but @deepgram/sdk 5.x transcribeFile
+    // builds the query from a fixed whitelist of keys and silently dropped both, so
+    // the count never reached Deepgram (nor are they in Deepgram's diarization docs).
+    // Per D-21 participant information reaches only the LLM (<participants> in UC-300).
+
+    // FR-004 / RQ-048: repeated `keyterm=` parameters (the SDK serializes an array as
+    // key=a&key=b). The caller already capped the list; re-capping is idempotent and
+    // keeps the adapter within Deepgram's budget whoever the caller is. Empty → the key
+    // is absent and the request is byte-for-byte the pre-FR-004 one.
+    const keyterms = capKeyterms(input.keyterms ?? []);
+    const keytermParams = keyterms.length > 0 ? { keyterm: keyterms } : {};
 
     // HttpResponsePromise<MediaTranscribeResponse> extends Promise<MediaTranscribeResponse>
     // — await yields the body directly (no .body wrapper needed).
@@ -228,13 +241,13 @@ export class DeepgramAsrProvider implements IAsrProvider {
       body = await this.client.listen.v1.media.transcribeFile(
         buffer,
         {
-          model: 'nova-3',
+          model: DEEPGRAM_MODEL,
           diarize: true,
           smart_format: true,
           utterances: true,
           punctuate: true,
           ...languageParams,
-          ...diarizationParams,
+          ...keytermParams,
         },
         { timeoutInSeconds: REQUEST_TIMEOUT_SECONDS },
       );

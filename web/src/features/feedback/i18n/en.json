@@ -1,0 +1,86 @@
+{
+  "button": "Feedback",
+  "historyButton": "Version history",
+  "title": "Feedback on the protocol",
+  "description": "Tell us what is wrong with the protocol. Your feedback is saved for the current version.",
+  "tabs": {
+    "label": "Feedback type",
+    "comment": "Remarks",
+    "corrected": "Correct protocol",
+    "docx": "Word with comments"
+  },
+  "category": {
+    "label": "Category (optional)",
+    "none": "— not set —",
+    "SPEAKER_ATTRIBUTION": "Speaker attribution",
+    "MISSED_DECISION": "Missed decision",
+    "WRONG_TASK": "Wrong task",
+    "FABRICATED": "Made up",
+    "TERMS_NAMES": "Terms and names",
+    "STYLE": "Style",
+    "OTHER": "Other"
+  },
+  "comment": {
+    "label": "Remarks",
+    "placeholder": "What should be fixed in the protocol?"
+  },
+  "corrected": {
+    "label": "Correct protocol text",
+    "placeholder": "Paste the correct protocol here",
+    "or": "or upload a file (.md, .txt, .docx)",
+    "file": "File"
+  },
+  "docx": {
+    "file": "Word file (.docx) with comments and tracked changes"
+  },
+  "submit": "Send",
+  "sending": "Sending…",
+  "sent": "Feedback sent",
+  "extracted": "Recognized: {{comments}} comments, {{revisions}} edits",
+  "extractedError": "The file is saved, but its content could not be read",
+  "errors": {
+    "FEEDBACK_TEXT_REQUIRED": "Write some text",
+    "FEEDBACK_FILE_REQUIRED": "Attach a file",
+    "FEEDBACK_FILE_TYPE": "This file type is not accepted",
+    "FEEDBACK_FILE_TOO_LARGE": "The file is too large (max {{max}} MB)",
+    "generic": "Could not send the feedback"
+  },
+  "list": {
+    "title": "Sent feedback",
+    "empty": "No feedback yet",
+    "loading": "Loading…",
+    "error": "Could not load the feedback",
+    "retry": "Retry",
+    "version": "version {{n}}",
+    "download": "Download {{name}}",
+    "kind": {
+      "COMMENT": "Remarks",
+      "CORRECTED_PROTOCOL": "Correct protocol",
+      "DOCX_REVIEW": "Word with comments"
+    }
+  },
+  "history": {
+    "description": "Earlier versions of the protocol: generated and saved edits.",
+    "title": "Protocol version history",
+    "empty": "No versions yet",
+    "loading": "Loading…",
+    "error": "Could not load the history",
+    "retry": "Retry",
+    "current": "current",
+    "kind": {
+      "GENERATED": "Generated",
+      "USER_EDIT": "Edit",
+      "LEGACY": "Earlier version"
+    },
+    "version": "Version {{n}}",
+    "by": "by {{name}}",
+    "view": "View",
+    "compare": "Compare with original",
+    "close": "Close version",
+    "markdown": "Version text",
+    "diffTitle": "Changes against the original",
+    "noOriginal": "No original version to compare with",
+    "identical": "No differences from the original",
+    "original": "Original is version {{n}}"
+  }
+}

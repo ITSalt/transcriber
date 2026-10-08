@@ -49,33 +49,41 @@ describe.skipIf(!DATABASE_URL)('program schema v1 (migration 20261007120000)', (
     expect(ws).toMatchObject({ name: LEGACY_WORKSPACE_NAME, personal: true })
   })
 
-  it('a meeting inserted the pre-program way (no workspaceId) lands in «Роман»', async () => {
+  it('after WP-BACKEND-01: NOT NULL; the old INSERT shape still lands in «Роман» (default kept, D-22)', async () => {
     await inRollback(async (tx) => {
-      const m = await tx.meeting.create({ data: { title: 'pre-program insert' } })
+      const m = await tx.meeting.create({ data: { title: 'with workspace', workspaceId: LEGACY_WORKSPACE_ID } })
       expect(m.workspaceId).toBe(LEGACY_WORKSPACE_ID)
       expect(m.projectId).toBeNull()
+      // the previous release's INSERT shape (no workspace_id) keeps working during a deploy
+      const [old] = await tx.$queryRawUnsafe<Array<{ ws: string }>>(
+        `INSERT INTO meetings (id, title, updated_at) VALUES (gen_random_uuid(), 'old shape', now()) RETURNING workspace_id::text AS ws`,
+      )
+      expect(old).toEqual({ ws: LEGACY_WORKSPACE_ID })
+      // an explicit NULL is rejected
+      await tx.$executeRawUnsafe(`SAVEPOINT no_ws`)
+      await expect(
+        tx.$executeRawUnsafe(`INSERT INTO meetings (id, title, updated_at, workspace_id) VALUES (gen_random_uuid(), 'no ws', now(), NULL)`),
+      ).rejects.toThrow(/workspace_id|null/i)
+      await tx.$executeRawUnsafe(`ROLLBACK TO SAVEPOINT no_ws`)
     })
   })
 
-  it('backfill SQL is idempotent and maps editCount → LEGACY / GENERATED', async () => {
+  // The NULL-workspace backfill needs a nullable column, i.e. a throw-away database — it is
+  // covered there (migrations.down.db.test.ts, AC-4); this shared-DB case keeps to versions.
+  it('protocol-version backfill SQL is idempotent and maps editCount → LEGACY / GENERATED', async () => {
     const sql = readFileSync(MIGRATION, 'utf8')
-    // The migration's own statements, narrowed to this test's rows: run unnarrowed they would
+    // The migration's own statement, narrowed to this test's rows: run unnarrowed it would
     // scan (and FK-lock) rows prisma.smoke.test.ts commits in parallel on the same database.
     const backfillSql = sql.slice(sql.indexOf('INSERT INTO "protocol_versions"'))
-    const wsUpdateSql = sql.slice(sql.indexOf('UPDATE "meetings"'), sql.indexOf('-- AddForeignKey'))
     expect(backfillSql).toContain('FROM "protocols" p\n')
-    expect(wsUpdateSql).toContain('WHERE "workspace_id" IS NULL;')
     const only = (ids: string[]) => ids.map((id) => `'${id}'::uuid`).join(', ')
     await inRollback(async (tx) => {
-      const a = await tx.meeting.create({ data: { title: 'never edited' } })
-      const b = await tx.meeting.create({ data: { title: 'edited' } })
-      await tx.$executeRawUnsafe(`UPDATE meetings SET workspace_id = NULL WHERE id = $1::uuid`, b.id)
+      const a = await tx.meeting.create({ data: { title: 'never edited', workspaceId: LEGACY_WORKSPACE_ID } })
+      const b = await tx.meeting.create({ data: { title: 'edited', workspaceId: LEGACY_WORKSPACE_ID } })
       await tx.protocol.create({ data: { meetingId: a.id, markdownContent: '# A' } })
       await tx.protocol.create({ data: { meetingId: b.id, markdownContent: '# B edited', editCount: 2, lastEditedAt: new Date('2026-09-03T10:00:00Z') } })
       const ids = only([a.id, b.id])
       const backfill = backfillSql.replace('FROM "protocols" p\n', `FROM "protocols" p WHERE p."meeting_id" IN (${ids})\n`)
-      const wsUpdate = wsUpdateSql.replace('WHERE "workspace_id" IS NULL;', `WHERE "workspace_id" IS NULL AND "id" IN (${ids});`)
-      await tx.$executeRawUnsafe(wsUpdate)
       await tx.$executeRawUnsafe(backfill)
       await tx.$executeRawUnsafe(backfill) // second run must not duplicate or fail
       const versions = await tx.protocolVersion.findMany({ where: { meetingId: { in: [a.id, b.id] } }, orderBy: { kind: 'asc' } })
@@ -87,14 +95,13 @@ describe.skipIf(!DATABASE_URL)('program schema v1 (migration 20261007120000)', (
       )
       expect(versions).toHaveLength(2)
       expect(versions.find((v) => v.meetingId === b.id)!.createdAt.toISOString()).toBe('2026-09-03T10:00:00.000Z')
-      expect((await tx.meeting.findUnique({ where: { id: b.id } }))!.workspaceId).toBe(LEGACY_WORKSPACE_ID)
     })
   })
 
   it('deleting a meeting cascades through every new meeting-scoped table (old UC-003 keeps working)', async () => {
     await inRollback(async (tx) => {
       const user = await tx.user.create({ data: { name: 'U', pinLookup: `lookup2-${Date.now()}`, pinHash: 'scrypt$x' } })
-      const m = await tx.meeting.create({ data: { title: 'cascade' } })
+      const m = await tx.meeting.create({ data: { title: 'cascade', workspaceId: LEGACY_WORKSPACE_ID } })
       const gen = await tx.protocolGeneration.create({ data: { meetingId: m.id, kind: 'MEMORY_EXTRACT', model: 'm', promptVersion: 'v' } })
       await tx.meetingContext.create({ data: { meetingId: m.id } })
       await tx.protocolVersion.create({ data: { meetingId: m.id, n: 1, kind: 'GENERATED', markdown: '#', generationId: gen.id } })
@@ -127,7 +134,7 @@ describe.skipIf(!DATABASE_URL)('program schema v1 (migration 20261007120000)', (
       await expect(tx.$executeRawUnsafe(
         `INSERT INTO login_blocks (id, client_key, updated_at) VALUES (gen_random_uuid(), '*', now()) ON CONFLICT (client_key) DO NOTHING`,
       )).resolves.toBe(0)
-      const m = await tx.meeting.create({ data: { title: 'versions', status: 'AWAITING_START' } })
+      const m = await tx.meeting.create({ data: { title: 'versions', status: 'AWAITING_START', workspaceId: LEGACY_WORKSPACE_ID } })
       await tx.protocolVersion.create({ data: { meetingId: m.id, n: 1, kind: 'GENERATED', markdown: '#' } })
       await expect(tx.$executeRawUnsafe(
         `INSERT INTO protocol_versions (id, meeting_id, n, kind, markdown) VALUES (gen_random_uuid(), $1::uuid, 1, 'USER_EDIT', 'dup') ON CONFLICT (meeting_id, n) DO NOTHING`,
