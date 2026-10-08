@@ -41,7 +41,7 @@ CANCELLED (причина).
 | [WP-API-PROJECTS-01](work-packages/WP-API-PROJECTS-01-projects-context.md) | api-projects | API проектов и контекста встречи, запуск распознавания | PROD | product-api-projects | https://github.com/ITSalt/transcriber/pull/20 (accepted 109c71f00f) | 2026-10-08 |
 | [WP-API-FEEDBACK-01](work-packages/WP-API-FEEDBACK-01-feedback.md) | api-feedback | API версий протокола и обратной связи, разбор docx | PROD | product-api-feedback | https://github.com/ITSalt/transcriber/pull/21 (accepted e420bd0f93) | 2026-10-08 |
 | [WP-API-MEMORY-01](work-packages/WP-API-MEMORY-01-registry.md) | api-memory | API памяти проекта: задачи, решения, подтверждения | READY | product-api-memory | — | 2026-10-07 |
-| [WP-WORKER-MEMORY-01](work-packages/WP-WORKER-MEMORY-01-pipeline.md) | worker-memory | Память проекта в Neo4j: слой графа, извлечение, сопоставление, сводка | ACCEPTED | product-worker-memory | https://github.com/ITSalt/transcriber/pull/16 (accepted b6561a5cf7) | 2026-10-07 |
+| [WP-WORKER-MEMORY-01](work-packages/WP-WORKER-MEMORY-01-pipeline.md) | worker-memory | Память проекта в Neo4j: слой графа, извлечение, сопоставление, сводка | ACCEPTED | product-worker-memory | https://github.com/ITSalt/transcriber/pull/16 (accepted 69f3715e3d) | 2026-10-08 |
 | [WP-INFRA-02](work-packages/WP-INFRA-02-deploy-migrate-first.md) | infra | Порядок деплоя: миграции Postgres до сборки и замены dist | PROD | product-infra | https://github.com/ITSalt/transcriber/pull/11 (accepted 6694e5e172) | 2026-10-07 |
 | [WP-INFRA-03](work-packages/WP-INFRA-03-neo4j-ports.md) | infra | Порты Neo4j памяти проекта 7476/7689 (D-26) | PROD | product-infra | https://github.com/ITSalt/transcriber/pull/22 (accepted 5d27d4a320) | 2026-10-08 |
 
@@ -145,6 +145,9 @@ R-n — действие: точная команда одной строкой 
 <!-- orch:journal -->
 | Дата | WP | Событие | Подтверждение |
 |------|----|---------|---------------|
+| 2026-10-08 11:50Z | WP-WORKER-MEMORY-01 | WP-WORKER-MEMORY-01: ACCEPTED -> ACCEPTED | reports/wp-worker-memory-01-review-20261008-r3.md: rebase, CI run 37772440650 pass на 69f3715e3d |
+| 2026-10-08 11:50Z | WP-WORKER-MEMORY-01 | WP-WORKER-MEMORY-01: accepted at 69f3715e3d19caf24966e664636572da0b041794 | report reports/wp-worker-memory-01-review-20261008-r3.md |
+| 2026-10-08 11:48Z | WP-WORKER-MEMORY-01 | WP-WORKER-MEMORY-01: review round 3 started at 69f3715e3d | reports/wp-worker-memory-01-review-20261008-r3.md |
 | 2026-10-08 11:47Z | WP-INFRA-03 | WP-INFRA-03 PROD; R-17: memory-neo4j поднят на 7476/7689, healthy, cypher ok; graph:migrate — при деплое WORKER-MEMORY-01 | reports/verify-WP-INFRA-03-prod-20261008.md |
 | 2026-10-08 11:47Z | — | R-17 closed | 2026-10-08 ssh learn-prod: URI → bolt://127.0.0.1:7689; docker compose up -d memory-neo4j → Recreated/Started, healthy через ~30 с; 127.0.0.1:7476 и :7689 слушают; HostConfig.Memory=1610612736; cypher-shell RETURN 1 → ok; свободно 3.8 GiB |
 | 2026-10-08 11:47Z | — | R-17 opened for owner | work-packages/WP-INFRA-03-neo4j-ports.md |
