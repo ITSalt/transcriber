@@ -84,8 +84,7 @@ function SpeakersForm({
   const [choices, setChoices] = useState<Choices>(() =>
     initialChoices(data.labels, data.participants),
   );
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);  const [error, setError] = useState<string | null>(null);
   const [showInvalid, setShowInvalid] = useState(false);
 
   // a refetch with a different label set must not leave a label without a choice
@@ -133,8 +132,15 @@ function SpeakersForm({
     try {
       await putSpeakers(meetingId, {
         action,
-        mapping: action === "confirm" ? buildMapping(choices) : [],
+        mapping:
+          action === "confirm"
+            ? buildMapping(
+                choices,
+                Object.fromEntries(data.labels.map((l) => [l.label, l.display])),
+              )
+            : [],
       });
+      // success: stay busy — the block disappears once the card refetches, no second PUT
       // the meeting is GENERATING_PROTOCOL now; do not wait for SSE to show it
       void queryClient.invalidateQueries({ queryKey: ["meetings", meetingId] });
     } catch (err) {
@@ -147,7 +153,6 @@ function SpeakersForm({
       } else {
         setError(t("error.generic"));
       }
-    } finally {
       setBusy(false);
     }
   }

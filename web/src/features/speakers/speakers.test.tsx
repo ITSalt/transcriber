@@ -221,6 +221,29 @@ describe("speakers confirmation (AWAITING_SPEAKERS)", () => {
     expect(puts(calls)[0]!.body).toEqual({ action: "skip", mapping: [] });
   });
 
+  it("merge into a «keep» label sends the root's «Speaker N» as name (PUT body)", async () => {
+    const calls = mockApi("AWAITING_SPEAKERS");
+    renderSlot();
+    await userEvent.selectOptions(await screen.findByTestId("speaker-select-SPEAKER_1"), "m:SPEAKER_0");
+    await userEvent.click(screen.getByTestId("speakers-confirm"));
+
+    await waitFor(() => expect(puts(calls)).toHaveLength(1));
+    expect(SpeakersPutRequest.parse(puts(calls)[0]!.body).mapping).toEqual([
+      { label: "SPEAKER_1", name: "Speaker 1" },
+    ]);
+  });
+
+  it("stays disabled after a successful PUT: a second click sends nothing", async () => {
+    const calls = mockApi("AWAITING_SPEAKERS");
+    renderSlot();
+    await userEvent.click(await screen.findByTestId("speakers-skip"));
+    await waitFor(() => expect(puts(calls)).toHaveLength(1));
+    expect(screen.getByTestId("speakers-skip")).toBeDisabled();
+    expect(screen.getByTestId("speakers-confirm")).toBeDisabled();
+    await userEvent.click(screen.getByTestId("speakers-skip"));
+    expect(puts(calls)).toHaveLength(1);
+  });
+
   it("on 409 shows a message and re-requests the meeting status", async () => {
     const calls = mockApi("AWAITING_SPEAKERS", () =>
       new Response(JSON.stringify({ code: "MEETING_NOT_AWAITING_SPEAKERS", message: "x" }), {
@@ -239,14 +262,17 @@ describe("speakers confirmation (AWAITING_SPEAKERS)", () => {
 });
 
 describe("buildMapping", () => {
-  it("leaves «keep» out and nulls a merge into a «keep» label", () => {
+  it("leaves «keep» out and sends the root's display for a merge into a «keep» label", () => {
     expect(
-      buildMapping({
-        SPEAKER_0: { kind: "keep" },
-        SPEAKER_1: { kind: "merge", target: "SPEAKER_0" },
-        SPEAKER_2: { kind: "keep" },
-      }),
-    ).toEqual([{ label: "SPEAKER_1", name: null }]);
+      buildMapping(
+        {
+          SPEAKER_0: { kind: "keep" },
+          SPEAKER_1: { kind: "merge", target: "SPEAKER_0" },
+          SPEAKER_2: { kind: "keep" },
+        },
+        { SPEAKER_0: "Speaker 1", SPEAKER_1: "Speaker 2", SPEAKER_2: "Speaker 3" },
+      ),
+    ).toEqual([{ label: "SPEAKER_1", name: "Speaker 1" }]);
   });
 
   it("follows a merge chain to the root", () => {

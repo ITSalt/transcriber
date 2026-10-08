@@ -55,19 +55,24 @@ export function invalidLabels(choices: Choices): string[] {
  * Body entries of a «confirm». «Keep» is left out (the current value stays);
  * a merged label copies the choice of the label it points to.
  */
-export function buildMapping(choices: Choices): SpeakerMappingEntry[] {
+export function buildMapping(
+  choices: Choices,
+  displays: Record<string, string> = {},
+): SpeakerMappingEntry[] {
   const entries: SpeakerMappingEntry[] = [];
   for (const label of Object.keys(choices)) {
     const choice = choices[label]!;
     if (choice.kind === "keep") continue;
-    const effective = choices[resolveRoot(choices, label)]!;
+    const rootLabel = resolveRoot(choices, label);
+    const effective = choices[rootLabel]!;
     if (effective.kind === "participant") {
       entries.push({ label, participant_id: effective.participantId });
     } else if (effective.kind === "name") {
       entries.push({ label, name: effective.name.trim() });
     } else {
-      // merged into a «keep» label: both stay «Speaker N»
-      entries.push({ label, name: null });
+      // merged into a «keep» label: the worker puts a null as «Speaker <own index>», which would
+      // not merge — send the root's neutral name so both labels read as one speaker
+      entries.push({ label, name: displays[rootLabel] ?? null });
     }
   }
   return entries;
