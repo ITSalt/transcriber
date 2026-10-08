@@ -36,7 +36,7 @@ CANCELLED (причина).
 | [WP-WORKER-02](work-packages/WP-WORKER-02-project-memory.md) | worker | Память проекта в Neo4j: извлечение, сопоставление, сводка | CANCELLED (создан в неверном потоке; заменён WP-WORKER-MEMORY-01 (D-15)) | product-worker | — | 2026-10-07 |
 | [WP-INFRA-01](work-packages/WP-INFRA-01-neo4j.md) | infra | Neo4j памяти проекта: сервис, лимиты, бэкап, CI, шаг деплоя | PROD | product-infra | https://github.com/ITSalt/transcriber/pull/10 (accepted 0e7ebe85d3) | 2026-10-07 |
 | [WP-WEB-PROJECTS-01](work-packages/WP-WEB-PROJECTS-01-projects-context.md) | web-projects | Проекты и форма контекста перед распознаванием | PROD | product-web-projects | https://github.com/ITSalt/transcriber/pull/19 (accepted 79d01c1853) | 2026-10-08 |
-| [WP-WEB-FEEDBACK-01](work-packages/WP-WEB-FEEDBACK-01-feedback.md) | web-feedback | Режим обратной связи по протоколу | ACCEPTED | product-web-feedback | https://github.com/ITSalt/transcriber/pull/18 (accepted 79cca617f4) | 2026-10-08 |
+| [WP-WEB-FEEDBACK-01](work-packages/WP-WEB-FEEDBACK-01-feedback.md) | web-feedback | Режим обратной связи по протоколу | PROD | product-web-feedback | https://github.com/ITSalt/transcriber/pull/18 (accepted 79cca617f4) | 2026-10-08 |
 | [WP-WEB-MEMORY-01](work-packages/WP-WEB-MEMORY-01-registry.md) | web-memory | Реестр задач и решений проекта, очередь подтверждений | ACCEPTED | product-web-memory | https://github.com/ITSalt/transcriber/pull/14 (accepted b404424afc) | 2026-10-07 |
 | [WP-API-PROJECTS-01](work-packages/WP-API-PROJECTS-01-projects-context.md) | api-projects | API проектов и контекста встречи, запуск распознавания | PROD | product-api-projects | https://github.com/ITSalt/transcriber/pull/20 (accepted 109c71f00f) | 2026-10-08 |
 | [WP-API-FEEDBACK-01](work-packages/WP-API-FEEDBACK-01-feedback.md) | api-feedback | API версий протокола и обратной связи, разбор docx | PROD | product-api-feedback | https://github.com/ITSalt/transcriber/pull/21 (accepted e420bd0f93) | 2026-10-08 |
@@ -131,7 +131,7 @@ R-n — действие: точная команда одной строкой 
 | 19 | transcriber | WP-WEB-PROJECTS-01 | — | WP-WEB-FEEDBACK-01 | merged |
 | 20 | transcriber | WP-WORKER-MEMORY-01 | — | WP-WEB-PROJECTS-01 | dropped |
 | 21 | transcriber | WP-WEB-MEMORY-01 | — | WP-WORKER-MEMORY-01 | dropped |
-| 22 | transcriber | WP-WEB-FEEDBACK-01 | — | WP-WEB-PROJECTS-01 | queued |
+| 22 | transcriber | WP-WEB-FEEDBACK-01 | — | WP-WEB-PROJECTS-01 | merged |
 | 23 | transcriber | WP-WORKER-MEMORY-01 | — | WP-WEB-FEEDBACK-01 | queued |
 | 24 | transcriber | WP-WEB-MEMORY-01 | — | WP-WORKER-MEMORY-01 | queued |
 
@@ -142,6 +142,11 @@ R-n — действие: точная команда одной строкой 
 <!-- orch:journal -->
 | Дата | WP | Событие | Подтверждение |
 |------|----|---------|---------------|
+| 2026-10-08 11:26Z | WP-WEB-FEEDBACK-01 | WP-WEB-FEEDBACK-01 PROD: живой сценарий (аутлет, история версий, диалог отзыва) со скриншотами | reports/verify-WP-WEB-FEEDBACK-01-prod-20261008.md |
+| 2026-10-08 11:24Z | WP-WEB-FEEDBACK-01 | WP-WEB-FEEDBACK-01: VERIFIED_TEST -> PROD | verify --env prod e8abab753b: reports/verify-WP-WEB-FEEDBACK-01-prod-20261008.md |
+| 2026-10-08 11:24Z | WP-WEB-FEEDBACK-01 | WP-WEB-FEEDBACK-01: MERGED -> VERIFIED_TEST | verify --env test e8abab753b: reports/verify-WP-WEB-FEEDBACK-01-test-20261008.md |
+| 2026-10-08 11:21Z | WP-WEB-FEEDBACK-01 | WP-WEB-FEEDBACK-01 merged in the merge queue | orch.py deliver: e8abab753b |
+| 2026-10-08 11:21Z | WP-WEB-FEEDBACK-01 | WP-WEB-FEEDBACK-01: ACCEPTED -> MERGED | gh pr merge --squash: e8abab753b (https://github.com/ITSalt/transcriber/pull/18) |
 | 2026-10-08 11:20Z | WP-WEB-FEEDBACK-01 | WP-WEB-FEEDBACK-01: ACCEPTED -> ACCEPTED | reports/wp-web-feedback-01-review-20261008-r3.md: rebase (+override), CI run 37769175990 pass на 79cca617f4 |
 | 2026-10-08 11:20Z | WP-WEB-FEEDBACK-01 | WP-WEB-FEEDBACK-01: accepted at 79cca617f45f207f53b5f83916ee8817aac256b3 | report reports/wp-web-feedback-01-review-20261008-r3.md |
 | 2026-10-08 11:19Z | WP-WEB-FEEDBACK-01 | WP-WEB-FEEDBACK-01: review round 3 started at 79cca617f4 | reports/wp-web-feedback-01-review-20261008-r3.md |
