@@ -29,6 +29,7 @@ import { JOB_RETRY_ATTEMPTS } from '@transcrib/shared'
 
 import { extractAudio } from '../lib/ffmpeg.js'
 import { DeepgramAsrProvider, isTransientAsrError } from '../asr/deepgram-adapter.js'
+import { buildAsrKeyterms, frozenContextSnapshot, isAsrKeytermsEnabled } from '../asr/keyterms.js'
 import { publishMeetingEvent } from '../lib/publisher.js'
 import { prisma } from '../lib/prisma.js'
 import { createStorage } from '../lib/storage.js'
@@ -188,7 +189,8 @@ export async function processTranscriptionJob(
       where: { id: transcription_job_id },
       include: {
         meeting: {
-          include: { recording: true },
+          // FR-004: the frozen context snapshot feeds the ASR keyterms (RQ-048, RQ-059)
+          include: { recording: true, context: true },
         },
       },
     })
@@ -254,10 +256,23 @@ export async function processTranscriptionJob(
     const asr = deps?.asr ?? new DeepgramAsrProvider()
     const languageHint = meeting.language === 'AUTO' ? null : meeting.language
 
+    // FR-004 / RQ-048 / RQ-059: keyterms only behind ASR_KEYTERMS_ENABLED (off until
+    // Q-1 is measured) and only from a FROZEN snapshot. An empty list leaves the key out,
+    // so the provider sees exactly the pre-FR-004 input.
+    let keyterms: string[] = []
+    if (isAsrKeytermsEnabled()) {
+      const frozen = frozenContextSnapshot(meeting.context, (message) =>
+        log.warn({ transcription_job_id, meetingId: meeting.id }, message),
+      )
+      keyterms = frozen ? buildAsrKeyterms(frozen.snapshot) : []
+      log.info({ transcription_job_id, keytermCount: keyterms.length }, 'ASR keyterms prepared')
+    }
+
     const asrResult: AsrResult = await asr.transcribe({
       audio: audioBuffer,
       languageHint,
       speakerCount: speaker_count ?? null,
+      ...(keyterms.length > 0 ? { keyterms } : {}),
     })
 
     // ── Step 5+6: Resolve speaker names (RQ-017) ──────────────────────────
