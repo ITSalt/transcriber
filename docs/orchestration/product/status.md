@@ -97,10 +97,11 @@ R-n — действие: точная команда одной строкой 
 <!-- orch:locks -->
 | Замок | Репозиторий | Держатель | С | Ждут | Примечание |
 |-------|-------------|-----------|---|------|------------|
-| transcriber:shared/** | transcriber | WP-WORKER-MEMORY-01 | 2026-10-07 20:11Z | WP-API-PROJECTS-01 | dispatch |
+| transcriber:shared/** | transcriber | WP-WORKER-MEMORY-01 | 2026-10-07 20:11Z | — | dispatch |
 | transcriber:worker/package.json | transcriber | WP-WORKER-MEMORY-01 | 2026-10-07 20:11Z | — | dispatch |
 | transcriber:.tl/changelog.md | transcriber | WP-API-PROJECTS-01 | 2026-10-08 10:33Z | — | — |
 | transcriber:.tl/status.json | transcriber | WP-API-FEEDBACK-01 | 2026-10-08 10:39Z | — | — |
+| transcriber:graph | transcriber | WP-API-PROJECTS-01 | 2026-10-08 10:50Z | — | — |
 
 ## Очередь слияний
 
@@ -134,6 +135,8 @@ R-n — действие: точная команда одной строкой 
 <!-- orch:journal -->
 | Дата | WP | Событие | Подтверждение |
 |------|----|---------|---------------|
+| 2026-10-08 10:51Z | — | PLUGIN-BUG-4: столкновение одноразовых клонов двух параллельных сверок (review_clone.sh); Issue https://github.com/ITSalt/PepperSkills/issues/35 (D-18); orch.yaml review_setup += shared build | bugs/PLUGIN-BUG-4.md |
+| 2026-10-08 10:50Z | WP-API-PROJECTS-01 | lock transcriber:graph acquired | orch.py lock |
 | 2026-10-08 10:50Z | WP-API-PROJECTS-01 | WP-API-PROJECTS-01: REVIEW -> REVISE | reports/wp-api-projects-01-review-20261008.md: 1 пункт (500 при протоколе проекта > 50 000 → 422 PREVIOUS_PROTOCOL_TOO_LONG, A-9) + .tl-правки + merge main |
 | 2026-10-08 10:50Z | WP-API-PROJECTS-01 | WP-API-PROJECTS-01 waits for lock transcriber:shared/src/api/errors.ts (WP-WORKER-MEMORY-01) | orch.py lock acquire |
 | 2026-10-08 10:50Z | — | A-9 recorded | — |

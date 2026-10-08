@@ -53,7 +53,7 @@ repos:
     shared_paths: [pnpm-lock.yaml, "package.json", "**/package.json", "shared/**", "api/prisma/**", ".tl/{status.json,master-plan.md,changelog.md,release-status.json,deploy-plan.md}", ".tl/external-contracts/**", "graph-infra/**", "config.yaml", "CLAUDE.md", "api/src/server.ts", "worker/src/index.ts", "worker/src/job-processor.ts", "worker/src/queues.ts", "web/src/App.tsx", "web/src/i18n/**"]
     resources: [migrations, {name: graph, mode: on-demand}, {name: dev-stack, mode: on-demand}]
     checks: []
-    review_setup: ["pnpm install --frozen-lockfile", "pnpm --filter @transcrib/api run db:generate"]
+    review_setup: ["pnpm install --frozen-lockfile", "pnpm --filter @transcrib/api run db:generate", "pnpm --filter @transcrib/shared build"]
     deploy_workflows: [deploy-production.yml]
     integration_branch: main
     prod_branch: main
