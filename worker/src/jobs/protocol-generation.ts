@@ -31,7 +31,8 @@ import {
   getProjectMemoryProvider,
 } from '@transcrib/shared'
 
-import { KieAiLlmProvider, isTransientLlmError } from '../llm/kieai.js'
+import { isTransientLlmError } from '../llm/errors.js'
+import { createLlmProvider } from '../llm/provider.js'
 import {
   hasProtocolContext,
   loadProtocolSystemPrompt,
@@ -322,7 +323,7 @@ export async function processProtocolGenerationJob(
     const model: LlmModel = LLM_MODEL_DEFAULT
 
     // ── Step 4: Call LLM provider (TECH-011) ─────────────────────────────────
-    const llm: ILlmProvider = deps?.llm ?? new KieAiLlmProvider()
+    const llm: ILlmProvider = deps?.llm ?? createLlmProvider(deps?.env)
     const llmResult = await llm.generate({
       prompt: transcriptText,
       model,
@@ -451,7 +452,7 @@ export async function processProtocolGenerationJob(
     // ── ALT: Failure path (RQ-026, FR-001) ────────────────────────────────────
     //
     // FR-001 retry semantics (RC-UC-300):
-    //   - TRANSIENT error (KieAiLlmError.isTransient=true, e.g. 429/5xx) with
+    //   - TRANSIENT error (LlmProviderError.isTransient=true, e.g. 429/5xx) with
     //     attempts remaining → re-throw WITHOUT writing FAILED so BullMQ schedules
     //     the next attempt. The BRQ-009 idempotency guard must NOT see a FAILED row.
     //   - PERMANENT error (parse error, missing-section, 401/400/404) OR
@@ -465,7 +466,7 @@ export async function processProtocolGenerationJob(
     const isFinalAttempt = attemptsMade >= resolveMaxAttempts(job) - 1
 
     // Determine if this is a transient error we should let BullMQ retry.
-    // isTransientLlmError returns true only for KieAiLlmError with isTransient=true.
+    // isTransientLlmError returns true only for a provider error (kie.ai or OpenRouter) with isTransient=true.
     const shouldRetry = isTransientLlmError(err) && !isFinalAttempt
 
     log.error(

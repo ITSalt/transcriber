@@ -26,9 +26,9 @@ import { deleteMeetingFromGraph, deleteProjectFromGraph, type MemoryGraph } from
 import type { WorkerModuleContext } from '../job-processor.js'
 import { readMemoryNeo4jConfig } from '../graph/config.js'
 import { createMemoryGraphConnection, type MemoryGraphConnection } from '../graph/driver.js'
-import { KieAiLlmError } from '../llm/kieai.js'
+import { LlmProviderError } from '../llm/errors.js'
+import { createCompletionProvider } from '../llm/provider.js'
 import { readMemorySettings, type MemorySettings } from './config.js'
-import { KieAiCompletionProvider } from './kieai-completion.js'
 import { GraphOutboxConsumer } from './outbox.js'
 import { runMemoryUpdate, type MemoryPipelineDeps } from './pipeline.js'
 import { createGenerationRecorder, createMeetingLoader, createOutboxRepo, createProtocolJobLookup } from './postgres.js'
@@ -57,7 +57,7 @@ export async function processMemoryJob(deps: MemoryPipelineDeps, job: Job<unknow
     deps.log.info({ jobId: job.id, meetingId: payload.data.meeting_id, ...outcome }, 'project memory updated')
   } catch (err) {
     // permanent provider errors (401, 400, …) are not worth the remaining attempts
-    if (err instanceof KieAiLlmError && !err.isTransient) throw new UnrecoverableError(err.message)
+    if (err instanceof LlmProviderError && !err.isTransient) throw new UnrecoverableError(err.message)
     throw err
   }
 }
@@ -96,7 +96,7 @@ export async function register(ctx: WorkerModuleContext, overrides: MemoryModule
     let llm: ILlmCompletionProvider | undefined
     const deps: MemoryPipelineDeps = {
       graph: connection.graph,
-      llm: overrides.llm ?? (() => (llm ??= new KieAiCompletionProvider())),
+      llm: overrides.llm ?? (() => (llm ??= createCompletionProvider(env))),
       loadMeeting: createMeetingLoader(prisma),
       recordGeneration: createGenerationRecorder(prisma),
       log,

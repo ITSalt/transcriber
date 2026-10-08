@@ -44,4 +44,11 @@ describe('loadConfig', () => {
       loadConfig({ JOB_CONCURRENCY: 'not-a-number' }),
     ).toThrow('Invalid environment configuration')
   })
+
+  it('WP-WORKER-03: LLM variables are optional, blank means unset, an unknown provider fails at start', () => {
+    expect(loadConfig({}).LLM_TIMEOUT_MS).toBe(180_000)
+    expect(loadConfig({ LLM_PROVIDER: '', OPENROUTER_API_KEY: '' }).LLM_PROVIDER).toBeUndefined()
+    expect(loadConfig({ LLM_PROVIDER: 'openrouter', LLM_MODEL: 'm' })).toMatchObject({ LLM_PROVIDER: 'openrouter', LLM_MODEL: 'm' })
+    expect(() => loadConfig({ LLM_PROVIDER: 'gemini' })).toThrow('Invalid environment configuration')
+  })
 })

@@ -11,8 +11,14 @@
 
 // ─── LlmModel ─────────────────────────────────────────────────────────────────
 
-export type LlmModel = 'claude-sonnet-4-6' | 'gpt-5-4';
+/**
+ * A provider-specific model id. The known ids are listed for autocomplete; `(string & {})`
+ * keeps the union open so a new vendor/model (OpenRouter slugs like 'anthropic/claude-haiku-5.5')
+ * needs no change here. ProtocolGeneration.model is a plain String column, so any id is storable.
+ */
+export type LlmModel = 'claude-sonnet-4-6' | 'gpt-5-4' | 'anthropic/claude-haiku-5.5' | (string & {});
 
+/** Default for kie.ai. OpenRouter's default model is chosen in worker/src/llm/provider.ts. */
 export const LLM_MODEL_DEFAULT: LlmModel = 'claude-sonnet-4-6';
 
 // ─── LlmInput ─────────────────────────────────────────────────────────────────

@@ -203,5 +203,12 @@ describe('processMemoryJob', () => {
     )
     const transient = new KieAiLlmError('503', { status: 503, isTransient: true })
     await expect(processMemoryJob(failing(transient), job(payload))).rejects.toBe(transient)
+    // WP-WORKER-03: the same split for OpenRouter errors
+    const { OpenRouterLlmError } = await import('../llm/openrouter.js')
+    await expect(
+      processMemoryJob(failing(new OpenRouterLlmError('402', { status: 402, isTransient: false })), job(payload)),
+    ).rejects.toBeInstanceOf(UnrecoverableError)
+    const orTransient = new OpenRouterLlmError('502', { status: 502, isTransient: true })
+    await expect(processMemoryJob(failing(orTransient), job(payload))).rejects.toBe(orTransient)
   })
 })

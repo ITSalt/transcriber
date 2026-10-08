@@ -3,9 +3,10 @@
  * Pino logger mirroring api/ conventions (TECH-005).
  */
 import pino, { type Logger } from 'pino'
+import { describeLlmSettings, resolveLlmSettings } from './llm/provider.js'
 
 export function buildLogger(level: string, isPretty: boolean): Logger {
-  return pino({
+  const log = pino({
     level,
     redact: {
       paths: [
@@ -26,4 +27,7 @@ export function buildLogger(level: string, isPretty: boolean): Logger {
         }
       : {}),
   })
+  // WP-WORKER-03: one startup line; an invalid LLM configuration stops the worker here
+  log.info(describeLlmSettings(resolveLlmSettings()))
+  return log
 }
