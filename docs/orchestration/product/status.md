@@ -21,7 +21,7 @@ CANCELLED (причина).
 <!-- orch:wp -->
 | WP | Модуль | Название | Статус | Сессия | PR | Обновлено |
 |----|--------|----------|--------|--------|----|-----------|
-| [WP-BACKEND-01](work-packages/WP-BACKEND-01-auth-workspaces.md) | backend | Вход по PIN, рабочие пространства и изоляция данных (API+worker) | VERIFIED_TEST | product-backend | https://github.com/ITSalt/transcriber/pull/15 (accepted ba75536568) | 2026-10-08 |
+| [WP-BACKEND-01](work-packages/WP-BACKEND-01-auth-workspaces.md) | backend | Вход по PIN, рабочие пространства и изоляция данных (API+worker) | PROD | product-backend | https://github.com/ITSalt/transcriber/pull/15 (accepted ba75536568) | 2026-10-08 |
 | [WP-FRONTEND-01](work-packages/WP-FRONTEND-01-design-system.md) | frontend | Дизайн-система ITSALT и каркас приложения | PROD | product-frontend | https://github.com/ITSalt/transcriber/pull/9 (accepted 364b6b9fb8) | 2026-10-07 |
 | [WP-FRONTEND-02](work-packages/WP-FRONTEND-02-login-tasks.md) | frontend | Экран входа, переключатель пространств, список задач | ACCEPTED | product-frontend | https://github.com/ITSalt/transcriber/pull/13 (accepted feb98efd46) | 2026-10-07 |
 | [WP-BACKEND-02](work-packages/WP-BACKEND-02-projects-context.md) | backend | Проекты и контекст встречи: в распознавание и в протокол | CANCELLED (заменён WP-API-PROJECTS-01 (D-15, поток api-projects)) | product-backend | — | 2026-10-07 |
@@ -83,6 +83,7 @@ R-n — действие: точная команда одной строкой 
 | ~~P-16~~ | ~~Размер «предыдущего протокола» в контексте встречи (WP-WORKER-01, L4): пользователь может вставить/загрузить до 200 000 символов, и вместе с длинным транскриптом промпт превысит окно модели; kie.ai ответит 400 — постоянная ошибка, встреча станет FAILED с кнопкой «Повторить» без шансов. Варианты: (a) бюджет в рендерере: обрезать <previous_protocol> до N символов (например, 30 000) с пометкой «обрезано»; (b) ограничить размер поля на API/форме (API-PROJECTS-01, WEB-PROJECTS-01); (c) оба. Рекомендую (c): лимит на форме 50 000 символов + страховочная обрезка в воркере; делается небольшими правками в пакетах волны 3 (API-PROJECTS-01) и follow-up воркера~~ | reports/wp-worker-01-review-20261007.md | 2026-10-07 | 2026-10-08: answered by D-25 |
 | ~~R-13~~ | ~~Запустить Neo4j памяти проекта на прод-VM (нужно до доставки WP-WORKER-MEMORY-01; не срочно, но пароль задаётся ДО первого старта): ssh deploy@transcriber.itsalt.ru 'cd /opt/transcrib && PW=$(openssl rand -hex 24) && printf "\nMEMORY_NEO4J_URI=bolt://127.0.0.1:7688\nMEMORY_NEO4J_USER=neo4j\nMEMORY_NEO4J_PASS…=<пароль>\nMEMORY_NEO4J_DATABASE=neo4j\n" "$PW" >> .env && chmod 600 .env && docker compose up -d memory-neo4j && sleep 60 && docker compose ps memory-neo4j && docker inspect -f "{{.HostConfig.Memory}}" $(docker compose ps -q memory-neo4j) && free -h \| head -2' ; expected: контейнер memory-neo4j healthy, Memory=1610612736, свободная память VM не ниже ~1 GB; пароль не присылать — он остаётся только в /opt/transcrib/.env (симлинки api/.env и worker/.env ведут на него) ; then: оркестратор проверит ответ /api/health, следующий деплой выполнит graph:migrate, и WORKER-MEMORY-01 можно доставлять~~ | work-packages/WP-WORKER-MEMORY-01-pipeline.md | 2026-10-07 | 2026-10-07 dropped: текст пункта споткнул линт о секреты (строка вида PASSWORD=…); заменён на R-14 с той же сутью |
 | R-14 | Запустить Neo4j памяти проекта на прод-VM (нужно до доставки WP-WORKER-MEMORY-01; пароль задаётся ДО первого старта контейнера): ssh deploy@transcriber.itsalt.ru 'cd /opt/transcrib && PW=$(openssl rand -hex 24) && { echo; echo MEMORY_NEO4J_URI=bolt://127.0.0.1:7688; echo MEMORY_NEO4J_USER=neo4j; echo MEMORY_NEO4J_PASS"WORD=$PW"; echo MEMORY_NEO4J_DATABASE=neo4j; } >> .env && chmod 600 .env && docker compose up -d memory-neo4j && sleep 60 && docker compose ps memory-neo4j && docker inspect -f "{{.HostConfig.Memory}}" $(docker compose ps -q memory-neo4j) && free -h \| head -2' ; expected: memory-neo4j healthy, Memory=1610612736, свободно на VM не меньше ~1 GB; пароль остаётся только в /opt/transcrib/.env (api/.env и worker/.env — симлинки на него), присылать не нужно ; then: оркестратор проверит health API, следующий деплой выполнит graph:migrate, WORKER-MEMORY-01 можно доставлять | work-packages/WP-WORKER-MEMORY-01-pipeline.md | 2026-10-07 |  |
+| R-15 | Диагностика занятого порта 7475 на прод-VM (R-14 упал: Bind for 127.0.0.1:7475 failed; переменные MEMORY_NEO4J_* в /opt/transcrib/.env уже дописаны — повторно команду R-14 НЕ выполнять): ssh deploy@transcriber.itsalt.ru 'sudo ss -ltnp \| grep -E ":7475\|:7688"; docker ps --format "{{.Names}} {{.Ports}}" \| grep -E "747\|768"; grep -c MEMORY_NEO4J_ /opt/transcrib/.env' ; expected: строка с процессом/контейнером на 7475 и число 4 (переменные дописаны один раз) ; then: оркестратор предложит смену порта браузера memory-neo4j в compose (пакет INFRA-03) или остановку конфликтующего сервиса | work-packages/WP-WORKER-MEMORY-01-pipeline.md | 2026-10-08 |  |
 
 ## Замки
 
@@ -93,7 +94,6 @@ R-n — действие: точная команда одной строкой 
 <!-- orch:locks -->
 | Замок | Репозиторий | Держатель | С | Ждут | Примечание |
 |-------|-------------|-----------|---|------|------------|
-| transcriber:migrations | transcriber | WP-BACKEND-01 | 2026-10-07 20:10Z | — | dispatch |
 | transcriber:shared/** | transcriber | WP-WORKER-MEMORY-01 | 2026-10-07 20:11Z | — | dispatch |
 | transcriber:worker/package.json | transcriber | WP-WORKER-MEMORY-01 | 2026-10-07 20:11Z | — | dispatch |
 | transcriber:web/src/i18n/** | transcriber | WP-FRONTEND-02 | 2026-10-07 21:54Z | — | ретроактивно: пакет изменил root en/ru.json без объявления; замок был свободен |
@@ -127,6 +127,10 @@ R-n — действие: точная команда одной строкой 
 <!-- orch:journal -->
 | Дата | WP | Событие | Подтверждение |
 |------|----|---------|---------------|
+| 2026-10-08 10:15Z | WP-BACKEND-01 | WP-BACKEND-01 PROD: живой сценарий записан; R-14 упал на порту 7475 (переменные уже в .env), открыт R-15 | reports/verify-WP-BACKEND-01-prod-20261008.md |
+| 2026-10-08 10:15Z | WP-BACKEND-01 | lock transcriber:migrations released | orch.py lock |
+| 2026-10-08 10:14Z | — | R-15 opened for owner | work-packages/WP-WORKER-MEMORY-01-pipeline.md |
+| 2026-10-08 10:14Z | WP-BACKEND-01 | WP-BACKEND-01: VERIFIED_TEST -> PROD | verify --env prod fd9ca659f0: reports/verify-WP-BACKEND-01-prod-20261008.md |
 | 2026-10-08 10:13Z | WP-API-PROJECTS-01 | D-23/D-24/D-25 записаны (P-14 a, P-15 a, P-16 b); WP-API-PROJECTS-01 п.2/п.9: лимит предыдущего протокола 50 000 в shared/ | decisions.md D-23..D-25 |
 | 2026-10-08 10:12Z | WP-BACKEND-01 | WP-BACKEND-01: MERGED -> VERIFIED_TEST | verify --env test fd9ca659f0: reports/verify-WP-BACKEND-01-test-20261008.md |
 | 2026-10-08 10:12Z | — | P-16 closed | answered by D-25 |
