@@ -202,6 +202,7 @@ FR-006). Postgres остаётся источником истины; Neo4j хр
 | Переменные окружения api и worker | `MEMORY_NEO4J_URI`, `MEMORY_NEO4J_USER`, `MEMORY_NEO4J_PASSWORD`, `MEMORY_NEO4J_DATABASE` (в `.env` прода, не в репозитории) |
 | Лимиты (D-16) | heap 512m (initial = max), pagecache 256m, transaction total max 256m, потолок контейнера 1536m, `-XX:+ExitOnOutOfMemoryError` |
 | Бэкапы | gzip, ротация 3 копий, проверка свободного места перед дампом |
+| Порты | 7476 (browser) / 7689 (bolt) на 127.0.0.1 (D-26, прежние 7475/7688 заняты `fc-neo4j`) |
 | Не путать | `transcrib-neo4j` (порты 3614/3627) — граф спецификаций для nacl-скиллов, к приложению отношения не имеет |
 
 **Порядок выкладки.** Контейнер Neo4j и переменные окружения появляются раньше кода,
