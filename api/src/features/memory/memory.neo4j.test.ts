@@ -105,7 +105,7 @@ describe.skipIf(!URI)('WP-API-MEMORY-01 on Neo4j', { timeout: 60_000 }, () => {
         events: [{ id: closeEventId, field: 'status', oldValue: 'OPEN', newValue: 'DONE', reviewState: 'PENDING', confidence: 0.95, reason: 'отправил', quote: 'договор отправил' }],
       }],
       newDecisions: [],
-      decisionMentions: [],
+      decisionMentions: [{ code: 'D-1', mention: { quote: 'по договору подряда', startMs: 0, endMs: 1000, speakerLabel: null } }],
       memory: { id: uuid(), summaryMd: '# Сводка v2' },
       now: '2026-10-08T12:00:00.000Z',
     }
