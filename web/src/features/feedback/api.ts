@@ -49,7 +49,7 @@ export class FeedbackApiError extends ApiError {
   constructor(
     status: number,
     message: string,
-    public readonly code?: string,
+    public override readonly code?: string,
   ) {
     super(status, message);
   }
