@@ -39,6 +39,7 @@ import {
   renderProtocolUserMessage,
 } from '../llm/protocol-prompt.js'
 import { buildProtocolContext } from '../llm/protocol-context.js'
+import { guardProtocolParticipants } from '../llm/protocol-guard.js'
 import { buildAsrKeyterms, frozenContextSnapshot, isAsrKeytermsEnabled } from '../asr/keyterms.js'
 import { DEEPGRAM_MODEL } from '../asr/deepgram-adapter.js'
 import { publishMeetingEvent } from '../lib/publisher.js'
@@ -330,6 +331,25 @@ export async function processProtocolGenerationJob(
       language,
       ...(context ? { context } : {}),
     })
+
+    // ── Step 4b: Memory-leak guard (WP-WORKER-07) ────────────────────────────
+    // People in the project card / previous protocol who are nowhere in this transcript are
+    // dropped from "## Участники"; what was dropped goes to the log for diagnostics.
+    const rawSpeakerMap = transcript.speakerMap
+    const guarded = guardProtocolParticipants(
+      llmResult.text,
+      transcriptText,
+      rawSpeakerMap && typeof rawSpeakerMap === 'object' && !Array.isArray(rawSpeakerMap)
+        ? (rawSpeakerMap as Record<string, string | null>)
+        : null,
+    )
+    if (guarded.removed.length > 0) {
+      log.warn(
+        { protocol_generation_job_id, meetingId: meeting.id, removedParticipants: guarded.removed },
+        'Participants absent from the transcript removed from the protocol',
+      )
+      llmResult.text = guarded.markdown
+    }
 
     // ── Step 5: Validate required sections (RQ-023) ──────────────────────────
     const sectionError = validateProtocolSections(llmResult.text, language)

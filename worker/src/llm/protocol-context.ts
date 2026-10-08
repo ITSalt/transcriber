@@ -97,6 +97,24 @@ const UPLOAD_DATE_FORMAT = new Intl.DateTimeFormat('en-CA', {
   day: '2-digit',
 })
 
+/**
+ * WP-WORKER-07: the project summary describes other meetings and the model carried its
+ * facts into the protocol, so <project_memory> keeps only what the model needs for
+ * <carried_tasks>: open tasks and decisions. The provider renders
+ * "Сводка проекта:\n…" first, then "Открытые задачи (…" and/or "Последние решения:"; the
+ * summary is cut at the first of those headers (null when nothing else is left). The summary
+ * stays available in the Memory tab. Done here, not in the provider, so every provider is covered.
+ */
+const SUMMARY_HEADER = 'Сводка проекта:'
+const KEPT_HEADERS = ['Открытые задачи (', 'Последние решения:']
+
+export function stripProjectSummary(memory: string | null): string | null {
+  if (memory === null || !memory.startsWith(SUMMARY_HEADER)) return memory
+  const cuts = KEPT_HEADERS.map((h) => memory.indexOf(`\n\n${h}`)).filter((i) => i >= 0)
+  if (cuts.length === 0) return null
+  return memory.slice(Math.min(...cuts) + 2)
+}
+
 const nonEmpty = (s: string | null | undefined): s is string => typeof s === 'string' && s.trim() !== ''
 
 export interface ProtocolContextInput {
@@ -116,6 +134,7 @@ export interface ProtocolContextInput {
 export function buildProtocolContext(input: ProtocolContextInput): LlmContextSections | undefined {
   const { snapshot, memory, meeting, language } = input
   const l = LABEL[language]
+  const promptMemory = stripProjectSummary(memory)
 
   const participants = snapshot?.participants.map((p) => participantLine(p, language)).join('\n') ?? ''
   const glossary = snapshot?.glossary.map((g) => glossaryLine(g, language)).join('\n') ?? ''
@@ -125,7 +144,7 @@ export function buildProtocolContext(input: ProtocolContextInput): LlmContextSec
     glossary: nonEmpty(glossary) ? glossary : null,
     previous_protocol: snapshot ? previousProtocolText(snapshot) : null,
     notes: nonEmpty(snapshot?.notes) ? snapshot!.notes : null,
-    project_memory: nonEmpty(memory) ? memory : null,
+    project_memory: nonEmpty(promptMemory) ? promptMemory : null,
   }
 
   const meetingType = snapshot?.meeting_type ?? null

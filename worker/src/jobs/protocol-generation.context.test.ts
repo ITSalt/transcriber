@@ -348,3 +348,33 @@ describe('UC-300 prompt archive is best effort (RQ-061)', () => {
     expect(tx.protocolGeneration.create).not.toHaveBeenCalled()
   })
 })
+
+describe('WP-WORKER-07 memory-leak guard in the pipeline', () => {
+  it('removes a participant absent from the transcript before persisting, and logs it', async () => {
+    const { tx, llm, storage } = setup()
+    llm.generate.mockResolvedValueOnce({
+      text: '## Участники\n- Мария\n- Ильнур — разработчик\n- Speaker 2\n\n## Обсуждение\n- x\n\n## Решения\n- y\n\n## Задачи\n- z',
+      model: 'claude-sonnet-4-6' as const,
+      tokensIn: 1,
+      tokensOut: 1,
+    })
+    const log = logger()
+    await processProtocolGenerationJob(job, log as never, { llm, storage, memory: noMemory, redisUrl: 'redis://x', env: {} })
+
+    const saved = tx.protocol.create.mock.calls[0]![0].data.markdownContent as string
+    expect(saved).toContain('- Мария')
+    expect(saved).toContain('- Speaker 2')
+    expect(saved).not.toContain('Ильнур')
+    expect(tx.protocolVersion.create.mock.calls[0]![0].data.markdown).toBe(saved)
+    expect(log.warn).toHaveBeenCalledWith(
+      expect.objectContaining({ removedParticipants: ['- Ильнур — разработчик'] }),
+      expect.stringContaining('removed from the protocol'),
+    )
+  })
+
+  it('leaves a clean protocol byte-for-byte', async () => {
+    const { tx, llm, storage } = setup()
+    await processProtocolGenerationJob(job, logger() as never, { llm, storage, memory: noMemory, redisUrl: 'redis://x', env: {} })
+    expect(tx.protocol.create.mock.calls[0]![0].data.markdownContent).toBe(RU_MD)
+  })
+})
