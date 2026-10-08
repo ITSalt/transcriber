@@ -23,7 +23,7 @@ CANCELLED (причина).
 |----|--------|----------|--------|--------|----|-----------|
 | [WP-BACKEND-01](work-packages/WP-BACKEND-01-auth-workspaces.md) | backend | Вход по PIN, рабочие пространства и изоляция данных (API+worker) | PROD | product-backend | https://github.com/ITSalt/transcriber/pull/15 (accepted ba75536568) | 2026-10-08 |
 | [WP-FRONTEND-01](work-packages/WP-FRONTEND-01-design-system.md) | frontend | Дизайн-система ITSALT и каркас приложения | PROD | product-frontend | https://github.com/ITSalt/transcriber/pull/9 (accepted 364b6b9fb8) | 2026-10-07 |
-| [WP-FRONTEND-02](work-packages/WP-FRONTEND-02-login-tasks.md) | frontend | Экран входа, переключатель пространств, список задач | ACCEPTED | product-frontend | https://github.com/ITSalt/transcriber/pull/13 (accepted 4b4d74a970) | 2026-10-08 |
+| [WP-FRONTEND-02](work-packages/WP-FRONTEND-02-login-tasks.md) | frontend | Экран входа, переключатель пространств, список задач | PROD | product-frontend | https://github.com/ITSalt/transcriber/pull/13 (accepted 4b4d74a970) | 2026-10-08 |
 | [WP-BACKEND-02](work-packages/WP-BACKEND-02-projects-context.md) | backend | Проекты и контекст встречи: в распознавание и в протокол | CANCELLED (заменён WP-API-PROJECTS-01 (D-15, поток api-projects)) | product-backend | — | 2026-10-07 |
 | [WP-FRONTEND-03](work-packages/WP-FRONTEND-03-projects-context-ui.md) | frontend | Проекты и форма контекста перед распознаванием | CANCELLED (заменён WP-WEB-PROJECTS-01 (D-15)) | product-frontend | — | 2026-10-07 |
 | [WP-BACKEND-03](work-packages/WP-BACKEND-03-feedback.md) | backend | История версий протокола и приём обратной связи | CANCELLED (заменён WP-API-FEEDBACK-01 (D-15, поток api-feedback)) | product-backend | — | 2026-10-07 |
@@ -84,6 +84,7 @@ R-n — действие: точная команда одной строкой 
 | ~~R-13~~ | ~~Запустить Neo4j памяти проекта на прод-VM (нужно до доставки WP-WORKER-MEMORY-01; не срочно, но пароль задаётся ДО первого старта): ssh deploy@transcriber.itsalt.ru 'cd /opt/transcrib && PW=$(openssl rand -hex 24) && printf "\nMEMORY_NEO4J_URI=bolt://127.0.0.1:7688\nMEMORY_NEO4J_USER=neo4j\nMEMORY_NEO4J_PASS…=<пароль>\nMEMORY_NEO4J_DATABASE=neo4j\n" "$PW" >> .env && chmod 600 .env && docker compose up -d memory-neo4j && sleep 60 && docker compose ps memory-neo4j && docker inspect -f "{{.HostConfig.Memory}}" $(docker compose ps -q memory-neo4j) && free -h \| head -2' ; expected: контейнер memory-neo4j healthy, Memory=1610612736, свободная память VM не ниже ~1 GB; пароль не присылать — он остаётся только в /opt/transcrib/.env (симлинки api/.env и worker/.env ведут на него) ; then: оркестратор проверит ответ /api/health, следующий деплой выполнит graph:migrate, и WORKER-MEMORY-01 можно доставлять~~ | work-packages/WP-WORKER-MEMORY-01-pipeline.md | 2026-10-07 | 2026-10-07 dropped: текст пункта споткнул линт о секреты (строка вида PASSWORD=…); заменён на R-14 с той же сутью |
 | R-14 | Запустить Neo4j памяти проекта на прод-VM (нужно до доставки WP-WORKER-MEMORY-01; пароль задаётся ДО первого старта контейнера): ssh deploy@transcriber.itsalt.ru 'cd /opt/transcrib && PW=$(openssl rand -hex 24) && { echo; echo MEMORY_NEO4J_URI=bolt://127.0.0.1:7688; echo MEMORY_NEO4J_USER=neo4j; echo MEMORY_NEO4J_PASS"WORD=$PW"; echo MEMORY_NEO4J_DATABASE=neo4j; } >> .env && chmod 600 .env && docker compose up -d memory-neo4j && sleep 60 && docker compose ps memory-neo4j && docker inspect -f "{{.HostConfig.Memory}}" $(docker compose ps -q memory-neo4j) && free -h \| head -2' ; expected: memory-neo4j healthy, Memory=1610612736, свободно на VM не меньше ~1 GB; пароль остаётся только в /opt/transcrib/.env (api/.env и worker/.env — симлинки на него), присылать не нужно ; then: оркестратор проверит health API, следующий деплой выполнит graph:migrate, WORKER-MEMORY-01 можно доставлять | work-packages/WP-WORKER-MEMORY-01-pipeline.md | 2026-10-07 |  |
 | R-15 | Диагностика занятого порта 7475 на прод-VM (R-14 упал: Bind for 127.0.0.1:7475 failed; переменные MEMORY_NEO4J_* в /opt/transcrib/.env уже дописаны — повторно команду R-14 НЕ выполнять): ssh deploy@transcriber.itsalt.ru 'sudo ss -ltnp \| grep -E ":7475\|:7688"; docker ps --format "{{.Names}} {{.Ports}}" \| grep -E "747\|768"; grep -c MEMORY_NEO4J_ /opt/transcrib/.env' ; expected: строка с процессом/контейнером на 7475 и число 4 (переменные дописаны один раз) ; then: оркестратор предложит смену порта браузера memory-neo4j в compose (пакет INFRA-03) или остановку конфликтующего сервиса | work-packages/WP-WORKER-MEMORY-01-pipeline.md | 2026-10-08 |  |
+| R-16 | Включить вход по PIN (после FRONTEND-02 в проде; не блокирует доставку; делать, когда готовы — до этого всё работает как раньше в пространстве «Роман»). Три шага на VM (api/.env — симлинк на /opt/transcrib/.env): (1) ssh deploy@transcriber.itsalt.ru 'cd /opt/transcrib && echo PIN_PEPPER=cf4bba3deff4e0ae4a8a8d97bf2007fc4b17e00314ba3b96bec6afad5cfbc383 >> .env && grep -c ^PIN_PEPPER= .env' → 1 ; (2) ssh -t deploy@transcriber.itsalt.ru 'cd /opt/transcrib && pnpm --filter @transcrib/api run user:create -- --name "Роман" --pin <6 цифр> --workspace "Роман"' → пользователь создан, PIN в выводе не печатается; при необходимости ещё пользователи той же командой; (3) ssh deploy@transcriber.itsalt.ru 'cd /opt/transcrib && sed -i "s/^AUTH_REQUIRED=.*/AUTH_REQUIRED=true/" .env && grep -q ^AUTH_REQUIRED=true .env \|\| echo AUTH_REQUIRED=true >> .env; pm2 restart transcrib-api && sleep 5 && curl -s -o /dev/null -w "%{http_code}" https://transcriber.itsalt.ru/api/meetings' → 401 ; then: откройте https://transcriber.itsalt.ru — экран PIN; оркестратор проверит /me без cookie → 401 и закроет пункт. Откат: AUTH_REQUIRED=false + pm2 restart transcrib-api | work-packages/WP-FRONTEND-02-login-tasks.md | 2026-10-08 |  |
 
 ## Замки
 
@@ -96,7 +97,6 @@ R-n — действие: точная команда одной строкой 
 |-------|-------------|-----------|---|------|------------|
 | transcriber:shared/** | transcriber | WP-WORKER-MEMORY-01 | 2026-10-07 20:11Z | WP-API-PROJECTS-01 | dispatch |
 | transcriber:worker/package.json | transcriber | WP-WORKER-MEMORY-01 | 2026-10-07 20:11Z | — | dispatch |
-| transcriber:web/src/i18n/** | transcriber | WP-FRONTEND-02 | 2026-10-07 21:54Z | — | ретроактивно: пакет изменил root en/ru.json без объявления; замок был свободен |
 
 ## Очередь слияний
 
@@ -115,7 +115,7 @@ R-n — действие: точная команда одной строкой 
 | 7 | transcriber | WP-WORKER-01 | https://github.com/ITSalt/transcriber/pull/17 | WP-WEB-MEMORY-01 | dropped |
 | 8 | transcriber | WP-WORKER-MEMORY-01 | https://github.com/ITSalt/transcriber/pull/16 | WP-WORKER-01 | dropped |
 | 9 | transcriber | WP-BACKEND-01 | https://github.com/ITSalt/transcriber/pull/15 | — | merged |
-| 10 | transcriber | WP-FRONTEND-02 | https://github.com/ITSalt/transcriber/pull/13 | WP-BACKEND-01 | queued |
+| 10 | transcriber | WP-FRONTEND-02 | https://github.com/ITSalt/transcriber/pull/13 | WP-BACKEND-01 | merged |
 | 11 | transcriber | WP-WORKER-01 | https://github.com/ITSalt/transcriber/pull/17 | WP-FRONTEND-02 | queued |
 | 12 | transcriber | WP-WORKER-MEMORY-01 | https://github.com/ITSalt/transcriber/pull/16 | WP-WORKER-01 | queued |
 | 13 | transcriber | WP-WEB-MEMORY-01 | https://github.com/ITSalt/transcriber/pull/14 | WP-WORKER-MEMORY-01 | queued |
@@ -127,6 +127,12 @@ R-n — действие: точная команда одной строкой 
 <!-- orch:journal -->
 | Дата | WP | Событие | Подтверждение |
 |------|----|---------|---------------|
+| 2026-10-08 10:27Z | WP-FRONTEND-02 | WP-FRONTEND-02 PROD: живой сценарий (шапка, список задач, /login→список, 404) записан; R-16 — включение входа | reports/verify-WP-FRONTEND-02-prod-20261008.md |
+| 2026-10-08 10:27Z | — | R-16 opened for owner | work-packages/WP-FRONTEND-02-login-tasks.md |
+| 2026-10-08 10:27Z | WP-FRONTEND-02 | WP-FRONTEND-02: VERIFIED_TEST -> PROD | verify --env prod ae76dda3e3: reports/verify-WP-FRONTEND-02-prod-20261008.md |
+| 2026-10-08 10:25Z | WP-FRONTEND-02 | WP-FRONTEND-02: MERGED -> VERIFIED_TEST | verify --env test ae76dda3e3: reports/verify-WP-FRONTEND-02-test-20261008.md |
+| 2026-10-08 10:22Z | WP-FRONTEND-02 | WP-FRONTEND-02 merged in the merge queue; released transcriber:web/src/i18n/** | orch.py deliver: ae76dda3e3 |
+| 2026-10-08 10:22Z | WP-FRONTEND-02 | WP-FRONTEND-02: ACCEPTED -> MERGED | gh pr merge --squash: ae76dda3e3 (https://github.com/ITSalt/transcriber/pull/13) |
 | 2026-10-08 10:22Z | WP-FRONTEND-02 | WP-FRONTEND-02: accepted at 4b4d74a97053accbbd0d2d4a11b452fc16c0f91b | report reports/wp-frontend-02-review-20261008-r2.md |
 | 2026-10-08 10:21Z | WP-FRONTEND-02 | WP-FRONTEND-02: ACCEPTED -> ACCEPTED | reports/wp-frontend-02-review-20261008-r2.md: rebase на main, diff по web/ пуст, CI run 37762486203 pass на 4b4d74a970; graph: checked |
 | 2026-10-08 10:21Z | WP-FRONTEND-02 | WP-FRONTEND-02 раунд 2 (rebase) ACCEPTED на 4b4d74a970; graph: checked | reports/wp-frontend-02-review-20261008-r2.md |
