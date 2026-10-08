@@ -20,6 +20,9 @@ enum MeetingStatus {
   AWAITING_START
   TRANSCRIBING
   TRANSCRIBED
+  /// FR-004 / D-38: recognised, waiting for the speaker confirmation (PUT /api/meetings/:id/speakers).
+  /// Set by the worker (WP-WORKER-06) only for meetings started with a context.
+  AWAITING_SPEAKERS
   GENERATING_PROTOCOL
   PROTOCOL_READY
   EDITED
@@ -122,8 +125,8 @@ model Meeting {
   /// FR-004: optional project inside the workspace.
   projectId   String? @map("project_id") @db.Uuid
 
-  workspace Workspace  @relation(fields: [workspaceId], references: [id], onDelete: Restrict)
-  project   Project?   @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Restrict)
+  project   Project?  @relation(fields: [projectId], references: [id], onDelete: SetNull)
 
   recording           Recording?
   transcriptionJob    TranscriptionJob?
@@ -179,20 +182,24 @@ model TranscriptionJob {
 
 /// mod-transcription — ASR output
 model Transcript {
-  id           String           @id @default(uuid()) @db.Uuid
-  meetingId    String           @unique @map("meeting_id") @db.Uuid
+  id                  String           @id @default(uuid()) @db.Uuid
+  meetingId           String           @unique @map("meeting_id") @db.Uuid
   /// JSONB: { [speakerId: string]: string } — speaker label overrides
-  speakerMap   Json             @default("{}") @map("speaker_map") @db.JsonB
+  speakerMap          Json             @default("{}") @map("speaker_map") @db.JsonB
   /// JSONB array of Deepgram word/utterance segments
-  segmentsBlob Json             @default("[]") @map("segments_blob") @db.JsonB
-  rawText      String?          @map("raw_text")
+  segmentsBlob        Json             @default("[]") @map("segments_blob") @db.JsonB
+  rawText             String?          @map("raw_text")
+  /// D-38: the confirmation request as the author sent it (PUT /speakers body.mapping, with
+  /// participant ids). NULL until confirmed. `speakerMap` stays the label → name map the worker reads.
+  speakerMapping      Json?            @map("speaker_mapping") @db.JsonB
+  speakersConfirmedAt DateTime?        @map("speakers_confirmed_at")
   /// RQ-018 / BRQ-005: the language actually spoken in the recording, as reported by ASR
   /// (or the confirmed hint when the author declared one). RU or EN only; NULL when the
   /// provider reported neither. NEVER 'AUTO'. Records the recording — it does NOT select
   /// the protocol prompt template, which is driven by Meeting.language (RQ-022 / DEC-003).
-  language     MeetingLanguage?
-  createdAt    DateTime         @default(now()) @map("created_at")
-  updatedAt    DateTime         @updatedAt @map("updated_at")
+  language            MeetingLanguage?
+  createdAt           DateTime         @default(now()) @map("created_at")
+  updatedAt           DateTime         @updatedAt @map("updated_at")
 
   meeting Meeting @relation(fields: [meetingId], references: [id], onDelete: Cascade)
 

@@ -10,6 +10,8 @@ export const MeetingStatus = z.enum([
   'AWAITING_START',
   'TRANSCRIBING',
   'TRANSCRIBED',
+  // FR-004 / D-38: recognised, waiting for the author to confirm speakers (PUT /api/meetings/:id/speakers)
+  'AWAITING_SPEAKERS',
   'GENERATING_PROTOCOL',
   'PROTOCOL_READY',
   'EDITED',
