@@ -29,6 +29,7 @@ interface StatusSectionProps {
  * RQ-005 — Action links gated by status:
  * - 'View transcript': enabled when status in
  *   {TRANSCRIBED, GENERATING_PROTOCOL, PROTOCOL_READY, EDITED}
+ *   (not AWAITING_SPEAKERS: GET /transcript answers 409 STATUS_NOT_READY there)
  * - 'Review/Edit protocol': enabled when status in {PROTOCOL_READY, EDITED}
  * - 'Export PDF': enabled when status in {PROTOCOL_READY, EDITED}
  */

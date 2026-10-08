@@ -35,6 +35,7 @@
       "UPLOADED": "Загружено",
       "TRANSCRIBING": "Транскрибирование",
       "TRANSCRIBED": "Транскрибировано",
+      "AWAITING_SPEAKERS": "Ожидает подтверждения спикеров",
       "GENERATING_PROTOCOL": "Генерация протокола",
       "PROTOCOL_READY": "Протокол готов",
       "EDITED": "Отредактировано",

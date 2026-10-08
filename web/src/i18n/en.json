@@ -35,6 +35,7 @@
       "UPLOADED": "Uploaded",
       "TRANSCRIBING": "Transcribing",
       "TRANSCRIBED": "Transcribed",
+      "AWAITING_SPEAKERS": "Awaiting speakers",
       "GENERATING_PROTOCOL": "Generating Protocol",
       "PROTOCOL_READY": "Protocol Ready",
       "EDITED": "Edited",
