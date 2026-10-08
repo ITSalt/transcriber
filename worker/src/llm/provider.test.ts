@@ -1,7 +1,7 @@
 /**
  * WP-WORKER-03 — provider/model selection from env (D-32).
  */
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { KieAiCompletionProvider } from '../memory/kieai-completion.js'
 import { KieAiLlmProvider } from './kieai.js'
 import { OpenRouterLlmProvider } from './openrouter.js'
@@ -54,7 +54,7 @@ describe('resolveLlmSettings', () => {
 
   it('startup line', () => {
     expect(describeLlmSettings(resolveLlmSettings({ OPENROUTER_API_KEY: 'or' }))).toBe(
-      'llm provider: openrouter model: anthropic/claude-haiku-5.5 proxy: direct',
+      'llm provider: openrouter model: anthropic/claude-haiku-5.5 proxy: direct reasoning: off max_tokens: 8192',
     )
   })
 
@@ -63,7 +63,7 @@ describe('resolveLlmSettings', () => {
     const s = resolveLlmSettings({ OPENROUTER_API_KEY: 'or', OUTBOUND_PROXY_URL: 'http://user:s3cret@proxy.test:3128' })
     expect(s).toMatchObject({ useProxy: true, proxy: 'http://***:***@proxy.test:3128' })
     const line = describeLlmSettings(s)
-    expect(line).toBe('llm provider: openrouter model: anthropic/claude-haiku-5.5 proxy: http://***:***@proxy.test:3128')
+    expect(line).toBe('llm provider: openrouter model: anthropic/claude-haiku-5.5 proxy: http://***:***@proxy.test:3128 reasoning: off max_tokens: 8192')
     expect(line).not.toContain('s3cret')
   })
 
@@ -87,6 +87,33 @@ describe('resolveLlmSettings', () => {
   })
 })
 
+describe('LLM_REASONING / LLM_MAX_TOKENS (WP-WORKER-05)', () => {
+  const or = { OPENROUTER_API_KEY: 'or' }
+
+  it('defaults: reasoning off, 8192; blank = unset', () => {
+    expect(resolveLlmSettings(or)).toMatchObject({ reasoning: 'off', maxTokens: 8192 })
+    expect(resolveLlmSettings({ ...or, LLM_REASONING: '', LLM_MAX_TOKENS: '' })).toMatchObject({ reasoning: 'off', maxTokens: 8192 })
+  })
+
+  it('valid values are taken; the startup line shows them', () => {
+    const s = resolveLlmSettings({ ...or, LLM_REASONING: 'low', LLM_MAX_TOKENS: '16000' })
+    expect(s).toMatchObject({ reasoning: 'low', maxTokens: 16000 })
+    expect(describeLlmSettings(s)).toContain('reasoning: low max_tokens: 16000')
+  })
+
+  it('invalid values are configuration errors at start', () => {
+    for (const bad of [{ LLM_REASONING: 'max' }, { LLM_REASONING: 'on' }, { LLM_MAX_TOKENS: '255' }, { LLM_MAX_TOKENS: 'lots' }, { LLM_MAX_TOKENS: '1.5' }]) {
+      expect(() => resolveLlmSettings({ ...or, ...bad })).toThrowError(LlmConfigError)
+    }
+    expect(() => resolveLlmSettings({ ...or, LLM_REASONING: 'max' })).toThrowError(/LLM_REASONING/)
+    expect(() => resolveLlmSettings({ ...or, LLM_MAX_TOKENS: '255' })).toThrowError(/LLM_MAX_TOKENS/)
+  })
+
+  it('the kie.ai startup line has no reasoning / max_tokens', () => {
+    expect(describeLlmSettings(resolveLlmSettings({ KIE_API_KEY: 'k' }))).toBe('llm provider: kieai model: claude-sonnet-4-6 proxy: direct')
+  })
+})
+
 describe('factories', () => {
   it('build the adapter the settings name, for both interfaces', () => {
     const or = { OPENROUTER_API_KEY: 'or' }
@@ -102,5 +129,38 @@ describe('factories', () => {
     const bad = { OPENROUTER_API_KEY: 'or', OUTBOUND_PROXY_URL: 'socks5://p:1080' }
     expect(() => createLlmProvider(bad)).toThrowError(LlmConfigError)
     expect(() => createCompletionProvider(bad)).toThrowError(LlmConfigError)
+  })
+
+  // WP-WORKER-05 (review round 1): env → factory → constructor → request body
+  describe('LLM_REASONING / LLM_MAX_TOKENS reach the OpenRouter request body', () => {
+    const env = { OPENROUTER_API_KEY: 'or', LLM_REASONING: 'low', LLM_MAX_TOKENS: '12000' }
+    const okReply = () =>
+      vi.fn(async () => new Response(JSON.stringify({ choices: [{ message: { content: 'x' }, finish_reason: 'stop' }] }), { status: 200 }))
+    const bodyOf = (f: ReturnType<typeof vi.fn>) => JSON.parse((f.mock.calls[0] as unknown as [string, RequestInit])[1].body as string)
+
+    afterEach(() => {
+      vi.unstubAllGlobals()
+    })
+
+    it('createLlmProvider: generate()', async () => {
+      const f = okReply()
+      vi.stubGlobal('fetch', f)
+      await createLlmProvider(env).generate({ prompt: 'p', language: 'EN' })
+      expect(bodyOf(f)).toMatchObject({ reasoning: { effort: 'low' }, max_tokens: 12000 })
+    })
+
+    it('createCompletionProvider: complete() without maxTokens', async () => {
+      const f = okReply()
+      vi.stubGlobal('fetch', f)
+      await createCompletionProvider(env).complete({ system: 's', user: 'u' })
+      expect(bodyOf(f)).toMatchObject({ reasoning: { effort: 'low' }, max_tokens: 12000 })
+    })
+
+    it('defaults reach the body too: reasoning disabled, 8192', async () => {
+      const f = okReply()
+      vi.stubGlobal('fetch', f)
+      await createLlmProvider({ OPENROUTER_API_KEY: 'or' }).generate({ prompt: 'p', language: 'EN' })
+      expect(bodyOf(f)).toMatchObject({ reasoning: { enabled: false }, max_tokens: 8192 })
+    })
   })
 })

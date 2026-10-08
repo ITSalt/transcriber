@@ -18,7 +18,7 @@ const ok = (over: Record<string, unknown> = {}) => ({
 })
 const reply = (status: number, body: unknown) =>
   vi.fn(async () => new Response(typeof body === 'string' ? body : JSON.stringify(body), { status }))
-const provider = (opts: { timeoutMs?: number } = {}) =>
+const provider = (opts: Partial<ConstructorParameters<typeof OpenRouterLlmProvider>[0] & object> = {}) =>
   new OpenRouterLlmProvider({ apiKey: KEY, baseUrl: 'https://or.test/api/v1', ...opts })
 const callOf = (f: ReturnType<typeof vi.fn>) => f.mock.calls[0] as unknown as [string, RequestInit]
 
@@ -27,7 +27,7 @@ afterEach(() => {
 })
 
 describe('OpenRouterLlmProvider.generate', () => {
-  it('posts system+user messages with max_tokens 4096, Bearer and attribution headers', async () => {
+  it('posts system+user messages with max_tokens 8192, reasoning off, Bearer and attribution headers', async () => {
     const f = reply(200, ok())
     vi.stubGlobal('fetch', f)
     await provider().generate({ prompt: 'TRANSCRIPT', language: 'EN' })
@@ -42,7 +42,7 @@ describe('OpenRouterLlmProvider.generate', () => {
     })
     const body = JSON.parse(init.body as string)
     expect(body.model).toBe('anthropic/claude-haiku-5.5')
-    expect(body.max_tokens).toBe(4096)
+    expect(body.max_tokens).toBe(8192)
     expect(body.messages.map((m: { role: string }) => m.role)).toEqual(['system', 'user'])
     expect(body.messages[1].content).toContain('TRANSCRIPT')
     expect(body.response_format).toBeUndefined()
@@ -166,7 +166,7 @@ describe('OpenRouterCompletionProvider.complete', () => {
     const res = await provider().complete({ system: 's', user: 'u' })
     expect(res.text).toBe('```\nkeep\n```')
     const body = JSON.parse(callOf(f)[1].body as string)
-    expect(body.max_tokens).toBe(4096)
+    expect(body.max_tokens).toBe(8192)
     expect(body.response_format).toBeUndefined()
   })
 
@@ -195,7 +195,78 @@ describe('prompt parity with kie.ai (only the transport differs)', () => {
 
     expect(or.messages[0].content).toBe(kie.system)
     expect(or.messages[1].content).toBe(kie.messages[0].content)
-    expect(or.max_tokens).toBe(kie.max_tokens)
+    // WP-WORKER-05: the OpenRouter limit is LLM_MAX_TOKENS (8192); the kie.ai default stays 4096
+    expect(or.max_tokens).toBe(8192)
+    expect(kie.max_tokens).toBe(4096)
+  })
+})
+
+describe('reasoning, max_tokens and empty-reply diagnostics (WP-WORKER-05)', () => {
+  const bodyOf = (f: ReturnType<typeof vi.fn>) => JSON.parse(callOf(f)[1].body as string)
+  const exhausted = (over: Record<string, unknown> = {}) =>
+    ok({
+      choices: [{ message: { content: null }, finish_reason: 'length' }],
+      usage: { prompt_tokens: 34441, completion_tokens: 4096, completion_tokens_details: { reasoning_tokens: 4096 } },
+      ...over,
+    })
+
+  it('reasoning is {enabled:false} by default and {effort} when set', async () => {
+    const f = reply(200, ok())
+    vi.stubGlobal('fetch', f)
+    await provider().generate({ prompt: 'p', language: 'EN' })
+    expect(bodyOf(f).reasoning).toEqual({ enabled: false })
+
+    const g = reply(200, ok())
+    vi.stubGlobal('fetch', g)
+    await provider({ reasoning: 'low' }).generate({ prompt: 'p', language: 'EN' })
+    expect(bodyOf(g).reasoning).toEqual({ effort: 'low' })
+  })
+
+  it('max_tokens: the option for generate(), input.maxTokens ?? option for complete()', async () => {
+    const f = reply(200, ok())
+    vi.stubGlobal('fetch', f)
+    await provider({ maxTokens: 12000 }).generate({ prompt: 'p', language: 'EN' })
+    expect(bodyOf(f).max_tokens).toBe(12000)
+
+    const g = reply(200, ok())
+    vi.stubGlobal('fetch', g)
+    await provider({ maxTokens: 12000 }).complete({ system: 's', user: 'u', maxTokens: 4096 })
+    expect(bodyOf(g).max_tokens).toBe(4096)
+
+    const h = reply(200, ok())
+    vi.stubGlobal('fetch', h)
+    await provider({ maxTokens: 12000 }).complete({ system: 's', user: 'u' })
+    expect(bodyOf(h).max_tokens).toBe(12000)
+  })
+
+  it('finish_reason length with null content → permanent error naming the limit and reasoning_tokens', async () => {
+    vi.stubGlobal('fetch', reply(200, exhausted()))
+    const err = await provider({ maxTokens: 4096 }).generate({ prompt: 'p', language: 'EN' }).catch((e: unknown) => e)
+    expect(err).toBeInstanceOf(OpenRouterLlmError)
+    expect(isTransientLlmError(err)).toBe(false)
+    expect((err as Error).message).toBe(
+      'OpenRouter: max_tokens (4096) exhausted before any content (reasoning_tokens=4096, completion_tokens=4096) — lower LLM_REASONING or raise LLM_MAX_TOKENS',
+    )
+  })
+
+  it('another empty reply keeps the old text and adds finish_reason', async () => {
+    vi.stubGlobal('fetch', reply(200, ok({ choices: [{ message: { content: ' ' }, finish_reason: 'stop' }] })))
+    const err = await provider().generate({ prompt: 'p', language: 'EN' }).catch((e: unknown) => e)
+    expect((err as Error).message).toBe('OpenRouter API returned an empty or missing completion text (finish_reason=stop)')
+    vi.stubGlobal('fetch', reply(200, { id: 'x' }))
+    const err2 = await provider().generate({ prompt: 'p', language: 'EN' }).catch((e: unknown) => e)
+    expect((err2 as Error).message).toContain('empty or missing completion text (finish_reason=unknown)')
+  })
+
+  it('a normal reply maps as before (tokensOut = completion_tokens) and logs reasoning_tokens', async () => {
+    const log = vi.fn()
+    vi.stubGlobal(
+      'fetch',
+      reply(200, ok({ usage: { prompt_tokens: 100, completion_tokens: 50, completion_tokens_details: { reasoning_tokens: 7 } } })),
+    )
+    const res = await provider({ log }).generate({ prompt: 'p', language: 'EN' })
+    expect(res).toMatchObject({ text: '# Protocol', tokensIn: 100, tokensOut: 50 })
+    expect(log).toHaveBeenCalledWith('openrouter completion', expect.objectContaining({ tokensOut: 50, reasoningTokens: 7, finishReason: 'stop' }))
   })
 })
 

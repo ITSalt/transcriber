@@ -16,6 +16,10 @@ export const LlmEnvSchema = z.object({
   KIE_API_KEY: z.preprocess(blankAsUnset, z.string().optional()),
   /** per-request timeout of the LLM call; a timeout is a transient failure */
   LLM_TIMEOUT_MS: z.preprocess(blankAsUnset, z.coerce.number().int().min(1000).default(180_000)),
+  /** OpenRouter reasoning: off = disabled (default), else the effort level (WP-WORKER-05) */
+  LLM_REASONING: z.preprocess(blankAsUnset, z.enum(['off', 'low', 'medium', 'high']).default('off')),
+  /** OpenRouter max_tokens of protocol generation (WP-WORKER-05) */
+  LLM_MAX_TOKENS: z.preprocess(blankAsUnset, z.coerce.number().int().min(256).default(8192)),
 })
 
 const EnvSchema = LlmEnvSchema.extend({
