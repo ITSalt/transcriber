@@ -150,6 +150,7 @@ R-n — действие: точная команда одной строкой 
 <!-- orch:journal -->
 | Дата | WP | Событие | Подтверждение |
 |------|----|---------|---------------|
+| 2026-10-08 16:20Z | WP-WORKER-03 | D-32: ключ OpenRouter из materials/transcriber.txt (вне git) проверен (/auth/key: платный тариф, лимит 50 USD, расход 0) и дописан в /opt/transcrib/.env как OPENROUTER_API_KEY + LLM_MODEL=anthropic/claude-haiku-5.5 (chmod 600; код использует после доставки WP-WORKER-03). Проба модели через OpenRouter: 200 за 1,4 с (kie.ai — 35 с); kie.ai повтор 12.05 упал второй раз 16:05Z | ssh grep -c OPENROUTER_API_KEY /opt/transcrib/.env → 1; curl openrouter chat/completions 200 |
 | 2026-10-08 16:09Z | WP-WORKER-03 | WP-WORKER-03: READY -> DISPATCHING | start command handed to the owner; model sonnet; locks transcriber:shared/**, transcriber:shared/src/llm/ILlmProvider.ts |
 | 2026-10-08 16:09Z | WP-WORKER-03 | WP-WORKER-03: DRAFT -> READY | пакет написан по фактам kie.ai 500 ×7, D-32, A-11 |
 | 2026-10-08 16:09Z | — | A-11 recorded | — |
