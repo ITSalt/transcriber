@@ -26,7 +26,7 @@
 | 2026-10-08 17:25Z | WP-WORKER-04 | https://github.com/ITSalt/transcriber/pull/25 | 0f14bc7de397 | deploy-production.yml: run https://github.com/ITSalt/transcriber/actions/runs/37816432764 succeeded | PASS | — | — | — | влит --squash; после сбоя по D-34 |
 | 2026-10-08 17:50Z | WP-WORKER-05 | https://github.com/ITSalt/transcriber/pull/26 | 06068a32e3ed | deploy-production.yml: run https://github.com/ITSalt/transcriber/actions/runs/37819709928 succeeded | PASS | — | — | — | влит --squash |
 | 2026-10-08 19:30Z | WP-WORKER-07 | https://github.com/ITSalt/transcriber/pull/27 | b23db1bf9fa7 | deploy-production.yml: run https://github.com/ITSalt/transcriber/actions/runs/37832470257 succeeded | PASS | — | — | — | влит --squash |
-| 2026-10-08 19:38Z | WP-WORKER-MEMORY-02 | https://github.com/ITSalt/transcriber/pull/28 | 3732f6f5f104 | — | — | — | — | — | влит --squash |
+| 2026-10-08 19:38Z | WP-WORKER-MEMORY-02 | https://github.com/ITSalt/transcriber/pull/28 | 3732f6f5f104 | deploy-production.yml: run https://github.com/ITSalt/transcriber/actions/runs/37833459389 succeeded | PASS | — | — | — | влит --squash |
 
 ## Релизы
 
