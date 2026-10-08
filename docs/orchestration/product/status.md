@@ -52,7 +52,7 @@ CANCELLED (причина).
 | [WP-WORKER-06](work-packages/WP-WORKER-06-speakers-gate.md) | worker | Воркер: остановка на AWAITING_SPEAKERS, имена спикеров в транскрипте и промпте | READY | product-worker | — | 2026-10-08 |
 | [WP-FRONTEND-06](work-packages/WP-FRONTEND-06-speakers.md) | frontend | Экран подтверждения спикеров перед генерацией протокола | READY | product-frontend | — | 2026-10-08 |
 | [WP-WORKER-07](work-packages/WP-WORKER-07-memory-leak-guard.md) | worker | Защита протокола от утечки памяти проекта и чужих участников | ACCEPTED | product-worker | https://github.com/ITSalt/transcriber/pull/27 (accepted ade44c9c31) | 2026-10-08 |
-| [WP-WORKER-MEMORY-02](work-packages/WP-WORKER-MEMORY-02-hygiene.md) | worker-memory | Гигиена памяти проекта: дедуп решений, валидация исполнителей, сводка по продуктам | REVIEW | product-worker-memory | https://github.com/ITSalt/transcriber/pull/28 | 2026-10-08 |
+| [WP-WORKER-MEMORY-02](work-packages/WP-WORKER-MEMORY-02-hygiene.md) | worker-memory | Гигиена памяти проекта: дедуп решений, валидация исполнителей, сводка по продуктам | REVISE | product-worker-memory | https://github.com/ITSalt/transcriber/pull/28 | 2026-10-08 |
 
 ## Ждёт владельца
 
@@ -167,6 +167,7 @@ R-n — действие: точная команда одной строкой 
 <!-- orch:journal -->
 | Дата | WP | Событие | Подтверждение |
 |------|----|---------|---------------|
+| 2026-10-08 19:29Z | WP-WORKER-MEMORY-02 | WP-WORKER-MEMORY-02: REVIEW -> REVISE | reports/wp-worker-memory-02-review-20261008.md: M-1 страховка Jaccard теряет решения с другим числом/отрицанием |
 | 2026-10-08 19:28Z | WP-WORKER-07 | WP-WORKER-07 queued for merge (sequential) | https://github.com/ITSalt/transcriber/pull/27 |
 | 2026-10-08 19:28Z | WP-WORKER-07 | WP-WORKER-07: accepted at ade44c9c31d2ee2aa473a1c90862a43a17083435 | report reports/wp-worker-07-review-20261008-r2.md |
 | 2026-10-08 19:28Z | WP-WORKER-07 | WP-WORKER-07: REVIEW -> ACCEPTED | ade44c9c31; reports/wp-worker-07-review-20261008-r2.md |
