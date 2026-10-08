@@ -1,0 +1,61 @@
+{
+  "title": "Meeting context",
+  "intro": "Optional. Context helps recognition spell names and terms correctly and makes the protocol more accurate. It cannot be changed after recognition starts.",
+  "fromProject": "from project",
+  "fromMeeting": "this meeting",
+  "project": {
+    "label": "Project (optional)",
+    "none": "No project",
+    "participants": "Project participants",
+    "glossary": "Project glossary"
+  },
+  "additions": { "title": "Additions for this meeting" },
+  "type": {
+    "label": "Meeting type",
+    "none": "Not specified",
+    "NEGOTIATION": "Negotiation",
+    "STATUS": "Status meeting",
+    "PLANNING": "Planning",
+    "INTERVIEW": "Interview",
+    "OTHER": "Other"
+  },
+  "goal": "Meeting goal",
+  "agenda": "Agenda",
+  "extraParticipants": "Additional participants",
+  "extraTerms": "Additional terms",
+  "addToMeeting": "Add to this meeting",
+  "addToProject": "Add to project",
+  "addToProjectError": "Could not add to the project.",
+  "limitHint": "Up to {{max}} names and terms are passed to recognition; the rest only goes into the protocol.",
+  "limitExceeded": "Currently {{count}}: the extras will not reach recognition.",
+  "previous": {
+    "label": "Previous protocol",
+    "project": "Last protocol of the project",
+    "paste": "Paste text or upload .md / .txt",
+    "none": "Do not use",
+    "needProject": "Choose a project to use its last protocol.",
+    "fromMeeting": "{{title}} (version {{version}})",
+    "unavailable": "The project has no protocol yet.",
+    "pastePlaceholder": "Paste the previous protocol (Markdown)",
+    "file": "Protocol file (.md / .txt)",
+    "tooLong": "The file is too long (max 200 000 characters)."
+  },
+  "notes": "Notes",
+  "start": {
+    "button": "Start recognition",
+    "hintWaiting": "Available once the file is uploaded.",
+    "hintReady": "File uploaded. Fill in the context if needed and start recognition.",
+    "hintSkip": "The context is empty — recognition will start without it.",
+    "starting": "Starting…",
+    "error": "Could not start recognition. Try again."
+  },
+  "snapshot": {
+    "open": "Used context",
+    "title": "Context used for recognition",
+    "frozen": "Snapshot fixed at the start of recognition; later project edits do not change it.",
+    "draft": "Draft: recognition has not started yet.",
+    "participants": "Participants",
+    "glossary": "Glossary",
+    "hash": "Snapshot"
+  }
+}

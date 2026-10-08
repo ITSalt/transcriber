@@ -10,6 +10,7 @@
 import {
   S3Client,
   GetObjectCommand,
+  PutObjectCommand,
   NoSuchKey,
   NotFound,
 } from '@aws-sdk/client-s3'
@@ -46,13 +47,15 @@ export function workerS3ConfigFromEnv(): WorkerS3Config {
   }
 }
 
-// ─── Minimal IStorage for worker (read-only path) ────────────────────────────
+// ─── Minimal IStorage for worker ─────────────────────────────────────────────
 
 /**
- * Minimal read-only storage adapter for the worker.
- * Only implements getObjectStream and URI helpers needed by UC-200.
+ * Minimal storage adapter for the worker: reads for UC-200, plus small writes
+ * (UC-300 archives the rendered protocol prompt, RQ-051 / RQ-061).
  */
-export class WorkerS3Storage implements Pick<IStorage, 'getObjectStream' | 'storageUriToKey' | 'keyToStorageUri'> {
+export class WorkerS3Storage
+  implements Pick<IStorage, 'getObjectStream' | 'putObject' | 'storageUriToKey' | 'keyToStorageUri'>
+{
   private readonly client: S3Client
   private readonly bucket: string
 
@@ -101,6 +104,20 @@ export class WorkerS3Storage implements Pick<IStorage, 'getObjectStream' | 'stor
         throw new StorageNotFoundError(key)
       }
       throw new StorageError(`Failed to get object "${key}"`, err)
+    }
+  }
+
+  /**
+   * Single-request PUT of a small object. Only buffers: the worker never streams
+   * uploads (the recordings are uploaded by the browser straight to storage).
+   */
+  async putObject(key: string, body: Uint8Array, contentType: string): Promise<void> {
+    try {
+      await this.client.send(
+        new PutObjectCommand({ Bucket: this.bucket, Key: key, Body: body, ContentType: contentType }),
+      )
+    } catch (err) {
+      throw new StorageError(`Failed to put object "${key}"`, err)
     }
   }
 

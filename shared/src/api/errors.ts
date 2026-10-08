@@ -27,6 +27,8 @@ export const PROGRAM_ERRORS = {
   MEETING_NOT_AWAITING_START: 409,
   CONTEXT_FROZEN: 409,
   PREVIOUS_PROTOCOL_UNAVAILABLE: 422,
+  /** D-25: the project's last protocol exceeds PREVIOUS_PROTOCOL_MAX_CHARS — never truncated */
+  PREVIOUS_PROTOCOL_TOO_LONG: 422,
   // FR-005 — versions / feedback (WP-API-FEEDBACK-01)
   PROTOCOL_VERSION_NOT_FOUND: 404,
   FEEDBACK_FILE_REQUIRED: 400,
@@ -56,6 +58,7 @@ export const PROGRAM_ERROR_MESSAGES: Record<ProgramErrorCode, string> = {
   MEETING_NOT_AWAITING_START: 'Распознавание уже запущено',
   CONTEXT_FROZEN: 'Контекст нельзя менять после старта распознавания',
   PREVIOUS_PROTOCOL_UNAVAILABLE: 'В проекте ещё нет протокола',
+  PREVIOUS_PROTOCOL_TOO_LONG: 'Протокол проекта длиннее 50 000 символов — выберите «без протокола» или вставьте фрагмент',
   PROTOCOL_VERSION_NOT_FOUND: 'Такой версии протокола нет',
   FEEDBACK_FILE_REQUIRED: 'Приложите файл',
   FEEDBACK_TEXT_REQUIRED: 'Напишите текст',

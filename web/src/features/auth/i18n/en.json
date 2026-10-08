@@ -1,0 +1,11 @@
+{
+  "title": "Sign in",
+  "hint": "Enter your 6-digit PIN",
+  "digit": "Digit {{n}} of 6",
+  "invalidPin": "Wrong PIN",
+  "failed": "Could not sign in. Try again",
+  "workspace": "Workspace",
+  "personal": "personal",
+  "userMenu": "User menu",
+  "logout": "Sign out"
+}

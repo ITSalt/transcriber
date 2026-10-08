@@ -1,5 +1,16 @@
 # Changelog — .tl/
 
+## [2026-10-08] FR-004 — projects and meeting context API (WP-API-PROJECTS-01)
+
+- **API:** `api/src/features/projects` (CRUD of projects, participants, glossary; `last-protocol`)
+  and `api/src/features/context` (`GET/PUT /api/meetings/:id/context`, `POST /api/meetings/:id/start`).
+  `/start` freezes the snapshot (project card + meeting additions + previous protocol text) with
+  `snapshot_hash`, enqueues the existing `PENDING` transcription job; a repeat is 409.
+- **Shared:** `PREVIOUS_PROTOCOL_MAX_CHARS` 200 000 → 50 000 (D-25); new error code
+  `PREVIOUS_PROTOCOL_TOO_LONG` (422).
+- **Graph (`/nacl-sa-feature`):** RQ-047 amended, RQ-064 new, DEC-011 new, `MeetingContext-A08`
+  limit, UC-502/UC-503 → spec_version 2. FR file: `.tl/feature-requests/FR-004-projects-meeting-context.md`.
+
 ## [2026-10-07] FR-003..FR-006 — program «product» contract v1 (WP-BACKEND-06, TECH-027)
 
 The contract package of the program «Модернизация Transcrib до продукта» (D-15): the whole

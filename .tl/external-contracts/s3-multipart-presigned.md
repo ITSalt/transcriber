@@ -6,6 +6,9 @@
 > protocol described in graph ADR-005 (revoked 2026-05-22 in W3; succeeded by
 > ADR-012). See changelog [2026-05-19] ed6aaa9 for the code-side removal.
 
+
+> **WP-BACKEND-01 (FR-003):** init/complete/abort take `workspace_id` (membership checked before any URL is presigned); new keys are `ws/<workspaceId>/<uuid>.<ext>`; complete/abort accept only keys of the target workspace, plus `pending/<uuid>.<ext>` for the legacy workspace «Роман» (uploads started before the package shipped). `complete` also takes `defer_start` (meeting stays `AWAITING_START`, nothing enqueued) — `shared/src/api/uc100.ts`.
+
 ## 1. Identity
 
 | Field | Value |
@@ -62,7 +65,7 @@ Headers: presigned URL embeds the signature
 
 ```jsonc
 {
-  "s3_key": "pending/<uuid>.mp4",
+  "s3_key": "ws/<workspaceId>/<uuid>.mp4",
   "s3_upload_id": "<aws-multipart-upload-id>",
   "parts": [
     { "part_number": 1, "etag": "\"<aws-etag-1>\"" },
@@ -85,7 +88,7 @@ Headers: presigned URL embeds the signature
 
 ```jsonc
 {
-  "s3_key": "pending/<uuid>.<ext>",
+  "s3_key": "ws/<workspaceId>/<uuid>.<ext>",
   "s3_upload_id": "<aws-multipart-upload-id>",
   "part_size": 10485760,
   "parts": [
