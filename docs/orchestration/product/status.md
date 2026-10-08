@@ -48,8 +48,8 @@ CANCELLED (причина).
 | [WP-WORKER-03](work-packages/WP-WORKER-03-openrouter-llm.md) | worker | LLM-провайдер OpenRouter (anthropic/claude-haiku-5.5) за ILlmProvider, переключение провайдера по env | PROD | product-worker | https://github.com/ITSalt/transcriber/pull/24 (accepted 33f870eacd) | 2026-10-08 |
 | [WP-WORKER-04](work-packages/WP-WORKER-04-outbound-proxy.md) | worker | Исходящий прокси для OpenRouter (OUTBOUND_PROXY_URL, undici ProxyAgent, только LLM-трафик) | PROD | product-worker | https://github.com/ITSalt/transcriber/pull/25 (accepted 83f42ec2b1) | 2026-10-08 |
 | [WP-WORKER-05](work-packages/WP-WORKER-05-openrouter-reasoning.md) | worker | OpenRouter: reasoning выключен по умолчанию, лимит выхода и диагностика пустого ответа (LLM_REASONING, LLM_MAX_TOKENS) | PROD | product-worker | https://github.com/ITSalt/transcriber/pull/26 (accepted b31b2d946d) | 2026-10-08 |
-| [WP-BACKEND-07](work-packages/WP-BACKEND-07-speakers.md) | backend | Подтверждение спикеров: контракт, статус AWAITING_SPEAKERS, API карты спикеров | ACCEPTED | product-backend | https://github.com/ITSalt/transcriber/pull/29 (accepted 3f3e6b0583) | 2026-10-08 |
-| [WP-WORKER-06](work-packages/WP-WORKER-06-speakers-gate.md) | worker | Воркер: остановка на AWAITING_SPEAKERS, имена спикеров в транскрипте и промпте | READY | product-worker | — | 2026-10-08 |
+| [WP-BACKEND-07](work-packages/WP-BACKEND-07-speakers.md) | backend | Подтверждение спикеров: контракт, статус AWAITING_SPEAKERS, API карты спикеров | PROD | product-backend | https://github.com/ITSalt/transcriber/pull/29 (accepted 3f3e6b0583) | 2026-10-08 |
+| [WP-WORKER-06](work-packages/WP-WORKER-06-speakers-gate.md) | worker | Воркер: остановка на AWAITING_SPEAKERS, имена спикеров в транскрипте и промпте | DISPATCHING | product-worker | — | 2026-10-08 |
 | [WP-FRONTEND-06](work-packages/WP-FRONTEND-06-speakers.md) | frontend | Экран подтверждения спикеров перед генерацией протокола | READY | product-frontend | — | 2026-10-08 |
 | [WP-WORKER-07](work-packages/WP-WORKER-07-memory-leak-guard.md) | worker | Защита протокола от утечки памяти проекта и чужих участников | PROD | product-worker | https://github.com/ITSalt/transcriber/pull/27 (accepted ade44c9c31) | 2026-10-08 |
 | [WP-WORKER-MEMORY-02](work-packages/WP-WORKER-MEMORY-02-hygiene.md) | worker-memory | Гигиена памяти проекта: дедуп решений, валидация исполнителей, сводка по продуктам | PROD | product-worker-memory | https://github.com/ITSalt/transcriber/pull/28 (accepted adc8af0791) | 2026-10-08 |
@@ -113,12 +113,11 @@ R-n — действие: точная команда одной строкой 
 <!-- orch:locks -->
 | Замок | Репозиторий | Держатель | С | Ждут | Примечание |
 |-------|-------------|-----------|---|------|------------|
-| transcriber:shared/** | transcriber | WP-BACKEND-07 | 2026-10-08 19:02Z | WP-WORKER-MEMORY-02 | dispatch |
-| transcriber:shared/src/api/speakers.ts | transcriber | WP-BACKEND-07 | 2026-10-08 19:02Z | WP-WORKER-MEMORY-02 | dispatch |
-| transcriber:shared/src/api/uc002.ts | transcriber | WP-BACKEND-07 | 2026-10-08 19:02Z | WP-WORKER-MEMORY-02 | dispatch |
-| transcriber:api/prisma/** | transcriber | WP-BACKEND-07 | 2026-10-08 19:02Z | — | dispatch |
-| transcriber:.tl/external-contracts/** | transcriber | WP-BACKEND-07 | 2026-10-08 19:02Z | — | dispatch |
+| transcriber:shared/** | transcriber | — | 2026-10-08 19:47Z | WP-WORKER-MEMORY-02 | released by WP-BACKEND-07 |
+| transcriber:shared/src/api/speakers.ts | transcriber | — | 2026-10-08 19:47Z | WP-WORKER-MEMORY-02 | released by WP-BACKEND-07 |
+| transcriber:shared/src/api/uc002.ts | transcriber | — | 2026-10-08 19:47Z | WP-WORKER-MEMORY-02 | released by WP-BACKEND-07 |
 | transcriber:migrations | transcriber | WP-BACKEND-07 | 2026-10-08 19:02Z | — | dispatch |
+| transcriber:worker/src/job-processor.ts | transcriber | WP-WORKER-06 | 2026-10-08 19:51Z | — | dispatch |
 
 ## Очередь слияний
 
@@ -161,7 +160,7 @@ R-n — действие: точная команда одной строкой 
 | 31 | transcriber | WP-WORKER-05 | https://github.com/ITSalt/transcriber/pull/26 | — | merged |
 | 32 | transcriber | WP-WORKER-07 | https://github.com/ITSalt/transcriber/pull/27 | — | merged |
 | 33 | transcriber | WP-WORKER-MEMORY-02 | https://github.com/ITSalt/transcriber/pull/28 | — | merged |
-| 34 | transcriber | WP-BACKEND-07 | https://github.com/ITSalt/transcriber/pull/29 | — | queued |
+| 34 | transcriber | WP-BACKEND-07 | https://github.com/ITSalt/transcriber/pull/29 | — | merged |
 
 ## Журнал
 
@@ -170,6 +169,13 @@ R-n — действие: точная команда одной строкой 
 <!-- orch:journal -->
 | Дата | WP | Событие | Подтверждение |
 |------|----|---------|---------------|
+| 2026-10-08 19:51Z | WP-BACKEND-07 | WP-BACKEND-07 доставлен: merge 2e131fe287, deploy success с миграцией 20261009120000_awaiting_speakers (enum MeetingStatus содержит AWAITING_SPEAKERS, колонки transcripts.speaker_mapping/speakers_confirmed_at), api/worker online, verify test/prod PASS; WP-WORKER-06 → TASK в product-worker, WP-FRONTEND-06 → команда владельцу | chain deliver_b07.sh; psql _prisma_migrations, enum_range |
+| 2026-10-08 19:51Z | WP-FRONTEND-06 | dispatch of WP-FRONTEND-06 refused: depends on WP-WORKER-06 (DISPATCHING), not merged yet | orch.py dispatch |
+| 2026-10-08 19:51Z | WP-WORKER-06 | WP-WORKER-06: READY -> DISPATCHING | TASK message to live session; model sonnet; locks transcriber:worker/src/job-processor.ts |
+| 2026-10-08 19:51Z | WP-BACKEND-07 | WP-BACKEND-07: VERIFIED_TEST -> PROD | verify --env prod 2e131fe287: reports/verify-WP-BACKEND-07-prod-20261008.md |
+| 2026-10-08 19:51Z | WP-BACKEND-07 | WP-BACKEND-07: MERGED -> VERIFIED_TEST | verify --env test 2e131fe287: reports/verify-WP-BACKEND-07-test-20261008.md |
+| 2026-10-08 19:47Z | WP-BACKEND-07 | WP-BACKEND-07 merged in the merge queue; released transcriber:shared/**, transcriber:shared/src/api/speakers.ts, transcriber:shared/src/api/uc002.ts, transcriber:api/prisma/**, transcriber:.tl/external-contracts/** | orch.py deliver: 2e131fe287 |
+| 2026-10-08 19:47Z | WP-BACKEND-07 | WP-BACKEND-07: ACCEPTED -> MERGED | gh pr merge --squash: 2e131fe287 (https://github.com/ITSalt/transcriber/pull/29) |
 | 2026-10-08 19:47Z | — | R-21 closed | 2026-10-08 22:46 (+03) по D-39 оркестратор выполнил: docker exec learn-postgres pg_dump -U postgres -d transcrib -Fc → ~/backup/transcrib-before-backend07-20261008-2246.dump, 1 278 226 байт; свободно 8,2 ГБ (72 % занято) |
 | 2026-10-08 19:47Z | — | D-39 recorded | — |
 | 2026-10-08 19:44Z | — | WP-WORKER-MEMORY-02 доставлен (merge 3732f6f5f1, deploy success, verify prod PASS → PROD); живой сценарий памяти — в итоговой проверке волны 4 (повтор трёх записей с подтверждением спикеров). WP-BACKEND-07: ревью r1 ACCEPTED (migrations: safe, reversible); доставка после бэкапа R-21 | chain deliver_m02.sh; reports/wp-backend-07-review-20261008.md |
