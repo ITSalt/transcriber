@@ -46,6 +46,7 @@ CANCELLED (причина).
 | [WP-INFRA-03](work-packages/WP-INFRA-03-neo4j-ports.md) | infra | Порты Neo4j памяти проекта 7476/7689 (D-26) | PROD | product-infra | https://github.com/ITSalt/transcriber/pull/22 (accepted 5d27d4a320) | 2026-10-08 |
 | [WP-WORKER-03](work-packages/WP-WORKER-03-openrouter-llm.md) | worker | LLM-провайдер OpenRouter (anthropic/claude-haiku-5.5) за ILlmProvider, переключение провайдера по env | VERIFYING | product-worker | https://github.com/ITSalt/transcriber/pull/24 (accepted 33f870eacd) | 2026-10-08 |
 | [WP-WORKER-04](work-packages/WP-WORKER-04-outbound-proxy.md) | worker | Исходящий прокси для OpenRouter (OUTBOUND_PROXY_URL, undici ProxyAgent, только LLM-трафик) | PROD | product-worker | https://github.com/ITSalt/transcriber/pull/25 (accepted 83f42ec2b1) | 2026-10-08 |
+| [WP-WORKER-05](work-packages/WP-WORKER-05-openrouter-reasoning.md) | worker | OpenRouter: reasoning выключен по умолчанию, лимит выхода и диагностика пустого ответа (LLM_REASONING, LLM_MAX_TOKENS) | DISPATCHING | product-worker | — | 2026-10-08 |
 
 ## Ждёт владельца
 
@@ -152,6 +153,12 @@ R-n — действие: точная команда одной строкой 
 <!-- orch:journal -->
 | Дата | WP | Событие | Подтверждение |
 |------|----|---------|---------------|
+| 2026-10-08 17:35Z | WP-WORKER-04 | Живой сценарий WP-WORKER-04 (прод на OpenRouter через прокси): прокси и ключ работают (нет 403), но длинные протоколы 12.05/20.05 → «empty or missing completion text»: reasoning haiku-5.5 съедает max_tokens 4096 — D-35, WP-WORKER-05 (TASK в живую сессию product-worker); WP-WORKER-04 остаётся VERIFIED/PROD по своему объёму (транспорт через прокси доказан) | pm2 logs 20:30 +03; results/or-probe-4096.json finish=length reasoning_tokens=4096 |
+| 2026-10-08 17:34Z | WP-WORKER-05 | WP-WORKER-05: READY -> DISPATCHING | TASK message to live session; model sonnet |
+| 2026-10-08 17:34Z | WP-WORKER-05 | WP-WORKER-05: DRAFT -> READY | D-35; воспроизведение с cloudpc (results/or-probe-*.json) |
+| 2026-10-08 17:34Z | — | A-13 recorded | — |
+| 2026-10-08 17:34Z | WP-WORKER-05 | WP-WORKER-05 created (DRAFT) | work-packages/WP-WORKER-05-openrouter-reasoning.md |
+| 2026-10-08 17:34Z | — | D-35 recorded | — |
 | 2026-10-08 17:30Z | WP-WORKER-04 | WP-WORKER-04 доставлен (merge 0f14bc7de3, deploy success, verify test/prod PASS); прод переключён на OpenRouter через прокси владельца: LLM_PROVIDER=openrouter, LLM_MODEL=anthropic/claude-haiku-5.5, воркер online 17:29:42Z со строкой «proxy: <маскированный адрес прокси>»; живой сценарий — повтор протоколов 12.05 и 20.05 (проход A) | pm2 logs transcrib-worker; orch.py verify prod PASS |
 | 2026-10-08 17:29Z | WP-WORKER-04 | WP-WORKER-04: VERIFIED_TEST -> PROD | verify --env prod 0f14bc7de3: reports/verify-WP-WORKER-04-prod-20261008.md |
 | 2026-10-08 17:29Z | WP-WORKER-04 | WP-WORKER-04: MERGED -> VERIFIED_TEST | verify --env test 0f14bc7de3: reports/verify-WP-WORKER-04-test-20261008.md |
