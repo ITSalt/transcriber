@@ -30,7 +30,14 @@ export function StatusBadge({ status }: StatusBadgeProps) {
     <span aria-live="polite">
       <Badge
         variant={getVariant(status)}
-        className={isTransient ? "animate-pulse" : undefined}
+        // AWAITING_SPEAKERS waits for the user, not for a job: highlighted, not pulsing
+        className={
+          isTransient
+            ? "animate-pulse"
+            : status === "AWAITING_SPEAKERS"
+              ? "border-amber-500 text-amber-700"
+              : undefined
+        }
         data-testid={`status-badge-${status}`}
       >
         {label}

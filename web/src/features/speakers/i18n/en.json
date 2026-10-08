@@ -1,0 +1,28 @@
+{
+  "title": "Confirm speakers",
+  "intro": "Match the recognition labels to people — the names go into the protocol. You can skip: the protocol will keep «Speaker N».",
+  "splitHint": "Two labels of one person can be merged, but one label cannot be split into two people.",
+  "loading": "Loading speakers…",
+  "loadError": "Could not load speakers.",
+  "retry": "Retry",
+  "duration": "speaks {{value}}",
+  "assignLabel": "Who is {{speaker}}",
+  "nameLabel": "Name for {{speaker}}",
+  "namePlaceholder": "Full name",
+  "option": {
+    "keep": "Keep as is",
+    "participants": "Project participants",
+    "other": "Other name…",
+    "same": "Same person",
+    "sameAs": "Same as {{speaker}}"
+  },
+  "confirm": "Confirm and generate protocol",
+  "submitting": "Sending…",
+  "skip": "Skip",
+  "error": {
+    "nameRequired": "Enter a name.",
+    "conflict": "Speakers are already confirmed or the meeting status changed. The card was refreshed.",
+    "notFound": "The participant was not found in the meeting's project. Reload the page and choose again.",
+    "generic": "Could not submit. Please try again."
+  }
+}
