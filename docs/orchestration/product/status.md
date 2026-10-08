@@ -50,7 +50,7 @@ CANCELLED (причина).
 | [WP-WORKER-05](work-packages/WP-WORKER-05-openrouter-reasoning.md) | worker | OpenRouter: reasoning выключен по умолчанию, лимит выхода и диагностика пустого ответа (LLM_REASONING, LLM_MAX_TOKENS) | PROD | product-worker | https://github.com/ITSalt/transcriber/pull/26 (accepted b31b2d946d) | 2026-10-08 |
 | [WP-BACKEND-07](work-packages/WP-BACKEND-07-speakers.md) | backend | Подтверждение спикеров: контракт, статус AWAITING_SPEAKERS, API карты спикеров | PROD | product-backend | https://github.com/ITSalt/transcriber/pull/29 (accepted 3f3e6b0583) | 2026-10-08 |
 | [WP-WORKER-06](work-packages/WP-WORKER-06-speakers-gate.md) | worker | Воркер: остановка на AWAITING_SPEAKERS, имена спикеров в транскрипте и промпте | PROD | product-worker | https://github.com/ITSalt/transcriber/pull/30 (accepted a87e135916) | 2026-10-08 |
-| [WP-FRONTEND-06](work-packages/WP-FRONTEND-06-speakers.md) | frontend | Экран подтверждения спикеров перед генерацией протокола | REVISE | product-frontend | https://github.com/ITSalt/transcriber/pull/31 | 2026-10-08 |
+| [WP-FRONTEND-06](work-packages/WP-FRONTEND-06-speakers.md) | frontend | Экран подтверждения спикеров перед генерацией протокола | ACCEPTED | product-frontend | https://github.com/ITSalt/transcriber/pull/31 (accepted 53b3ca8906) | 2026-10-08 |
 | [WP-WORKER-07](work-packages/WP-WORKER-07-memory-leak-guard.md) | worker | Защита протокола от утечки памяти проекта и чужих участников | PROD | product-worker | https://github.com/ITSalt/transcriber/pull/27 (accepted ade44c9c31) | 2026-10-08 |
 | [WP-WORKER-MEMORY-02](work-packages/WP-WORKER-MEMORY-02-hygiene.md) | worker-memory | Гигиена памяти проекта: дедуп решений, валидация исполнителей, сводка по продуктам | PROD | product-worker-memory | https://github.com/ITSalt/transcriber/pull/28 (accepted adc8af0791) | 2026-10-08 |
 
@@ -161,6 +161,7 @@ R-n — действие: точная команда одной строкой 
 | 33 | transcriber | WP-WORKER-MEMORY-02 | https://github.com/ITSalt/transcriber/pull/28 | — | merged |
 | 34 | transcriber | WP-BACKEND-07 | https://github.com/ITSalt/transcriber/pull/29 | — | merged |
 | 35 | transcriber | WP-WORKER-06 | https://github.com/ITSalt/transcriber/pull/30 | — | merged |
+| 36 | transcriber | WP-FRONTEND-06 | https://github.com/ITSalt/transcriber/pull/31 | — | queued |
 
 ## Журнал
 
@@ -169,6 +170,10 @@ R-n — действие: точная команда одной строкой 
 <!-- orch:journal -->
 | Дата | WP | Событие | Подтверждение |
 |------|----|---------|---------------|
+| 2026-10-08 20:34Z | WP-FRONTEND-06 | WP-FRONTEND-06 queued for merge (sequential) | https://github.com/ITSalt/transcriber/pull/31 |
+| 2026-10-08 20:34Z | WP-FRONTEND-06 | WP-FRONTEND-06: accepted at 53b3ca8906da0fa402e6d185055012889ed1a2df | report reports/wp-frontend-06-review-20261008-r2.md |
+| 2026-10-08 20:34Z | WP-FRONTEND-06 | WP-FRONTEND-06: REVIEW -> ACCEPTED | 53b3ca8906; reports/wp-frontend-06-review-20261008-r2.md |
+| 2026-10-08 20:34Z | WP-FRONTEND-06 | WP-FRONTEND-06: REVISE -> REVIEW | 53b3ca8906; report reports/wp-frontend-06-review-20261008-r2.md |
 | 2026-10-08 20:32Z | WP-FRONTEND-06 | WP-FRONTEND-06: REVIEW -> REVISE | reports/wp-frontend-06-review-20261008.md: Medium-1 merge в корень «как есть» теряется; Low-1 busy |
 | 2026-10-08 20:21Z | WP-FRONTEND-06 | WP-FRONTEND-06: READY e5e9d5fc3f (PR 31); ревью r1 запущено; A-16 — features/speakers в области frontend | сообщение product-frontend; review-start |
 | 2026-10-08 20:21Z | — | A-16 recorded | — |
