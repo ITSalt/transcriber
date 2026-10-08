@@ -118,7 +118,6 @@ R-n — действие: точная команда одной строкой 
 | transcriber:api/prisma/** | transcriber | WP-BACKEND-07 | 2026-10-08 19:02Z | — | dispatch |
 | transcriber:.tl/external-contracts/** | transcriber | WP-BACKEND-07 | 2026-10-08 19:02Z | — | dispatch |
 | transcriber:migrations | transcriber | WP-BACKEND-07 | 2026-10-08 19:02Z | — | dispatch |
-| transcriber:graph | transcriber | WP-BACKEND-07 | 2026-10-08 19:07Z | — | — |
 
 ## Очередь слияний
 
@@ -167,6 +166,8 @@ R-n — действие: точная команда одной строкой 
 <!-- orch:journal -->
 | Дата | WP | Событие | Подтверждение |
 |------|----|---------|---------------|
+| 2026-10-08 19:19Z | WP-BACKEND-07 | WP-BACKEND-07: UNLOCK graph — в граф записаны FR-007 (spec-complete), UC-505 «Подтвердить спикеров», DEC-013, статус AWAITING_SPEAKERS, атрибуты Transcript.speaker_mapping/speakers_confirmed_at, UC-200/300/002 помечены stale с program_delta; файл .tl/feature-requests/FR-007*.md сессия не создавала (путь вне пакета) | сообщение product-backend |
+| 2026-10-08 19:19Z | WP-BACKEND-07 | lock transcriber:graph released | orch.py lock |
 | 2026-10-08 19:18Z | WP-WORKER-MEMORY-02 | WP-WORKER-MEMORY-02: READY c3d6195e9c (PR 28); ревью r1 запущено; п. 3 (сводка по продуктам) отложен сессией с обоснованием — решить после ревью | сообщение product-worker-memory; review-start |
 | 2026-10-08 19:17Z | WP-WORKER-MEMORY-02 | WP-WORKER-MEMORY-02: DISPATCHING -> REVIEW | c3d6195e9c; report reports/wp-worker-memory-02-review-20261008.md |
 | 2026-10-08 19:16Z | WP-WORKER-07 | WP-WORKER-07: READY b48882a895 (PR 27); ревью r1 запущено; подозрение оркестратора на дефект нормализации имён в protocol-guard.ts (стемы разной длины для падежей: «антон»→«ант», «антону»→«анто») передано рецензенту как вопрос 1 | чтение protocol-guard.ts stemOf |
