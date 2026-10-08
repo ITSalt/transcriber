@@ -44,9 +44,9 @@ CANCELLED (причина).
 | [WP-WORKER-MEMORY-01](work-packages/WP-WORKER-MEMORY-01-pipeline.md) | worker-memory | Память проекта в Neo4j: слой графа, извлечение, сопоставление, сводка | PROD | product-worker-memory | https://github.com/ITSalt/transcriber/pull/16 (accepted 69f3715e3d) | 2026-10-08 |
 | [WP-INFRA-02](work-packages/WP-INFRA-02-deploy-migrate-first.md) | infra | Порядок деплоя: миграции Postgres до сборки и замены dist | PROD | product-infra | https://github.com/ITSalt/transcriber/pull/11 (accepted 6694e5e172) | 2026-10-07 |
 | [WP-INFRA-03](work-packages/WP-INFRA-03-neo4j-ports.md) | infra | Порты Neo4j памяти проекта 7476/7689 (D-26) | PROD | product-infra | https://github.com/ITSalt/transcriber/pull/22 (accepted 5d27d4a320) | 2026-10-08 |
-| [WP-WORKER-03](work-packages/WP-WORKER-03-openrouter-llm.md) | worker | LLM-провайдер OpenRouter (anthropic/claude-haiku-5.5) за ILlmProvider, переключение провайдера по env | VERIFYING | product-worker | https://github.com/ITSalt/transcriber/pull/24 (accepted 33f870eacd) | 2026-10-08 |
+| [WP-WORKER-03](work-packages/WP-WORKER-03-openrouter-llm.md) | worker | LLM-провайдер OpenRouter (anthropic/claude-haiku-5.5) за ILlmProvider, переключение провайдера по env | PROD | product-worker | https://github.com/ITSalt/transcriber/pull/24 (accepted 33f870eacd) | 2026-10-08 |
 | [WP-WORKER-04](work-packages/WP-WORKER-04-outbound-proxy.md) | worker | Исходящий прокси для OpenRouter (OUTBOUND_PROXY_URL, undici ProxyAgent, только LLM-трафик) | PROD | product-worker | https://github.com/ITSalt/transcriber/pull/25 (accepted 83f42ec2b1) | 2026-10-08 |
-| [WP-WORKER-05](work-packages/WP-WORKER-05-openrouter-reasoning.md) | worker | OpenRouter: reasoning выключен по умолчанию, лимит выхода и диагностика пустого ответа (LLM_REASONING, LLM_MAX_TOKENS) | ACCEPTED | product-worker | https://github.com/ITSalt/transcriber/pull/26 (accepted b31b2d946d) | 2026-10-08 |
+| [WP-WORKER-05](work-packages/WP-WORKER-05-openrouter-reasoning.md) | worker | OpenRouter: reasoning выключен по умолчанию, лимит выхода и диагностика пустого ответа (LLM_REASONING, LLM_MAX_TOKENS) | PROD | product-worker | https://github.com/ITSalt/transcriber/pull/26 (accepted b31b2d946d) | 2026-10-08 |
 
 ## Ждёт владельца
 
@@ -145,7 +145,7 @@ R-n — действие: точная команда одной строкой 
 | 28 | transcriber | WP-API-MEMORY-01 | https://github.com/ITSalt/transcriber/pull/23 | — | merged |
 | 29 | transcriber | WP-WORKER-03 | https://github.com/ITSalt/transcriber/pull/24 | — | merged |
 | 30 | transcriber | WP-WORKER-04 | https://github.com/ITSalt/transcriber/pull/25 | — | merged |
-| 31 | transcriber | WP-WORKER-05 | https://github.com/ITSalt/transcriber/pull/26 | — | queued |
+| 31 | transcriber | WP-WORKER-05 | https://github.com/ITSalt/transcriber/pull/26 | — | merged |
 
 ## Журнал
 
@@ -154,6 +154,13 @@ R-n — действие: точная команда одной строкой 
 <!-- orch:journal -->
 | Дата | WP | Событие | Подтверждение |
 |------|----|---------|---------------|
+| 2026-10-08 18:02Z | — | Проход A/B завершён: 12.05 и 20.05 через OpenRouter за ~20 с, проход B с keyterms (47/27/47 по логу «ASR keyterms prepared»); Q-1 закрыт D-36 (keyterms работают); аналитика по обратной связи — reports/feedback-analysis-20261008.md: 10 из 18 пунктов закрываются картой проекта и контекстом; главные открытые — имена спикеров (нужен шаг подтверждения), утечка памяти проекта в протокол чужой встречи, диаризация (D-21), метаданные asr_options «reconstructed» | results/keyterm-ab-stats.json; protocol_generations; память проектов A/B через API |
+| 2026-10-08 18:02Z | — | D-37 recorded | — |
+| 2026-10-08 18:01Z | WP-WORKER-03 | WP-WORKER-03: VERIFYING -> PROD | живой сценарий выполнен после WP-WORKER-04/05: 5 протоколов через OpenRouter на проде 17:55–17:58Z (reports/verify-WP-WORKER-03-prod-20261008.md) |
+| 2026-10-08 17:55Z | WP-WORKER-05 | WP-WORKER-05: VERIFIED_TEST -> PROD | verify --env prod 06068a32e3: reports/verify-WP-WORKER-05-prod-20261008.md |
+| 2026-10-08 17:54Z | WP-WORKER-05 | WP-WORKER-05: MERGED -> VERIFIED_TEST | verify --env test 06068a32e3: reports/verify-WP-WORKER-05-test-20261008.md |
+| 2026-10-08 17:50Z | WP-WORKER-05 | WP-WORKER-05 merged in the merge queue | orch.py deliver: 06068a32e3 |
+| 2026-10-08 17:50Z | WP-WORKER-05 | WP-WORKER-05: ACCEPTED -> MERGED | gh pr merge --squash: 06068a32e3 (https://github.com/ITSalt/transcriber/pull/26) |
 | 2026-10-08 17:48Z | WP-WORKER-05 | WP-WORKER-05 queued for merge (sequential) | https://github.com/ITSalt/transcriber/pull/26 |
 | 2026-10-08 17:48Z | WP-WORKER-05 | WP-WORKER-05: accepted at b31b2d946d3682bfe0b8fc82098d28bff8a914d5 | report reports/wp-worker-05-review-20261008-r2.md |
 | 2026-10-08 17:48Z | WP-WORKER-05 | WP-WORKER-05: REVIEW -> ACCEPTED | b31b2d946d; reports/wp-worker-05-review-20261008-r2.md |
