@@ -46,7 +46,7 @@ CANCELLED (причина).
 | [WP-INFRA-03](work-packages/WP-INFRA-03-neo4j-ports.md) | infra | Порты Neo4j памяти проекта 7476/7689 (D-26) | PROD | product-infra | https://github.com/ITSalt/transcriber/pull/22 (accepted 5d27d4a320) | 2026-10-08 |
 | [WP-WORKER-03](work-packages/WP-WORKER-03-openrouter-llm.md) | worker | LLM-провайдер OpenRouter (anthropic/claude-haiku-5.5) за ILlmProvider, переключение провайдера по env | VERIFYING | product-worker | https://github.com/ITSalt/transcriber/pull/24 (accepted 33f870eacd) | 2026-10-08 |
 | [WP-WORKER-04](work-packages/WP-WORKER-04-outbound-proxy.md) | worker | Исходящий прокси для OpenRouter (OUTBOUND_PROXY_URL, undici ProxyAgent, только LLM-трафик) | PROD | product-worker | https://github.com/ITSalt/transcriber/pull/25 (accepted 83f42ec2b1) | 2026-10-08 |
-| [WP-WORKER-05](work-packages/WP-WORKER-05-openrouter-reasoning.md) | worker | OpenRouter: reasoning выключен по умолчанию, лимит выхода и диагностика пустого ответа (LLM_REASONING, LLM_MAX_TOKENS) | REVISE | product-worker | https://github.com/ITSalt/transcriber/pull/26 | 2026-10-08 |
+| [WP-WORKER-05](work-packages/WP-WORKER-05-openrouter-reasoning.md) | worker | OpenRouter: reasoning выключен по умолчанию, лимит выхода и диагностика пустого ответа (LLM_REASONING, LLM_MAX_TOKENS) | ACCEPTED | product-worker | https://github.com/ITSalt/transcriber/pull/26 (accepted b31b2d946d) | 2026-10-08 |
 
 ## Ждёт владельца
 
@@ -145,6 +145,7 @@ R-n — действие: точная команда одной строкой 
 | 28 | transcriber | WP-API-MEMORY-01 | https://github.com/ITSalt/transcriber/pull/23 | — | merged |
 | 29 | transcriber | WP-WORKER-03 | https://github.com/ITSalt/transcriber/pull/24 | — | merged |
 | 30 | transcriber | WP-WORKER-04 | https://github.com/ITSalt/transcriber/pull/25 | — | merged |
+| 31 | transcriber | WP-WORKER-05 | https://github.com/ITSalt/transcriber/pull/26 | — | queued |
 
 ## Журнал
 
@@ -153,6 +154,10 @@ R-n — действие: точная команда одной строкой 
 <!-- orch:journal -->
 | Дата | WP | Событие | Подтверждение |
 |------|----|---------|---------------|
+| 2026-10-08 17:48Z | WP-WORKER-05 | WP-WORKER-05 queued for merge (sequential) | https://github.com/ITSalt/transcriber/pull/26 |
+| 2026-10-08 17:48Z | WP-WORKER-05 | WP-WORKER-05: accepted at b31b2d946d3682bfe0b8fc82098d28bff8a914d5 | report reports/wp-worker-05-review-20261008-r2.md |
+| 2026-10-08 17:48Z | WP-WORKER-05 | WP-WORKER-05: REVIEW -> ACCEPTED | b31b2d946d; reports/wp-worker-05-review-20261008-r2.md |
+| 2026-10-08 17:48Z | WP-WORKER-05 | WP-WORKER-05: REVISE -> REVIEW | b31b2d946d; report reports/wp-worker-05-review-20261008-r2.md |
 | 2026-10-08 17:46Z | WP-WORKER-05 | WP-WORKER-05: REVIEW -> REVISE | reports/wp-worker-05-review-20261008.md: 1 пункт — тест связки env→фабрика→запрос (M6/M6b выжили) |
 | 2026-10-08 17:38Z | WP-WORKER-05 | WP-WORKER-05: READY 4267b4bb57 (PR 26); ревью r1 запущено | сообщение product-worker; review-start |
 | 2026-10-08 17:37Z | WP-WORKER-05 | WP-WORKER-05: DISPATCHING -> REVIEW | 4267b4bb57; report reports/wp-worker-05-review-20261008.md |
