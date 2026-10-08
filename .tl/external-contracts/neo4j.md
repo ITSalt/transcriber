@@ -15,7 +15,7 @@
 | **Owner skill** | `nacl-sa-feature` (FR-006) / `nacl-sa-architect` |
 | **Consumed by** | `nacl-tl-plan`, `nacl-tl-dev-be`, `nacl-tl-sync`, `nacl-tl-qa` |
 | **Created** | `2026-10-07` (WP-BACKEND-06, contract v1) |
-| **Last updated** | `2026-10-07` |
+| **Last updated** | `2026-10-08` (WP-API-MEMORY-01: graph model as implemented, API routes, DELETE_PROJECT producer) |
 | **References** | FR-006, ADR-013, DEC-009, UC-600..UC-605, RQ-054..RQ-057; program decisions D-11, D-13, D-14, D-16; `shared/src/api/memory.ts`, `shared/src/llm/ProjectMemoryProvider.ts`, `worker/src/job-processor.ts` (`WORKER_MODULES`, `register(ctx)`), `api/prisma/schema.prisma` (`GraphOutbox`); runtime/ops: `scripts/README-neo4j.md` (WP-INFRA-01) |
 
 ## 2. Endpoint
@@ -46,8 +46,11 @@ Where the code lives (WP-WORKER-MEMORY-01 decides the internals):
   never pulls `neo4j-driver`. Both api and worker import their Cypher and mappers from here.
 - **Worker side** — `worker/src/graph` (driver lifecycle, writes, outbox drain) and
   `worker/src/memory` (pipeline, `register(ctx)`).
-- **API side** — `api/src/features/memory` (reads + confirm/reject/PATCH) with its own
-  driver instance from the same env.
+- **API side** — `api/src/features/memory` (reads + confirm/reject/PATCH + meeting
+  `memory-refs`) with its own lazily created driver from the same env
+  (`api/src/features/memory/graph.ts`). The project/meeting scope comes from the auth plugin's
+  access check (`request.projectAccess` / `meetingAccess`); `/api/task-events/:eventId/*`
+  resolves the event with `findTaskEventScope(eventId, callerWorkspaceIds)`.
 
 Hard rules for every query:
 
@@ -58,20 +61,39 @@ Hard rules for every query:
 | **Transactions** | One meeting's memory update = **one** write transaction (all-or-nothing). |
 | **Projections** | `(:Project)`, `(:Meeting)`, `(:Participant)` mirror Postgres ids; they are projections, never edited in Neo4j first. |
 
-Graph model (labels in the memory database):
+Graph model (labels in the memory database; as implemented by `shared/src/memory`, schema
+version 1). Every node except `SchemaVersion` carries `workspaceId` and `projectId`.
 
 ```
-(:Task {id, workspaceId, projectId, code 'T-n', title, description, status, dueDate, mergedInto, updatedAt})
-(:Decision {id, workspaceId, projectId, code 'D-n', text, supersededBy, createdAt})
-(:TaskEvent {id, workspaceId, projectId, field, oldValue, newValue, validAt, recordedAt, supersededAt,
-             source LLM|USER, confidence, reason, reviewState AUTO|PENDING|CONFIRMED|REJECTED, quote, authorUserId})
-(:ProjectMemory {workspaceId, projectId, version, summaryMd, sourceMeetingId, createdAt})
+(:Project {id, workspaceId, projectId, createdAt, taskSeq, decisionSeq, meetingSeq})   -- projection + per-project counters; codes T-n / D-n are never reused
+(:Meeting {id, workspaceId, projectId, seq, title, occurredAt})-[:OF_PROJECT]->(:Project)   -- projection
+(:Participant {id, workspaceId, projectId, name})-[:OF_PROJECT]->(:Project)                -- projection (ProjectParticipant id)
+(:Task {id, workspaceId, projectId, code 'T-n', seq, title, description, status, assigneeName, assigneeParticipantId,
+        dueDate, mergedInto, createdInMeetingId, createdAt, updatedAt})   -- state is folded from the task's events
+(:Decision {id, workspaceId, projectId, code 'D-n', seq, text, supersededBy, createdInMeetingId, createdAt})
+(:TaskEvent {id, workspaceId, projectId, field, creation, oldValue, newValue, oldParticipantId, newParticipantId,
+             validAt, recordedAt, appliedAt, supersededAt, ordinal, source LLM|USER, confidence, reason,
+             reviewState AUTO|PENDING|CONFIRMED|REJECTED, reviewedAt, reviewedBy, quote, authorUserId, meetingId})
+(:ProjectMemory {id, workspaceId, projectId, version, summaryMd, sourceMeetingId, createdAt})
+(:Tombstone {id 'MEETING:<id>' | 'PROJECT:<id>', kind, targetId, workspaceId, projectId, deletedAt})   -- service node: a deletion in flight cannot be undone by a late memory update
+(:SchemaVersion {id 'project-memory', version, ...})                                                     -- service node: applied graph:migrate version (no tenant ids)
 (:Task)-[:MENTIONED_IN {quote, startMs, endMs, speakerLabel, kind CREATED|STATUS_UPDATE|REASSIGNED|DUE_CHANGED|MENTIONED}]->(:Meeting)
 (:TaskEvent)-[:OF_TASK]->(:Task)   (:TaskEvent)-[:IN_MEETING]->(:Meeting)
-(:Task)-[:ASSIGNED_TO]->(:Participant)   (:Task)-[:DEPENDS_ON|DUPLICATE_OF|SUBTASK_OF]->(:Task)
-(:Decision)-[:MENTIONED_IN {quote}]->(:Meeting)   (:Decision)-[:LEADS_TO]->(:Task)   (:Decision)-[:SUPERSEDES]->(:Decision)
+(:Task)-[:ASSIGNED_TO]->(:Participant)   (:Task)-[:DUPLICATE_OF]->(:Task)
+(:Decision)-[:MENTIONED_IN {quote, startMs, endMs, speakerLabel}]->(:Meeting)
+(:Decision)-[:LEADS_TO]->(:Task)   (:Decision)-[:SUPERSEDES]->(:Decision)
 (:ProjectMemory)-[:OF_PROJECT]->(:Project)   (:ProjectMemory)-[:PREVIOUS]->(:ProjectMemory)
 ```
+
+Notes:
+
+- `DEPENDS_ON` and `SUBTASK_OF` are **not produced in v1** (no pipeline writes them, no API
+  reads them); only `DUPLICATE_OF` (from a confirmed `merged_into` event) exists.
+- Manual edits (`PATCH /api/projects/:id/tasks/:code`) are stored as `TaskEvent`s with
+  `source USER`, `reviewState CONFIRMED`, `authorUserId` = the editor (the legacy principal
+  uses the stable `LEGACY_USER_ID`), `meetingId` null. A task's state is always the fold of
+  its applied events (`AUTO`/`CONFIRMED`); `PENDING` and `REJECTED` never change it.
+- `ProjectMemory` versions are append-only; `PREVIOUS` links to the prior version.
 
 Status values, transitions and the wire DTOs are pinned in `shared/src/api/memory.ts`
 (`MemoryTaskStatus`, `TASK_STATUS_TRANSITIONS`, `TaskEvent`, …). Status values are stored
@@ -90,8 +112,9 @@ strings to avoid driver temporal types on the wire.
 |---|---|
 | Memory update after a protocol | async: `protocolJobCompleted` worker event → BullMQ queue `project-memory` (`PROJECT_MEMORY_QUEUE`, payload `ProjectMemoryJobPayload`) owned by `worker/src/memory` |
 | Prompt memory for a protocol | sync read inside protocol generation through `getProjectMemoryProvider().getPromptMemory(projectId, workspaceId)` (≲ 5 000 tokens; `null` → section omitted) |
-| Deletions (meeting with a project, project) | `graph_outbox` row in the same Postgres transaction → drained by the worker, `DETACH DELETE`, retried while Neo4j is down (`attempts`, `last_error`, `done_at`) |
-| API reads (tasks, decisions, memory, review queue) | sync; Neo4j down → `503 MEMORY_UNAVAILABLE` |
+| Deletions (meeting with a project, project) | `graph_outbox` row in the same Postgres transaction → drained by the worker, `DETACH DELETE`, retried while Neo4j is down (`attempts`, `last_error`, `done_at`). Producers: `DELETE /api/meetings/:id` (`DELETE_MEETING`, `uc-003.service.ts`, only for a meeting that has a project) and `DELETE /api/projects/:projectId` (`DELETE_PROJECT`, `features/projects/routes.ts`) — the row is written in the same transaction as the delete. |
+| API reads (tasks, decisions, memory, review queue, meeting refs) | sync; Neo4j off or down → `503 MEMORY_UNAVAILABLE` |
+| API writes (confirm / reject a PENDING event, manual task edit) | sync, one scoped write transaction each; repeat confirm/reject → `409 TASK_EVENT_ALREADY_REVIEWED`; forbidden status change → `400 TASK_STATUS_TRANSITION` (same `canTransitionTaskStatus` as the worker); foreign or unknown project / event / participant → the same `404 NOT_FOUND` |
 
 ## 7. File-URL reachability assumptions
 

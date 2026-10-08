@@ -278,6 +278,11 @@ describe.skipIf(!DATABASE_URL)('FR-003 — login, isolation of every /api route,
         'GET /api/meetings', 'GET /api/meetings/:id', 'GET /api/meetings/:id/events',
         'GET /api/meetings/:id/protocol/pdf', 'GET /api/meetings/:id/transcript/download',
         'POST /api/uploads/init', 'POST /api/auth/login', 'GET /api/auth/me',
+        // FR-006 memory routes (WP-API-MEMORY-01): project- and meeting-scoped are gated by the
+        // checks below; task-events by workspace membership of the event (graph lookup)
+        'GET /api/projects/:projectId/tasks', 'PATCH /api/projects/:projectId/tasks/:code',
+        'GET /api/projects/:projectId/review-queue', 'GET /api/meetings/:id/memory-refs',
+        'POST /api/task-events/:eventId/confirm', 'POST /api/task-events/:eventId/reject',
       ]))
     })
 
@@ -329,8 +334,12 @@ describe.skipIf(!DATABASE_URL)('FR-003 — login, isolation of every /api route,
       // workspace (400 WORKSPACE_REQUIRED) or a body the route rejects (400 VALIDATION_ERROR)
       for (const r of rest) {
         const res = await req(r.method, `${fill(r.url)}?workspace_id=${ids.wsA}`, cookieB)
-        expect([400, 404], `${r.method} ${r.url} → ${res.statusCode} ${res.body}`).toContain(res.statusCode)
-        expect(['NOT_FOUND', 'WORKSPACE_REQUIRED', 'VALIDATION_ERROR'], `${r.method} ${r.url}`).toContain(res.json().code)
+        // /api/task-events/:eventId/* is resolved in the memory graph: with no Neo4j configured
+        // (local run without MEMORY_NEO4J_URI) it answers 503 MEMORY_UNAVAILABLE — still no 2xx
+        // and nothing revealed; with Neo4j (CI) the unknown event is the usual 404.
+        const memoryOff = r.url.startsWith('/api/task-events/') && !process.env['MEMORY_NEO4J_URI']
+        expect(memoryOff ? [400, 404, 503] : [400, 404], `${r.method} ${r.url} → ${res.statusCode} ${res.body}`).toContain(res.statusCode)
+        expect(['NOT_FOUND', 'WORKSPACE_REQUIRED', 'VALIDATION_ERROR', ...(memoryOff ? ['MEMORY_UNAVAILABLE'] : [])], `${r.method} ${r.url}`).toContain(res.json().code)
       }
       expect((await req('GET', `/api/meetings?workspace_id=${ids.wsA}`, cookieB)).statusCode).toBe(404)
       const init = await req('POST', '/api/uploads/init', cookieB, {
@@ -527,6 +536,18 @@ describe.skipIf(!DATABASE_URL)('FR-003 — login, isolation of every /api route,
         meeting_id: ids.meetingA, project_id: ids.projectA, workspace_id: ids.wsA,
       })
       expect(await db.meeting.findUnique({ where: { id: ids.meetingA } })).toBeNull()
+    })
+
+    it("deleting a project writes a DELETE_PROJECT GraphOutbox row in the same transaction; a foreign user's delete writes nothing", async () => {
+      const foreign = await app.inject({ method: 'DELETE', url: `/api/projects/${ids.projectA}`, headers: { cookie: await cookieOf(PIN.b) } })
+      expect(foreign.statusCode).toBe(404)
+      expect(await db.graphOutbox.count({ where: { op: 'DELETE_PROJECT' } })).toBe(0)
+
+      const res = await app.inject({ method: 'DELETE', url: `/api/projects/${ids.projectA}`, headers: { cookie: await cookieOf(PIN.a) } })
+      expect(res.statusCode, res.body).toBe(204)
+      const out = await db.graphOutbox.findMany({ where: { op: 'DELETE_PROJECT' } })
+      expect(out.map((o: { payload: unknown }) => o.payload)).toEqual([{ project_id: ids.projectA, workspace_id: ids.wsA }])
+      expect(await db.project.findUnique({ where: { id: ids.projectA } })).toBeNull()
     })
   })
 }, 600_000)

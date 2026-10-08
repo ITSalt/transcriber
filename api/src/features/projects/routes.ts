@@ -117,7 +117,15 @@ export default async function projectsRoutes(app: FastifyInstance): Promise<void
 
   // meetings keep (projectId → NULL by the FK's ON DELETE SET NULL); participants/terms cascade
   r.delete('/api/projects/:projectId', { schema: { params: ProjectParams } }, async (request, reply) => {
-    await prisma.project.delete({ where: { id: request.params.projectId } })
+    // FR-006 / D-13: the project's memory graph is removed by the worker; the outbox row is
+    // written in the SAME transaction as the delete (contract neo4j.md §6)
+    const { projectId, workspaceId } = request.projectAccess!
+    await prisma.$transaction(async (tx) => {
+      await tx.graphOutbox.create({
+        data: { op: 'DELETE_PROJECT', payload: { project_id: projectId, workspace_id: workspaceId } },
+      })
+      await tx.project.delete({ where: { id: projectId } })
+    })
     return reply.status(204).send()
   })
 
