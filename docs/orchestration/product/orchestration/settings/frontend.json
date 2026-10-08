@@ -47,6 +47,7 @@
       "Read(//home/cloudpc/projects/transcriber/web/src/features/shell/**)",
       "Read(//home/cloudpc/projects/transcriber/web/src/features/auth/**)",
       "Read(//home/cloudpc/projects/transcriber/web/src/features/tasks/**)",
+      "Read(//home/cloudpc/projects/transcriber/web/src/features/speakers/**)",
       "Bash(gh pr create *)",
       "Bash(pnpm --filter @transcrib/web test)",
       "Bash(pnpm -r typecheck)",

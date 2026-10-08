@@ -123,7 +123,7 @@ modules:
   - id: frontend
     kind: area
     repo: transcriber
-    paths: ["web/{index.html,vite.config.ts,tsconfig.json,tsconfig.node.json,vitest.config.ts,README.md}", "web/public/**", "web/src/{main.tsx,App.test.tsx,test-setup.ts,vite-env.d.ts}", "web/src/styles/**", "web/src/components/**", "web/src/lib/**", "web/src/i18n/**", "web/src/routes/{catalog,meeting,transcript}/**", "web/src/features/{shell,auth,tasks}/**"]
+    paths: ["web/{index.html,vite.config.ts,tsconfig.json,tsconfig.node.json,vitest.config.ts,README.md}", "web/public/**", "web/src/{main.tsx,App.test.tsx,test-setup.ts,vite-env.d.ts}", "web/src/styles/**", "web/src/components/**", "web/src/lib/**", "web/src/i18n/**", "web/src/routes/{catalog,meeting,transcript}/**", "web/src/features/{shell,auth,tasks,speakers}/**"]
     session: product-frontend
     tests: {scoped: ["pnpm --filter @transcrib/web test"], full: ["pnpm -r typecheck", "pnpm test"]}
     methodology: {name: nacl, allowed: [nacl-tl-dev-fe, nacl-tl-fix, nacl-tl-review, nacl-tl-regression-test, nacl-tl-verify-code, nacl-tl-sync, nacl-tl-docs, nacl-tl-stubs, nacl-tl-qa, nacl-sa-ui, nacl-tl-status], forbidden: [nacl-tl-release, nacl-tl-deploy, nacl-tl-deliver, nacl-tl-hotfix, nacl-tl-ship, nacl-tl-conductor, nacl-tl-full, nacl-goal, nacl-publish]}

@@ -50,7 +50,7 @@ CANCELLED (причина).
 | [WP-WORKER-05](work-packages/WP-WORKER-05-openrouter-reasoning.md) | worker | OpenRouter: reasoning выключен по умолчанию, лимит выхода и диагностика пустого ответа (LLM_REASONING, LLM_MAX_TOKENS) | PROD | product-worker | https://github.com/ITSalt/transcriber/pull/26 (accepted b31b2d946d) | 2026-10-08 |
 | [WP-BACKEND-07](work-packages/WP-BACKEND-07-speakers.md) | backend | Подтверждение спикеров: контракт, статус AWAITING_SPEAKERS, API карты спикеров | PROD | product-backend | https://github.com/ITSalt/transcriber/pull/29 (accepted 3f3e6b0583) | 2026-10-08 |
 | [WP-WORKER-06](work-packages/WP-WORKER-06-speakers-gate.md) | worker | Воркер: остановка на AWAITING_SPEAKERS, имена спикеров в транскрипте и промпте | PROD | product-worker | https://github.com/ITSalt/transcriber/pull/30 (accepted a87e135916) | 2026-10-08 |
-| [WP-FRONTEND-06](work-packages/WP-FRONTEND-06-speakers.md) | frontend | Экран подтверждения спикеров перед генерацией протокола | DISPATCHING | product-frontend | — | 2026-10-08 |
+| [WP-FRONTEND-06](work-packages/WP-FRONTEND-06-speakers.md) | frontend | Экран подтверждения спикеров перед генерацией протокола | REVIEW | product-frontend | https://github.com/ITSalt/transcriber/pull/31 | 2026-10-08 |
 | [WP-WORKER-07](work-packages/WP-WORKER-07-memory-leak-guard.md) | worker | Защита протокола от утечки памяти проекта и чужих участников | PROD | product-worker | https://github.com/ITSalt/transcriber/pull/27 (accepted ade44c9c31) | 2026-10-08 |
 | [WP-WORKER-MEMORY-02](work-packages/WP-WORKER-MEMORY-02-hygiene.md) | worker-memory | Гигиена памяти проекта: дедуп решений, валидация исполнителей, сводка по продуктам | PROD | product-worker-memory | https://github.com/ITSalt/transcriber/pull/28 (accepted adc8af0791) | 2026-10-08 |
 
@@ -169,6 +169,9 @@ R-n — действие: точная команда одной строкой 
 <!-- orch:journal -->
 | Дата | WP | Событие | Подтверждение |
 |------|----|---------|---------------|
+| 2026-10-08 20:21Z | WP-FRONTEND-06 | WP-FRONTEND-06: READY e5e9d5fc3f (PR 31); ревью r1 запущено; A-16 — features/speakers в области frontend | сообщение product-frontend; review-start |
+| 2026-10-08 20:21Z | — | A-16 recorded | — |
+| 2026-10-08 20:21Z | WP-FRONTEND-06 | WP-FRONTEND-06: DISPATCHING -> REVIEW | e5e9d5fc3f; report reports/wp-frontend-06-review-20261008.md |
 | 2026-10-08 20:09Z | WP-WORKER-06 | WP-WORKER-06 доставлен (merge a50f44d6b6, verify test/prod PASS → PROD); живой сценарий подтверждения спикеров через API на проде прошёл полностью: AWAITING_SPEAKERS за 21 с → GET/PUT /speakers → PROTOCOL_READY с именами 4 участников, транскрипт с именами (0 меток Speaker N); осталась WP-FRONTEND-06 (экран) | chain deliver_w06.sh; results/mtcb-D-protocol-new.md; GET /transcript full_text |
 | 2026-10-08 20:07Z | WP-WORKER-06 | WP-WORKER-06: VERIFIED_TEST -> PROD | verify --env prod a50f44d6b6: reports/verify-WP-WORKER-06-prod-20261008.md |
 | 2026-10-08 20:07Z | WP-WORKER-06 | WP-WORKER-06: MERGED -> VERIFIED_TEST | verify --env test a50f44d6b6: reports/verify-WP-WORKER-06-test-20261008.md |
