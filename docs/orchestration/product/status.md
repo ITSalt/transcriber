@@ -123,9 +123,13 @@ R-n — действие: точная команда одной строкой 
 | 12 | transcriber | WP-WORKER-MEMORY-01 | https://github.com/ITSalt/transcriber/pull/16 | WP-WORKER-01 | dropped |
 | 13 | transcriber | WP-WEB-MEMORY-01 | https://github.com/ITSalt/transcriber/pull/14 | WP-WORKER-MEMORY-01 | dropped |
 | 14 | transcriber | WP-API-FEEDBACK-01 | — | — | merged |
-| 15 | transcriber | WP-WORKER-MEMORY-01 | — | WP-API-FEEDBACK-01 | queued |
-| 16 | transcriber | WP-WEB-MEMORY-01 | — | WP-WORKER-MEMORY-01 | queued |
+| 15 | transcriber | WP-WORKER-MEMORY-01 | — | WP-API-FEEDBACK-01 | dropped |
+| 16 | transcriber | WP-WEB-MEMORY-01 | — | WP-WORKER-MEMORY-01 | dropped |
 | 17 | transcriber | WP-API-PROJECTS-01 | — | WP-WEB-MEMORY-01 | queued |
+| 18 | transcriber | WP-WEB-FEEDBACK-01 | — | WP-API-PROJECTS-01 | queued |
+| 19 | transcriber | WP-WEB-PROJECTS-01 | — | WP-WEB-FEEDBACK-01 | queued |
+| 20 | transcriber | WP-WORKER-MEMORY-01 | — | WP-WEB-PROJECTS-01 | queued |
+| 21 | transcriber | WP-WEB-MEMORY-01 | — | WP-WORKER-MEMORY-01 | queued |
 
 ## Журнал
 
@@ -134,6 +138,12 @@ R-n — действие: точная команда одной строкой 
 <!-- orch:journal -->
 | Дата | WP | Событие | Подтверждение |
 |------|----|---------|---------------|
+| 2026-10-08 10:57Z | WP-WEB-MEMORY-01 | WP-WEB-MEMORY-01 queued for merge (sequential) | — |
+| 2026-10-08 10:57Z | WP-WORKER-MEMORY-01 | WP-WORKER-MEMORY-01 queued for merge (sequential) | — |
+| 2026-10-08 10:57Z | WP-WEB-PROJECTS-01 | WP-WEB-PROJECTS-01 queued for merge (sequential) | — |
+| 2026-10-08 10:57Z | WP-WEB-FEEDBACK-01 | WP-WEB-FEEDBACK-01 queued for merge (sequential) | — |
+| 2026-10-08 10:57Z | WP-WEB-MEMORY-01 | WP-WEB-MEMORY-01 dropped in the merge queue | — |
+| 2026-10-08 10:57Z | WP-WORKER-MEMORY-01 | WP-WORKER-MEMORY-01 dropped in the merge queue | — |
 | 2026-10-08 10:57Z | WP-API-PROJECTS-01 | WP-API-PROJECTS-01 queued for merge (sequential) | — |
 | 2026-10-08 10:57Z | WP-API-PROJECTS-01 | WP-API-PROJECTS-01: ACCEPTED -> ACCEPTED | reports/wp-api-projects-01-review-20261008-r2.md: пункт 1 закрыт; CI run 37766507835 pass на 17bdd3261e; ждём merge main (rebase 2) перед доставкой |
 | 2026-10-08 10:57Z | WP-API-PROJECTS-01 | WP-API-PROJECTS-01: accepted at 17bdd3261e19e2952d321727c91ea012f3d3e783 | report reports/wp-api-projects-01-review-20261008-r2.md |
