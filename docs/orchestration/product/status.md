@@ -166,6 +166,8 @@ R-n — действие: точная команда одной строкой 
 <!-- orch:journal -->
 | Дата | WP | Событие | Подтверждение |
 |------|----|---------|---------------|
+| 2026-10-08 19:03Z | WP-WORKER-07 | WP-WORKER-07: READY -> DISPATCHING | start command handed to the owner; model sonnet |
+| 2026-10-08 19:03Z | WP-WORKER-07 | WP-WORKER-07: DISPATCHING -> READY | сессия product-worker закрыта (сокет недоступен) — TASK не доставлен; запуск новой сессии командой dispatch |
 | 2026-10-08 19:03Z | WP-WORKER-MEMORY-02 | WP-WORKER-MEMORY-02: READY -> DISPATCHING | start command handed to the owner; model sonnet |
 | 2026-10-08 19:02Z | WP-WORKER-07 | WP-WORKER-07: READY -> DISPATCHING | TASK message to live session; model sonnet |
 | 2026-10-08 19:02Z | WP-WORKER-MEMORY-02 | dispatch of WP-WORKER-MEMORY-02 refused: lock transcriber:shared/** is held by WP-BACKEND-07; lock transcriber:shared/src/api/speakers.ts is held by WP-BACKEND-07 (overlaps shared/**); lock transcriber:shared/src/api/uc002.ts is held by WP-BACKEND-07 (overlaps shared/**) | orch.py dispatch |
