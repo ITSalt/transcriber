@@ -126,10 +126,13 @@ R-n — действие: точная команда одной строкой 
 | 15 | transcriber | WP-WORKER-MEMORY-01 | — | WP-API-FEEDBACK-01 | dropped |
 | 16 | transcriber | WP-WEB-MEMORY-01 | — | WP-WORKER-MEMORY-01 | dropped |
 | 17 | transcriber | WP-API-PROJECTS-01 | — | WP-WEB-MEMORY-01 | queued |
-| 18 | transcriber | WP-WEB-FEEDBACK-01 | — | WP-API-PROJECTS-01 | queued |
+| 18 | transcriber | WP-WEB-FEEDBACK-01 | — | WP-API-PROJECTS-01 | dropped |
 | 19 | transcriber | WP-WEB-PROJECTS-01 | — | WP-WEB-FEEDBACK-01 | queued |
-| 20 | transcriber | WP-WORKER-MEMORY-01 | — | WP-WEB-PROJECTS-01 | queued |
-| 21 | transcriber | WP-WEB-MEMORY-01 | — | WP-WORKER-MEMORY-01 | queued |
+| 20 | transcriber | WP-WORKER-MEMORY-01 | — | WP-WEB-PROJECTS-01 | dropped |
+| 21 | transcriber | WP-WEB-MEMORY-01 | — | WP-WORKER-MEMORY-01 | dropped |
+| 22 | transcriber | WP-WEB-FEEDBACK-01 | — | WP-WEB-PROJECTS-01 | queued |
+| 23 | transcriber | WP-WORKER-MEMORY-01 | — | WP-WEB-FEEDBACK-01 | queued |
+| 24 | transcriber | WP-WEB-MEMORY-01 | — | WP-WORKER-MEMORY-01 | queued |
 
 ## Журнал
 
@@ -138,6 +141,13 @@ R-n — действие: точная команда одной строкой 
 <!-- orch:journal -->
 | Дата | WP | Событие | Подтверждение |
 |------|----|---------|---------------|
+| 2026-10-08 10:58Z | WP-WEB-FEEDBACK-01 | Очередь слияния: API-PROJECTS-01 → WEB-PROJECTS-01 → WEB-FEEDBACK-01 (доставка только после ответа P-17 и R-16) → WORKER-MEMORY-01 → WEB-MEMORY-01 (после P-18) | orch.py merge list |
+| 2026-10-08 10:58Z | WP-WEB-MEMORY-01 | WP-WEB-MEMORY-01 queued for merge (sequential) | — |
+| 2026-10-08 10:58Z | WP-WORKER-MEMORY-01 | WP-WORKER-MEMORY-01 queued for merge (sequential) | — |
+| 2026-10-08 10:58Z | WP-WEB-FEEDBACK-01 | WP-WEB-FEEDBACK-01 queued for merge (sequential) | — |
+| 2026-10-08 10:58Z | WP-WEB-MEMORY-01 | WP-WEB-MEMORY-01 dropped in the merge queue | — |
+| 2026-10-08 10:58Z | WP-WORKER-MEMORY-01 | WP-WORKER-MEMORY-01 dropped in the merge queue | — |
+| 2026-10-08 10:58Z | WP-WEB-FEEDBACK-01 | WP-WEB-FEEDBACK-01 dropped in the merge queue | — |
 | 2026-10-08 10:57Z | WP-WEB-MEMORY-01 | WP-WEB-MEMORY-01 queued for merge (sequential) | — |
 | 2026-10-08 10:57Z | WP-WORKER-MEMORY-01 | WP-WORKER-MEMORY-01 queued for merge (sequential) | — |
 | 2026-10-08 10:57Z | WP-WEB-PROJECTS-01 | WP-WEB-PROJECTS-01 queued for merge (sequential) | — |
