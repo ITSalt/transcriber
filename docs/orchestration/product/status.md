@@ -44,6 +44,7 @@ CANCELLED (причина).
 | [WP-WORKER-MEMORY-01](work-packages/WP-WORKER-MEMORY-01-pipeline.md) | worker-memory | Память проекта в Neo4j: слой графа, извлечение, сопоставление, сводка | PROD | product-worker-memory | https://github.com/ITSalt/transcriber/pull/16 (accepted 69f3715e3d) | 2026-10-08 |
 | [WP-INFRA-02](work-packages/WP-INFRA-02-deploy-migrate-first.md) | infra | Порядок деплоя: миграции Postgres до сборки и замены dist | PROD | product-infra | https://github.com/ITSalt/transcriber/pull/11 (accepted 6694e5e172) | 2026-10-07 |
 | [WP-INFRA-03](work-packages/WP-INFRA-03-neo4j-ports.md) | infra | Порты Neo4j памяти проекта 7476/7689 (D-26) | PROD | product-infra | https://github.com/ITSalt/transcriber/pull/22 (accepted 5d27d4a320) | 2026-10-08 |
+| [WP-WORKER-03](work-packages/WP-WORKER-03-openrouter-llm.md) | worker | LLM-провайдер OpenRouter (anthropic/claude-haiku-5.5) за ILlmProvider, переключение провайдера по env | DISPATCHING | product-worker | — | 2026-10-08 |
 
 ## Ждёт владельца
 
@@ -102,6 +103,8 @@ R-n — действие: точная команда одной строкой 
 <!-- orch:locks -->
 | Замок | Репозиторий | Держатель | С | Ждут | Примечание |
 |-------|-------------|-----------|---|------|------------|
+| transcriber:shared/** | transcriber | WP-WORKER-03 | 2026-10-08 16:09Z | — | dispatch |
+| transcriber:shared/src/llm/ILlmProvider.ts | transcriber | WP-WORKER-03 | 2026-10-08 16:09Z | — | dispatch |
 
 ## Очередь слияний
 
@@ -147,6 +150,11 @@ R-n — действие: точная команда одной строкой 
 <!-- orch:journal -->
 | Дата | WP | Событие | Подтверждение |
 |------|----|---------|---------------|
+| 2026-10-08 16:09Z | WP-WORKER-03 | WP-WORKER-03: READY -> DISPATCHING | start command handed to the owner; model sonnet; locks transcriber:shared/**, transcriber:shared/src/llm/ILlmProvider.ts |
+| 2026-10-08 16:09Z | WP-WORKER-03 | WP-WORKER-03: DRAFT -> READY | пакет написан по фактам kie.ai 500 ×7, D-32, A-11 |
+| 2026-10-08 16:09Z | — | A-11 recorded | — |
+| 2026-10-08 16:08Z | WP-WORKER-03 | WP-WORKER-03 created (DRAFT) | work-packages/WP-WORKER-03-openrouter-llm.md |
+| 2026-10-08 16:08Z | — | D-32 recorded | — |
 | 2026-10-08 15:48Z | — | Повторный прогон (D-30): проекты и контекст созданы под «Тест»; распознавание 12.05 (8 голосов, 7 задано) и 20.05 (6/6) прошло; генерация протокола дважды упала — kie.ai HTTP 500 «Server exception» 6 раз подряд 14:41–14:50Z, по 3 попытки на задание (TECH-026); проба kie.ai с VM: 200, но 35 с на 8 токенов — деградация шлюза; повтор через POST /retry (F-004) запущен. Найдено: Q-1 (keyterms) открыт с 2026-10-07, флаг не включён — D-31 | protocol_generation_jobs error_msg; pm2 logs transcrib-worker; curl api.kie.ai/claude/v1/messages с VM |
 | 2026-10-08 15:48Z | — | D-31 recorded | — |
 | 2026-10-08 14:35Z | — | D-30 recorded | — |
