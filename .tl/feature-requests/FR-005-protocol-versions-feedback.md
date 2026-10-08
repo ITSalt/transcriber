@@ -83,9 +83,18 @@ equals `Protocol.markdown_content`, so feedback bound to `current_n` refers to t
 user sees. Until then, the API must compute `current_n` from the latest version only when
 its markdown matches `Protocol.markdown_content`.
 
+## Detail (WP-API-FEEDBACK-01)
+
+UC-303 (5 steps), UC-304 (7 steps), UC-305 (4 steps) are `detail_status: complete`, `spec_version` 2; UI forms are owed by WP-WEB-FEEDBACK-01.
+Contracts: `.tl/tasks/UC-303..305/api-contract.md`. Requirements added/extended: RQ-052, RQ-053 (implementation notes),
+**RQ-065** (feedback is accepted only from a signed-in user; the legacy principal of D-20 gets `401 UNAUTHENTICATED`, because
+`ProtocolFeedback.user_id` is mandatory). A meeting without any `ProtocolVersion` answers `404 PROTOCOL_VERSION_NOT_FOUND` on submit.
+
 ## Decisions
 
 - DEC-008: append-only versions, Protocol keeps the current text.
+- DEC-012: protocol feedback is accepted only from a signed-in user; the legacy principal reads but cannot submit
+  (alternatives: nullable `user_id`, a service user). Open to the owner as P-17.
 
 ## Skills Invoked
 
