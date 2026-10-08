@@ -261,12 +261,52 @@ describe('memory gate (D-14)', () => {
       expect(plan.newDecisions).toMatchObject([{ code: 'D-2', text: 'Другое соглашение' }])
     })
 
-    it('two near-identical decisions in one meeting give one D-n', () => {
+    it('a different number/date or a negation is never a duplicate → a new decision', () => {
+      const dated = [{ code: 'D-6', text: 'Срок сборки по таблице до 19 мая' }]
+      expect(wordJaccard('Срок сборки по таблице до 19 мая', 'Срок сборки по таблице до 26 мая')).toBeGreaterThan(0.6)
+      expect(findSimilarDecision('Срок сборки по таблице до 26 мая', dated)).toBeNull()
+      expect(findSimilarDecision('Не подаём на сертификацию в текущем виде', known)).toBeNull()
+      const plan = gate({
+        recentDecisions: [...dated, ...known],
+        decisionItems: [dItem('d1', 'Срок сборки по таблице до 26 мая'), dItem('d2', 'Не подаём на сертификацию в текущем виде')],
+        decisionResolutions: [dRes({ item: 'd1', action: 'NEW' }), dRes({ item: 'd2', action: 'NEW' })],
+      })
+      expect(plan.newDecisions.map((d) => d.text)).toEqual(['Срок сборки по таблице до 26 мая', 'Не подаём на сертификацию в текущем виде'])
+      expect(plan.decisionMentions).toEqual([])
+    })
+
+    it('supersedes_code from the LLM wins over the similarity guard', () => {
+      const plan = gate({
+        recentDecisions: [{ code: 'D-5', text: 'Старое соглашение о сроках' }, ...known],
+        decisionItems: [dItem('d1', 'Подать на сертификацию в текущем виде сейчас')],
+        decisionResolutions: [dRes({ item: 'd1', action: 'NEW', supersedes_code: 'D-5' })],
+      })
+      expect(plan.newDecisions).toMatchObject([{ supersedes: 'D-5' }])
+      expect(plan.decisionMentions).toEqual([])
+    })
+
+    it('a guard hit without duplicate_of leaves a pending note; a hit by the LLM does not', () => {
+      const byGuard = gate({
+        recentDecisions: known,
+        decisionItems: [dItem('d1', 'Подать на сертификацию в текущем виде сейчас')],
+        decisionResolutions: [dRes({ item: 'd1', action: 'NEW' })],
+      })
+      expect(byGuard.notes).toMatchObject([{ code: 'D-1', pending: true }])
+      const byLlm = gate({
+        recentDecisions: known,
+        decisionItems: [dItem('d1', 'Подать на сертификацию в текущем виде сейчас')],
+        decisionResolutions: [dRes({ item: 'd1', action: 'NEW', duplicate_of: 'D-1' })],
+      })
+      expect(byLlm.notes).toEqual([])
+    })
+
+    it('two near-identical decisions in one meeting give one D-n and the second quote is kept as a mention', () => {
       const plan = gate({
         decisionItems: [dItem('d1', 'Срок сдачи до 19 мая'), dItem('d2', 'Срок сдачи до 19 мая включительно')],
         decisionResolutions: [dRes({ item: 'd1', action: 'NEW' }), dRes({ item: 'd2', action: 'NEW' })],
       })
       expect(plan.newDecisions).toHaveLength(1)
+      expect(plan.decisionMentions).toMatchObject([{ code: 'D-2' }])
     })
 
     it('a new task for an assignee outside the participants → no assignee, PENDING «исполнитель: …»', () => {

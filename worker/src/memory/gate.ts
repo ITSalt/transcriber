@@ -15,9 +15,12 @@
  *             speaker of the meeting (the task keeps assignee null; the event quotes
  *             «исполнитель: <как сказано>» for a person to confirm), anything below the
  *             threshold or backed by a fuzzy (non-exact) quote.
- * Decisions: a repeat of an existing decision (LLM `duplicate_of`, or word-set Jaccard
- *   ≥ DECISION_DUPLICATE_THRESHOLD against existing/earlier decisions) creates no D-n — it only
- *   adds a mention (MENTIONED_IN) to the existing one.
+ * Decisions: the main mechanism is the LLM (`duplicate_of` / NO_CHANGE + target). A repeat
+ *   creates no D-n — it only adds a mention (MENTIONED_IN) to the existing decision. The
+ *   deterministic guard (word-set Jaccard ≥ DECISION_DUPLICATE_THRESHOLD) is only for
+ *   near-verbatim repeats the LLM missed: texts that differ in a number/date or a negation are
+ *   never duplicates, a valid `supersedes_code` from the LLM always wins, and a guard hit is
+ *   noted (pending) so the trace stays.
  * Tasks the meeting does not mention get nothing.
  */
 import {
@@ -29,7 +32,7 @@ import {
 } from '@transcrib/shared'
 import type { MeetingUpdatePlan, NewTaskEventInput, TaskMentionInput } from '@transcrib/shared/memory'
 import type { DecisionResolution, ExtractedDecision, ExtractedTask, StatusSignal, TaskResolution } from './llm-output.js'
-import { normalizeText, type VerifiedQuote } from './transcript.js'
+import { NEGATIONS, normalizeText, type VerifiedQuote } from './transcript.js'
 
 export interface VerifiedTaskItem {
   /** i1, i2, … — the quote_ref of MEMORY_RESOLVE */
@@ -88,6 +91,12 @@ export const DECISION_DUPLICATE_THRESHOLD = 0.6
 
 const wordSet = (text: string) => new Set(normalizeText(text).split(' ').filter(Boolean))
 
+/** Numbers/dates and negations flip the meaning of a decision: «до 19 мая» ≠ «до 26 мая», «подаём» ≠ «не подаём». */
+function meaningTokens(text: string): string {
+  const w = [...wordSet(text)]
+  return [...w.filter((x) => /\p{N}/u.test(x)), '|', ...w.filter((x) => NEGATIONS.has(x))].sort().join(' ')
+}
+
 /** |A∩B| / |A∪B| of the normalised word sets (0 when either is empty). */
 export function wordJaccard(a: string, b: string): number {
   const x = wordSet(a)
@@ -106,6 +115,7 @@ export function findSimilarDecision(
 ): { code: string; score: number } | null {
   let best: { code: string; score: number } | null = null
   for (const k of known) {
+    if (meaningTokens(text) !== meaningTokens(k.text)) continue
     const score = wordJaccard(text, k.text)
     if (score >= threshold && (!best || score > best.score)) best = { code: k.code, score }
   }
@@ -375,12 +385,18 @@ export function applyGate(input: GateInput): GatePlan {
       }
       continue
     }
-    // a repeat of an existing decision: the LLM says so (duplicate_of) or the wording is nearly the same
-    const dupCode =
-      (r.duplicate_of && recent.has(r.duplicate_of) ? r.duplicate_of : null) ?? findSimilarDecision(item.decision.text, known)?.code ?? null
-    if (dupCode && dupCode !== r.supersedes_code) {
-      if (recent.has(dupCode)) plan.decisionMentions.push({ code: dupCode, mention })
-      continue
+    // a repeat of an existing decision: the LLM says so (duplicate_of) or, as a guard, the wording is
+    // nearly verbatim. A valid supersedes_code means the LLM says "replaces", never "repeats".
+    if (!(r.supersedes_code && recent.has(r.supersedes_code))) {
+      const byLlm = r.duplicate_of && recent.has(r.duplicate_of) ? r.duplicate_of : null
+      const byText = byLlm ? null : (findSimilarDecision(item.decision.text, known)?.code ?? null)
+      const dupCode = byLlm ?? byText
+      if (dupCode) {
+        // the code may belong to a decision created earlier in this meeting: the write creates it before the mentions
+        plan.decisionMentions.push({ code: dupCode, mention })
+        if (byText) plan.notes.push({ code: dupCode, text: `${dupCode} повтор решения по тексту: «${item.decision.text}» (новое решение не создано)`, pending: true })
+        continue
+      }
     }
     decisionSeq += 1
     const code = `D-${decisionSeq}`

@@ -40,7 +40,7 @@ const MIN_QUOTE_CHARS = 6
 const MIN_FUZZY_TOKENS = 4
 const MAX_WINDOW = 3
 /** a fuzzy quote may miss a word, but never one of these: "не отправил" ≠ "отправил" */
-const NEGATIONS = new Set(['не', 'ни', 'нет', 'no', 'not', 'never', 'без'])
+export const NEGATIONS = new Set(['не', 'ни', 'нет', 'no', 'not', 'never', 'без'])
 
 function speakerDisplay(label: string): string {
   const m = /SPEAKER_(\d+)/i.exec(label)
