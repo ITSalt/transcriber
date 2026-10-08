@@ -51,7 +51,7 @@ CANCELLED (причина).
 | [WP-BACKEND-07](work-packages/WP-BACKEND-07-speakers.md) | backend | Подтверждение спикеров: контракт, статус AWAITING_SPEAKERS, API карты спикеров | DISPATCHING | product-backend | — | 2026-10-08 |
 | [WP-WORKER-06](work-packages/WP-WORKER-06-speakers-gate.md) | worker | Воркер: остановка на AWAITING_SPEAKERS, имена спикеров в транскрипте и промпте | READY | product-worker | — | 2026-10-08 |
 | [WP-FRONTEND-06](work-packages/WP-FRONTEND-06-speakers.md) | frontend | Экран подтверждения спикеров перед генерацией протокола | READY | product-frontend | — | 2026-10-08 |
-| [WP-WORKER-07](work-packages/WP-WORKER-07-memory-leak-guard.md) | worker | Защита протокола от утечки памяти проекта и чужих участников | DISPATCHING | product-worker | — | 2026-10-08 |
+| [WP-WORKER-07](work-packages/WP-WORKER-07-memory-leak-guard.md) | worker | Защита протокола от утечки памяти проекта и чужих участников | REVIEW | product-worker | https://github.com/ITSalt/transcriber/pull/27 | 2026-10-08 |
 | [WP-WORKER-MEMORY-02](work-packages/WP-WORKER-MEMORY-02-hygiene.md) | worker-memory | Гигиена памяти проекта: дедуп решений, валидация исполнителей, сводка по продуктам | DISPATCHING | product-worker-memory | — | 2026-10-08 |
 
 ## Ждёт владельца
@@ -167,6 +167,8 @@ R-n — действие: точная команда одной строкой 
 <!-- orch:journal -->
 | Дата | WP | Событие | Подтверждение |
 |------|----|---------|---------------|
+| 2026-10-08 19:16Z | WP-WORKER-07 | WP-WORKER-07: READY b48882a895 (PR 27); ревью r1 запущено; подозрение оркестратора на дефект нормализации имён в protocol-guard.ts (стемы разной длины для падежей: «антон»→«ант», «антону»→«анто») передано рецензенту как вопрос 1 | чтение protocol-guard.ts stemOf |
+| 2026-10-08 19:15Z | WP-WORKER-07 | WP-WORKER-07: DISPATCHING -> REVIEW | b48882a895; report reports/wp-worker-07-review-20261008.md |
 | 2026-10-08 19:07Z | WP-BACKEND-07 | lock transcriber:graph acquired | orch.py lock |
 | 2026-10-08 19:03Z | WP-WORKER-07 | WP-WORKER-07: READY -> DISPATCHING | start command handed to the owner; model sonnet |
 | 2026-10-08 19:03Z | WP-WORKER-07 | WP-WORKER-07: DISPATCHING -> READY | сессия product-worker закрыта (сокет недоступен) — TASK не доставлен; запуск новой сессии командой dispatch |
