@@ -58,6 +58,7 @@
 2. После PUT — статус `GENERATING_PROTOCOL`, обычный прогресс; ошибки 409/404 — понятные тексты. Статус `AWAITING_SPEAKERS` в списке задач и на карточке (подпись, цвет), i18n RU/EN.
 3. Тесты компонентов (RTL): рендер меток и цитат, объединение, валидация (имя не пустое), отправка тела по контракту, обработка 409.
 4. Не менять: страницу протокола, загрузку, другие фичи.
+5. Из ревью WP-BACKEND-07 (reports/wp-backend-07-review-20261008.md): карты статусов, которые не знают `AWAITING_SPEAKERS` и входят в объём этого пакета — `web/src/i18n/{ru,en}.json` (`catalog.status.*`), `web/src/routes/catalog/index.tsx` (`TRANSIENT_STATUSES` — новый статус НЕ переходный: ждёт пользователя, не поллить), `web/src/routes/meeting/components/StatusBadge.tsx` (вариант), `StatusSection.tsx` (`TRANSCRIPT_STATUSES`). Ограничение API: `GET /api/meetings/:id/transcript` в `AWAITING_SPEAKERS` отвечает 409 `STATUS_NOT_READY` — экран показывает образцы из `GET /speakers`, кнопку «Транскрипт» в этом статусе не показывать (или дизейблить с подсказкой).
 
 ### Не входит
 
