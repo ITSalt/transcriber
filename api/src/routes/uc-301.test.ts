@@ -18,7 +18,7 @@
  *   T11 — 400 VALIDATION_FAILED when markdown_content missing/empty (PUT)
  *   T12 — 500 INTERNAL_ERROR on DB failure (GET)
  *   T13 — 400 VALIDATION_ERROR for invalid UUID in :id
- *   T14 — NFR-007: endpoints reachable without Authorization header
+ *   T14 — D-20 (AUTH_REQUIRED=false): endpoints reachable without Authorization header
  *   T15 — Status-driven gating: PROTOCOL_READY and EDITED are accepted (GET)
  *   T16 — Status-driven gating: non-protocol statuses rejected with 409 (GET)
  */
@@ -47,16 +47,31 @@ vi.mock('../config.js', () => ({
   },
 }))
 
-const { mockFindUnique, mockProtocolUpdate, mockMeetingUpdate, mockTransaction } = vi.hoisted(() => ({
+const { mockFindUnique, mockProtocolUpdate, mockMeetingUpdate, mockTransaction, mockVersionFindFirst, mockVersionCreate, mockProtocolLock } = vi.hoisted(() => ({
   mockFindUnique: vi.fn(),
   mockProtocolUpdate: vi.fn(),
   mockMeetingUpdate: vi.fn(),
   mockTransaction: vi.fn(),
+  // FR-005 (WP-BACKEND-01): saveProtocol appends ProtocolVersion rows inside the transaction
+  mockVersionFindFirst: vi.fn(),
+  mockVersionCreate: vi.fn(),
+  // the protocol row locked and re-read inside the transaction (SELECT … FOR UPDATE)
+  mockProtocolLock: vi.fn().mockResolvedValue([
+    {
+      markdown_content: '# locked current text',
+      edit_count: 0,
+      last_edited_at: null,
+      generated_at: new Date('2024-03-01T10:00:00.000Z'),
+      updated_at: new Date('2024-03-01T10:00:00.000Z'),
+    },
+  ]),
 }))
 
 vi.mock('../db.js', () => ({
   prisma: {
     meeting: {
+      // FR-003 access check of the auth plugin (meeting is in workspace «Роман»)
+      findFirst: vi.fn().mockResolvedValue({ id: '00000000-0000-4000-8000-0000000000ff', workspaceId: '00000000-0000-4000-8000-000000000001', projectId: null }),
       findMany: vi.fn(),
       findUnique: mockFindUnique,
       update: mockMeetingUpdate,
@@ -64,7 +79,19 @@ vi.mock('../db.js', () => ({
     protocol: {
       update: mockProtocolUpdate,
     },
-    $transaction: mockTransaction,
+    // saveProtocol uses an interactive transaction; the tests configure mockTransaction with
+    // the [updatedProtocol, updatedMeeting] pair, which this adapter hands out through `tx`.
+    $transaction: async (arg: unknown) => {
+      const configured = await mockTransaction(arg)
+      if (typeof arg !== 'function') return configured
+      const [protocol, meeting] = (Array.isArray(configured) ? configured : []) as unknown[]
+      return (arg as (tx: unknown) => Promise<unknown>)({
+        $queryRaw: mockProtocolLock,
+        protocolVersion: { findFirst: mockVersionFindFirst, create: mockVersionCreate },
+        protocol: { update: vi.fn().mockResolvedValue(protocol) },
+        meeting: { update: vi.fn().mockResolvedValue(meeting) },
+      })
+    },
     $queryRaw: vi.fn().mockResolvedValue([{ '?column?': 1 }]),
   },
 }))
@@ -209,8 +236,8 @@ describe('UC-301-BE — GET /api/meetings/:id/protocol', () => {
     expect(res.json<{ code: string }>().code).toBe('VALIDATION_ERROR')
   })
 
-  // T14: NFR-007 no auth required
-  it('T14 — NFR-007: endpoint reachable without Authorization header', async () => {
+  // T14: D-20 — no session needed while AUTH_REQUIRED=false
+  it('T14 — D-20 (AUTH_REQUIRED=false): endpoint reachable without Authorization header', async () => {
     mockFindUnique.mockResolvedValue(makeDbMeeting())
 
     const res = await app.inject({
@@ -371,13 +398,10 @@ describe('UC-301-BE — PUT /api/meetings/:id/protocol', () => {
   // T06: RQ-030 — saves exact markdown_content
   it('T06 — RQ-030: PUT saves the exact markdown_content passed (BRQ-018)', async () => {
     mockFindUnique.mockResolvedValue(makeDbMeeting())
-    mockTransaction.mockImplementation(async (ops: unknown[]) => {
-      // Execute both ops to verify the protocol update call includes correct content
-      if (Array.isArray(ops)) {
-        return [makeUpdatedProtocol(2, 1), { ...makeDbMeeting(), status: 'EDITED' }]
-      }
-      return []
-    })
+    mockTransaction.mockImplementation(async () => [
+      makeUpdatedProtocol(2, 1),
+      { ...makeDbMeeting(), status: 'EDITED' },
+    ])
 
     const res = await app.inject({
       method: 'PUT',
@@ -476,7 +500,7 @@ describe('UC-301-BE — PUT /api/meetings/:id/protocol', () => {
   })
 
   // NFR-007: no auth required (PUT)
-  it('NFR-007: PUT endpoint reachable without Authorization header', async () => {
+  it('D-20 (AUTH_REQUIRED=false): PUT endpoint reachable without Authorization header', async () => {
     mockFindUnique.mockResolvedValue(makeDbMeeting())
     mockTransaction.mockResolvedValue([
       makeUpdatedProtocol(2, 1),
@@ -491,6 +515,59 @@ describe('UC-301-BE — PUT /api/meetings/:id/protocol', () => {
     })
 
     expect(res.statusCode).toBe(200)
+  })
+
+  // ── RQ-050 (WP-BACKEND-01): immutable versions written in the same transaction ──
+  describe('RQ-050 protocol versions', () => {
+    const ok = () => mockTransaction.mockResolvedValue([makeUpdatedProtocol(2, 1), { ...makeDbMeeting(), status: 'EDITED' }])
+    const put = () =>
+      app.inject({
+        method: 'PUT',
+        url: `/api/meetings/${MEETING_UUID}/protocol`,
+        headers: { 'Content-Type': 'application/json' },
+        payload: { markdown_content: NEW_MARKDOWN },
+      })
+
+    it('no history yet → the replaced text becomes v1 GENERATED, the save v2 USER_EDIT', async () => {
+      mockFindUnique.mockResolvedValue(makeDbMeeting())
+      ok()
+      mockVersionFindFirst.mockResolvedValueOnce(null)
+      mockVersionCreate.mockClear()
+      expect((await put()).statusCode).toBe(200)
+      expect(mockVersionCreate.mock.calls.map(([a]) => [a.data.n, a.data.kind, a.data.markdown])).toEqual([
+        [1, 'GENERATED', '# locked current text'],
+        [2, 'USER_EDIT', NEW_MARKDOWN],
+      ])
+    })
+
+    it('history lacks the replaced text → it is recorded as LEGACY n+1 first (the LOCKED text, not a stale read)', async () => {
+      mockFindUnique.mockResolvedValue(makeDbMeeting())
+      ok()
+      mockVersionFindFirst.mockResolvedValueOnce({ n: 4, markdown: '# something older' })
+      mockVersionCreate.mockClear()
+      expect((await put()).statusCode).toBe(200)
+      expect(mockVersionCreate.mock.calls.map(([a]) => [a.data.n, a.data.kind, a.data.markdown])).toEqual([
+        [5, 'LEGACY', '# locked current text'],
+        [6, 'USER_EDIT', NEW_MARKDOWN],
+      ])
+    })
+
+    it('history already ends with the replaced text → only the USER_EDIT version', async () => {
+      mockFindUnique.mockResolvedValue(makeDbMeeting())
+      ok()
+      mockVersionFindFirst.mockResolvedValueOnce({ n: 2, markdown: '# locked current text' })
+      mockVersionCreate.mockClear()
+      expect((await put()).statusCode).toBe(200)
+      expect(mockVersionCreate.mock.calls.map(([a]) => [a.data.n, a.data.kind])).toEqual([[3, 'USER_EDIT']])
+    })
+
+    it('two saves racing for the same version number → 409 PROTOCOL_EDIT_CONFLICT', async () => {
+      mockFindUnique.mockResolvedValue(makeDbMeeting())
+      mockTransaction.mockRejectedValue(Object.assign(new Error('Unique constraint failed'), { code: 'P2002' }))
+      const res = await put()
+      expect(res.statusCode).toBe(409)
+      expect(res.json<{ code: string }>().code).toBe('PROTOCOL_EDIT_CONFLICT')
+    })
   })
 
   // Invalid UUID in PUT

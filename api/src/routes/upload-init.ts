@@ -6,6 +6,8 @@
  * POST /api/uploads/complete to finalize.
  *
  * BRQ-001: max 500 MB   BRQ-002: allowed MIME types
+ * FR-003 / RQ-044: the upload goes into `workspace_id` (membership checked BEFORE any URL is
+ * presigned; the legacy principal may omit it → «Роман»). New keys: ws/<workspaceId>/<uuid>.<ext>.
  */
 import { randomUUID } from 'node:crypto'
 import type { FastifyInstance } from 'fastify'
@@ -13,6 +15,7 @@ import type { ZodTypeProvider } from '@fastify/type-provider-zod'
 import { UploadInitRequest, UploadInitResponse } from '@transcrib/shared'
 import { S3StorageProvider, s3ConfigFromEnv } from '../storage/s3-adapter.js'
 import { AppError } from '../plugins/errors.js'
+import { resolveWorkspace } from '../features/auth/access.js'
 
 const PART_SIZE = 10 * 1024 * 1024 // 10 MB (S3 minimum for non-last parts is 5 MB)
 // DEC-004: every part URL is signed up front, so the LAST part's URL expires
@@ -28,6 +31,11 @@ const EXT_MAP: Record<string, string> = {
   'video/webm': 'webm',
 }
 
+/** Key prefix of new uploads into a workspace (FR-003). */
+export function uploadKeyPrefix(workspaceId: string): string {
+  return `ws/${workspaceId}/`
+}
+
 export async function uploadInitRoutes(app: FastifyInstance): Promise<void> {
   app.withTypeProvider<ZodTypeProvider>().post(
     '/api/uploads/init',
@@ -39,10 +47,11 @@ export async function uploadInitRoutes(app: FastifyInstance): Promise<void> {
     },
     async (request, reply) => {
       const { filetype, size_bytes } = request.body
+      const workspaceId = resolveWorkspace(request, request.body.workspace_id)
 
       const s3 = new S3StorageProvider(s3ConfigFromEnv())
       const ext = EXT_MAP[filetype] ?? 'mp4'
-      const s3Key = `pending/${randomUUID()}.${ext}`
+      const s3Key = `${uploadKeyPrefix(workspaceId)}${randomUUID()}.${ext}`
 
       let s3UploadId: string
       try {
