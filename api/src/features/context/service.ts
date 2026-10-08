@@ -7,6 +7,7 @@ import type { Prisma } from '@prisma/client'
 import {
   canonicalSnapshotJson,
   MeetingContextSnapshot,
+  PREVIOUS_PROTOCOL_MAX_CHARS,
   PROGRAM_ERRORS,
   PROGRAM_ERROR_MESSAGES,
   type LastProtocolResponse,
@@ -157,6 +158,8 @@ export async function freezeAndStart(meetingId: string): Promise<StartResult> {
     if (previous.source === 'project') {
       const last = meeting.projectId ? await lastProtocolOf(meeting.projectId, tx) : null
       if (!last) throw previousProtocolUnavailable()
+      // D-25: never truncated — the author picks «без протокола» or pastes a fragment
+      if (last.markdown.length > PREVIOUS_PROTOCOL_MAX_CHARS) throw programError('PREVIOUS_PROTOCOL_TOO_LONG')
       previous = { source: 'project', meeting_id: last.meeting_id, text: last.markdown }
     }
 

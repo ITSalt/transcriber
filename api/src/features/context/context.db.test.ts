@@ -311,6 +311,26 @@ describe.skipIf(!DATABASE_URL)('FR-004 — projects, context, start', () => {
     expect(ctx.previous_protocol).toEqual({ source: 'project', meeting_id: prev.id, text: '# Прошлый' })
   })
 
+  it("previous protocol 'project' longer than 50 000 → 422 TOO_LONG, rolled back; exactly 50 000 is accepted (D-25)", async () => {
+    const pid = await makeProject()
+    const m = await awaitingMeeting()
+    await call('PUT', `/api/meetings/${m.id}/context`, { project_id: pid, previous_protocol: { source: 'project' } })
+    const prev = await db.meeting.create({
+      data: { workspaceId: LEGACY_WS, projectId: pid, title: 'Длинная', status: 'PROTOCOL_READY', protocol: { create: { markdownContent: 'x'.repeat(50_001) } } },
+    })
+
+    const fail = await call('POST', `/api/meetings/${m.id}/start`)
+    expect(fail.statusCode, fail.body).toBe(422)
+    expect(fail.json().code).toBe('PREVIOUS_PROTOCOL_TOO_LONG')
+    expect((await db.meeting.findUnique({ where: { id: m.id } })).status).toBe('AWAITING_START')
+    expect(h.queueAdd).not.toHaveBeenCalled()
+
+    await db.protocol.update({ where: { meetingId: prev.id }, data: { markdownContent: 'x'.repeat(50_000) } })
+    const ok = await call('POST', `/api/meetings/${m.id}/start`)
+    expect(ok.statusCode, ok.body).toBe(200)
+    expect(h.queueAdd).toHaveBeenCalledTimes(1)
+  })
+
   it('start from a meeting not in AWAITING_START → 409', async () => {
     const m = await awaitingMeeting()
     await db.meeting.update({ where: { id: m.id }, data: { status: 'TRANSCRIBING' } })

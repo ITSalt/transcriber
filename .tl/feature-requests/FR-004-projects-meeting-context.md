@@ -26,7 +26,7 @@ context into an immutable snapshot that feeds ASR keyterms and the LLM context s
 | Domain | +4 entities, +2 enums, ~1 modified | Project, ProjectParticipant, GlossaryTerm, MeetingContext; ParticipantSide, MeetingType; Meeting +project_id, MeetingStatus +AWAITING_START |
 | Use Cases | +5 NEW | UC-500..UC-504 |
 | Use Cases | ~4 MODIFIED | UC-001 (status), UC-100 (defer_start), UC-200 (keyterms), UC-300 (context sections) |
-| Requirements | RQ-046..RQ-049 | |
+| Requirements | RQ-046..RQ-049, RQ-064 | |
 
 ## Contract v1 (code)
 
@@ -58,6 +58,19 @@ context into an immutable snapshot that feeds ASR keyterms and the LLM context s
 ## Decisions
 
 - DEC-007: draft until `/start`, then an immutable snapshot with `snapshot_hash`.
+- DEC-011 (WP-API-PROJECTS-01, D-25): previous-protocol text ≤ 50 000 characters
+  (`PREVIOUS_PROTOCOL_MAX_CHARS`, one Zod limit for API and form; no truncation in the worker);
+  a `source=project` protocol is resolved inside the `/start` transaction.
+
+## Requirement amendments (WP-API-PROJECTS-01)
+
+- RQ-047: previous protocol ≤ 50 000 (was 200 000); the status claim at `/start` is atomic (one
+  winner of two parallel starts, one queued job); the existing `PENDING` job is enqueued with
+  `{transcription_job_id, speaker_count}`. A `source=project` protocol that is missing →
+  422 `PREVIOUS_PROTOCOL_UNAVAILABLE`; longer than 50 000 → 422 `PREVIOUS_PROTOCOL_TOO_LONG`
+  (never truncated). Both roll the start back: the meeting stays `AWAITING_START`, nothing is queued.
+- RQ-064 (new): `GET /api/projects/:projectId/last-protocol` returns the current text of the newest
+  protocol among the project's meetings; none → 422 `PREVIOUS_PROTOCOL_UNAVAILABLE`.
 
 ## Skills Invoked
 
