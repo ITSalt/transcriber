@@ -32,7 +32,7 @@ CANCELLED (причина).
 | [WP-FRONTEND-05](work-packages/WP-FRONTEND-05-project-memory-ui.md) | frontend | Реестр задач и решений проекта, очередь подтверждений | CANCELLED (заменён WP-WEB-MEMORY-01 (D-15)) | product-frontend | — | 2026-10-07 |
 | [WP-BACKEND-05](work-packages/WP-BACKEND-05-neo4j-prod.md) | backend | Neo4j для памяти проекта: сервис, лимиты памяти, бэкап, CI | CANCELLED (заменён WP-INFRA-01 и WP-WORKER-MEMORY-01 (D-15)) | product-backend | — | 2026-10-07 |
 | [WP-BACKEND-06](work-packages/WP-BACKEND-06-contract.md) | backend | Контракт программы: схема БД, контракты shared, зависимости | PROD | product-backend | https://github.com/ITSalt/transcriber/pull/12 (accepted 3fa3500f47) | 2026-10-07 |
-| [WP-WORKER-01](work-packages/WP-WORKER-01-context-asr-llm.md) | worker | Контекст встречи в Deepgram и в промпт протокола, метаданные генерации | ACCEPTED | product-worker | https://github.com/ITSalt/transcriber/pull/17 (accepted d0728e2380) | 2026-10-08 |
+| [WP-WORKER-01](work-packages/WP-WORKER-01-context-asr-llm.md) | worker | Контекст встречи в Deepgram и в промпт протокола, метаданные генерации | PROD | product-worker | https://github.com/ITSalt/transcriber/pull/17 (accepted d0728e2380) | 2026-10-08 |
 | [WP-WORKER-02](work-packages/WP-WORKER-02-project-memory.md) | worker | Память проекта в Neo4j: извлечение, сопоставление, сводка | CANCELLED (создан в неверном потоке; заменён WP-WORKER-MEMORY-01 (D-15)) | product-worker | — | 2026-10-07 |
 | [WP-INFRA-01](work-packages/WP-INFRA-01-neo4j.md) | infra | Neo4j памяти проекта: сервис, лимиты, бэкап, CI, шаг деплоя | PROD | product-infra | https://github.com/ITSalt/transcriber/pull/10 (accepted 0e7ebe85d3) | 2026-10-07 |
 | [WP-WEB-PROJECTS-01](work-packages/WP-WEB-PROJECTS-01-projects-context.md) | web-projects | Проекты и форма контекста перед распознаванием | ACCEPTED | product-web-projects | https://github.com/ITSalt/transcriber/pull/19 | 2026-10-07 |
@@ -97,7 +97,7 @@ R-n — действие: точная команда одной строкой 
 |-------|-------------|-----------|---|------|------------|
 | transcriber:shared/** | transcriber | WP-WORKER-MEMORY-01 | 2026-10-07 20:11Z | — | dispatch |
 | transcriber:worker/package.json | transcriber | WP-WORKER-MEMORY-01 | 2026-10-07 20:11Z | — | dispatch |
-| transcriber:graph | transcriber | — | 2026-10-08 10:33Z | WP-API-FEEDBACK-01 | released by WP-API-PROJECTS-01 |
+| transcriber:graph | transcriber | WP-API-FEEDBACK-01 | 2026-10-08 10:37Z | — | — |
 | transcriber:.tl/changelog.md | transcriber | WP-API-PROJECTS-01 | 2026-10-08 10:33Z | — | — |
 
 ## Очередь слияний
@@ -118,7 +118,7 @@ R-n — действие: точная команда одной строкой 
 | 8 | transcriber | WP-WORKER-MEMORY-01 | https://github.com/ITSalt/transcriber/pull/16 | WP-WORKER-01 | dropped |
 | 9 | transcriber | WP-BACKEND-01 | https://github.com/ITSalt/transcriber/pull/15 | — | merged |
 | 10 | transcriber | WP-FRONTEND-02 | https://github.com/ITSalt/transcriber/pull/13 | WP-BACKEND-01 | merged |
-| 11 | transcriber | WP-WORKER-01 | https://github.com/ITSalt/transcriber/pull/17 | WP-FRONTEND-02 | queued |
+| 11 | transcriber | WP-WORKER-01 | https://github.com/ITSalt/transcriber/pull/17 | WP-FRONTEND-02 | merged |
 | 12 | transcriber | WP-WORKER-MEMORY-01 | https://github.com/ITSalt/transcriber/pull/16 | WP-WORKER-01 | queued |
 | 13 | transcriber | WP-WEB-MEMORY-01 | https://github.com/ITSalt/transcriber/pull/14 | WP-WORKER-MEMORY-01 | queued |
 
@@ -129,6 +129,12 @@ R-n — действие: точная команда одной строкой 
 <!-- orch:journal -->
 | Дата | WP | Событие | Подтверждение |
 |------|----|---------|---------------|
+| 2026-10-08 10:37Z | WP-WORKER-01 | WP-WORKER-01 PROD: живой сценарий записан (pm2 online, снапшот промпта в CI, флаг keyterms выключен) | reports/verify-WP-WORKER-01-prod-20261008.md |
+| 2026-10-08 10:37Z | WP-WORKER-01 | WP-WORKER-01: VERIFIED_TEST -> PROD | verify --env prod 40d6ba5bc2: reports/verify-WP-WORKER-01-prod-20261008.md |
+| 2026-10-08 10:37Z | WP-API-FEEDBACK-01 | lock transcriber:graph acquired | orch.py lock |
+| 2026-10-08 10:36Z | WP-WORKER-01 | WP-WORKER-01: MERGED -> VERIFIED_TEST | verify --env test 40d6ba5bc2: reports/verify-WP-WORKER-01-test-20261008.md |
+| 2026-10-08 10:33Z | WP-WORKER-01 | WP-WORKER-01 merged in the merge queue | orch.py deliver: 40d6ba5bc2 |
+| 2026-10-08 10:33Z | WP-WORKER-01 | WP-WORKER-01: ACCEPTED -> MERGED | gh pr merge --squash: 40d6ba5bc2 (https://github.com/ITSalt/transcriber/pull/17) |
 | 2026-10-08 10:33Z | WP-API-PROJECTS-01 | WP-API-PROJECTS-01 UNLOCK graph: RQ-047/MeetingContext-A08 изменены (лимит 50000, D-25), NEW RQ-064, DEC-011, UC-502/503 spec_version 2; правка .tl md — в раунде REVISE под замками путей | сообщение сессии 2026-10-08; read-cypher ниже |
 | 2026-10-08 10:33Z | WP-API-PROJECTS-01 | lock transcriber:.tl/changelog.md acquired | orch.py lock |
 | 2026-10-08 10:33Z | WP-API-PROJECTS-01 | lock transcriber:graph released | orch.py lock |
