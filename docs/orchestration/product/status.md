@@ -52,7 +52,7 @@ CANCELLED (причина).
 | [WP-WORKER-06](work-packages/WP-WORKER-06-speakers-gate.md) | worker | Воркер: остановка на AWAITING_SPEAKERS, имена спикеров в транскрипте и промпте | READY | product-worker | — | 2026-10-08 |
 | [WP-FRONTEND-06](work-packages/WP-FRONTEND-06-speakers.md) | frontend | Экран подтверждения спикеров перед генерацией протокола | READY | product-frontend | — | 2026-10-08 |
 | [WP-WORKER-07](work-packages/WP-WORKER-07-memory-leak-guard.md) | worker | Защита протокола от утечки памяти проекта и чужих участников | DISPATCHING | product-worker | — | 2026-10-08 |
-| [WP-WORKER-MEMORY-02](work-packages/WP-WORKER-MEMORY-02-hygiene.md) | worker-memory | Гигиена памяти проекта: дедуп решений, валидация исполнителей, сводка по продуктам | READY | product-worker-memory | — | 2026-10-08 |
+| [WP-WORKER-MEMORY-02](work-packages/WP-WORKER-MEMORY-02-hygiene.md) | worker-memory | Гигиена памяти проекта: дедуп решений, валидация исполнителей, сводка по продуктам | DISPATCHING | product-worker-memory | — | 2026-10-08 |
 
 ## Ждёт владельца
 
@@ -166,6 +166,7 @@ R-n — действие: точная команда одной строкой 
 <!-- orch:journal -->
 | Дата | WP | Событие | Подтверждение |
 |------|----|---------|---------------|
+| 2026-10-08 19:03Z | WP-WORKER-MEMORY-02 | WP-WORKER-MEMORY-02: READY -> DISPATCHING | start command handed to the owner; model sonnet |
 | 2026-10-08 19:02Z | WP-WORKER-07 | WP-WORKER-07: READY -> DISPATCHING | TASK message to live session; model sonnet |
 | 2026-10-08 19:02Z | WP-WORKER-MEMORY-02 | dispatch of WP-WORKER-MEMORY-02 refused: lock transcriber:shared/** is held by WP-BACKEND-07; lock transcriber:shared/src/api/speakers.ts is held by WP-BACKEND-07 (overlaps shared/**); lock transcriber:shared/src/api/uc002.ts is held by WP-BACKEND-07 (overlaps shared/**) | orch.py dispatch |
 | 2026-10-08 19:02Z | WP-BACKEND-07 | WP-BACKEND-07: READY -> DISPATCHING | start command handed to the owner; model sonnet; locks transcriber:shared/**, transcriber:shared/src/api/speakers.ts, transcriber:shared/src/api/uc002.ts, transcriber:api/prisma/**, transcriber:.tl/external-contracts/**, transcriber:migrations |
