@@ -142,6 +142,7 @@ R-n — действие: точная команда одной строкой 
 <!-- orch:journal -->
 | Дата | WP | Событие | Подтверждение |
 |------|----|---------|---------------|
+| 2026-10-08 11:07Z | WP-FRONTEND-02 | WP-FRONTEND-02 PROD: экран входа и вход по PIN проверены в браузере после R-16 (скриншоты) | reports/verify-WP-FRONTEND-02-prod-20261008.md |
 | 2026-10-08 11:06Z | WP-FRONTEND-02 | R-16 выполнен по ssh (D-28): вход по PIN включён на проде; CLI user:create не читает .env сам — нужен set -a; . .env (backlog: README/CLI); PIN владельцу передан вне файлов | ssh learn-prod 2026-10-08; curl login/me/logout |
 | 2026-10-08 11:06Z | — | R-16 closed | выполнено оркестратором по D-28 2026-10-08: PIN_PEPPER добавлен в /opt/transcrib/.env; user:create → Роман (f5fc588d…) в пространстве «Роман»; AUTH_REQUIRED=true, pm2 restart transcrib-api (online); проверки: health 200, /api/meetings и /api/auth/me без cookie 401, login верным PIN 200 + cookie, /me 200, неверный PIN 401 INVALID_PIN, logout 204 → /me 401 |
 | 2026-10-08 11:06Z | WP-API-PROJECTS-01 | WP-API-PROJECTS-01 merged in the merge queue; released transcriber:.tl/changelog.md | orch.py deliver: bf75f694f2 |
