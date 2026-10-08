@@ -1,14 +1,14 @@
 /**
  * UC-001-BE — View meeting catalog: service layer
  *
- * Queries all meetings sorted by updated_at DESC and left-joins Recording
- * for duration_sec. Maps Prisma model → MeetingListItem DTO.
+ * Queries the meetings of ONE workspace sorted by updated_at DESC and left-joins Recording
+ * for duration_sec. Maps Prisma model → WorkspaceMeetingListItem DTO.
  *
  * RQ-001: Meeting catalog MUST sort meetings by updated_at descending.
- * RQ-003: AUTHOR sees only own meetings; deferred until auth (NFR-007), so
- *         MVP returns all meetings.
+ * RQ-003 / RQ-044 (FR-003): the caller passes a workspace whose membership the route has
+ *         already checked; nothing outside it is ever returned.
  */
-import type { MeetingListItem, MeetingListResponse } from '@transcrib/shared'
+import type { WorkspaceMeetingListItem, WorkspaceMeetingListResponse } from '@transcrib/shared'
 import { prisma } from '../db.js'
 import { AppError } from '../plugins/errors.js'
 
@@ -23,15 +23,20 @@ function filenameFromUri(storageUri: string): string {
 }
 
 /**
- * Return the full meeting list sorted by updated_at DESC.
- * RQ-001, RQ-003 (MVP scope = all)
+ * Return the meetings of a workspace (optionally of one project) sorted by updated_at DESC.
+ * RQ-001, RQ-003 / RQ-044
  */
-export async function listMeetings(): Promise<MeetingListResponse> {
+export async function listMeetings(
+  workspaceId: string,
+  projectId?: string,
+): Promise<WorkspaceMeetingListResponse> {
   try {
     const meetings = await prisma.meeting.findMany({
+      where: { workspaceId, ...(projectId ? { projectId } : {}) },
       // RQ-001: sort by updated_at descending
       orderBy: { updatedAt: 'desc' },
       include: {
+        project: { select: { name: true } },
         // Left-join Recording to obtain duration_sec
         recording: {
           select: {
@@ -42,7 +47,7 @@ export async function listMeetings(): Promise<MeetingListResponse> {
       },
     })
 
-    const items: MeetingListItem[] = meetings.map((m) => ({
+    const items: WorkspaceMeetingListItem[] = meetings.map((m) => ({
       id: m.id,
       // title: non-nullable in Prisma schema but nullable in DTO contract
       // (schema will be relaxed when upload flow sets real titles)
@@ -61,6 +66,9 @@ export async function listMeetings(): Promise<MeetingListResponse> {
         m.recording?.durationSec != null
           ? Math.trunc(m.recording.durationSec)
           : null,
+      workspace_id: m.workspaceId,
+      project_id: m.projectId ?? null,
+      project_name: m.project?.name ?? null,
     }))
 
     return { items }

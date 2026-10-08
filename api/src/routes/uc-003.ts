@@ -3,7 +3,8 @@
  *
  * DELETE /api/meetings/:id → MeetingDeleteResponse
  *
- * NFR-007: No authentication at MVP — endpoint is open.
+ * FR-003 / RQ-044: workspace membership is checked by the auth plugin before validation
+ * and the handler (features/auth/routes.ts); foreign or nonexistent meeting → 404 NOT_FOUND.
  * RQ-006: Cascade-removes all derived artifacts + S3 object.
  * RQ-007: In-flight jobs are marked FAILED before deletion; in_flight_failed=true in response.
  */
@@ -30,7 +31,7 @@ export async function meetingDeleteRoutes(app: FastifyInstance): Promise<void> {
       },
     },
     async (request, reply) => {
-      // RQ-003/NFR-007: no ownership filter at MVP
+      // FR-003: access already checked by the auth plugin (request.meetingAccess)
       const { id } = request.params
 
       // Build storage adapter from env (same pattern as UC-100)

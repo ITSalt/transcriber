@@ -6,26 +6,43 @@
  *
  * Pipeline steps:
  *   1. Mark job IN_PROGRESS (PROCESSING) — RQ-021
- *   2. Load Transcript via Meeting relation — RQ-022
- *   3. Select prompt template per Transcript language (RU/EN) — RQ-022
- *   4. Call KieAiLlmProvider.generate — TECH-011
+ *   2. Load Transcript, frozen MeetingContext and project memory — RQ-022, RQ-059, RQ-062
+ *   3. Select prompt template per Meeting.language (RU/EN) and context mode — RQ-022, RQ-060
+ *   4. Call KieAiLlmProvider.generate with the context sections — TECH-011, RQ-049
  *   5. Validate four required sections in markdown output — RQ-023
- *   6. Persist Protocol row (version=1) — RQ-025
- *   7. Transition Meeting.status → PROTOCOL_READY — RQ-025 / BRQ-008
- *   8. Transition ProtocolGenerationJob.status → DONE — RQ-021
- *   9. Publish SSE 'meeting.status' event — TECH-012
+ *   6. Archive the rendered user prompt in S3 (best effort) — RQ-061
+ *   7. Persist Protocol (version=1) + ProtocolGeneration + ProtocolVersion(1, GENERATED)
+ *      in one transaction — RQ-025, RQ-050, RQ-051
+ *   8. Transition Meeting.status → PROTOCOL_READY — RQ-025 / BRQ-008
+ *   9. Transition ProtocolGenerationJob.status → DONE — RQ-021
+ *  10. Publish SSE 'meeting.status' event — TECH-012
  *  ALT: On any error → FAILED path — RQ-026
  */
+import { randomUUID } from 'node:crypto'
 import type { Job } from 'bullmq'
 import type { Logger } from 'pino'
 
-import type { ProtocolGenerationJobPayload } from '@transcrib/shared'
+import type { ProtocolGenerationJobPayload, ProjectMemoryProvider } from '@transcrib/shared'
 import type { ILlmProvider, LlmModel } from '@transcrib/shared'
-import { LLM_MODEL_DEFAULT, JOB_RETRY_ATTEMPTS } from '@transcrib/shared'
+import {
+  LLM_MODEL_DEFAULT,
+  JOB_RETRY_ATTEMPTS,
+  LEGACY_WORKSPACE_ID,
+  getProjectMemoryProvider,
+} from '@transcrib/shared'
 
 import { KieAiLlmProvider, isTransientLlmError } from '../llm/kieai.js'
+import {
+  hasProtocolContext,
+  loadProtocolSystemPrompt,
+  renderProtocolUserMessage,
+} from '../llm/protocol-prompt.js'
+import { buildProtocolContext } from '../llm/protocol-context.js'
+import { buildAsrKeyterms, frozenContextSnapshot, isAsrKeytermsEnabled } from '../asr/keyterms.js'
+import { DEEPGRAM_MODEL } from '../asr/deepgram-adapter.js'
 import { publishMeetingEvent } from '../lib/publisher.js'
 import { prisma } from '../lib/prisma.js'
+import { createStorage, type WorkerS3Storage } from '../lib/storage.js'
 import { resolveProtocolLanguage } from '../lib/language.js'
 
 // ─── Retry configuration (RC-UC-300 FR-001) ──────────────────────────────────
@@ -93,6 +110,97 @@ export function validateProtocolSections(
 export interface ProtocolGenerationDeps {
   llm?: ILlmProvider
   redisUrl?: string
+  /** Prompt archive (RQ-061). Defaults to createStorage() from env. */
+  storage?: Pick<WorkerS3Storage, 'putObject' | 'keyToStorageUri'>
+  /** <project_memory> source (RQ-062). Defaults to the process-wide provider. */
+  memory?: ProjectMemoryProvider
+  /** Environment for ASR_KEYTERMS_ENABLED. Defaults to process.env. */
+  env?: Record<string, string | undefined>
+}
+
+// ─── Context, memory, prompt archive ─────────────────────────────────────────
+
+/**
+ * RQ-061: upper bound for the prompt archive PUT. The archive is audit, not the product:
+ * an S3 that accepts the connection and then hangs must not keep the protocol unsaved.
+ */
+export const PROMPT_ARCHIVE_TIMEOUT_MS = 15_000
+
+/**
+ * RQ-062: upper bound for ProjectMemoryProvider.getPromptMemory. Defence in depth — the
+ * Neo4j provider bounds itself — so a provider that neither resolves nor throws cannot
+ * hold the job (and its BullMQ lock) forever; on timeout the section is omitted.
+ */
+export const PROJECT_MEMORY_TIMEOUT_MS = 15_000
+
+/** Reject after `ms` unless `work` settles first. The work itself is not cancelled. */
+async function withTimeout<T>(work: Promise<T>, ms: number, what: string): Promise<T> {
+  let timer: NodeJS.Timeout | undefined
+  const timeout = new Promise<never>((_, reject) => {
+    timer = setTimeout(() => reject(new Error(`${what} timed out after ${ms} ms`)), ms)
+  })
+  try {
+    return await Promise.race([work, timeout])
+  } finally {
+    clearTimeout(timer)
+  }
+}
+
+/**
+ * RQ-062: <project_memory> only for a project meeting, filtered by workspace AND
+ * project. A failing provider must not cost the user a protocol (D-19): the section
+ * is omitted and the generation goes on.
+ */
+async function loadProjectMemory(
+  provider: ProjectMemoryProvider,
+  projectId: string | null,
+  workspaceId: string,
+  log: Logger,
+): Promise<string | null> {
+  if (!projectId) return null
+  try {
+    return await withTimeout(
+      provider.getPromptMemory(projectId, workspaceId),
+      PROJECT_MEMORY_TIMEOUT_MS,
+      'project memory',
+    )
+  } catch (err) {
+    log.warn(
+      { projectId, workspaceId, error: err instanceof Error ? err.message : String(err) },
+      'Project memory unavailable — <project_memory> omitted',
+    )
+    return null
+  }
+}
+
+/**
+ * RQ-051 / RQ-061: the rendered user prompt goes to
+ * ws/<workspaceId>/prompts/<generationId>.txt. Best effort — an archive outage
+ * leaves prompt_uri NULL instead of failing the protocol.
+ */
+async function archivePrompt(
+  storage: ProtocolGenerationDeps['storage'] | undefined,
+  workspaceId: string,
+  generationId: string,
+  userMessage: string,
+  log: Logger,
+): Promise<string | null> {
+  const key = `ws/${workspaceId}/prompts/${generationId}.txt`
+  try {
+    const target = storage ?? createStorage()
+    await withTimeout(
+      target.putObject(key, Buffer.from(userMessage, 'utf-8'), 'text/plain; charset=utf-8'),
+      PROMPT_ARCHIVE_TIMEOUT_MS,
+      'prompt archive',
+    )
+    return target.keyToStorageUri(key)
+  } catch (err) {
+    log.warn(
+      { generationId, key, error: err instanceof Error ? err.message : String(err) },
+      'Protocol prompt not archived — prompt_uri left NULL',
+    )
+    return null
+  }
 }
 
 // ─── Main pipeline ────────────────────────────────────────────────────────────
@@ -121,7 +229,8 @@ export async function processProtocolGenerationJob(
       where: { id: protocol_generation_job_id },
       include: {
         meeting: {
-          include: { transcript: true },
+          // FR-004: the frozen context snapshot feeds the prompt sections (RQ-049, RQ-059)
+          include: { transcript: true, context: true },
         },
       },
     })
@@ -185,14 +294,41 @@ export async function processProtocolGenerationJob(
     // silently — which is precisely how the 2026-08-14 defect went unnoticed.
     const language = resolveProtocolLanguage(meeting.language)
 
+    // ── Step 2b: Context snapshot + project memory (FR-004, FR-006) ──────────
+    // RQ-059: only a frozen snapshot counts; RQ-062: memory only for a project meeting.
+    // With neither, `context` is undefined and the request below is byte-for-byte the
+    // pre-program one (RQ-049).
+    const workspaceId = meeting.workspaceId ?? LEGACY_WORKSPACE_ID
+    const frozen = frozenContextSnapshot(meeting.context, (message) =>
+      log.warn({ protocol_generation_job_id, meetingId: meeting.id }, message),
+    )
+    const memory = await loadProjectMemory(
+      deps?.memory ?? getProjectMemoryProvider(),
+      meeting.projectId ?? null,
+      workspaceId,
+      log,
+    )
+    const context = buildProtocolContext({
+      snapshot: frozen?.snapshot ?? null,
+      memory,
+      meeting: { title: meeting.title, createdAt: meeting.createdAt },
+      language,
+    })
+
     // ── Step 3: Build prompt from transcript text ────────────────────────────
-    // RQ-022: full transcript text passed as user prompt; system prompt (template) chosen by language
+    // RQ-022: full transcript text passed as user prompt; system prompt (template) chosen by
+    // language and, since FR-004, by whether there is any context (RQ-060).
     const transcriptText = transcript.rawText ?? ''
     const model: LlmModel = LLM_MODEL_DEFAULT
 
     // ── Step 4: Call LLM provider (TECH-011) ─────────────────────────────────
     const llm: ILlmProvider = deps?.llm ?? new KieAiLlmProvider()
-    const llmResult = await llm.generate({ prompt: transcriptText, model, language })
+    const llmResult = await llm.generate({
+      prompt: transcriptText,
+      model,
+      language,
+      ...(context ? { context } : {}),
+    })
 
     // ── Step 5: Validate required sections (RQ-023) ──────────────────────────
     const sectionError = validateProtocolSections(llmResult.text, language)
@@ -201,8 +337,33 @@ export async function processProtocolGenerationJob(
       throw new Error(sectionError)
     }
 
-    // ── Step 6+7+8: Persist Protocol + update Meeting + mark DONE ────────────
-    // All writes in a single transaction (BRQ-008: Meeting.status mirror)
+    // ── Step 6: Generation audit record (RQ-051) ─────────────────────────────
+    // The same functions the adapter used, so what is recorded is what was sent.
+    // keyterms/asr_options are rebuilt from the same frozen snapshot and flag the
+    // transcription used — the schema keeps no separate record of the ASR call.
+    const generationId = randomUUID()
+    const promptVersion = loadProtocolSystemPrompt(language, hasProtocolContext(context)).version
+    const keytermsEnabled = isAsrKeytermsEnabled(deps?.env ?? process.env)
+    const keyterms = keytermsEnabled && frozen ? buildAsrKeyterms(frozen.snapshot) : []
+    const asrOptions = {
+      source: 'reconstructed',
+      provider: 'deepgram',
+      model: DEEPGRAM_MODEL,
+      language_hint: meeting.language === 'AUTO' ? null : meeting.language,
+      keyterms_enabled: keytermsEnabled,
+      keyterm_count: keyterms.length,
+    }
+    const promptUri = await archivePrompt(
+      deps?.storage,
+      workspaceId,
+      generationId,
+      renderProtocolUserMessage(transcriptText, context),
+      log,
+    )
+
+    // ── Step 7+8+9: Persist Protocol + generation + version, update Meeting, DONE ─
+    // All writes in a single transaction (BRQ-008: Meeting.status mirror; RQ-050: the
+    // first version is written with the Protocol it describes)
     await prisma.$transaction(async (tx) => {
       // RQ-025: Insert Protocol(version=1, edit_count=0 implicit, generated_at=now)
       await tx.protocol.create({
@@ -210,6 +371,34 @@ export async function processProtocolGenerationJob(
           meetingId: meeting.id,
           markdownContent: llmResult.text,
           version: 1,
+        },
+      })
+
+      // RQ-051: what produced this protocol
+      await tx.protocolGeneration.create({
+        data: {
+          id: generationId,
+          meetingId: meeting.id,
+          kind: 'PROTOCOL',
+          model: llmResult.model,
+          promptVersion,
+          contextSnapshotHash: frozen?.hash ?? null,
+          keyterms,
+          asrOptions,
+          inputTokens: llmResult.tokensIn,
+          outputTokens: llmResult.tokensOut,
+          promptUri,
+        },
+      })
+
+      // RQ-050: immutable history starts with the generated text
+      await tx.protocolVersion.create({
+        data: {
+          meetingId: meeting.id,
+          n: 1,
+          kind: 'GENERATED',
+          markdown: llmResult.text,
+          generationId,
         },
       })
 
@@ -232,7 +421,16 @@ export async function processProtocolGenerationJob(
     })
 
     log.info(
-      { protocol_generation_job_id, meetingId: meeting.id, model, language },
+      {
+        protocol_generation_job_id,
+        meetingId: meeting.id,
+        model,
+        language,
+        generationId,
+        withContext: context !== undefined,
+        withMemory: memory !== null,
+        promptArchived: promptUri !== null,
+      },
       'Protocol persisted',
     )
 

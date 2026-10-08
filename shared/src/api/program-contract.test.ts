@@ -69,6 +69,13 @@ describe('LoginRequest (D-8: PIN = exactly 6 digits)', () => {
     expect(LOGIN_MAX_FAILED_ATTEMPTS).toBe(10);
   });
 
+  it('D-25: a too-long project protocol is a 422 with its own text', () => {
+    expect(PROGRAM_ERRORS.PREVIOUS_PROTOCOL_TOO_LONG).toBe(422);
+    expect(PROGRAM_ERROR_MESSAGES.PREVIOUS_PROTOCOL_TOO_LONG).toBe(
+      'Протокол проекта длиннее 50 000 символов — выберите «без протокола» или вставьте фрагмент',
+    );
+  });
+
   it('has a message for every error code', () => {
     for (const code of ProgramErrorCode.options) {
       expect(PROGRAM_ERROR_MESSAGES[code]).toMatch(/\S/);
@@ -190,6 +197,10 @@ describe('meeting context', () => {
     expect(MeetingContextPutRequest.safeParse({ meeting_type: 'STANDUP' }).success).toBe(false);
     expect(PreviousProtocol.safeParse({ source: 'upload', text: '' }).success).toBe(false);
     expect(PreviousProtocol.safeParse({ source: 'upload', text: 'x'.repeat(PREVIOUS_PROTOCOL_MAX_CHARS + 1) }).success).toBe(false);
+    // D-25: exactly 50 000 characters
+    expect(PREVIOUS_PROTOCOL_MAX_CHARS).toBe(50_000);
+    expect(PreviousProtocol.safeParse({ source: 'upload', text: 'x'.repeat(50_000) }).success).toBe(true);
+    expect(PreviousProtocol.safeParse({ source: 'upload', text: 'x'.repeat(50_001) }).success).toBe(false);
     expect(PreviousProtocol.safeParse({ source: 'email' }).success).toBe(false);
     expect(PreviousProtocol.parse({ source: 'project' })).toEqual({ source: 'project', meeting_id: null, text: null });
   });

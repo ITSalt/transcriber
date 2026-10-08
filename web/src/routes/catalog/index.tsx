@@ -2,7 +2,8 @@ import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router";
 import { apiGet } from "@/lib/api";
-import { MeetingListResponse } from "@transcrib/shared";
+import { WorkspaceMeetingListResponse } from "@transcrib/shared";
+import { useWorkspaceId } from "@/lib/session";
 import { Button } from "@/components/ui/button";
 import {
   Table,
@@ -18,10 +19,16 @@ const TRANSIENT_STATUSES = new Set([
   "GENERATING_PROTOCOL",
 ]);
 
-function useMeetingList() {
+function useMeetingList(workspaceId: string | undefined) {
   return useQuery({
-    queryKey: ["meetings"],
-    queryFn: () => apiGet("/api/meetings", MeetingListResponse),
+    // the workspace is part of the key: switching it never shows another workspace's list
+    queryKey: ["meetings", workspaceId],
+    queryFn: () =>
+      apiGet(
+        `/api/meetings?workspace_id=${encodeURIComponent(workspaceId ?? "")}`,
+        WorkspaceMeetingListResponse,
+      ),
+    enabled: Boolean(workspaceId),
     // Poll while any meeting is in a transient state
     refetchInterval: (query) => {
       const items = query.state.data?.items ?? [];
@@ -33,7 +40,8 @@ function useMeetingList() {
 
 export default function CatalogPage() {
   const { t } = useTranslation();
-  const { data, isLoading, isError, refetch } = useMeetingList();
+  const workspaceId = useWorkspaceId();
+  const { data, isLoading, isError, refetch } = useMeetingList(workspaceId);
 
   return (
     <div data-testid="catalog-page" className="container mx-auto py-8 px-4">
@@ -67,11 +75,10 @@ export default function CatalogPage() {
         <Table aria-label={t("catalog.tableLabel")}>
           <TableHeader>
             <tr>
-              <TableHead>{t("catalog.columns.title")}</TableHead>
+              <TableHead>{t("catalog.columns.file")}</TableHead>
+              <TableHead>{t("catalog.columns.date")}</TableHead>
               <TableHead>{t("catalog.columns.status")}</TableHead>
-              <TableHead>{t("catalog.columns.language")}</TableHead>
-              <TableHead>{t("catalog.columns.uploaded_at")}</TableHead>
-              <TableHead>{t("catalog.columns.duration")}</TableHead>
+              <TableHead>{t("catalog.columns.protocol")}</TableHead>
               <TableHead />
             </tr>
           </TableHeader>

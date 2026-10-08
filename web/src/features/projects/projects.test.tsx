@@ -1,0 +1,111 @@
+import { describe, it, expect, vi, beforeAll, afterEach } from "vitest";
+import { render, screen, waitFor, within } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { createMemoryRouter, RouterProvider } from "react-router";
+import { ProjectDetailResponse, ProjectListResponse, ProjectParticipant } from "@transcrib/shared";
+import i18n from "@/i18n/config";
+import { WithSession, WS_PERSONAL } from "@/lib/test-utils";
+import { featureRegistry } from "@/lib/features";
+import { routes } from "./index";
+
+const WS = WS_PERSONAL;
+const PID = "11111111-1111-4111-8111-111111111111";
+const NOW = "2026-10-07T10:00:00.000Z";
+const SUMMARY = {
+  id: PID, workspace_id: WS, name: "Alpha", description: "Main deal",
+  meeting_count: 2, created_at: NOW, updated_at: NOW,
+};
+
+interface Call { method: string; url: string; body: unknown }
+
+function mockApi() {
+  const calls: Call[] = [];
+  const json = (b: unknown, s = 200) =>
+    new Response(JSON.stringify(b), { status: s, headers: { "Content-Type": "application/json" } });
+  vi.spyOn(globalThis, "fetch").mockImplementation(async (url, init) => {
+    const u = String(url);
+    const method = (init as RequestInit | undefined)?.method ?? "GET";
+    const raw = (init as RequestInit | undefined)?.body;
+    const body = typeof raw === "string" ? (JSON.parse(raw) as unknown) : undefined;
+    calls.push({ method, url: u, body });
+    if (u.includes("/api/projects?")) return json(ProjectListResponse.parse({ items: [SUMMARY] }));
+    if (u.endsWith("/api/projects") && method === "POST") {
+      return json(ProjectDetailResponse.parse({ project: { ...SUMMARY, name: "New" }, participants: [], glossary: [] }), 201);
+    }
+    if (u.endsWith(`/api/projects/${PID}`) && method === "GET") {
+      return json(ProjectDetailResponse.parse({ project: SUMMARY, participants: [], glossary: [] }));
+    }
+    if (u.endsWith(`/participants`) && method === "POST") {
+      return json(ProjectParticipant.parse({ id: "33333333-3333-4333-8333-333333333333", name: "Anna", aliases: ["Аня"], role: "PM", organization: null, side: "CLIENT" }), 201);
+    }
+    return new Response("Not found", { status: 404 });
+  });
+  return calls;
+}
+
+function renderAt(path: string) {
+  const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  const router = createMemoryRouter(routes, { initialEntries: [path] });
+  return render(
+    <QueryClientProvider client={client}>
+      <WithSession>
+        <RouterProvider router={router} />
+      </WithSession>
+    </QueryClientProvider>,
+  );
+}
+
+beforeAll(async () => {
+  await i18n.changeLanguage("en");
+});
+afterEach(() => vi.restoreAllMocks());
+
+describe("projects feature", () => {
+  it("registers the nav item and routes through the feature glob (D-15)", () => {
+    expect(featureRegistry.navItems.map((n) => n.to)).toContain("/projects");
+    expect(featureRegistry.routes.map((r) => r.path)).toEqual(
+      expect.arrayContaining(["/projects", "/projects/:projectId"]),
+    );
+  });
+
+  it("lists projects of the workspace", async () => {
+    const calls = mockApi();
+    renderAt("/projects");
+    expect(await screen.findByText("Alpha")).toBeInTheDocument();
+    expect(calls[0]!.url).toContain(`workspace_id=${WS}`);
+  });
+
+  it("creates a project and opens its card", async () => {
+    const calls = mockApi();
+    renderAt("/projects");
+    await userEvent.type(await screen.findByTestId("project-create-name"), "New");
+    await userEvent.click(screen.getByTestId("project-create-submit"));
+    await screen.findByTestId("project-detail");
+    const post = calls.find((c) => c.method === "POST" && c.url.endsWith("/api/projects"))!;
+    expect(post.body).toMatchObject({ workspace_id: WS, name: "New" });
+  });
+
+  it("adds a participant with aliases, role and side on the card", async () => {
+    const calls = mockApi();
+    renderAt(`/projects/${PID}`);
+    await screen.findByTestId("project-detail");
+    const form = within(screen.getByTestId("participant-form"));
+    await userEvent.type(form.getByTestId("participant-form-name"), "Anna");
+    await userEvent.type(form.getByTestId("participant-form-aliases"), "Аня, Anya");
+    await userEvent.type(form.getByTestId("participant-form-role"), "PM");
+    await userEvent.selectOptions(form.getByTestId("participant-form-side"), "CLIENT");
+    await userEvent.click(form.getByTestId("participant-form-submit"));
+    await waitFor(() =>
+      expect(calls.some((c) => c.method === "POST" && c.url.endsWith("/participants"))).toBe(true),
+    );
+    const post = calls.find((c) => c.url.endsWith("/participants"))!;
+    expect(post.body).toEqual({
+      name: "Anna",
+      aliases: ["Аня", "Anya"],
+      role: "PM",
+      organization: null,
+      side: "CLIENT",
+    });
+  });
+});

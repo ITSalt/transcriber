@@ -7,7 +7,7 @@ the dev spec-graph container `transcrib-neo4j` (ports 3614/3627).
 
 `docker-compose.yml` → `memory-neo4j`:
 
-- ports only on `127.0.0.1`: bolt `7688`, browser `7475`
+- ports only on `127.0.0.1`: bolt `7689`, browser `7476`
 - auth: `neo4j` / `MEMORY_NEO4J_PASSWORD` (dev default `memory_dev_password`; set a real one in prod)
 - limits (D-16): heap 512m/512m, page cache 256m, transaction cap 256m,
   `-XX:+ExitOnOutOfMemoryError`, container `mem_limit: 1536m`, `restart: unless-stopped`
@@ -19,8 +19,18 @@ docker compose ps memory-neo4j                       # healthy
 docker inspect -f '{{.HostConfig.Memory}}' "$(docker compose ps -q memory-neo4j)"   # 1610612736
 ```
 
-Env for the app: `MEMORY_NEO4J_URI` (`bolt://localhost:7688`), `MEMORY_NEO4J_USER`,
+Env for the app: `MEMORY_NEO4J_URI` (`bolt://localhost:7689`), `MEMORY_NEO4J_USER`,
 `MEMORY_NEO4J_PASSWORD`, `MEMORY_NEO4J_DATABASE` (see `.env.example`).
+
+### Ports already in use
+
+7475/7688 are taken by the `fc-neo4j` container of another project on the prod VM (D-26),
+so this service uses 7476 (browser) / 7689 (bolt). If `docker compose up` reports
+"port is already allocated", find the owner:
+
+```bash
+ss -ltnp | grep -E ":7476|:7689"
+```
 
 ### Password — set it BEFORE the first start
 

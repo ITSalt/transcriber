@@ -4,12 +4,15 @@ import { createMemoryRouter, RouterProvider } from "react-router";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { collectFeatures, featureRegistry } from "@/lib/features";
 import { createAppRoutes } from "@/App";
+import { ME, json, mockApi } from "@/lib/test-utils";
 
 beforeAll(async () => {
   await import("@/i18n/config");
 });
 
 function renderAt(path: string, registry = featureRegistry) {
+  // a signed-in user: the shell asks /api/auth/me before rendering anything
+  mockApi((url) => (url.pathname === "/api/auth/me" ? json(ME) : undefined));
   const router = createMemoryRouter(createAppRoutes(registry), {
     initialEntries: [path],
   });
@@ -31,7 +34,7 @@ describe("feature auto-registration (D-15)", () => {
     );
   });
 
-  it("a temporary feature contributes route, nav item and slot without touching App.tsx", () => {
+  it("a temporary feature contributes route, nav item and slot without touching App.tsx", async () => {
     const registry = collectFeatures({
       "../features/shell/index.ts": { navItems: [] },
       "../features/tmp/index.tsx": {
@@ -45,21 +48,21 @@ describe("feature auto-registration (D-15)", () => {
 
     renderAt("/tmp", registry);
 
-    expect(screen.getByTestId("tmp-page")).toBeInTheDocument();
+    expect(await screen.findByTestId("tmp-page")).toBeInTheDocument();
     expect(screen.getByTestId("slot-header-right")).toContainElement(
       screen.getByTestId("tmp-slot"),
     );
-    expect(screen.getByRole("link", { name: /Встречи|Meetings/ })).toHaveAttribute(
+    expect(screen.getByRole("link", { name: /Задачи|Tasks/ })).toHaveAttribute(
       "href",
       "/tmp",
     );
   });
 
-  it("renders existing pages inside AppShell with an empty header.right slot", () => {
+  it("renders existing pages inside AppShell with an empty header.right slot", async () => {
     // Explicit registry: independent of which features exist globally.
     renderAt("/catalog", collectFeatures({}));
-    const shell = screen.getByTestId("app-shell");
-    expect(shell).toContainElement(screen.getByTestId("catalog-page"));
+    const page = await screen.findByTestId("catalog-page");
+    expect(screen.getByTestId("app-shell")).toContainElement(page);
     expect(screen.getByTestId("slot-header-right")).toBeEmptyDOMElement();
   });
 });

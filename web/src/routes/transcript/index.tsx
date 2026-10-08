@@ -2,7 +2,8 @@ import { useParams, useNavigate } from "react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { ArrowLeft } from "lucide-react";
-import { apiGet } from "@/lib/api";
+import { apiGet, isNotFound } from "@/lib/api";
+import { NotFound } from "@/components/NotFound";
 import { TranscriptResponse } from "@transcrib/shared";
 import {
   Card,
@@ -42,7 +43,9 @@ export default function TranscriptPage() {
   const { t } = useTranslation();
 
   const meetingId = id ?? "";
-  const { data, isLoading, isError, refetch } = useTranscript(meetingId);
+  const { data, error, isLoading, isError, refetch } = useTranscript(meetingId);
+
+  if (isNotFound(error)) return <NotFound />;
 
   return (
     <div
