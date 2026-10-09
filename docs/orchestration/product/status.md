@@ -128,6 +128,7 @@ R-n — действие: точная команда одной строкой 
 | transcriber:web/src/i18n/** | transcriber | WP-FRONTEND-07 | 2026-10-09 10:13Z | — | dispatch |
 | transcriber:shared/** | transcriber | WP-WORKER-08 | 2026-10-09 10:13Z | — | dispatch |
 | transcriber:shared/src/asr/IAsrProvider.ts:38 | transcriber | WP-WORKER-08 | 2026-10-09 10:13Z | — | dispatch |
+| transcriber:graph | transcriber | WP-WEB-PROJECTS-02 | 2026-10-09 10:56Z | — | — |
 
 ## Очередь слияний
 
@@ -182,6 +183,7 @@ R-n — действие: точная команда одной строкой 
 <!-- orch:journal -->
 | Дата | WP | Событие | Подтверждение |
 |------|----|---------|---------------|
+| 2026-10-09 10:56Z | WP-WEB-PROJECTS-02 | lock transcriber:graph acquired | orch.py lock |
 | 2026-10-09 10:55Z | WP-WEB-PROJECTS-02 | WP-WEB-PROJECTS-02: READY -> REVISE | раунд 1: тест projects.test.tsx падает (CI red), prefill без теста, чужой project id, граф не обновлён — reports/wp-web-projects-02-review-20261009.md |
 | 2026-10-09 10:54Z | WP-SPEC-01 | WP-SPEC-01: PROD -> DONE | PROD 7811d25cc2; граф 48/48 approved, user_story без «задач»; CLAUDE.md на VM; reports/verify-WP-SPEC-01-prod-20261009.md |
 | 2026-10-09 10:54Z | WP-SPEC-01 | WP-SPEC-01: VERIFIED_TEST -> PROD | verify --env prod 7811d25cc2: reports/verify-WP-SPEC-01-prod-20261009.md |
