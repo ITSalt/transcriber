@@ -192,6 +192,7 @@ R-n — действие: точная команда одной строкой 
 <!-- orch:journal -->
 | Дата | WP | Событие | Подтверждение |
 |------|----|---------|---------------|
+| 2026-10-09 12:43Z | WP-BACKEND-08 | WP-BACKEND-08: delivery refused: G5: the previous merge WP-BACKEND-08 is ACCEPTED, not VERIFIED_TEST (or --after-failure D-n) | orch.py deliver --apply |
 | 2026-10-09 12:43Z | — | R-22 closed | pg_dump -Fc на VM: /opt/transcrib/backups/transcrib-20261009-pre-drop-speaker-count.dump, размер 1316047 байт, pg_restore --list: 20 TABLE DATA; снят перед слиянием contract-PR #40 |
 | 2026-10-09 12:43Z | WP-BACKEND-08 | WP-BACKEND-08 queued for merge (sequential) | — |
 | 2026-10-09 12:43Z | WP-BACKEND-08 | WP-BACKEND-08: accepted at 432933a0e70f3d30bd9395367c51ca7a0fd7bb1c | report reports/wp-backend-08-review-20261009-r3.md |
