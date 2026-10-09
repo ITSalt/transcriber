@@ -191,6 +191,8 @@ R-n — действие: точная команда одной строкой 
 <!-- orch:journal -->
 | Дата | WP | Событие | Подтверждение |
 |------|----|---------|---------------|
+| 2026-10-09 19:13Z | — | по указанию владельца 2026-10-09 создан пользователь «Владислав» (fe85b433…) в личном пространстве «Владислав» (54d2dd1c…), user:create exit 0; проверено: login 200 → /me Владислав, logout 204; SELECT users/memberships: 3 пользователя; PIN «Романа» подтверждён входом (login 200/logout 204) | ssh deploy@transcriber.itsalt.ru user:create --pin - (stdin); curl login/me/logout 2026-10-09; psql SELECT users JOIN memberships |
+| 2026-10-09 19:13Z | — | D-45 recorded | — |
 | 2026-10-09 14:30Z | WP-FRONTEND-08 | WP-FRONTEND-08: PROD -> DONE | PROD 06582ba529; список: названия, колонка и фильтр «Проект» (9 = API), сброс → 11; карточка: ссылка на проект — reports/verify-WP-FRONTEND-08-prod-20261009.md |
 | 2026-10-09 14:29Z | WP-FRONTEND-08 | WP-FRONTEND-08: VERIFIED_TEST -> PROD | verify --env prod 06582ba529: reports/verify-WP-FRONTEND-08-prod-20261009.md |
 | 2026-10-09 14:29Z | WP-FRONTEND-08 | WP-FRONTEND-08: MERGED -> VERIFIED_TEST | verify --env test 06582ba529: reports/verify-WP-FRONTEND-08-test-20261009.md |
