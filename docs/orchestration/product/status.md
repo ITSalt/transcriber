@@ -54,11 +54,11 @@ CANCELLED (причина).
 | [WP-WORKER-07](work-packages/WP-WORKER-07-memory-leak-guard.md) | worker | Защита протокола от утечки памяти проекта и чужих участников | DONE | product-worker | https://github.com/ITSalt/transcriber/pull/27 (accepted ade44c9c31) | 2026-10-08 |
 | [WP-WORKER-MEMORY-02](work-packages/WP-WORKER-MEMORY-02-hygiene.md) | worker-memory | Гигиена памяти проекта: дедуп решений, валидация исполнителей, сводка по продуктам | DONE | product-worker-memory | https://github.com/ITSalt/transcriber/pull/28 (accepted adc8af0791) | 2026-10-08 |
 | [WP-SPEC-01](work-packages/WP-SPEC-01-glossary.md) | spec | Глоссарий графа: UTF-8, русские названия, термины программы, подписи форм | DONE | product-spec | https://github.com/ITSalt/transcriber/pull/32 (accepted 9ecfd6bb41) | 2026-10-09 |
-| [WP-FRONTEND-07](work-packages/WP-FRONTEND-07-wording.md) | frontend | Единая терминология в строках ядра: «Встречи», «обработка», «Спикер N», род статусов | VERIFIED_TEST | product-frontend | https://github.com/ITSalt/transcriber/pull/35 (accepted 9cf5dc0df1) | 2026-10-09 |
+| [WP-FRONTEND-07](work-packages/WP-FRONTEND-07-wording.md) | frontend | Единая терминология в строках ядра: «Встречи», «обработка», «Спикер N», род статусов | PROD | product-frontend | https://github.com/ITSalt/transcriber/pull/35 (accepted 9cf5dc0df1) | 2026-10-09 |
 | [WP-WEB-MEMORY-02](work-packages/WP-WEB-MEMORY-02-assignments.md) | web-memory | «Поручения» вместо «задач» в памяти проекта | DISPATCHING | product-web-memory | — | 2026-10-09 |
 | [WP-WEB-FEEDBACK-02](work-packages/WP-WEB-FEEDBACK-02-assignment-category.md) | web-feedback | Категория отзыва «Неверное поручение» | DISPATCHING | product-web-feedback | — | 2026-10-09 |
-| [WP-WEB-PROJECTS-02](work-packages/WP-WEB-PROJECTS-02-meetings-and-upload.md) | web-projects | «Проекты и поручения», встречи на карточке проекта, удаление поля «Количество спикеров» | VERIFIED_TEST | product-web-projects | https://github.com/ITSalt/transcriber/pull/34 (accepted 48daf9b7f4) | 2026-10-09 |
-| [WP-WORKER-08](work-packages/WP-WORKER-08-protocol-wording.md) | worker | Протокол: «## Поручения», «Спикер N», отказ от speakerCount в ASR | VERIFIED_TEST | product-worker | https://github.com/ITSalt/transcriber/pull/36 (accepted 62df97ade4) | 2026-10-09 |
+| [WP-WEB-PROJECTS-02](work-packages/WP-WEB-PROJECTS-02-meetings-and-upload.md) | web-projects | «Проекты и поручения», встречи на карточке проекта, удаление поля «Количество спикеров» | PROD | product-web-projects | https://github.com/ITSalt/transcriber/pull/34 (accepted 48daf9b7f4) | 2026-10-09 |
+| [WP-WORKER-08](work-packages/WP-WORKER-08-protocol-wording.md) | worker | Протокол: «## Поручения», «Спикер N», отказ от speakerCount в ASR | PROD | product-worker | https://github.com/ITSalt/transcriber/pull/36 (accepted 62df97ade4) | 2026-10-09 |
 | [WP-WORKER-MEMORY-03](work-packages/WP-WORKER-MEMORY-03-speaker-label.md) | worker-memory | Метка спикера в цитатах памяти: «Спикер N» | DISPATCHING | product-worker-memory | — | 2026-10-09 |
 | [WP-BACKEND-08](work-packages/WP-BACKEND-08-meeting-project-speaker-count.md) | backend | Проект в карточке встречи; удаление speaker_count из контрактов, сервисов и БД | DISPATCHING | product-backend | — | 2026-10-09 |
 | [WP-FRONTEND-08](work-packages/WP-FRONTEND-08-catalog-project.md) | frontend | Список встреч: название и проект, фильтр по проекту, заголовок карточки встречи | READY | product-frontend | — | 2026-10-09 |
@@ -189,6 +189,9 @@ R-n — действие: точная команда одной строкой 
 <!-- orch:journal -->
 | Дата | WP | Событие | Подтверждение |
 |------|----|---------|---------------|
+| 2026-10-09 11:14Z | WP-FRONTEND-07 | WP-FRONTEND-07: VERIFIED_TEST -> PROD | verify --env prod 655830416e: reports/verify-WP-FRONTEND-07-prod-20261009.md |
+| 2026-10-09 11:14Z | WP-WORKER-08 | WP-WORKER-08: VERIFIED_TEST -> PROD | verify --env prod 3d6673d9f5: reports/verify-WP-WORKER-08-prod-20261009.md |
+| 2026-10-09 11:14Z | WP-WEB-PROJECTS-02 | WP-WEB-PROJECTS-02: VERIFIED_TEST -> PROD | verify --env prod 39bdde1e97: reports/verify-WP-WEB-PROJECTS-02-prod-20261009.md |
 | 2026-10-09 11:14Z | WP-FRONTEND-07 | WP-FRONTEND-07: MERGED -> VERIFIED_TEST | verify --env test 655830416e: reports/verify-WP-FRONTEND-07-test-20261009.md |
 | 2026-10-09 11:10Z | — | R-22 opened for owner | work-packages/WP-BACKEND-08-meeting-project-speaker-count.md |
 | 2026-10-09 11:10Z | WP-BACKEND-08 | WP-BACKEND-08: READY -> DISPATCHING | start command handed to the owner; model sonnet; locks transcriber:shared/**, transcriber:shared/src/api/uc002.ts, transcriber:shared/src/api/uc100.ts:94, transcriber:shared/src/api/uc200.ts:11, transcriber:api/prisma/**, transcriber:migrations |
