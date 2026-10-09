@@ -19,7 +19,6 @@ import { useWorkspaceId } from "@/lib/session";
 export const projectKeys = {
   list: (workspaceId: string) => ["projects", "list", workspaceId] as const,
   detail: (id: string) => ["projects", "detail", id] as const,
-  meetings: (id: string) => ["projects", "meetings", id] as const,
   lastProtocol: (id: string) => ["projects", "last-protocol", id] as const,
 };
 
@@ -48,7 +47,8 @@ export function useProject(projectId: string | null | undefined) {
 export function useProjectMeetings(projectId: string) {
   const workspaceId = useWorkspaceId();
   return useQuery({
-    queryKey: projectKeys.meetings(projectId),
+    // shares the ["meetings"] prefix so deleting/retrying a meeting invalidates this block too
+    queryKey: ["meetings", workspaceId, { project_id: projectId }],
     queryFn: () =>
       apiGet(
         `/api/meetings?workspace_id=${encodeURIComponent(workspaceId ?? "")}&project_id=${encodeURIComponent(projectId)}`,

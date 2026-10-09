@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router";
 import { useTranslation } from "react-i18next";
 import { apiPost } from "@/lib/api";
@@ -18,7 +18,7 @@ import {
   isDraftEmpty,
   type ContextDraft,
 } from "@/features/context/draft";
-import { useLastProtocol } from "@/features/projects/api";
+import { useLastProtocol, useProjects } from "@/features/projects/api";
 import {
   Select,
   SelectContent,
@@ -62,10 +62,20 @@ export default function UploadPage() {
   const [progress, setProgress] = useState(0);
   const [uploadState, setUploadState] = useState<UploadState>("idle");
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
-  const [draft, setDraft] = useState<ContextDraft>(() => ({
-    ...emptyDraft,
-    projectId: searchParams.get("project"),
-  }));
+  const [draft, setDraft] = useState<ContextDraft>(emptyDraft);
+  const projects = useProjects();
+  const prefillProjectId = searchParams.get("project");
+  const prefilled = useRef(false);
+
+  // ?project= preselects a project, but only one the user can see: an unknown or foreign
+  // id must not sit in the draft (it would break start).
+  useEffect(() => {
+    if (prefilled.current || !prefillProjectId || !projects.data) return;
+    prefilled.current = true;
+    if (projects.data.items.some((p) => p.id === prefillProjectId)) {
+      setDraft((d) => (d.projectId === null ? { ...d, projectId: prefillProjectId } : d));
+    }
+  }, [prefillProjectId, projects.data]);
   const [meetingId, setMeetingId] = useState<string | null>(null);
   const lastProtocol = useLastProtocol(draft.projectId);
   const abortControllerRef = useRef<AbortController | null>(null);

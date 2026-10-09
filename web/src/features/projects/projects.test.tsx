@@ -129,7 +129,7 @@ describe("projects feature", () => {
     MEETINGS = [
       {
         id: MID, title: "Kickoff", filename: "k.mp4", status: "PROTOCOL_READY",
-        uploaded_at: NOW, workspace_id: WS, project_id: PID, project_name: "Alpha",
+        language: "RU", duration_sec: 600, uploaded_at: NOW, updated_at: NOW, workspace_id: WS, project_id: PID, project_name: "Alpha",
       },
     ];
     const calls = mockApi();
