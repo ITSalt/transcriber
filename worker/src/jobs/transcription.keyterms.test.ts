@@ -96,9 +96,8 @@ function log() {
   return { info: vi.fn(), warn: vi.fn(), error: vi.fn(), debug: vi.fn() } as never
 }
 
-const job = { id: 'b-1', data: { transcription_job_id: JOB_ID, speaker_count: 2 } } as unknown as Job<{
+const job = { id: 'b-1', data: { transcription_job_id: JOB_ID } } as unknown as Job<{
   transcription_job_id: string
-  speaker_count: number
 }>
 
 beforeEach(() => {
@@ -146,9 +145,9 @@ describe('UC-200 keyterms (RQ-048 / RQ-059)', () => {
     await processTranscriptionJob(job as never, log(), { asr, redisUrl: 'redis://x' })
 
     const input = asr.transcribe.mock.calls[0]![0]
-    expect(Object.keys(input).sort()).toEqual(['audio', 'languageHint', 'speakerCount'])
+    expect(Object.keys(input).sort()).toEqual(['audio', 'languageHint'])
     expect(input.languageHint).toBe('RU')
-    expect(input.speakerCount).toBe(2)
+    expect(input).not.toHaveProperty('speaker' + 'Count')
   })
 
   it('a frozen context that fails the schema is ignored with a warning, the job still succeeds', async () => {

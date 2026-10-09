@@ -31,13 +31,6 @@ export interface AudioInput {
   languageHint: string | null;
 
   /**
-   * Optional user-supplied speaker count. When set, providers should pin
-   * diarization to exactly this number (e.g. Deepgram min_speakers /
-   * max_speakers). Null/undefined = let the provider auto-detect.
-   */
-  speakerCount?: number | null;
-
-  /**
    * FR-004 (contract v1): vocabulary to boost — participant names and their variants,
    * organizations, glossary terms flagged asr_keyterm. Already deduplicated and capped by
    * the caller (ASR_KEYTERMS_MAX = 50, ≈ ASR_KEYTERMS_MAX_TOKENS = 450). Deepgram sends each

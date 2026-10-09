@@ -436,9 +436,10 @@ describe('T04 (RQ-017) — Speaker name resolution', () => {
       SPEAKER_0: 'Alice',
       SPEAKER_1: null,
     }
-    const text = buildFullText(segments, speakerMap)
+    const text = buildFullText(segments, speakerMap, 'EN')
     expect(text).toContain('[00:00] Alice: My name is Alice.')
     expect(text).toContain('[01:05] Speaker 2: Good to meet you.')
+    expect(buildFullText(segments, speakerMap, 'RU')).toContain('[01:05] Спикер 2: Good to meet you.')
   })
 
   it('unresolved labels render as Speaker N in full_text (BRQ-021)', () => {
@@ -450,9 +451,13 @@ describe('T04 (RQ-017) — Speaker name resolution', () => {
       SPEAKER_0: null,
       SPEAKER_1: null,
     }
-    const text = buildFullText(segments, speakerMap)
+    const text = buildFullText(segments, speakerMap, 'EN')
     expect(text).toContain('Speaker 1:')
     expect(text).toContain('Speaker 2:')
+    const ru = buildFullText(segments, speakerMap)
+    expect(ru).toContain('Спикер 1:')
+    expect(ru).toContain('Спикер 2:')
+    expect(ru).not.toContain('Speaker')
   })
 })
 

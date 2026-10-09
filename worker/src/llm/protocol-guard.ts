@@ -14,13 +14,13 @@
  *     3 letters must be equal;
  *   - a participant line is kept when ANY word of its name matches ANY word of the
  *     transcript text or of a speaker_map value;
- *   - lines whose name is a bare "Speaker N" label are never touched.
+ *   - lines whose name is a bare "Спикер N" / "Speaker N" label are never touched.
  */
 
 const PARTICIPANTS_HEADING = /^##\s+(Участники|Participants)\s*$/i
 const ANY_HEADING = /^##\s+\S/
 const BULLET = /^\s*[-*•]\s+(.*)$/
-const SPEAKER_LABEL = /^speaker\s*\d+\b/i
+const SPEAKER_LABEL = /^(speaker|спикер)\s*\d+\b/i
 
 function sameName(a: string, b: string): boolean {
   const min = Math.min(a.length, b.length)
