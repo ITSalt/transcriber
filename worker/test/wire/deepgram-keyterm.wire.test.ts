@@ -5,7 +5,7 @@
  * SDK with an injected fetch, so the asserted query string is exactly what would go on
  * the wire: repeated `keyterm=` parameters, no commas, within the term/token caps — and
  * no `keyterm` at all when there are no keyterms (the pre-FR-004 request).
- * It also pins the Q-2 fact (D-21): speakerCount never reaches the query.
+ * It also pins the Q-2 fact (D-21, D-43): no speaker count is sent (no min/max_speakers).
  */
 import { describe, it, expect } from 'vitest'
 import { ASR_KEYTERMS_MAX, ASR_KEYTERMS_MAX_TOKENS } from '@transcrib/shared'
@@ -90,10 +90,10 @@ describe('Deepgram request — keyterm on the wire (RQ-048)', () => {
     }
   })
 
-  it('Q-2 / D-21: the speaker count is not part of the ASR request', async () => {
+  it('Q-2 / D-21: no speaker count is part of the ASR request', async () => {
     const { fetch, urls } = capture()
     const asr = new DeepgramAsrProvider('test-key', { fetch })
-    await asr.transcribe({ audio: AUDIO, languageHint: 'RU', speakerCount: 3 })
+    await asr.transcribe({ audio: AUDIO, languageHint: 'RU' })
     expect(urls[0]!.searchParams.has('min_speakers')).toBe(false)
     expect(urls[0]!.searchParams.has('max_speakers')).toBe(false)
   })

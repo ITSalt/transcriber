@@ -536,6 +536,25 @@ describe('T05 (RQ-018) — Language hint and detection', () => {
     )
   })
 
+  // D-41: the unconfirmed-speaker label in raw_text follows the protocol language.
+  it.each([
+    ['AUTO', 'Спикер'],
+    ['RU', 'Спикер'],
+    ['EN', 'Speaker'],
+  ] as const)('meeting.language %s → raw_text labels unresolved speakers as «%s N»', async (language, label) => {
+    const { transcriptCreate } = setupSuccessfulMocks()
+    mockPrisma.transcriptionJob.findUnique.mockResolvedValue({
+      ...BASE_TX_JOB,
+      meeting: { ...BASE_TX_JOB.meeting, language },
+    } as any)
+
+    await processTranscriptionJob(makeJob('bullmq-label', JOB_ID) as any, makeLogger())
+
+    const { rawText } = (transcriptCreate.mock.calls[0]![0] as { data: { rawText: string } }).data
+    expect(rawText).toContain(`${label} 1: Hello everyone.`)
+    expect(rawText).toContain(`${label} 2: Good morning.`)
+  })
+
   it.each(['de', 'multi', 'auto'])(
     'persists NULL (not a coerced default) when ASR reports unsupported language %s',
     async (detected) => {
