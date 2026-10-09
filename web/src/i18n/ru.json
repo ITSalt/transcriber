@@ -24,7 +24,8 @@
     "search": "Поиск встреч…",
     "open": "Открыть",
     "columns": {
-      "file": "Файл",
+      "meeting": "Встреча",
+      "project": "Проект",
       "date": "Дата",
       "status": "Статус",
       "protocol": "Протокол"
@@ -42,7 +43,14 @@
       "EDITED": "Отредактирована",
       "FAILED": "Ошибка"
     },
-    "openProtocol": "Открыть протокол"
+    "openProtocol": "Открыть протокол",
+    "noProject": "Без проекта",
+    "projectLabel": "Проект",
+    "filter": {
+      "label": "Проект",
+      "all": "Все проекты",
+      "empty": "В этом проекте встреч нет"
+    }
   },
   "meeting": {
     "transcript": "Транскрипт",
@@ -138,10 +146,6 @@
     "languageAuto": "Русский (по умолчанию)",
     "languageRu": "Русский (RU)",
     "languageEn": "Английский (EN)",
-    "fieldSpeakerCount": "Количество спикеров (опционально)",
-    "fieldSpeakerCountPlaceholder": "Автоопределение",
-    "fieldSpeakerCountHint": "Укажите точное число говорящих, если оно известно — улучшит разделение по голосам.",
-    "errorSpeakerCountRange": "Количество спикеров должно быть от 1 до 10.",
     "finalizing": "Завершение загрузки…",
     "errorFileTooLarge": "Файл превышает 2,5 ГБ. Выберите файл меньшего размера.",
     "errorUnsupportedMime": "Неподдерживаемый формат. Загрузите файл MP4, MKV, MOV или WEBM.",

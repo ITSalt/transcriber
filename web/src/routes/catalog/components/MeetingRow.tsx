@@ -22,7 +22,29 @@ export function MeetingRow({ meeting }: MeetingRowProps) {
 
   return (
     <TableRow data-testid={`meeting-row-${meeting.id}`}>
-      <TableCell className="font-medium">{meeting.filename}</TableCell>
+      <TableCell className="font-medium">
+        <span data-testid={`meeting-title-${meeting.id}`}>
+          {meeting.title ?? meeting.filename}
+        </span>
+        {meeting.title && (
+          <span className="block text-xs font-normal text-muted-foreground">
+            {meeting.filename}
+          </span>
+        )}
+      </TableCell>
+      <TableCell>
+        {meeting.project_id ? (
+          <Link
+            to={`/projects/${meeting.project_id}`}
+            className="text-primary underline-offset-4 hover:underline"
+            data-testid={`project-link-${meeting.id}`}
+          >
+            {meeting.project_name}
+          </Link>
+        ) : (
+          "—"
+        )}
+      </TableCell>
       <TableCell>{formatDate(meeting.uploaded_at)}</TableCell>
       <TableCell>
         <StatusBadge status={meeting.status} />

@@ -1,9 +1,11 @@
+import { useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
-import { Link } from "react-router";
+import { Link, useSearchParams } from "react-router";
 import { apiGet } from "@/lib/api";
 import { WorkspaceMeetingListResponse } from "@transcrib/shared";
 import { useWorkspaceId } from "@/lib/session";
+import { useProjects } from "@/features/projects/api";
 import { Button } from "@/components/ui/button";
 import {
   Table,
@@ -19,13 +21,17 @@ const TRANSIENT_STATUSES = new Set([
   "GENERATING_PROTOCOL",
 ]);
 
-function useMeetingList(workspaceId: string | undefined) {
+function useMeetingList(
+  workspaceId: string | undefined,
+  projectId: string | null,
+) {
   return useQuery({
     // the workspace is part of the key: switching it never shows another workspace's list
-    queryKey: ["meetings", workspaceId],
+    queryKey: ["meetings", workspaceId, projectId],
     queryFn: () =>
       apiGet(
-        `/api/meetings?workspace_id=${encodeURIComponent(workspaceId ?? "")}`,
+        `/api/meetings?workspace_id=${encodeURIComponent(workspaceId ?? "")}` +
+          (projectId ? `&project_id=${encodeURIComponent(projectId)}` : ""),
         WorkspaceMeetingListResponse,
       ),
     enabled: Boolean(workspaceId),
@@ -41,7 +47,33 @@ function useMeetingList(workspaceId: string | undefined) {
 export default function CatalogPage() {
   const { t } = useTranslation();
   const workspaceId = useWorkspaceId();
-  const { data, isLoading, isError, refetch } = useMeetingList(workspaceId);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const requestedProject = searchParams.get("project");
+  const projects = useProjects();
+  // A ?project= left over from another workspace is not in this workspace's
+  // project list: drop it from the URL so the list is not silently empty.
+  const staleProject =
+    requestedProject !== null &&
+    projects.data !== undefined &&
+    !projects.data.items.some((p) => p.id === requestedProject);
+  const projectId = staleProject ? null : requestedProject;
+  useEffect(() => {
+    if (!staleProject) return;
+    const next = new URLSearchParams(searchParams);
+    next.delete("project");
+    setSearchParams(next, { replace: true });
+  }, [staleProject, searchParams, setSearchParams]);
+  const { data, isLoading, isError, refetch } = useMeetingList(
+    workspaceId,
+    projectId,
+  );
+
+  function onProjectChange(value: string) {
+    const next = new URLSearchParams(searchParams);
+    if (value) next.set("project", value);
+    else next.delete("project");
+    setSearchParams(next);
+  }
 
   return (
     <div data-testid="catalog-page" className="container mx-auto py-8 px-4">
@@ -52,6 +84,26 @@ export default function CatalogPage() {
             {t("nav.upload")}
           </Link>
         </Button>
+      </div>
+
+      <div className="mb-4 flex items-center gap-2">
+        <label htmlFor="catalog-project-filter" className="text-sm font-medium">
+          {t("catalog.filter.label")}
+        </label>
+        <select
+          id="catalog-project-filter"
+          className="flex h-10 w-64 rounded-sm border border-[var(--color-input)] bg-card px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ring)]"
+          value={projectId ?? ""}
+          onChange={(e) => onProjectChange(e.target.value)}
+          data-testid="catalog-project-filter"
+        >
+          <option value="">{t("catalog.filter.all")}</option>
+          {projects.data?.items.map((p) => (
+            <option key={p.id} value={p.id}>
+              {p.name}
+            </option>
+          ))}
+        </select>
       </div>
 
       {isLoading && (
@@ -68,14 +120,17 @@ export default function CatalogPage() {
       )}
 
       {data && data.items.length === 0 && (
-        <p data-testid="catalog-empty">{t("catalog.empty")}</p>
+        <p data-testid="catalog-empty">
+          {projectId ? t("catalog.filter.empty") : t("catalog.empty")}
+        </p>
       )}
 
       {data && data.items.length > 0 && (
         <Table aria-label={t("catalog.tableLabel")}>
           <TableHeader>
             <tr>
-              <TableHead>{t("catalog.columns.file")}</TableHead>
+              <TableHead>{t("catalog.columns.meeting")}</TableHead>
+              <TableHead>{t("catalog.columns.project")}</TableHead>
               <TableHead>{t("catalog.columns.date")}</TableHead>
               <TableHead>{t("catalog.columns.status")}</TableHead>
               <TableHead>{t("catalog.columns.protocol")}</TableHead>

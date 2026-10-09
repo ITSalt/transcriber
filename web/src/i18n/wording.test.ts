@@ -22,4 +22,10 @@ describe("core wording (D-40..D-42)", () => {
       expect(status[value], value).toBeTruthy();
     }
   });
+
+  it("upload.* has no speaker-count strings", () => {
+    for (const dict of [ru, en]) {
+      expect(JSON.stringify(dict.upload)).not.toMatch(/SpeakerCount|спикеров/i);
+    }
+  });
 });
