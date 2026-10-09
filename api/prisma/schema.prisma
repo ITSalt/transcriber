@@ -167,6 +167,8 @@ model TranscriptionJob {
   finishedAt   DateTime? @map("finished_at")
   errorMsg     String?   @map("error_msg")
   attemptCount Int       @default(0) @map("attempt_count")
+  /// Не используется, удаляется следующей миграцией (D-43).
+  speakerCount Int?      @map("speaker_count")
   createdAt    DateTime  @default(now()) @map("created_at")
   updatedAt    DateTime  @updatedAt @map("updated_at")
 
