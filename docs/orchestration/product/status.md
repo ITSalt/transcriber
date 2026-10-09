@@ -56,7 +56,7 @@ CANCELLED (причина).
 | [WP-SPEC-01](work-packages/WP-SPEC-01-glossary.md) | spec | Глоссарий графа: UTF-8, русские названия, термины программы, подписи форм | DONE | product-spec | https://github.com/ITSalt/transcriber/pull/32 (accepted 9ecfd6bb41) | 2026-10-09 |
 | [WP-FRONTEND-07](work-packages/WP-FRONTEND-07-wording.md) | frontend | Единая терминология в строках ядра: «Встречи», «обработка», «Спикер N», род статусов | DONE | product-frontend | https://github.com/ITSalt/transcriber/pull/35 (accepted 9cf5dc0df1) | 2026-10-09 |
 | [WP-WEB-MEMORY-02](work-packages/WP-WEB-MEMORY-02-assignments.md) | web-memory | «Поручения» вместо «задач» в памяти проекта | READY | product-web-memory | https://github.com/ITSalt/transcriber/pull/38 | 2026-10-09 |
-| [WP-WEB-FEEDBACK-02](work-packages/WP-WEB-FEEDBACK-02-assignment-category.md) | web-feedback | Категория отзыва «Неверное поручение» | READY | product-web-feedback | https://github.com/ITSalt/transcriber/pull/37 | 2026-10-09 |
+| [WP-WEB-FEEDBACK-02](work-packages/WP-WEB-FEEDBACK-02-assignment-category.md) | web-feedback | Категория отзыва «Неверное поручение» | ACCEPTED | product-web-feedback | https://github.com/ITSalt/transcriber/pull/37 (accepted 1eab9d6f45) | 2026-10-09 |
 | [WP-WEB-PROJECTS-02](work-packages/WP-WEB-PROJECTS-02-meetings-and-upload.md) | web-projects | «Проекты и поручения», встречи на карточке проекта, удаление поля «Количество спикеров» | DONE | product-web-projects | https://github.com/ITSalt/transcriber/pull/34 (accepted 48daf9b7f4) | 2026-10-09 |
 | [WP-WORKER-08](work-packages/WP-WORKER-08-protocol-wording.md) | worker | Протокол: «## Поручения», «Спикер N», отказ от speakerCount в ASR | DONE | product-worker | https://github.com/ITSalt/transcriber/pull/36 (accepted 62df97ade4) | 2026-10-09 |
 | [WP-WORKER-MEMORY-03](work-packages/WP-WORKER-MEMORY-03-speaker-label.md) | worker-memory | Метка спикера в цитатах памяти: «Спикер N» | VERIFIED_TEST | product-worker-memory | https://github.com/ITSalt/transcriber/pull/33 (accepted fc15b7225b) | 2026-10-09 |
@@ -182,6 +182,7 @@ R-n — действие: точная команда одной строкой 
 | 39 | transcriber | WP-WORKER-08 | — | — | merged |
 | 40 | transcriber | WP-FRONTEND-07 | — | — | merged |
 | 41 | transcriber | WP-WORKER-MEMORY-03 | — | — | merged |
+| 42 | transcriber | WP-WEB-FEEDBACK-02 | — | — | queued |
 
 ## Журнал
 
@@ -190,6 +191,9 @@ R-n — действие: точная команда одной строкой 
 <!-- orch:journal -->
 | Дата | WP | Событие | Подтверждение |
 |------|----|---------|---------------|
+| 2026-10-09 12:05Z | WP-WEB-FEEDBACK-02 | WP-WEB-FEEDBACK-02 queued for merge (sequential) | — |
+| 2026-10-09 12:05Z | WP-WEB-FEEDBACK-02 | WP-WEB-FEEDBACK-02: accepted at 1eab9d6f4507f8f1e446ca977f1f98d884fdd03c | report reports/wp-web-feedback-02-review-20261009.md |
+| 2026-10-09 12:05Z | WP-WEB-FEEDBACK-02 | WP-WEB-FEEDBACK-02: READY -> ACCEPTED | принят по диффу (одна строка i18n + тесты); CI зелёный на 1eab9d6f45 — reports/wp-web-feedback-02-review-20261009.md |
 | 2026-10-09 12:05Z | WP-WORKER-MEMORY-03 | WP-WORKER-MEMORY-03: MERGED -> VERIFIED_TEST | verify --env test b482b0e79f: reports/verify-WP-WORKER-MEMORY-03-test-20261009.md |
 | 2026-10-09 12:01Z | WP-WORKER-MEMORY-03 | WP-WORKER-MEMORY-03 merged in the merge queue | orch.py deliver: b482b0e79f |
 | 2026-10-09 12:01Z | WP-WORKER-MEMORY-03 | WP-WORKER-MEMORY-03: ACCEPTED -> MERGED | gh pr merge --squash: b482b0e79f (https://github.com/ITSalt/transcriber/pull/33) |
