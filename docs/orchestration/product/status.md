@@ -60,7 +60,7 @@ CANCELLED (причина).
 | [WP-WEB-PROJECTS-02](work-packages/WP-WEB-PROJECTS-02-meetings-and-upload.md) | web-projects | «Проекты и поручения», встречи на карточке проекта, удаление поля «Количество спикеров» | DONE | product-web-projects | https://github.com/ITSalt/transcriber/pull/34 (accepted 48daf9b7f4) | 2026-10-09 |
 | [WP-WORKER-08](work-packages/WP-WORKER-08-protocol-wording.md) | worker | Протокол: «## Поручения», «Спикер N», отказ от speakerCount в ASR | DONE | product-worker | https://github.com/ITSalt/transcriber/pull/36 (accepted 62df97ade4) | 2026-10-09 |
 | [WP-WORKER-MEMORY-03](work-packages/WP-WORKER-MEMORY-03-speaker-label.md) | worker-memory | Метка спикера в цитатах памяти: «Спикер N» | PROD | product-worker-memory | https://github.com/ITSalt/transcriber/pull/33 (accepted fc15b7225b) | 2026-10-09 |
-| [WP-BACKEND-08](work-packages/WP-BACKEND-08-meeting-project-speaker-count.md) | backend | Проект в карточке встречи; удаление speaker_count из контрактов, сервисов и БД | READY | product-backend | https://github.com/ITSalt/transcriber/pull/39 | 2026-10-09 |
+| [WP-BACKEND-08](work-packages/WP-BACKEND-08-meeting-project-speaker-count.md) | backend | Проект в карточке встречи; удаление speaker_count из контрактов, сервисов и БД | REVISE | product-backend | https://github.com/ITSalt/transcriber/pull/39 | 2026-10-09 |
 | [WP-FRONTEND-08](work-packages/WP-FRONTEND-08-catalog-project.md) | frontend | Список встреч: название и проект, фильтр по проекту, заголовок карточки встречи | READY | product-frontend | — | 2026-10-09 |
 
 ## Ждёт владельца
@@ -192,6 +192,7 @@ R-n — действие: точная команда одной строкой 
 <!-- orch:journal -->
 | Дата | WP | Событие | Подтверждение |
 |------|----|---------|---------------|
+| 2026-10-09 12:24Z | WP-BACKEND-08 | WP-BACKEND-08: READY -> REVISE | раунд 1: деструктивная миграция в одном деплое с кодом (migrate deploy до pm2 start → окно 500/зависание заданий); граф не обновлён — expand/contract: код сейчас, DROP COLUMN отдельным PR — reports/wp-backend-08-review-20261009.md |
 | 2026-10-09 12:16Z | WP-WEB-FEEDBACK-02 | WP-WEB-FEEDBACK-02: PROD -> DONE | PROD 75676ba117; категория «Неверное поручение» в диалоге обратной связи — reports/verify-WP-WEB-FEEDBACK-02-prod-20261009.md |
 | 2026-10-09 12:16Z | WP-WEB-MEMORY-02 | WP-WEB-MEMORY-02: PROD -> DONE | PROD 180137dc92; вкладка «Поручения», статусы ср. рода, реестр T-1…T-8 без слова «задач» — reports/verify-WP-WEB-MEMORY-02-prod-20261009.md |
 | 2026-10-09 12:15Z | WP-WEB-MEMORY-02 | WP-WEB-MEMORY-02: VERIFIED_TEST -> PROD | verify --env prod 180137dc92: reports/verify-WP-WEB-MEMORY-02-prod-20261009.md |
