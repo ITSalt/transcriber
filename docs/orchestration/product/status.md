@@ -59,7 +59,7 @@ CANCELLED (причина).
 | [WP-WEB-FEEDBACK-02](work-packages/WP-WEB-FEEDBACK-02-assignment-category.md) | web-feedback | Категория отзыва «Неверное поручение» | DISPATCHING | product-web-feedback | — | 2026-10-09 |
 | [WP-WEB-PROJECTS-02](work-packages/WP-WEB-PROJECTS-02-meetings-and-upload.md) | web-projects | «Проекты и поручения», встречи на карточке проекта, удаление поля «Количество спикеров» | DONE | product-web-projects | https://github.com/ITSalt/transcriber/pull/34 (accepted 48daf9b7f4) | 2026-10-09 |
 | [WP-WORKER-08](work-packages/WP-WORKER-08-protocol-wording.md) | worker | Протокол: «## Поручения», «Спикер N», отказ от speakerCount в ASR | DONE | product-worker | https://github.com/ITSalt/transcriber/pull/36 (accepted 62df97ade4) | 2026-10-09 |
-| [WP-WORKER-MEMORY-03](work-packages/WP-WORKER-MEMORY-03-speaker-label.md) | worker-memory | Метка спикера в цитатах памяти: «Спикер N» | DISPATCHING | product-worker-memory | — | 2026-10-09 |
+| [WP-WORKER-MEMORY-03](work-packages/WP-WORKER-MEMORY-03-speaker-label.md) | worker-memory | Метка спикера в цитатах памяти: «Спикер N» | READY | product-worker-memory | https://github.com/ITSalt/transcriber/pull/33 | 2026-10-09 |
 | [WP-BACKEND-08](work-packages/WP-BACKEND-08-meeting-project-speaker-count.md) | backend | Проект в карточке встречи; удаление speaker_count из контрактов, сервисов и БД | DISPATCHING | product-backend | — | 2026-10-09 |
 | [WP-FRONTEND-08](work-packages/WP-FRONTEND-08-catalog-project.md) | frontend | Список встреч: название и проект, фильтр по проекту, заголовок карточки встречи | READY | product-frontend | — | 2026-10-09 |
 
@@ -189,6 +189,9 @@ R-n — действие: точная команда одной строкой 
 <!-- orch:journal -->
 | Дата | WP | Событие | Подтверждение |
 |------|----|---------|---------------|
+| 2026-10-09 11:46Z | — | Сессии product-web-memory и product-web-feedback завершились без READY: в worktrees незакоммиченные правки i18n/тестов, веток на origin нет — владельцу выданы команды перезапуска (тот же worktree) | git status в .claude/worktrees/wp-web-memory-02-assignments и wp-web-feedback-02-assignment-category; ListAgents 2026-10-09 |
+| 2026-10-09 11:46Z | WP-WORKER-MEMORY-03 | WP-WORKER-MEMORY-03: review round 1 started at 4998d25fc5 | reports/wp-worker-memory-03-review-20261009.md |
+| 2026-10-09 11:46Z | WP-WORKER-MEMORY-03 | WP-WORKER-MEMORY-03: DISPATCHING -> READY | PR #33 на origin (sha 4998d25fc5, CI pass); READY-сообщения от product-worker-memory не было — факт по gh pr |
 | 2026-10-09 11:45Z | WP-FRONTEND-07 | WP-FRONTEND-07: PROD -> DONE | PROD 655830416e; меню/список/карточка/экран спикеров «Спикер N»; объединение: speaker_mapping SPEAKER_0 и SPEAKER_3 = «Спикер 1» — reports/verify-WP-FRONTEND-07-prod-20261009.md |
 | 2026-10-09 11:45Z | WP-WORKER-08 | WP-WORKER-08: PROD -> DONE | PROD 3d6673d9f5; встреча ff3ad632: протокол с «## Поручения», 0 «Speaker N», raw_text «Спикер 1»; старый протокол с «## Задачи» открывается — reports/verify-WP-WORKER-08-prod-20261009.md |
 | 2026-10-09 11:16Z | WP-WEB-PROJECTS-02 | WP-WEB-PROJECTS-02: PROD -> DONE | PROD 39bdde1e97; браузер: меню «Проекты и поручения», блок «Встречи» на карточке проекта (7 встреч, ссылки), /upload?project= без поля спикеров и с предвыбранным проектом — reports/verify-WP-WEB-PROJECTS-02-prod-20261009.md |
