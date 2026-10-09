@@ -60,8 +60,9 @@ CANCELLED (причина).
 | [WP-WEB-PROJECTS-02](work-packages/WP-WEB-PROJECTS-02-meetings-and-upload.md) | web-projects | «Проекты и поручения», встречи на карточке проекта, удаление поля «Количество спикеров» | DONE | product-web-projects | https://github.com/ITSalt/transcriber/pull/34 (accepted 48daf9b7f4) | 2026-10-09 |
 | [WP-WORKER-08](work-packages/WP-WORKER-08-protocol-wording.md) | worker | Протокол: «## Поручения», «Спикер N», отказ от speakerCount в ASR | DONE | product-worker | https://github.com/ITSalt/transcriber/pull/36 (accepted 62df97ade4) | 2026-10-09 |
 | [WP-WORKER-MEMORY-03](work-packages/WP-WORKER-MEMORY-03-speaker-label.md) | worker-memory | Метка спикера в цитатах памяти: «Спикер N» | DONE | product-worker-memory | https://github.com/ITSalt/transcriber/pull/33 (accepted fc15b7225b) | 2026-10-09 |
-| [WP-BACKEND-08](work-packages/WP-BACKEND-08-meeting-project-speaker-count.md) | backend | Проект в карточке встречи; удаление speaker_count из контрактов, сервисов и БД | ACCEPTED | product-backend | https://github.com/ITSalt/transcriber/pull/40 (accepted 432933a0e7) | 2026-10-09 |
+| [WP-BACKEND-08](work-packages/WP-BACKEND-08-meeting-project-speaker-count.md) | backend | Проект в карточке встречи; удаление speaker_count из контрактов, сервисов и БД | PROD | product-backend | https://github.com/ITSalt/transcriber/pull/40 (accepted 432933a0e7) | 2026-10-09 |
 | [WP-FRONTEND-08](work-packages/WP-FRONTEND-08-catalog-project.md) | frontend | Список встреч: название и проект, фильтр по проекту, заголовок карточки встречи | DISPATCHING | product-frontend | — | 2026-10-09 |
+| [WP-BACKEND-09](work-packages/WP-BACKEND-09-contract-speaker-count.md) | backend | Удаление колонки transcription_jobs.speaker_count (contract-шаг D-43 после WP-BACKEND-08) | ACCEPTED | product-backend | https://github.com/ITSalt/transcriber/pull/40 | 2026-10-09 |
 
 ## Ждёт владельца
 
@@ -126,10 +127,9 @@ R-n — действие: точная команда одной строкой 
 <!-- orch:locks -->
 | Замок | Репозиторий | Держатель | С | Ждут | Примечание |
 |-------|-------------|-----------|---|------|------------|
-| transcriber:migrations | transcriber | WP-BACKEND-08 | 2026-10-09 11:10Z | — | dispatch |
 | transcriber:web/src/i18n/** | transcriber | WP-FRONTEND-08 | 2026-10-09 12:35Z | — | dispatch |
 | transcriber:upload.fieldSpeakerCount* | transcriber | WP-FRONTEND-08 | 2026-10-09 12:35Z | — | dispatch |
-| transcriber:api/prisma/** | transcriber | WP-BACKEND-08 | 2026-10-09 12:40Z | — | — |
+| transcriber:migrations | transcriber | WP-BACKEND-09 | 2026-10-09 12:45Z | — | — |
 
 ## Очередь слияний
 
@@ -183,7 +183,8 @@ R-n — действие: точная команда одной строкой 
 | 42 | transcriber | WP-WEB-FEEDBACK-02 | — | — | merged |
 | 43 | transcriber | WP-WEB-MEMORY-02 | — | — | merged |
 | 44 | transcriber | WP-BACKEND-08 | — | — | merged |
-| 45 | transcriber | WP-BACKEND-08 | — | — | queued |
+| 45 | transcriber | WP-BACKEND-08 | — | — | dropped |
+| 46 | transcriber | WP-BACKEND-09 | — | — | queued |
 
 ## Журнал
 
@@ -192,6 +193,17 @@ R-n — действие: точная команда одной строкой 
 <!-- orch:journal -->
 | Дата | WP | Событие | Подтверждение |
 |------|----|---------|---------------|
+| 2026-10-09 12:45Z | WP-BACKEND-09 | PLUGIN-BUG-5: deliver G5 не пропускает второе слияние одного пакета — contract-шаг выделен в WP-BACKEND-09 (тот же PR #40), запись bugs/PLUGIN-BUG-5.md; Issue — после «да» владельца | deliver --check WP-BACKEND-08 12:43Z: G5 RED |
+| 2026-10-09 12:45Z | WP-BACKEND-09 | lock transcriber:migrations acquired | orch.py lock |
+| 2026-10-09 12:45Z | WP-BACKEND-09 | WP-BACKEND-09 queued for merge (sequential) | — |
+| 2026-10-09 12:45Z | WP-BACKEND-09 | WP-BACKEND-09: READY -> ACCEPTED | PR #40 sha 432933a0e7 принят (см. r3 WP-BACKEND-08); CI зелёный |
+| 2026-10-09 12:45Z | WP-BACKEND-09 | WP-BACKEND-09: review round 1 started at 432933a0e7 | reports/wp-backend-09-review-20261009.md |
+| 2026-10-09 12:45Z | WP-BACKEND-09 | WP-BACKEND-09: DRAFT -> READY | выделен из WP-BACKEND-08 (contract-шаг); работа в PR #40 |
+| 2026-10-09 12:44Z | WP-BACKEND-09 | WP-BACKEND-09 created (DRAFT) | work-packages/WP-BACKEND-09-contract-speaker-count.md |
+| 2026-10-09 12:44Z | WP-BACKEND-08 | WP-BACKEND-08: ACCEPTED -> PROD | expand-раунд на проде d6da675a03 (verify PASS 12:35Z); contract-шаг (PR #40) выделен в WP-BACKEND-09: плагин не пропускает второе слияние того же пакета (G5) |
+| 2026-10-09 12:44Z | WP-BACKEND-08 | lock transcriber:migrations released | orch.py lock |
+| 2026-10-09 12:44Z | WP-BACKEND-08 | lock transcriber:api/prisma/** released | orch.py lock |
+| 2026-10-09 12:44Z | WP-BACKEND-08 | WP-BACKEND-08 dropped in the merge queue | — |
 | 2026-10-09 12:43Z | WP-BACKEND-08 | WP-BACKEND-08: delivery refused: G5: the previous merge WP-BACKEND-08 is ACCEPTED, not VERIFIED_TEST (or --after-failure D-n) | orch.py deliver --apply |
 | 2026-10-09 12:43Z | — | R-22 closed | pg_dump -Fc на VM: /opt/transcrib/backups/transcrib-20261009-pre-drop-speaker-count.dump, размер 1316047 байт, pg_restore --list: 20 TABLE DATA; снят перед слиянием contract-PR #40 |
 | 2026-10-09 12:43Z | WP-BACKEND-08 | WP-BACKEND-08 queued for merge (sequential) | — |
