@@ -52,7 +52,7 @@ describe("feature auto-registration (D-15)", () => {
     expect(screen.getByTestId("slot-header-right")).toContainElement(
       screen.getByTestId("tmp-slot"),
     );
-    expect(screen.getByRole("link", { name: /Задачи|Tasks/ })).toHaveAttribute(
+    expect(screen.getByRole("link", { name: /Встречи|Meetings/ })).toHaveAttribute(
       "href",
       "/tmp",
     );

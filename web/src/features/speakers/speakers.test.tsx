@@ -46,7 +46,7 @@ const speakersBody = SpeakersResponse.parse({
   labels: [
     {
       label: "SPEAKER_0",
-      display: "Speaker 1",
+      display: "ignored-1",
       duration_sec: 65,
       segment_count: 5,
       samples: [
@@ -59,7 +59,7 @@ const speakersBody = SpeakersResponse.parse({
     },
     {
       label: "SPEAKER_1",
-      display: "Speaker 2",
+      display: "ignored-2",
       duration_sec: 30,
       segment_count: 2,
       samples: [{ start_ms: 5000, text: "Согласен" }],
@@ -68,7 +68,7 @@ const speakersBody = SpeakersResponse.parse({
     },
     {
       label: "SPEAKER_2",
-      display: "Speaker 3",
+      display: "ignored-3",
       duration_sec: 12,
       segment_count: 1,
       samples: [{ start_ms: 7000, text: "Я тоже" }],
@@ -221,7 +221,7 @@ describe("speakers confirmation (AWAITING_SPEAKERS)", () => {
     expect(puts(calls)[0]!.body).toEqual({ action: "skip", mapping: [] });
   });
 
-  it("merge into a «keep» label sends the root's «Speaker N» as name (PUT body)", async () => {
+  it("merge into a «keep» label sends the root's «Speaker N» (built from the label, not the API display) as name (PUT body)", async () => {
     const calls = mockApi("AWAITING_SPEAKERS");
     renderSlot();
     await userEvent.selectOptions(await screen.findByTestId("speaker-select-SPEAKER_1"), "m:SPEAKER_0");

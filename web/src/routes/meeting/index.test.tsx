@@ -121,6 +121,19 @@ describe("MeetingDetailPage", () => {
     expect(screen.queryByTestId("meeting-detail-error")).not.toBeInTheDocument();
   });
 
+  it("shows the meeting title as H1 with the upload date below", async () => {
+    mockFetch(MOCK_DETAIL_BASE);
+    renderMeetingDetail();
+    expect(await screen.findByRole("heading", { level: 1, name: "Weekly Sync" })).toBeInTheDocument();
+    expect(screen.getByTestId("meeting-heading-date")).toBeInTheDocument();
+  });
+
+  it("falls back to the recording filename in H1 when the title is empty", async () => {
+    mockFetch({ ...MOCK_DETAIL_BASE, meeting: { ...MOCK_DETAIL_BASE.meeting, title: null } });
+    renderMeetingDetail();
+    expect(await screen.findByRole("heading", { level: 1, name: "weekly.mp4" })).toBeInTheDocument();
+  });
+
   // CT01 — title field
   it("CT01: renders title label", async () => {
     mockFetch(MOCK_DETAIL_BASE);

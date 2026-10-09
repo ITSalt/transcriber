@@ -16,6 +16,7 @@ import {
   formatMs,
   initialChoices,
   invalidLabels,
+  speakerNumber,
   type Choice,
   type Choices,
 } from "./mapping";
@@ -81,6 +82,8 @@ function SpeakersForm({
 }) {
   const { t } = useTranslation("speakers");
   const queryClient = useQueryClient();
+  // the API `display` is ignored: the name is «Спикер N» / «Speaker N», N from SPEAKER_n (n+1)
+  const nameOf = (label: string) => t("speakerLabel", { n: speakerNumber(label) });
   const [choices, setChoices] = useState<Choices>(() =>
     initialChoices(data.labels, data.participants),
   );
@@ -136,7 +139,7 @@ function SpeakersForm({
           action === "confirm"
             ? buildMapping(
                 choices,
-                Object.fromEntries(data.labels.map((l) => [l.label, l.display])),
+                Object.fromEntries(data.labels.map((l) => [l.label, nameOf(l.label)])),
               )
             : [],
       });
@@ -189,7 +192,7 @@ function SpeakersForm({
               data-testid={`speaker-${l.label}`}
             >
               <div className="flex flex-wrap items-baseline gap-x-3">
-                <span className="font-medium">{l.display}</span>
+                <span className="font-medium">{nameOf(l.label)}</span>
                 <span className="text-xs text-[var(--color-muted-foreground)]">
                   {t("duration", { value: formatDuration(l.duration_sec) })}
                 </span>
@@ -208,7 +211,7 @@ function SpeakersForm({
 
               <div className="flex flex-wrap items-start gap-2">
                 <select
-                  aria-label={t("assignLabel", { speaker: l.display })}
+                  aria-label={t("assignLabel", { speaker: nameOf(l.label) })}
                   data-testid={`speaker-select-${l.label}`}
                   className="h-10 rounded-md border border-[var(--color-input)] bg-[var(--color-background)] px-3 text-sm"
                   value={selectValue(choice)}
@@ -230,7 +233,7 @@ function SpeakersForm({
                     <optgroup label={t("option.same")}>
                       {data.labels.slice(0, index).map((other) => (
                         <option key={other.label} value={MERGE + other.label}>
-                          {t("option.sameAs", { speaker: other.display })}
+                          {t("option.sameAs", { speaker: nameOf(other.label) })}
                         </option>
                       ))}
                     </optgroup>
@@ -239,7 +242,7 @@ function SpeakersForm({
 
                 {choice.kind === "name" && (
                   <Input
-                    aria-label={t("nameLabel", { speaker: l.display })}
+                    aria-label={t("nameLabel", { speaker: nameOf(l.label) })}
                     aria-invalid={showError}
                     data-testid={`speaker-name-${l.label}`}
                     placeholder={t("namePlaceholder")}

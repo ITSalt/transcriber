@@ -32,6 +32,12 @@ export function initialChoices(
   return result;
 }
 
+/** «SPEAKER_0» → 1 (n+1); a label without a trailing number reads as 1. */
+export function speakerNumber(label: string): number {
+  const m = /(\d+)$/.exec(label);
+  return m ? Number(m[1]) + 1 : 1;
+}
+
 /** Follows merges to the label that carries the actual choice. */
 export function resolveRoot(choices: Choices, label: string): string {
   let current = label;
