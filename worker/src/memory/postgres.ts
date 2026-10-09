@@ -6,6 +6,7 @@
 import type { PrismaClient } from '@prisma/client'
 import type { GenerationRecord, MeetingSource } from './pipeline.js'
 import type { OutboxRepo, OutboxRow } from './outbox.js'
+import { resolveProtocolLanguage } from '../lib/language.js'
 import { toMemorySegments } from './transcript.js'
 
 export function createMeetingLoader(prisma: PrismaClient) {
@@ -18,6 +19,7 @@ export function createMeetingLoader(prisma: PrismaClient) {
         createdAt: true,
         workspaceId: true,
         projectId: true,
+        language: true,
         transcript: { select: { segmentsBlob: true, speakerMap: true } },
         protocol: { select: { markdownContent: true } },
         project: { select: { participants: { select: { id: true, name: true, aliases: true }, orderBy: { createdAt: 'asc' } } } },
@@ -30,7 +32,7 @@ export function createMeetingLoader(prisma: PrismaClient) {
       projectId: m.projectId,
       title: m.title,
       occurredAt: m.createdAt.toISOString(),
-      segments: toMemorySegments(m.transcript?.segmentsBlob, m.transcript?.speakerMap),
+      segments: toMemorySegments(m.transcript?.segmentsBlob, m.transcript?.speakerMap, resolveProtocolLanguage(m.language)),
       protocolMarkdown: m.protocol?.markdownContent ?? null,
       participants: m.project?.participants ?? [],
     }
