@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { createQuoteVerifier, renderNumberedTranscript, toMemorySegments, verifyQuote } from './transcript.js'
+import { createQuoteVerifier, mappedSpeakerNames, renderNumberedTranscript, toMemorySegments, verifyQuote } from './transcript.js'
 
 const segments = toMemorySegments(
   [
@@ -31,6 +31,7 @@ describe('memory transcript', () => {
       'EN',
     )
     expect(en.map((x) => x.label)).toEqual(['Peter', 'Speaker 2'])
+    expect(mappedSpeakerNames(en)).toEqual(['Peter'])
   })
 
   it('accepts an exact quote regardless of case, punctuation and ё; timecode and speaker come from the segment', () => {
