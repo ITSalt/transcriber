@@ -61,7 +61,7 @@ CANCELLED (причина).
 | [WP-WORKER-08](work-packages/WP-WORKER-08-protocol-wording.md) | worker | Протокол: «## Поручения», «Спикер N», отказ от speakerCount в ASR | DONE | product-worker | https://github.com/ITSalt/transcriber/pull/36 (accepted 62df97ade4) | 2026-10-09 |
 | [WP-WORKER-MEMORY-03](work-packages/WP-WORKER-MEMORY-03-speaker-label.md) | worker-memory | Метка спикера в цитатах памяти: «Спикер N» | DONE | product-worker-memory | https://github.com/ITSalt/transcriber/pull/33 (accepted fc15b7225b) | 2026-10-09 |
 | [WP-BACKEND-08](work-packages/WP-BACKEND-08-meeting-project-speaker-count.md) | backend | Проект в карточке встречи; удаление speaker_count из контрактов, сервисов и БД | VERIFIED_TEST | product-backend | https://github.com/ITSalt/transcriber/pull/39 (accepted 9bf0812c62) | 2026-10-09 |
-| [WP-FRONTEND-08](work-packages/WP-FRONTEND-08-catalog-project.md) | frontend | Список встреч: название и проект, фильтр по проекту, заголовок карточки встречи | READY | product-frontend | — | 2026-10-09 |
+| [WP-FRONTEND-08](work-packages/WP-FRONTEND-08-catalog-project.md) | frontend | Список встреч: название и проект, фильтр по проекту, заголовок карточки встречи | DISPATCHING | product-frontend | — | 2026-10-09 |
 
 ## Ждёт владельца
 
@@ -127,6 +127,8 @@ R-n — действие: точная команда одной строкой 
 | Замок | Репозиторий | Держатель | С | Ждут | Примечание |
 |-------|-------------|-----------|---|------|------------|
 | transcriber:migrations | transcriber | WP-BACKEND-08 | 2026-10-09 11:10Z | — | dispatch |
+| transcriber:web/src/i18n/** | transcriber | WP-FRONTEND-08 | 2026-10-09 12:35Z | — | dispatch |
+| transcriber:upload.fieldSpeakerCount* | transcriber | WP-FRONTEND-08 | 2026-10-09 12:35Z | — | dispatch |
 
 ## Очередь слияний
 
@@ -188,6 +190,7 @@ R-n — действие: точная команда одной строкой 
 <!-- orch:journal -->
 | Дата | WP | Событие | Подтверждение |
 |------|----|---------|---------------|
+| 2026-10-09 12:35Z | WP-FRONTEND-08 | WP-FRONTEND-08: READY -> DISPATCHING | start command handed to the owner; model sonnet; locks transcriber:web/src/i18n/**, transcriber:upload.fieldSpeakerCount* |
 | 2026-10-09 12:34Z | WP-BACKEND-08 | WP-BACKEND-08: MERGED -> VERIFIED_TEST | verify --env test d6da675a03: reports/verify-WP-BACKEND-08-test-20261009.md |
 | 2026-10-09 12:31Z | WP-BACKEND-08 | WP-BACKEND-08 merged in the merge queue; released transcriber:shared/**, transcriber:shared/src/api/uc002.ts, transcriber:shared/src/api/uc100.ts:94, transcriber:shared/src/api/uc200.ts:11, transcriber:api/prisma/** | orch.py deliver: d6da675a03 |
 | 2026-10-09 12:31Z | WP-BACKEND-08 | WP-BACKEND-08: ACCEPTED -> MERGED | gh pr merge --squash: d6da675a03 (https://github.com/ITSalt/transcriber/pull/39) |
