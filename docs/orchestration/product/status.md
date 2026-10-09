@@ -56,7 +56,7 @@ CANCELLED (причина).
 | [WP-SPEC-01](work-packages/WP-SPEC-01-glossary.md) | spec | Глоссарий графа: UTF-8, русские названия, термины программы, подписи форм | DONE | product-spec | https://github.com/ITSalt/transcriber/pull/32 (accepted 9ecfd6bb41) | 2026-10-09 |
 | [WP-FRONTEND-07](work-packages/WP-FRONTEND-07-wording.md) | frontend | Единая терминология в строках ядра: «Встречи», «обработка», «Спикер N», род статусов | DONE | product-frontend | https://github.com/ITSalt/transcriber/pull/35 (accepted 9cf5dc0df1) | 2026-10-09 |
 | [WP-WEB-MEMORY-02](work-packages/WP-WEB-MEMORY-02-assignments.md) | web-memory | «Поручения» вместо «задач» в памяти проекта | READY | product-web-memory | https://github.com/ITSalt/transcriber/pull/38 | 2026-10-09 |
-| [WP-WEB-FEEDBACK-02](work-packages/WP-WEB-FEEDBACK-02-assignment-category.md) | web-feedback | Категория отзыва «Неверное поручение» | MERGED | product-web-feedback | https://github.com/ITSalt/transcriber/pull/37 (accepted 1eab9d6f45) | 2026-10-09 |
+| [WP-WEB-FEEDBACK-02](work-packages/WP-WEB-FEEDBACK-02-assignment-category.md) | web-feedback | Категория отзыва «Неверное поручение» | VERIFIED_TEST | product-web-feedback | https://github.com/ITSalt/transcriber/pull/37 (accepted 1eab9d6f45) | 2026-10-09 |
 | [WP-WEB-PROJECTS-02](work-packages/WP-WEB-PROJECTS-02-meetings-and-upload.md) | web-projects | «Проекты и поручения», встречи на карточке проекта, удаление поля «Количество спикеров» | DONE | product-web-projects | https://github.com/ITSalt/transcriber/pull/34 (accepted 48daf9b7f4) | 2026-10-09 |
 | [WP-WORKER-08](work-packages/WP-WORKER-08-protocol-wording.md) | worker | Протокол: «## Поручения», «Спикер N», отказ от speakerCount в ASR | DONE | product-worker | https://github.com/ITSalt/transcriber/pull/36 (accepted 62df97ade4) | 2026-10-09 |
 | [WP-WORKER-MEMORY-03](work-packages/WP-WORKER-MEMORY-03-speaker-label.md) | worker-memory | Метка спикера в цитатах памяти: «Спикер N» | VERIFIED_TEST | product-worker-memory | https://github.com/ITSalt/transcriber/pull/33 (accepted fc15b7225b) | 2026-10-09 |
@@ -191,6 +191,7 @@ R-n — действие: точная команда одной строкой 
 <!-- orch:journal -->
 | Дата | WP | Событие | Подтверждение |
 |------|----|---------|---------------|
+| 2026-10-09 12:11Z | WP-WEB-FEEDBACK-02 | WP-WEB-FEEDBACK-02: MERGED -> VERIFIED_TEST | verify --env test 75676ba117: reports/verify-WP-WEB-FEEDBACK-02-test-20261009.md |
 | 2026-10-09 12:09Z | WP-BACKEND-08 | WP-BACKEND-08: review round 1 started at 731ea379f9 | reports/wp-backend-08-review-20261009.md |
 | 2026-10-09 12:09Z | WP-BACKEND-08 | WP-BACKEND-08: DISPATCHING -> READY | READY от product-backend: PR #39, sha 731ea379f9 |
 | 2026-10-09 12:05Z | WP-WEB-FEEDBACK-02 | WP-WEB-FEEDBACK-02 merged in the merge queue | orch.py deliver: 75676ba117 |
