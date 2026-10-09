@@ -61,7 +61,7 @@ CANCELLED (причина).
 | [WP-WORKER-08](work-packages/WP-WORKER-08-protocol-wording.md) | worker | Протокол: «## Поручения», «Спикер N», отказ от speakerCount в ASR | DONE | product-worker | https://github.com/ITSalt/transcriber/pull/36 (accepted 62df97ade4) | 2026-10-09 |
 | [WP-WORKER-MEMORY-03](work-packages/WP-WORKER-MEMORY-03-speaker-label.md) | worker-memory | Метка спикера в цитатах памяти: «Спикер N» | DONE | product-worker-memory | https://github.com/ITSalt/transcriber/pull/33 (accepted fc15b7225b) | 2026-10-09 |
 | [WP-BACKEND-08](work-packages/WP-BACKEND-08-meeting-project-speaker-count.md) | backend | Проект в карточке встречи; удаление speaker_count из контрактов, сервисов и БД | DONE | product-backend | https://github.com/ITSalt/transcriber/pull/40 (accepted 432933a0e7) | 2026-10-09 |
-| [WP-FRONTEND-08](work-packages/WP-FRONTEND-08-catalog-project.md) | frontend | Список встреч: название и проект, фильтр по проекту, заголовок карточки встречи | PROD | product-frontend | https://github.com/ITSalt/transcriber/pull/41 (accepted 6e4b93ff90) | 2026-10-09 |
+| [WP-FRONTEND-08](work-packages/WP-FRONTEND-08-catalog-project.md) | frontend | Список встреч: название и проект, фильтр по проекту, заголовок карточки встречи | DONE | product-frontend | https://github.com/ITSalt/transcriber/pull/41 (accepted 6e4b93ff90) | 2026-10-09 |
 | [WP-BACKEND-09](work-packages/WP-BACKEND-09-contract-speaker-count.md) | backend | Удаление колонки transcription_jobs.speaker_count (contract-шаг D-43 после WP-BACKEND-08) | DONE | product-backend | https://github.com/ITSalt/transcriber/pull/40 (accepted 432933a0e7) | 2026-10-09 |
 
 ## Ждёт владельца
@@ -191,6 +191,7 @@ R-n — действие: точная команда одной строкой 
 <!-- orch:journal -->
 | Дата | WP | Событие | Подтверждение |
 |------|----|---------|---------------|
+| 2026-10-09 14:30Z | WP-FRONTEND-08 | WP-FRONTEND-08: PROD -> DONE | PROD 06582ba529; список: названия, колонка и фильтр «Проект» (9 = API), сброс → 11; карточка: ссылка на проект — reports/verify-WP-FRONTEND-08-prod-20261009.md |
 | 2026-10-09 14:29Z | WP-FRONTEND-08 | WP-FRONTEND-08: VERIFIED_TEST -> PROD | verify --env prod 06582ba529: reports/verify-WP-FRONTEND-08-prod-20261009.md |
 | 2026-10-09 14:29Z | WP-FRONTEND-08 | WP-FRONTEND-08: MERGED -> VERIFIED_TEST | verify --env test 06582ba529: reports/verify-WP-FRONTEND-08-test-20261009.md |
 | 2026-10-09 14:25Z | WP-FRONTEND-08 | WP-FRONTEND-08 merged in the merge queue; released transcriber:web/src/i18n/**, transcriber:upload.fieldSpeakerCount* | orch.py deliver: 06582ba529 |
