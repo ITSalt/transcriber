@@ -189,6 +189,7 @@ R-n — действие: точная команда одной строкой 
 <!-- orch:journal -->
 | Дата | WP | Событие | Подтверждение |
 |------|----|---------|---------------|
+| 2026-10-09 11:51Z | WP-BACKEND-08 | WP-BACKEND-08: ACK на точечную правку вне области модуля backend — api/src/features/context/service.ts и api/src/features/context/context.db.test.ts (только удаление speakerCount из select и передачи в enqueue), предусмотрено пакетом (раздел 1); модуль api-projects без активной сессии и пакета (все DONE), пересечений нет | QUESTION product-backend 2026-10-09; ListAgents: product-api-projects не запущена |
 | 2026-10-09 11:46Z | — | Сессии product-web-memory и product-web-feedback завершились без READY: в worktrees незакоммиченные правки i18n/тестов, веток на origin нет — владельцу выданы команды перезапуска (тот же worktree) | git status в .claude/worktrees/wp-web-memory-02-assignments и wp-web-feedback-02-assignment-category; ListAgents 2026-10-09 |
 | 2026-10-09 11:46Z | WP-WORKER-MEMORY-03 | WP-WORKER-MEMORY-03: review round 1 started at 4998d25fc5 | reports/wp-worker-memory-03-review-20261009.md |
 | 2026-10-09 11:46Z | WP-WORKER-MEMORY-03 | WP-WORKER-MEMORY-03: DISPATCHING -> READY | PR #33 на origin (sha 4998d25fc5, CI pass); READY-сообщения от product-worker-memory не было — факт по gh pr |
