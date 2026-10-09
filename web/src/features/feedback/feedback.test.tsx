@@ -13,6 +13,8 @@ import {
 import i18n from "@/i18n/config";
 import { FeedbackToolbar } from "./components/FeedbackToolbar";
 import { diffLines } from "./diff";
+import ruFeedback from "./i18n/ru.json";
+import enFeedback from "./i18n/en.json";
 
 beforeAll(async () => {
   await i18n.changeLanguage("en");
@@ -139,6 +141,11 @@ describe("feedback panel", () => {
     const user = await openFeedback();
 
     await user.type(screen.getByTestId("feedback-text"), "Wrong owner");
+    expect(
+      within(screen.getByTestId("feedback-category")).getByRole("option", {
+        name: "Wrong assignment",
+      }),
+    ).toHaveValue("WRONG_TASK");
     await user.selectOptions(screen.getByTestId("feedback-category"), "WRONG_TASK");
     await user.click(screen.getByTestId("feedback-submit"));
 
@@ -633,5 +640,16 @@ describe("diffLines", () => {
       { op: "same", text: "a" },
       { op: "del", text: "b" },
     ]);
+  });
+});
+
+describe("feedback strings", () => {
+  it("ru.json does not use the retired word for assignments", () => {
+    expect(JSON.stringify(ruFeedback).toLowerCase()).not.toContain("\u0437\u0430\u0434\u0430\u0447");
+  });
+
+  it("labels WRONG_TASK as an assignment", () => {
+    expect(ruFeedback.category.WRONG_TASK).toBe("Неверное поручение");
+    expect(enFeedback.category.WRONG_TASK).toBe("Wrong assignment");
   });
 });
