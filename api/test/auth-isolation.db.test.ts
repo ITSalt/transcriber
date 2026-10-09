@@ -500,19 +500,19 @@ describe.skipIf(!DATABASE_URL)('FR-003 — login, isolation of every /api route,
       parts: [{ part_number: 1, etag: 'e' }], ...extra,
     })
 
-    it('defer_start=true → AWAITING_START, PENDING job with speaker_count, nothing enqueued', async () => {
+    it('defer_start=true → AWAITING_START, PENDING job, nothing enqueued', async () => {
       const cookie = await cookieOf(PIN.a)
       h.queueAdd.mockClear()
-      const res = await app.inject({ method: 'POST', url: '/api/uploads/complete', headers: { cookie }, payload: completeBody(ids.wsA, { defer_start: true, speaker_count: 3 }) })
+      const res = await app.inject({ method: 'POST', url: '/api/uploads/complete', headers: { cookie }, payload: completeBody(ids.wsA, { defer_start: true, speaker_count: 3 /* legacy SPA field, stripped */ }) })
       expect(res.statusCode, res.body).toBe(200)
       expect(res.json().status).toBe('AWAITING_START')
       const m = await db.meeting.findUnique({ where: { id: res.json().meeting_id }, include: { transcriptionJob: true } })
-      expect(m).toMatchObject({ status: 'AWAITING_START', workspaceId: ids.wsA, transcriptionJob: { status: 'PENDING', speakerCount: 3 } })
+      expect(m).toMatchObject({ status: 'AWAITING_START', workspaceId: ids.wsA, transcriptionJob: { status: 'PENDING' } })
       expect(h.queueAdd).not.toHaveBeenCalled()
 
-      const now = await app.inject({ method: 'POST', url: '/api/uploads/complete', headers: { cookie }, payload: completeBody(ids.wsA, { speaker_count: 2 }) })
+      const now = await app.inject({ method: 'POST', url: '/api/uploads/complete', headers: { cookie }, payload: completeBody(ids.wsA, {}) })
       expect(now.json().status).toBe('TRANSCRIBING')
-      expect(h.queueAdd).toHaveBeenCalledWith(expect.objectContaining({ speaker_count: 2 }))
+      expect(h.queueAdd).toHaveBeenCalledWith({ transcription_job_id: expect.any(String) })
     })
 
     it('PUT protocol appends an immutable USER_EDIT version by the author (v1 recorded first)', async () => {

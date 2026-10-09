@@ -51,14 +51,14 @@ describe.skipIf(!DATABASE_URL)('FR-004 — projects, context, start', () => {
     return res.json().project.id as string
   }
 
-  async function awaitingMeeting(speakerCount: number | null = 3) {
+  async function awaitingMeeting() {
     return db.meeting.create({
       data: {
         workspaceId: LEGACY_WS,
         title: 'Встреча',
         status: 'AWAITING_START',
         recording: { create: { storageUri: 's3://b/ws/x/a.mp4', mimeType: 'VIDEO_MP4', sizeBytes: BigInt(10) } },
-        transcriptionJob: { create: { speakerCount } },
+        transcriptionJob: { create: {} },
       },
     }) as Promise<{ id: string }>
   }
@@ -227,7 +227,7 @@ describe.skipIf(!DATABASE_URL)('FR-004 — projects, context, start', () => {
     const pid = await makeProject()
     const part = (await call('POST', `/api/projects/${pid}/participants`, { name: 'Из проекта', side: 'OURS' })).json().id
     await call('POST', `/api/projects/${pid}/glossary`, { term: 'Термин проекта', asr_keyterm: true })
-    const m = await awaitingMeeting(4)
+    const m = await awaitingMeeting()
     const job = await db.transcriptionJob.findUnique({ where: { meetingId: m.id } })
     await call('PUT', `/api/meetings/${m.id}/context`, {
       project_id: pid,
@@ -243,7 +243,7 @@ describe.skipIf(!DATABASE_URL)('FR-004 — projects, context, start', () => {
     const hash = start.json().snapshot_hash as string
     expect(hash).toMatch(/^[0-9a-f]{64}$/)
     expect(h.queueAdd).toHaveBeenCalledTimes(1)
-    expect(h.queueAdd).toHaveBeenCalledWith({ transcription_job_id: job.id, speaker_count: 4 })
+    expect(h.queueAdd).toHaveBeenCalledWith({ transcription_job_id: job.id })
     expect(await db.transcriptionJob.count({ where: { meetingId: m.id } })).toBe(1) // no second job
     const row = await db.meeting.findUnique({ where: { id: m.id } })
     expect(row).toMatchObject({ status: 'TRANSCRIBING', projectId: pid })
@@ -284,11 +284,11 @@ describe.skipIf(!DATABASE_URL)('FR-004 — projects, context, start', () => {
   })
 
   it('start without any context is valid (empty snapshot)', async () => {
-    const m = await awaitingMeeting(null)
+    const m = await awaitingMeeting()
     const start = await call('POST', `/api/meetings/${m.id}/start`)
     expect(start.statusCode).toBe(200)
     const job = await db.transcriptionJob.findUnique({ where: { meetingId: m.id } })
-    expect(h.queueAdd).toHaveBeenCalledWith({ transcription_job_id: job.id, speaker_count: null })
+    expect(h.queueAdd).toHaveBeenCalledWith({ transcription_job_id: job.id })
   })
 
   it("previous protocol 'project': text resolved at start; none → 422 and the meeting stays AWAITING_START", async () => {

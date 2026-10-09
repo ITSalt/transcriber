@@ -70,6 +70,8 @@ function makeDbMeeting(overrides: Record<string, unknown> = {}) {
     title: 'Sprint Review',
     status: 'UPLOADED',
     language: 'RU',
+    projectId: null,
+    project: null,
     createdAt: now,
     updatedAt: now,
     recording: {
@@ -100,6 +102,21 @@ describe('UC-002-BE — GET /api/meetings/:id', () => {
 
   afterAll(async () => {
     await app.close()
+  })
+
+  it('returns project_id and project_name for a meeting of a project', async () => {
+    const PROJECT_UUID = '223e4567-e89b-12d3-a456-426614174000'
+    mockFindUnique.mockResolvedValue(makeDbMeeting({ projectId: PROJECT_UUID, project: { name: 'Alpha' } }))
+    const res = await app.inject({ method: 'GET', url: `/api/meetings/${MEETING_UUID}` })
+    expect(res.statusCode).toBe(200)
+    expect(res.json().meeting).toMatchObject({ project_id: PROJECT_UUID, project_name: 'Alpha' })
+  })
+
+  it('returns null project_id/project_name for a meeting without a project', async () => {
+    mockFindUnique.mockResolvedValue(makeDbMeeting())
+    const res = await app.inject({ method: 'GET', url: `/api/meetings/${MEETING_UUID}` })
+    expect(res.statusCode).toBe(200)
+    expect(res.json().meeting).toMatchObject({ project_id: null, project_name: null })
   })
 
   // ─── T01: happy path response shape ──────────────────────────────────────────

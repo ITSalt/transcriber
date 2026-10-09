@@ -54,7 +54,7 @@ describe('F-004 — API producers stamp the canonical retry policy', () => {
    * api/src/queue.ts -> the 2nd arg becomes `{ connection }` -> RED.
    * That is exactly the pre-fix state. */
   it('F004a: transcription producer sets defaultJobOptions on its Queue', async () => {
-    await addTranscriptionJob({ transcription_job_id: 'job-1', speaker_count: null })
+    await addTranscriptionJob({ transcription_job_id: 'job-1' })
 
     expect(QueueMock).toHaveBeenCalledWith(
       QueueName.Transcription,
@@ -80,7 +80,7 @@ describe('F-004 — API producers stamp the canonical retry policy', () => {
    * deep equality against the shared constant fails -> RED. This is the
    * assertion that makes silent api/worker divergence impossible. */
   it('F004c: the policy is the shared constant, not a local literal', async () => {
-    await addTranscriptionJob({ transcription_job_id: 'job-2', speaker_count: null })
+    await addTranscriptionJob({ transcription_job_id: 'job-2' })
 
     const ctorOptions = QueueMock.mock.calls[0]?.[1] as { defaultJobOptions?: unknown }
     expect(ctorOptions.defaultJobOptions).toEqual(JOB_RETRY_OPTIONS)
@@ -90,7 +90,7 @@ describe('F-004 — API producers stamp the canonical retry policy', () => {
    * arity becomes 3 -> RED here, instead of as collateral damage across four
    * assertions in uc-100.test.ts / uc-004.test.ts. */
   it('F004d: queue.add keeps its two-argument arity', async () => {
-    await addTranscriptionJob({ transcription_job_id: 'job-3', speaker_count: null })
+    await addTranscriptionJob({ transcription_job_id: 'job-3' })
 
     expect(mockQueueAdd).toHaveBeenCalledTimes(1)
     expect(mockQueueAdd.mock.calls[0]).toHaveLength(2)

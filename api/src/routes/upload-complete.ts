@@ -47,7 +47,6 @@ export async function uploadCompleteRoutes(app: FastifyInstance): Promise<void> 
         filetype,
         title,
         language,
-        speaker_count,
         parts,
       } = request.body
 
@@ -75,7 +74,6 @@ export async function uploadCompleteRoutes(app: FastifyInstance): Promise<void> 
         bucket: s3Cfg.bucket,
         title,
         language: language ?? undefined,
-        speakerCount: speaker_count ?? undefined,
         workspaceId,
         deferStart: request.body.defer_start === true,
       })

@@ -35,6 +35,7 @@ export async function getMeetingDetail(id: string): Promise<MeetingDetailRespons
       include: {
         recording: true,
         transcriptionJob: true,
+        project: { select: { name: true } },
         transcript: { select: { id: true } },
         protocolGenJob: true,
         protocol: { select: { id: true } },
@@ -64,6 +65,8 @@ export async function getMeetingDetail(id: string): Promise<MeetingDetailRespons
         title: meeting.title ?? null,
         language: meeting.language ?? null,
         status: meeting.status,
+        project_id: meeting.projectId ?? null,
+        project_name: meeting.project?.name ?? null,
         // Meeting has no dedicated uploaded_at; use createdAt
         uploaded_at: meeting.createdAt.toISOString(),
         updated_at: meeting.updatedAt.toISOString(),
