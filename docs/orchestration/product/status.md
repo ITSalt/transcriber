@@ -60,7 +60,7 @@ CANCELLED (причина).
 | [WP-WEB-PROJECTS-02](work-packages/WP-WEB-PROJECTS-02-meetings-and-upload.md) | web-projects | «Проекты и поручения», встречи на карточке проекта, удаление поля «Количество спикеров» | DONE | product-web-projects | https://github.com/ITSalt/transcriber/pull/34 (accepted 48daf9b7f4) | 2026-10-09 |
 | [WP-WORKER-08](work-packages/WP-WORKER-08-protocol-wording.md) | worker | Протокол: «## Поручения», «Спикер N», отказ от speakerCount в ASR | DONE | product-worker | https://github.com/ITSalt/transcriber/pull/36 (accepted 62df97ade4) | 2026-10-09 |
 | [WP-WORKER-MEMORY-03](work-packages/WP-WORKER-MEMORY-03-speaker-label.md) | worker-memory | Метка спикера в цитатах памяти: «Спикер N» | DONE | product-worker-memory | https://github.com/ITSalt/transcriber/pull/33 (accepted fc15b7225b) | 2026-10-09 |
-| [WP-BACKEND-08](work-packages/WP-BACKEND-08-meeting-project-speaker-count.md) | backend | Проект в карточке встречи; удаление speaker_count из контрактов, сервисов и БД | READY | product-backend | https://github.com/ITSalt/transcriber/pull/40 | 2026-10-09 |
+| [WP-BACKEND-08](work-packages/WP-BACKEND-08-meeting-project-speaker-count.md) | backend | Проект в карточке встречи; удаление speaker_count из контрактов, сервисов и БД | ACCEPTED | product-backend | https://github.com/ITSalt/transcriber/pull/40 (accepted 432933a0e7) | 2026-10-09 |
 | [WP-FRONTEND-08](work-packages/WP-FRONTEND-08-catalog-project.md) | frontend | Список встреч: название и проект, фильтр по проекту, заголовок карточки встречи | DISPATCHING | product-frontend | — | 2026-10-09 |
 
 ## Ждёт владельца
@@ -115,7 +115,7 @@ R-n — действие: точная команда одной строкой 
 | ~~P-20~~ | ~~Поле «Количество спикеров» на загрузке обещает улучшить разделение по голосам, но в Deepgram не передаётся (D-21): (а) убрать поле — рекомендация; (б) оставить с честной подсказкой «только подсказка протоколу». Подробности: reports/terminology-audit-20261009.md U1~~ | reports/terminology-audit-20261009.md | 2026-10-09 | 2026-10-09: answered by D-43 |
 | ~~P-21~~ | ~~Метка неподтверждённого спикера: транскрипт показывает «Спикер N», экран подтверждения и протокол — «Speaker N»: (а) «Speaker N» везде; (б) «Спикер N» в интерфейсе и протоколе, внутри данных остаётся Speaker N — рекомендация. Подробности: U6~~ | reports/terminology-audit-20261009.md | 2026-10-09 | 2026-10-09: answered by D-41 |
 | ~~P-22~~ | ~~После переименования меню «Задачи» → «Встречи» реестр поручений доступен только с карточки проекта. Нужен ли пункт меню «Задачи» со сводным реестром по всем проектам пространства? (а) да — новая страница и сводный маршрут; (б) нет, отложить до анализа обратной связи — рекомендация. Подробности: P-22 в отчёте~~ | reports/terminology-audit-20261009.md | 2026-10-09 | 2026-10-09: answered by D-42 |
-| R-22 | Бэкап БД прода перед миграцией WP-BACKEND-08 (DROP COLUMN transcription_jobs.speaker_count) — выполняет оркестратор по D-39 на шаге deliver, как R-21: ssh deploy@transcriber.itsalt.ru 'docker exec learn-postgres pg_dump -U <user> -Fc transcrib > /opt/transcrib/backups/transcrib-<date>.dump' ; expected: файл с размером > 0 и pg_restore --list без ошибок | work-packages/WP-BACKEND-08-meeting-project-speaker-count.md | 2026-10-09 |  |
+| ~~R-22~~ | ~~Бэкап БД прода перед миграцией WP-BACKEND-08 (DROP COLUMN transcription_jobs.speaker_count) — выполняет оркестратор по D-39 на шаге deliver, как R-21: ssh deploy@transcriber.itsalt.ru 'docker exec learn-postgres pg_dump -U <user> -Fc transcrib > /opt/transcrib/backups/transcrib-<date>.dump' ; expected: файл с размером > 0 и pg_restore --list без ошибок~~ | work-packages/WP-BACKEND-08-meeting-project-speaker-count.md | 2026-10-09 | 2026-10-09: pg_dump -Fc на VM: /opt/transcrib/backups/transcrib-20261009-pre-drop-speaker-count.dump, размер 1316047 байт, pg_restore --list: 20 TABLE DATA; снят перед слиянием contract-PR #40 |
 
 ## Замки
 
@@ -183,6 +183,7 @@ R-n — действие: точная команда одной строкой 
 | 42 | transcriber | WP-WEB-FEEDBACK-02 | — | — | merged |
 | 43 | transcriber | WP-WEB-MEMORY-02 | — | — | merged |
 | 44 | transcriber | WP-BACKEND-08 | — | — | merged |
+| 45 | transcriber | WP-BACKEND-08 | — | — | queued |
 
 ## Журнал
 
@@ -191,6 +192,10 @@ R-n — действие: точная команда одной строкой 
 <!-- orch:journal -->
 | Дата | WP | Событие | Подтверждение |
 |------|----|---------|---------------|
+| 2026-10-09 12:43Z | — | R-22 closed | pg_dump -Fc на VM: /opt/transcrib/backups/transcrib-20261009-pre-drop-speaker-count.dump, размер 1316047 байт, pg_restore --list: 20 TABLE DATA; снят перед слиянием contract-PR #40 |
+| 2026-10-09 12:43Z | WP-BACKEND-08 | WP-BACKEND-08 queued for merge (sequential) | — |
+| 2026-10-09 12:43Z | WP-BACKEND-08 | WP-BACKEND-08: accepted at 432933a0e70f3d30bd9395367c51ca7a0fd7bb1c | report reports/wp-backend-08-review-20261009-r3.md |
+| 2026-10-09 12:43Z | WP-BACKEND-08 | WP-BACKEND-08: READY -> ACCEPTED | contract: миграция/down.sql/DB-тест как в раунде 1, deploy-plan §5; CI зелёный на 432933a0e7; окно тихое (0 заданий); бэкап transcrib-20261009-pre-drop-speaker-count.dump — reports/wp-backend-08-review-20261009-r3.md |
 | 2026-10-09 12:40Z | WP-BACKEND-08 | lock transcriber:migrations acquired | orch.py lock |
 | 2026-10-09 12:40Z | WP-BACKEND-08 | lock transcriber:api/prisma/** acquired | orch.py lock |
 | 2026-10-09 12:40Z | WP-BACKEND-08 | WP-BACKEND-08: review round 3 started at 432933a0e7 | reports/wp-backend-08-review-20261009-r3.md |
