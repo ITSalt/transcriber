@@ -16,6 +16,7 @@ import {
   useUpdateProject,
 } from "./api";
 import { ParticipantForm, TermForm } from "./forms";
+import { ProjectMeetings } from "./ProjectMeetings";
 
 export default function ProjectDetailPage() {
   const { t } = useTranslation("projects");
@@ -105,6 +106,8 @@ export default function ProjectDetailPage() {
           </Button>
         </div>
       </section>
+
+      <ProjectMeetings projectId={projectId} />
 
       <section className="mb-8" data-testid="project-participants">
         <h2 className="mb-3 text-lg font-semibold">{t("participants.title")}</h2>

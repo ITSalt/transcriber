@@ -5,6 +5,7 @@ import {
   ProjectParticipant,
   GlossaryTerm,
   LastProtocolResponse,
+  WorkspaceMeetingListResponse,
   type ParticipantInput,
   type GlossaryTermInput,
   type ParticipantUpdate,
@@ -18,6 +19,7 @@ import { useWorkspaceId } from "@/lib/session";
 export const projectKeys = {
   list: (workspaceId: string) => ["projects", "list", workspaceId] as const,
   detail: (id: string) => ["projects", "detail", id] as const,
+  meetings: (id: string) => ["projects", "meetings", id] as const,
   lastProtocol: (id: string) => ["projects", "last-protocol", id] as const,
 };
 
@@ -39,6 +41,20 @@ export function useProject(projectId: string | null | undefined) {
     queryKey: projectKeys.detail(projectId ?? ""),
     queryFn: () => apiGet(`/api/projects/${projectId}`, ProjectDetailResponse),
     enabled: !!projectId,
+  });
+}
+
+/** Meetings of one project: the meeting list API filtered by project_id. */
+export function useProjectMeetings(projectId: string) {
+  const workspaceId = useWorkspaceId();
+  return useQuery({
+    queryKey: projectKeys.meetings(projectId),
+    queryFn: () =>
+      apiGet(
+        `/api/meetings?workspace_id=${encodeURIComponent(workspaceId ?? "")}&project_id=${encodeURIComponent(projectId)}`,
+        WorkspaceMeetingListResponse,
+      ),
+    enabled: !!workspaceId && !!projectId,
   });
 }
 
