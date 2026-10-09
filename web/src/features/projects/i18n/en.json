@@ -1,5 +1,5 @@
 {
-  "nav": "Projects",
+  "nav": "Projects & assignments",
   "title": "Projects",
   "loading": "Loading…",
   "loadError": "Failed to load projects.",
@@ -42,5 +42,12 @@
     "definition": "Explanation",
     "asrKeyterm": "For recognition",
     "forAsr": "for recognition"
+  },
+  "meetings": {
+    "title": "Meetings",
+    "loading": "Loading meetings…",
+    "error": "Failed to load meetings.",
+    "empty": "No meetings in this project yet",
+    "upload": "Upload a recording"
   }
 }

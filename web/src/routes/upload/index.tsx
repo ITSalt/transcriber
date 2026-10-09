@@ -1,5 +1,5 @@
-import { useState, useRef } from "react";
-import { useNavigate } from "react-router";
+import { useState, useRef, useEffect } from "react";
+import { useNavigate, useSearchParams } from "react-router";
 import { useTranslation } from "react-i18next";
 import { apiPost } from "@/lib/api";
 import {
@@ -18,7 +18,7 @@ import {
   isDraftEmpty,
   type ContextDraft,
 } from "@/features/context/draft";
-import { useLastProtocol } from "@/features/projects/api";
+import { useLastProtocol, useProjects } from "@/features/projects/api";
 import {
   Select,
   SelectContent,
@@ -54,15 +54,28 @@ export default function UploadPage() {
   const { t } = useTranslation();
   const { t: tc } = useTranslation("context");
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
 
   const [file, setFile] = useState<File | null>(null);
   const [title, setTitle] = useState("");
   const [language, setLanguage] = useState<"RU" | "EN" | "">("");
-  const [speakerCountInput, setSpeakerCountInput] = useState("");
   const [progress, setProgress] = useState(0);
   const [uploadState, setUploadState] = useState<UploadState>("idle");
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [draft, setDraft] = useState<ContextDraft>(emptyDraft);
+  const projects = useProjects();
+  const prefillProjectId = searchParams.get("project");
+  const prefilled = useRef(false);
+
+  // ?project= preselects a project, but only one the user can see: an unknown or foreign
+  // id must not sit in the draft (it would break start).
+  useEffect(() => {
+    if (prefilled.current || !prefillProjectId || !projects.data) return;
+    prefilled.current = true;
+    if (projects.data.items.some((p) => p.id === prefillProjectId)) {
+      setDraft((d) => (d.projectId === null ? { ...d, projectId: prefillProjectId } : d));
+    }
+  }, [prefillProjectId, projects.data]);
   const [meetingId, setMeetingId] = useState<string | null>(null);
   const lastProtocol = useLastProtocol(draft.projectId);
   const abortControllerRef = useRef<AbortController | null>(null);
@@ -115,16 +128,6 @@ export default function UploadPage() {
     setErrorMsg(null);
   }
 
-  function parseSpeakerCount(raw: string): { value: number | null; error: string | null } {
-    const trimmed = raw.trim();
-    if (trimmed === "") return { value: null, error: null };
-    const n = Number(trimmed);
-    if (!Number.isInteger(n) || n < 1 || n > 10) {
-      return { value: null, error: t("upload.errorSpeakerCountRange") };
-    }
-    return { value: n, error: null };
-  }
-
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!file) return;
@@ -132,12 +135,6 @@ export default function UploadPage() {
     const validationError = validateFile(file);
     if (validationError) {
       setErrorMsg(validationError);
-      return;
-    }
-
-    const { value: speakerCount, error: speakerErr } = parseSpeakerCount(speakerCountInput);
-    if (speakerErr) {
-      setErrorMsg(speakerErr);
       return;
     }
 
@@ -211,7 +208,6 @@ export default function UploadPage() {
           filetype: file.type,
           title: effectiveTitle,
           language: language || null,
-          speaker_count: speakerCount,
           parts: completedParts,
           defer_start: true,
         },
@@ -321,32 +317,6 @@ export default function UploadPage() {
               <SelectItem value="EN">{t("upload.languageEn")}</SelectItem>
             </SelectContent>
           </Select>
-        </div>
-
-        {/* Speaker count field — optional Deepgram diarization pin */}
-        <div className="mb-4">
-          <label
-            htmlFor="upload-speaker-count"
-            className="block text-sm font-medium mb-1"
-          >
-            {t("upload.fieldSpeakerCount")}
-          </label>
-          <Input
-            id="upload-speaker-count"
-            type="number"
-            min={1}
-            max={10}
-            step={1}
-            inputMode="numeric"
-            value={speakerCountInput}
-            onChange={(e) => setSpeakerCountInput(e.target.value)}
-            disabled={isUploading}
-            placeholder={t("upload.fieldSpeakerCountPlaceholder")}
-            data-testid="upload-input-speaker-count"
-          />
-          <p className="text-xs text-gray-500 mt-1">
-            {t("upload.fieldSpeakerCountHint")}
-          </p>
         </div>
 
         <ContextForm

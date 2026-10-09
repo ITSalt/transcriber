@@ -3,7 +3,7 @@ import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { createMemoryRouter, RouterProvider } from "react-router";
-import { ProjectDetailResponse, ProjectListResponse, ProjectParticipant } from "@transcrib/shared";
+import { WorkspaceMeetingListResponse, ProjectDetailResponse, ProjectListResponse, ProjectParticipant } from "@transcrib/shared";
 import i18n from "@/i18n/config";
 import { WithSession, WS_PERSONAL } from "@/lib/test-utils";
 import { featureRegistry } from "@/lib/features";
@@ -17,6 +17,9 @@ const SUMMARY = {
   meeting_count: 2, created_at: NOW, updated_at: NOW,
 };
 
+let MEETINGS: unknown[] = [];
+const MID = "44444444-4444-4444-8444-444444444444";
+
 interface Call { method: string; url: string; body: unknown }
 
 function mockApi() {
@@ -29,6 +32,9 @@ function mockApi() {
     const raw = (init as RequestInit | undefined)?.body;
     const body = typeof raw === "string" ? (JSON.parse(raw) as unknown) : undefined;
     calls.push({ method, url: u, body });
+    if (u.includes("/api/meetings?")) {
+      return json(WorkspaceMeetingListResponse.parse({ items: MEETINGS }));
+    }
     if (u.includes("/api/projects?")) return json(ProjectListResponse.parse({ items: [SUMMARY] }));
     if (u.endsWith("/api/projects") && method === "POST") {
       return json(ProjectDetailResponse.parse({ project: { ...SUMMARY, name: "New" }, participants: [], glossary: [] }), 201);
@@ -59,7 +65,10 @@ function renderAt(path: string) {
 beforeAll(async () => {
   await i18n.changeLanguage("en");
 });
-afterEach(() => vi.restoreAllMocks());
+afterEach(() => {
+  vi.restoreAllMocks();
+  MEETINGS = [];
+});
 
 describe("projects feature", () => {
   it("registers the nav item and routes through the feature glob (D-15)", () => {
@@ -107,5 +116,36 @@ describe("projects feature", () => {
       organization: null,
       side: "CLIENT",
     });
+  });
+
+  it("labels the nav item «Projects & assignments» (D-42)", async () => {
+    expect(i18n.t("projects:nav")).toBe("Projects & assignments");
+    await i18n.changeLanguage("ru");
+    expect(i18n.t("projects:nav")).toBe("Проекты и поручения");
+    await i18n.changeLanguage("en");
+  });
+
+  it("shows the project's meetings with links to /meetings/:id", async () => {
+    MEETINGS = [
+      {
+        id: MID, title: "Kickoff", filename: "k.mp4", status: "PROTOCOL_READY",
+        language: "RU", duration_sec: 600, uploaded_at: NOW, updated_at: NOW, workspace_id: WS, project_id: PID, project_name: "Alpha",
+      },
+    ];
+    const calls = mockApi();
+    renderAt(`/projects/${PID}`);
+    const row = await screen.findByTestId(`project-meeting-${MID}`);
+    expect(within(row).getByText("Kickoff")).toBeInTheDocument();
+    expect(within(row).getByRole("link")).toHaveAttribute("href", `/meetings/${MID}`);
+    const call = calls.find((c) => c.url.includes("/api/meetings?"))!;
+    expect(call.url).toContain(`workspace_id=${WS}`);
+    expect(call.url).toContain(`project_id=${PID}`);
+  });
+
+  it("shows the empty state and an upload link with the project preselected", async () => {
+    mockApi();
+    renderAt(`/projects/${PID}`);
+    expect(await screen.findByTestId("project-meetings-empty")).toBeInTheDocument();
+    expect(screen.getByTestId("project-upload")).toHaveAttribute("href", `/upload?project=${PID}`);
   });
 });

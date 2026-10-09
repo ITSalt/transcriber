@@ -150,14 +150,14 @@ function mockApi(
   return calls;
 }
 
-function renderUpload() {
+function renderUpload(path = "/upload") {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   const router = createMemoryRouter(
     [
       { path: "/upload", element: <UploadPage /> },
       { path: "/meetings/:id", element: <div data-testid="meeting-detail" /> },
     ],
-    { initialEntries: ["/upload"] },
+    { initialEntries: [path] },
   );
   return render(
     <QueryClientProvider client={client}>
@@ -204,6 +204,31 @@ describe("UploadPage — project and context (FR-004)", () => {
     expect(within(screen.getByTestId("context-project-info")).getAllByText("from project")).toHaveLength(2);
     // read-only: no inputs inside the project block
     expect(within(screen.getByTestId("context-project-info")).queryAllByRole("textbox")).toHaveLength(0);
+  });
+
+  it("?project=<id> of a visible project preselects it and is sent as project_id in PUT context", async () => {
+    const calls = mockApi();
+    renderUpload(`/upload?project=${PROJECT_ID}`);
+    await screen.findByTestId("context-project-info");
+    expect(screen.getByTestId("context-project")).toHaveValue(PROJECT_ID);
+
+    await uploadFile();
+    await userEvent.click(screen.getByTestId("upload-start"));
+    await waitFor(() => expect(screen.getByTestId("meeting-detail")).toBeInTheDocument());
+    const put = callsTo(calls, "PUT", `/api/meetings/${MEETING_ID}/context`)[0]!;
+    expect(MeetingContextPutRequest.parse(put.body).project_id).toBe(PROJECT_ID);
+  });
+
+  it("?project= with an unknown id is ignored: no preselection, start without a context PUT", async () => {
+    const calls = mockApi();
+    renderUpload("/upload?project=99999999-9999-4999-8999-999999999999");
+    await screen.findByRole("option", { name: "Alpha" });
+    expect(screen.getByTestId("context-project")).toHaveValue("");
+
+    await uploadFile();
+    await userEvent.click(screen.getByTestId("upload-start"));
+    await waitFor(() => expect(screen.getByTestId("meeting-detail")).toBeInTheDocument());
+    expect(callsTo(calls, "PUT", `/api/meetings/${MEETING_ID}/context`)).toHaveLength(0);
   });
 
   it("start is disabled until the file is uploaded, then enabled", async () => {

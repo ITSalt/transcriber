@@ -282,6 +282,21 @@ describe("UploadPage", () => {
     expect(body["size_bytes"]).toBe(2048);
     expect(body["filetype"]).toBe("video/mp4");
     expect(body["title"]).toBe("my-meeting");
+    expect(body).not.toHaveProperty("speaker_count");
+
+    const completeCall = fetchSpy.mock.calls.find(([url]) =>
+      String(url).includes("/api/uploads/complete"),
+    );
+    const completeBody = JSON.parse(
+      ((completeCall?.[1] as RequestInit) ?? {}).body as string,
+    ) as Record<string, unknown>;
+    expect(completeBody).not.toHaveProperty("speaker_count");
+  });
+
+  it("has no «speaker count» field (WP-WEB-PROJECTS-02)", () => {
+    mockSuccessfulUpload();
+    renderUpload();
+    expect(screen.queryByTestId("upload-input-speaker-count")).not.toBeInTheDocument();
   });
 
   it("shows error when upload API call fails", async () => {

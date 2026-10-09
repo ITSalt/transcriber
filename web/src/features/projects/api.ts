@@ -5,6 +5,7 @@ import {
   ProjectParticipant,
   GlossaryTerm,
   LastProtocolResponse,
+  WorkspaceMeetingListResponse,
   type ParticipantInput,
   type GlossaryTermInput,
   type ParticipantUpdate,
@@ -39,6 +40,21 @@ export function useProject(projectId: string | null | undefined) {
     queryKey: projectKeys.detail(projectId ?? ""),
     queryFn: () => apiGet(`/api/projects/${projectId}`, ProjectDetailResponse),
     enabled: !!projectId,
+  });
+}
+
+/** Meetings of one project: the meeting list API filtered by project_id. */
+export function useProjectMeetings(projectId: string) {
+  const workspaceId = useWorkspaceId();
+  return useQuery({
+    // shares the ["meetings"] prefix so deleting/retrying a meeting invalidates this block too
+    queryKey: ["meetings", workspaceId, { project_id: projectId }],
+    queryFn: () =>
+      apiGet(
+        `/api/meetings?workspace_id=${encodeURIComponent(workspaceId ?? "")}&project_id=${encodeURIComponent(projectId)}`,
+        WorkspaceMeetingListResponse,
+      ),
+    enabled: !!workspaceId && !!projectId,
   });
 }
 
