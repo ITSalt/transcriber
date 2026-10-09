@@ -62,7 +62,7 @@ CANCELLED (причина).
 | [WP-WORKER-MEMORY-03](work-packages/WP-WORKER-MEMORY-03-speaker-label.md) | worker-memory | Метка спикера в цитатах памяти: «Спикер N» | DONE | product-worker-memory | https://github.com/ITSalt/transcriber/pull/33 (accepted fc15b7225b) | 2026-10-09 |
 | [WP-BACKEND-08](work-packages/WP-BACKEND-08-meeting-project-speaker-count.md) | backend | Проект в карточке встречи; удаление speaker_count из контрактов, сервисов и БД | PROD | product-backend | https://github.com/ITSalt/transcriber/pull/40 (accepted 432933a0e7) | 2026-10-09 |
 | [WP-FRONTEND-08](work-packages/WP-FRONTEND-08-catalog-project.md) | frontend | Список встреч: название и проект, фильтр по проекту, заголовок карточки встречи | DISPATCHING | product-frontend | — | 2026-10-09 |
-| [WP-BACKEND-09](work-packages/WP-BACKEND-09-contract-speaker-count.md) | backend | Удаление колонки transcription_jobs.speaker_count (contract-шаг D-43 после WP-BACKEND-08) | VERIFIED_TEST | product-backend | https://github.com/ITSalt/transcriber/pull/40 (accepted 432933a0e7) | 2026-10-09 |
+| [WP-BACKEND-09](work-packages/WP-BACKEND-09-contract-speaker-count.md) | backend | Удаление колонки transcription_jobs.speaker_count (contract-шаг D-43 после WP-BACKEND-08) | PROD | product-backend | https://github.com/ITSalt/transcriber/pull/40 (accepted 432933a0e7) | 2026-10-09 |
 
 ## Ждёт владельца
 
@@ -193,6 +193,7 @@ R-n — действие: точная команда одной строкой 
 <!-- orch:journal -->
 | Дата | WP | Событие | Подтверждение |
 |------|----|---------|---------------|
+| 2026-10-09 12:50Z | WP-BACKEND-09 | WP-BACKEND-09: VERIFIED_TEST -> PROD | verify --env prod f68514de34: reports/verify-WP-BACKEND-09-prod-20261009.md |
 | 2026-10-09 12:50Z | WP-BACKEND-09 | WP-BACKEND-09: MERGED -> VERIFIED_TEST | verify --env test f68514de34: reports/verify-WP-BACKEND-09-test-20261009.md |
 | 2026-10-09 12:46Z | WP-BACKEND-09 | WP-BACKEND-09 merged in the merge queue; released transcriber:api/prisma/**, transcriber:.tl/{status.json,master-plan.md,changelog.md,release-status.json,deploy-plan.md} | orch.py deliver: f68514de34 |
 | 2026-10-09 12:46Z | WP-BACKEND-09 | WP-BACKEND-09: ACCEPTED -> MERGED | gh pr merge --squash: f68514de34 (https://github.com/ITSalt/transcriber/pull/40) |
