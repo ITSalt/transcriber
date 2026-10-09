@@ -59,7 +59,7 @@ CANCELLED (причина).
 | [WP-WEB-FEEDBACK-02](work-packages/WP-WEB-FEEDBACK-02-assignment-category.md) | web-feedback | Категория отзыва «Неверное поручение» | READY | product-web-feedback | https://github.com/ITSalt/transcriber/pull/37 | 2026-10-09 |
 | [WP-WEB-PROJECTS-02](work-packages/WP-WEB-PROJECTS-02-meetings-and-upload.md) | web-projects | «Проекты и поручения», встречи на карточке проекта, удаление поля «Количество спикеров» | DONE | product-web-projects | https://github.com/ITSalt/transcriber/pull/34 (accepted 48daf9b7f4) | 2026-10-09 |
 | [WP-WORKER-08](work-packages/WP-WORKER-08-protocol-wording.md) | worker | Протокол: «## Поручения», «Спикер N», отказ от speakerCount в ASR | DONE | product-worker | https://github.com/ITSalt/transcriber/pull/36 (accepted 62df97ade4) | 2026-10-09 |
-| [WP-WORKER-MEMORY-03](work-packages/WP-WORKER-MEMORY-03-speaker-label.md) | worker-memory | Метка спикера в цитатах памяти: «Спикер N» | ACCEPTED | product-worker-memory | https://github.com/ITSalt/transcriber/pull/33 (accepted fc15b7225b) | 2026-10-09 |
+| [WP-WORKER-MEMORY-03](work-packages/WP-WORKER-MEMORY-03-speaker-label.md) | worker-memory | Метка спикера в цитатах памяти: «Спикер N» | VERIFIED_TEST | product-worker-memory | https://github.com/ITSalt/transcriber/pull/33 (accepted fc15b7225b) | 2026-10-09 |
 | [WP-BACKEND-08](work-packages/WP-BACKEND-08-meeting-project-speaker-count.md) | backend | Проект в карточке встречи; удаление speaker_count из контрактов, сервисов и БД | DISPATCHING | product-backend | — | 2026-10-09 |
 | [WP-FRONTEND-08](work-packages/WP-FRONTEND-08-catalog-project.md) | frontend | Список встреч: название и проект, фильтр по проекту, заголовок карточки встречи | READY | product-frontend | — | 2026-10-09 |
 
@@ -181,7 +181,7 @@ R-n — действие: точная команда одной строкой 
 | 38 | transcriber | WP-WEB-PROJECTS-02 | — | — | merged |
 | 39 | transcriber | WP-WORKER-08 | — | — | merged |
 | 40 | transcriber | WP-FRONTEND-07 | — | — | merged |
-| 41 | transcriber | WP-WORKER-MEMORY-03 | — | — | queued |
+| 41 | transcriber | WP-WORKER-MEMORY-03 | — | — | merged |
 
 ## Журнал
 
@@ -190,6 +190,9 @@ R-n — действие: точная команда одной строкой 
 <!-- orch:journal -->
 | Дата | WP | Событие | Подтверждение |
 |------|----|---------|---------------|
+| 2026-10-09 12:05Z | WP-WORKER-MEMORY-03 | WP-WORKER-MEMORY-03: MERGED -> VERIFIED_TEST | verify --env test b482b0e79f: reports/verify-WP-WORKER-MEMORY-03-test-20261009.md |
+| 2026-10-09 12:01Z | WP-WORKER-MEMORY-03 | WP-WORKER-MEMORY-03 merged in the merge queue | orch.py deliver: b482b0e79f |
+| 2026-10-09 12:01Z | WP-WORKER-MEMORY-03 | WP-WORKER-MEMORY-03: ACCEPTED -> MERGED | gh pr merge --squash: b482b0e79f (https://github.com/ITSalt/transcriber/pull/33) |
 | 2026-10-09 12:01Z | WP-WORKER-MEMORY-03 | WP-WORKER-MEMORY-03 queued for merge (sequential) | — |
 | 2026-10-09 12:01Z | WP-WORKER-MEMORY-03 | WP-WORKER-MEMORY-03: accepted at fc15b7225bb504cd303c3f6317a281d988a17e55 | report reports/wp-worker-memory-03-review-20261009-r2.md |
 | 2026-10-09 12:01Z | WP-WORKER-MEMORY-03 | WP-WORKER-MEMORY-03: READY -> ACCEPTED | раунд 2: оба пункта закрыты по диффу; CI зелёный на fc15b7225b — reports/wp-worker-memory-03-review-20261009-r2.md |
