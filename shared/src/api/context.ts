@@ -12,7 +12,7 @@ import { ParticipantSide, PARTICIPANT_NAME_MAX, PARTICIPANT_ALIASES_MAX, GLOSSAR
 //        only from AWAITING_START (else 409 MEETING_NOT_AWAITING_START); freezes the
 //        snapshot = project card (source 'project') + meeting additions (source 'meeting')
 //        + previous protocol text, sets snapshot_hash and Meeting.projectId, then enqueues
-//        transcription exactly like finalizeUpload ({transcription_job_id, speaker_count}).
+//        transcription exactly like finalizeUpload ({transcription_job_id}).
 //        The context is optional: start without a PUT is valid.
 // Later project edits never change a frozen snapshot.
 

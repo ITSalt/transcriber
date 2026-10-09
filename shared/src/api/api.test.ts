@@ -64,6 +64,8 @@ describe('MeetingDetailResponse', () => {
       title: 'Demo',
       language: 'EN' as const,
       status: 'TRANSCRIBING' as const,
+      project_id: uuid,
+      project_name: 'Alpha',
       uploaded_at: now,
       updated_at: now,
     },

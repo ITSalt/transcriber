@@ -193,7 +193,7 @@ export async function retryMeetingProcessing(meetingId: string): Promise<RetryMe
     // Step 6: After commit — enqueue to BullMQ (RQ-035)
     try {
       if (stage === 'transcription') {
-        await addTranscriptionJob({ transcription_job_id: jobId, speaker_count: null })
+        await addTranscriptionJob({ transcription_job_id: jobId })
       } else {
         await enqueueProtocolGenerationJob({ protocol_generation_job_id: jobId })
       }

@@ -9,6 +9,8 @@ export const MeetingDetailResponse = z.object({
     title: z.string().nullable(),
     language: MeetingLanguage.nullable(),
     status: MeetingStatus,
+    project_id: z.string().uuid().nullable().default(null),
+    project_name: z.string().nullable().default(null),
     uploaded_at: z.string().datetime(),
     updated_at: z.string().datetime(),
   }),

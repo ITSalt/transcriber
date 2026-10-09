@@ -167,9 +167,7 @@ model TranscriptionJob {
   finishedAt   DateTime? @map("finished_at")
   errorMsg     String?   @map("error_msg")
   attemptCount Int       @default(0) @map("attempt_count")
-  /// A-5 (WP-BACKEND-01): the author's speaker-count hint from upload complete. Kept on the
-  /// job so a deferred start (POST /api/meetings/:id/start) can enqueue
-  /// {transcription_job_id, speaker_count} exactly like finalizeUpload. NULL = auto-detect.
+  /// Не используется, удаляется следующей миграцией (D-43).
   speakerCount Int?      @map("speaker_count")
   createdAt    DateTime  @default(now()) @map("created_at")
   updatedAt    DateTime  @updatedAt @map("updated_at")

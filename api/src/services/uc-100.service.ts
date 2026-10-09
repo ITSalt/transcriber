@@ -40,18 +40,13 @@ export interface FinalizeUploadInput {
   title?: string
   /** Optional language hint (RQ-012: null = auto-detect) */
   language?: string
-  /**
-   * Optional user-supplied speaker count hint. Propagated to the worker via
-   * the BullMQ payload; the worker passes it to Deepgram as min/max_speakers.
-   */
-  speakerCount?: number | null
   /** Whether container has been probed externally — if false, we probe here */
   skipProbe?: boolean
   /** FR-003: owning workspace — membership already checked by the route */
   workspaceId: string
   /**
    * FR-004 / D-9: true = create the meeting in AWAITING_START and enqueue nothing; the
-   * TranscriptionJob (PENDING, with speakerCount — A-5) is created now and enqueued by
+   * TranscriptionJob (PENDING) is created now and enqueued by
    * POST /api/meetings/:id/start (WP-API-PROJECTS-01).
    */
   deferStart?: boolean
@@ -142,7 +137,6 @@ export async function finalizeUpload(
     bucket,
     title,
     language,
-    speakerCount,
     skipProbe = false,
     workspaceId,
     deferStart = false,
@@ -228,11 +222,9 @@ export async function finalizeUpload(
       })
 
       // Step 3: Create TranscriptionJob (status=PENDING by schema default)
-      // A-5: the speaker hint is kept on the job so a deferred start can enqueue it
       const job = await tx.transcriptionJob.create({
         data: {
           meetingId: meeting.id,
-          speakerCount: speakerCount ?? null,
         },
       })
 
@@ -260,10 +252,7 @@ export async function finalizeUpload(
 
   // RQ-011: Enqueue BullMQ job AFTER transaction commits
   try {
-    await addTranscriptionJob({
-      transcription_job_id: transcriptionJobId,
-      speaker_count: speakerCount ?? null,
-    })
+    await addTranscriptionJob({ transcription_job_id: transcriptionJobId })
   } catch (err) {
     // Job row exists in DB; BullMQ enqueue failure is non-fatal at this layer.
     // A reconciliation worker can re-enqueue orphaned jobs.

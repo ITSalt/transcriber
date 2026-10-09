@@ -124,7 +124,6 @@ export async function saveDraft(meetingId: string, projectId: string | null, bod
 export interface StartResult {
   snapshotHash: string
   transcriptionJobId: string
-  speakerCount: number | null
 }
 
 /**
@@ -139,7 +138,7 @@ export async function freezeAndStart(meetingId: string): Promise<StartResult> {
 
     const meeting = await tx.meeting.findUniqueOrThrow({
       where: { id: meetingId },
-      select: { projectId: true, context: true, transcriptionJob: { select: { id: true, status: true, speakerCount: true } } },
+      select: { projectId: true, context: true, transcriptionJob: { select: { id: true, status: true } } },
     })
     const job = meeting.transcriptionJob
     if (!job || job.status !== 'PENDING') {
@@ -204,14 +203,14 @@ export async function freezeAndStart(meetingId: string): Promise<StartResult> {
     }
     await tx.meetingContext.upsert({ where: { meetingId }, create: { meetingId, ...data }, update: data })
 
-    return { snapshotHash, transcriptionJobId: job.id, speakerCount: job.speakerCount }
+    return { snapshotHash, transcriptionJobId: job.id }
   })
 }
 
 /** Same payload and queue as an immediate start in finalizeUpload (uc-100.service.ts). */
 export async function enqueueTranscription(result: StartResult, log: { error: (o: unknown, m: string) => void }): Promise<void> {
   try {
-    await addTranscriptionJob({ transcription_job_id: result.transcriptionJobId, speaker_count: result.speakerCount })
+    await addTranscriptionJob({ transcription_job_id: result.transcriptionJobId })
   } catch (err) {
     // the job row exists (PENDING); like finalizeUpload, an enqueue failure is not fatal here
     log.error({ err }, 'Failed to enqueue BullMQ transcription job')
