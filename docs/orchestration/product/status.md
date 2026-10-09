@@ -57,7 +57,7 @@ CANCELLED (причина).
 | [WP-FRONTEND-07](work-packages/WP-FRONTEND-07-wording.md) | frontend | Единая терминология в строках ядра: «Встречи», «обработка», «Спикер N», род статусов | READY | product-frontend | https://github.com/ITSalt/transcriber/pull/35 | 2026-10-09 |
 | [WP-WEB-MEMORY-02](work-packages/WP-WEB-MEMORY-02-assignments.md) | web-memory | «Поручения» вместо «задач» в памяти проекта | DISPATCHING | product-web-memory | — | 2026-10-09 |
 | [WP-WEB-FEEDBACK-02](work-packages/WP-WEB-FEEDBACK-02-assignment-category.md) | web-feedback | Категория отзыва «Неверное поручение» | DISPATCHING | product-web-feedback | — | 2026-10-09 |
-| [WP-WEB-PROJECTS-02](work-packages/WP-WEB-PROJECTS-02-meetings-and-upload.md) | web-projects | «Проекты и поручения», встречи на карточке проекта, удаление поля «Количество спикеров» | READY | product-web-projects | https://github.com/ITSalt/transcriber/pull/34 | 2026-10-09 |
+| [WP-WEB-PROJECTS-02](work-packages/WP-WEB-PROJECTS-02-meetings-and-upload.md) | web-projects | «Проекты и поручения», встречи на карточке проекта, удаление поля «Количество спикеров» | REVISE | product-web-projects | https://github.com/ITSalt/transcriber/pull/34 | 2026-10-09 |
 | [WP-WORKER-08](work-packages/WP-WORKER-08-protocol-wording.md) | worker | Протокол: «## Поручения», «Спикер N», отказ от speakerCount в ASR | READY | product-worker | https://github.com/ITSalt/transcriber/pull/36 | 2026-10-09 |
 | [WP-WORKER-MEMORY-03](work-packages/WP-WORKER-MEMORY-03-speaker-label.md) | worker-memory | Метка спикера в цитатах памяти: «Спикер N» | DISPATCHING | product-worker-memory | — | 2026-10-09 |
 | [WP-BACKEND-08](work-packages/WP-BACKEND-08-meeting-project-speaker-count.md) | backend | Проект в карточке встречи; удаление speaker_count из контрактов, сервисов и БД | READY | product-backend | — | 2026-10-09 |
@@ -182,6 +182,7 @@ R-n — действие: точная команда одной строкой 
 <!-- orch:journal -->
 | Дата | WP | Событие | Подтверждение |
 |------|----|---------|---------------|
+| 2026-10-09 10:55Z | WP-WEB-PROJECTS-02 | WP-WEB-PROJECTS-02: READY -> REVISE | раунд 1: тест projects.test.tsx падает (CI red), prefill без теста, чужой project id, граф не обновлён — reports/wp-web-projects-02-review-20261009.md |
 | 2026-10-09 10:54Z | WP-SPEC-01 | WP-SPEC-01: PROD -> DONE | PROD 7811d25cc2; граф 48/48 approved, user_story без «задач»; CLAUDE.md на VM; reports/verify-WP-SPEC-01-prod-20261009.md |
 | 2026-10-09 10:54Z | WP-SPEC-01 | WP-SPEC-01: VERIFIED_TEST -> PROD | verify --env prod 7811d25cc2: reports/verify-WP-SPEC-01-prod-20261009.md |
 | 2026-10-09 10:53Z | WP-SPEC-01 | WP-SPEC-01: MERGED -> VERIFIED_TEST | verify --env test 7811d25cc2: reports/verify-WP-SPEC-01-test-20261009.md |
