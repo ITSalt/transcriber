@@ -53,7 +53,7 @@ CANCELLED (причина).
 | [WP-FRONTEND-06](work-packages/WP-FRONTEND-06-speakers.md) | frontend | Экран подтверждения спикеров перед генерацией протокола | DONE | product-frontend | https://github.com/ITSalt/transcriber/pull/31 (accepted 53b3ca8906) | 2026-10-08 |
 | [WP-WORKER-07](work-packages/WP-WORKER-07-memory-leak-guard.md) | worker | Защита протокола от утечки памяти проекта и чужих участников | DONE | product-worker | https://github.com/ITSalt/transcriber/pull/27 (accepted ade44c9c31) | 2026-10-08 |
 | [WP-WORKER-MEMORY-02](work-packages/WP-WORKER-MEMORY-02-hygiene.md) | worker-memory | Гигиена памяти проекта: дедуп решений, валидация исполнителей, сводка по продуктам | DONE | product-worker-memory | https://github.com/ITSalt/transcriber/pull/28 (accepted adc8af0791) | 2026-10-08 |
-| [WP-SPEC-01](work-packages/WP-SPEC-01-glossary.md) | spec | Глоссарий графа: UTF-8, русские названия, термины программы, подписи форм | ACCEPTED | product-spec | https://github.com/ITSalt/transcriber/pull/32 (accepted 9ecfd6bb41) | 2026-10-09 |
+| [WP-SPEC-01](work-packages/WP-SPEC-01-glossary.md) | spec | Глоссарий графа: UTF-8, русские названия, термины программы, подписи форм | VERIFIED_TEST | product-spec | https://github.com/ITSalt/transcriber/pull/32 (accepted 9ecfd6bb41) | 2026-10-09 |
 | [WP-FRONTEND-07](work-packages/WP-FRONTEND-07-wording.md) | frontend | Единая терминология в строках ядра: «Встречи», «обработка», «Спикер N», род статусов | READY | product-frontend | https://github.com/ITSalt/transcriber/pull/35 | 2026-10-09 |
 | [WP-WEB-MEMORY-02](work-packages/WP-WEB-MEMORY-02-assignments.md) | web-memory | «Поручения» вместо «задач» в памяти проекта | DISPATCHING | product-web-memory | — | 2026-10-09 |
 | [WP-WEB-FEEDBACK-02](work-packages/WP-WEB-FEEDBACK-02-assignment-category.md) | web-feedback | Категория отзыва «Неверное поручение» | DISPATCHING | product-web-feedback | — | 2026-10-09 |
@@ -125,9 +125,6 @@ R-n — действие: точная команда одной строкой 
 <!-- orch:locks -->
 | Замок | Репозиторий | Держатель | С | Ждут | Примечание |
 |-------|-------------|-----------|---|------|------------|
-| transcriber:graph-infra/** | transcriber | WP-SPEC-01 | 2026-10-09 10:13Z | — | dispatch |
-| transcriber:.tl/external-contracts/** | transcriber | WP-SPEC-01 | 2026-10-09 10:13Z | — | dispatch |
-| transcriber:CLAUDE.md | transcriber | WP-SPEC-01 | 2026-10-09 10:13Z | — | dispatch |
 | transcriber:web/src/i18n/** | transcriber | WP-FRONTEND-07 | 2026-10-09 10:13Z | — | dispatch |
 | transcriber:shared/** | transcriber | WP-WORKER-08 | 2026-10-09 10:13Z | — | dispatch |
 | transcriber:shared/src/asr/IAsrProvider.ts:38 | transcriber | WP-WORKER-08 | 2026-10-09 10:13Z | — | dispatch |
@@ -176,7 +173,7 @@ R-n — действие: точная команда одной строкой 
 | 34 | transcriber | WP-BACKEND-07 | https://github.com/ITSalt/transcriber/pull/29 | — | merged |
 | 35 | transcriber | WP-WORKER-06 | https://github.com/ITSalt/transcriber/pull/30 | — | merged |
 | 36 | transcriber | WP-FRONTEND-06 | https://github.com/ITSalt/transcriber/pull/31 | — | merged |
-| 37 | transcriber | WP-SPEC-01 | — | — | queued |
+| 37 | transcriber | WP-SPEC-01 | — | — | merged |
 
 ## Журнал
 
@@ -185,6 +182,9 @@ R-n — действие: точная команда одной строкой 
 <!-- orch:journal -->
 | Дата | WP | Событие | Подтверждение |
 |------|----|---------|---------------|
+| 2026-10-09 10:53Z | WP-SPEC-01 | WP-SPEC-01: MERGED -> VERIFIED_TEST | verify --env test 7811d25cc2: reports/verify-WP-SPEC-01-test-20261009.md |
+| 2026-10-09 10:49Z | WP-SPEC-01 | WP-SPEC-01 merged in the merge queue; released transcriber:graph-infra/**, transcriber:.tl/external-contracts/**, transcriber:CLAUDE.md | orch.py deliver: 7811d25cc2 |
+| 2026-10-09 10:49Z | WP-SPEC-01 | WP-SPEC-01: ACCEPTED -> MERGED | gh pr merge --squash: 7811d25cc2 (https://github.com/ITSalt/transcriber/pull/32) |
 | 2026-10-09 10:48Z | WP-SPEC-01 | WP-SPEC-01: accepted at 9ecfd6bb41d66acb6f26a47ed9c72692d523b587 | report reports/wp-spec-01-review-20261009-r2.md |
 | 2026-10-09 10:47Z | WP-SPEC-01 | WP-SPEC-01 queued for merge (sequential) | — |
 | 2026-10-09 10:47Z | WP-SPEC-01 | WP-SPEC-01: READY -> ACCEPTED | раунд 2: user_story без «задач» (0), 48/48 approved, GLO-008 «## Поручения», validate 0 CRITICAL по глоссарию/Form/UC — reports/wp-spec-01-review-20261009-r2.md |
