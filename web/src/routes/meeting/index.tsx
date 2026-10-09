@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { useParams } from "react-router";
+import { Link, useParams } from "react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { apiGet, isNotFound } from "@/lib/api";
@@ -83,6 +83,25 @@ export default function MeetingDetailPage() {
             <h1 data-testid="meeting-heading" className="text-2xl font-semibold">
               {data.meeting.title ?? data.recording.filename}
             </h1>
+            <p
+              data-testid="meeting-project"
+              className="text-sm text-muted-foreground"
+            >
+              {data.meeting.project_id ? (
+                <>
+                  {t("catalog.projectLabel")}:{" "}
+                  <Link
+                    to={`/projects/${data.meeting.project_id}`}
+                    className="text-primary underline-offset-4 hover:underline"
+                    data-testid="meeting-project-link"
+                  >
+                    {data.meeting.project_name}
+                  </Link>
+                </>
+              ) : (
+                t("catalog.noProject")
+              )}
+            </p>
             <p
               data-testid="meeting-heading-date"
               className="text-sm text-muted-foreground"

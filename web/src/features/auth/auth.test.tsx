@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeAll, beforeEach, afterEach } from "vitest";
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen, within, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { createMemoryRouter, RouterProvider } from "react-router";
@@ -268,7 +268,7 @@ describe("workspace switcher and user menu", () => {
     renderApp("/catalog");
     const select = await screen.findByTestId("workspace-switcher");
     expect(select).toHaveValue(WS_PERSONAL);
-    expect(screen.getAllByRole("option").map((o) => o.textContent)).toEqual([
+    expect(within(select).getAllByRole("option").map((o) => o.textContent)).toEqual([
       "Роман (личное)",
       "Команда",
     ]);

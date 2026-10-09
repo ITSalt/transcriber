@@ -46,6 +46,7 @@ function mockList(body: unknown, status = 200) {
 }
 
 const MEETING_ID_1 = "a1b2c3d4-1234-4abc-8def-a1b2c3d4e5f6";
+const PROJECT_ID = "e5f6a7b8-1111-4222-8333-e5f6a7b8c9d0";
 const MEETING_ID_2 = "b2c3d4e5-5678-4bcd-9ef0-b2c3d4e5f6a7";
 
 const base = {
@@ -96,9 +97,9 @@ describe("CatalogPage (Meetings)", () => {
     const spy = mockList({ items: [] });
     renderCatalog();
     await waitFor(() => expect(spy).toHaveBeenCalled());
-    expect(String(spy.mock.calls[0]![0])).toBe(
-      `/api/meetings?workspace_id=${WS_PERSONAL}`,
-    );
+    expect(
+      spy.mock.calls.map((c) => String(c[0])).filter((u) => u.startsWith("/api/meetings")),
+    ).toEqual([`/api/meetings?workspace_id=${WS_PERSONAL}`]);
   });
 
   it("shows empty state when there are no meetings", async () => {
@@ -117,14 +118,22 @@ describe("CatalogPage (Meetings)", () => {
     });
   });
 
-  it("renders the File, Date, Status and Protocol columns", async () => {
+  it("renders the Meeting, Project, Date, Status and Protocol columns", async () => {
     mockList(MOCK_MEETINGS);
     renderCatalog();
-    for (const name of ["File", "Date", "Status", "Protocol"]) {
+    for (const name of ["Meeting", "Project", "Date", "Status", "Protocol"]) {
       expect(
         await screen.findByRole("columnheader", { name }),
       ).toBeInTheDocument();
     }
+  });
+
+  it("shows the title, with the file name beneath; falls back to the file name", async () => {
+    mockList(MOCK_MEETINGS);
+    renderCatalog();
+    expect(await screen.findByTestId(`meeting-title-${MEETING_ID_1}`)).toHaveTextContent("Weekly Sync");
+    expect(screen.getByText("weekly.mp4")).toBeInTheDocument();
+    expect(screen.getByTestId(`meeting-title-${MEETING_ID_2}`)).toHaveTextContent("interview.mp4");
   });
 
   it("renders a row per meeting showing the file name", async () => {
@@ -195,6 +204,56 @@ describe("CatalogPage (Meetings)", () => {
     expect(screen.getByTestId("upload-button").closest("a")).toHaveAttribute(
       "href",
       "/upload",
+    );
+  });
+
+  it("shows the project as a link, or a dash without one", async () => {
+    mockList({
+      items: [
+        { ...MOCK_MEETINGS.items[0]!, project_id: PROJECT_ID, project_name: "Alpha" },
+        MOCK_MEETINGS.items[1]!,
+      ],
+    });
+    renderCatalog();
+    const link = await screen.findByTestId(`project-link-${MEETING_ID_1}`);
+    expect(link).toHaveTextContent("Alpha");
+    expect(link).toHaveAttribute("href", `/projects/${PROJECT_ID}`);
+    expect(screen.queryByTestId(`project-link-${MEETING_ID_2}`)).not.toBeInTheDocument();
+  });
+
+  it("project filter adds project_id to the request", async () => {
+    const spy = mockApi(
+      (url) =>
+        url.pathname === "/api/projects"
+          ? json({
+              items: [
+                {
+                  id: PROJECT_ID,
+                  workspace_id: WS_PERSONAL,
+                  name: "Alpha",
+                  description: null,
+                  meeting_count: 1,
+                  created_at: "2026-05-18T10:00:00.000Z",
+                  updated_at: "2026-05-18T10:00:00.000Z",
+                },
+              ],
+            })
+          : undefined,
+      (url) =>
+        url.pathname === "/api/meetings"
+          ? json(url.searchParams.get("project_id") ? { items: [] } : MOCK_MEETINGS)
+          : undefined,
+    );
+    renderCatalog();
+    await screen.findByText("weekly.mp4");
+    await screen.findByRole("option", { name: "Alpha" });
+    await userEvent.selectOptions(screen.getByTestId("catalog-project-filter"), PROJECT_ID);
+    expect(await screen.findByTestId("catalog-empty")).toHaveTextContent(
+      "There are no meetings in this project",
+    );
+    const urls = spy.mock.calls.map((c) => String(c[0]));
+    expect(urls).toContain(
+      `/api/meetings?workspace_id=${WS_PERSONAL}&project_id=${PROJECT_ID}`,
     );
   });
 });

@@ -547,4 +547,22 @@ describe("MeetingDetailPage", () => {
     // Still on the detail page
     expect(screen.getByTestId("meeting-detail-page")).toBeInTheDocument();
   });
+
+  it("links to the project under the heading, or says there is none", async () => {
+    const pid = "e5f6a7b8-1111-4222-8333-e5f6a7b8c9d0";
+    mockFetch({
+      ...MOCK_DETAIL_BASE,
+      meeting: { ...MOCK_DETAIL_BASE.meeting, project_id: pid, project_name: "Alpha" },
+    });
+    renderMeetingDetail();
+    const link = await screen.findByTestId("meeting-project-link");
+    expect(link).toHaveTextContent("Alpha");
+    expect(link).toHaveAttribute("href", `/projects/${pid}`);
+  });
+
+  it("shows «No project» when the meeting has none", async () => {
+    mockFetch(MOCK_DETAIL_BASE);
+    renderMeetingDetail();
+    expect(await screen.findByTestId("meeting-project")).toHaveTextContent("No project");
+  });
 });

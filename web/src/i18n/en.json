@@ -24,7 +24,8 @@
     "search": "Search meetings…",
     "open": "Open",
     "columns": {
-      "file": "File",
+      "meeting": "Meeting",
+      "project": "Project",
       "date": "Date",
       "status": "Status",
       "protocol": "Protocol"
@@ -42,7 +43,14 @@
       "EDITED": "Edited",
       "FAILED": "Failed"
     },
-    "openProtocol": "Open protocol"
+    "openProtocol": "Open protocol",
+    "noProject": "No project",
+    "projectLabel": "Project",
+    "filter": {
+      "label": "Project",
+      "all": "All projects",
+      "empty": "There are no meetings in this project"
+    }
   },
   "meeting": {
     "transcript": "Transcript",
@@ -138,10 +146,6 @@
     "languageAuto": "Russian (default)",
     "languageRu": "Russian (RU)",
     "languageEn": "English (EN)",
-    "fieldSpeakerCount": "Speaker count (optional)",
-    "fieldSpeakerCountPlaceholder": "Auto-detect",
-    "fieldSpeakerCountHint": "Set the exact number of speakers if known — improves diarization.",
-    "errorSpeakerCountRange": "Speaker count must be between 1 and 10.",
     "finalizing": "Finalizing upload…",
     "errorFileTooLarge": "File exceeds 2.5 GB. Please choose a smaller file.",
     "errorUnsupportedMime": "Unsupported file type. Please upload an MP4, MKV, MOV, or WEBM file.",
