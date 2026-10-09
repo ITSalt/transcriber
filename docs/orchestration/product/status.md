@@ -54,7 +54,7 @@ CANCELLED (причина).
 | [WP-WORKER-07](work-packages/WP-WORKER-07-memory-leak-guard.md) | worker | Защита протокола от утечки памяти проекта и чужих участников | DONE | product-worker | https://github.com/ITSalt/transcriber/pull/27 (accepted ade44c9c31) | 2026-10-08 |
 | [WP-WORKER-MEMORY-02](work-packages/WP-WORKER-MEMORY-02-hygiene.md) | worker-memory | Гигиена памяти проекта: дедуп решений, валидация исполнителей, сводка по продуктам | DONE | product-worker-memory | https://github.com/ITSalt/transcriber/pull/28 (accepted adc8af0791) | 2026-10-08 |
 | [WP-SPEC-01](work-packages/WP-SPEC-01-glossary.md) | spec | Глоссарий графа: UTF-8, русские названия, термины программы, подписи форм | DONE | product-spec | https://github.com/ITSalt/transcriber/pull/32 (accepted 9ecfd6bb41) | 2026-10-09 |
-| [WP-FRONTEND-07](work-packages/WP-FRONTEND-07-wording.md) | frontend | Единая терминология в строках ядра: «Встречи», «обработка», «Спикер N», род статусов | READY | product-frontend | https://github.com/ITSalt/transcriber/pull/35 | 2026-10-09 |
+| [WP-FRONTEND-07](work-packages/WP-FRONTEND-07-wording.md) | frontend | Единая терминология в строках ядра: «Встречи», «обработка», «Спикер N», род статусов | REVISE | product-frontend | https://github.com/ITSalt/transcriber/pull/35 | 2026-10-09 |
 | [WP-WEB-MEMORY-02](work-packages/WP-WEB-MEMORY-02-assignments.md) | web-memory | «Поручения» вместо «задач» в памяти проекта | DISPATCHING | product-web-memory | — | 2026-10-09 |
 | [WP-WEB-FEEDBACK-02](work-packages/WP-WEB-FEEDBACK-02-assignment-category.md) | web-feedback | Категория отзыва «Неверное поручение» | DISPATCHING | product-web-feedback | — | 2026-10-09 |
 | [WP-WEB-PROJECTS-02](work-packages/WP-WEB-PROJECTS-02-meetings-and-upload.md) | web-projects | «Проекты и поручения», встречи на карточке проекта, удаление поля «Количество спикеров» | REVISE | product-web-projects | https://github.com/ITSalt/transcriber/pull/34 | 2026-10-09 |
@@ -183,6 +183,7 @@ R-n — действие: точная команда одной строкой 
 <!-- orch:journal -->
 | Дата | WP | Событие | Подтверждение |
 |------|----|---------|---------------|
+| 2026-10-09 10:58Z | WP-FRONTEND-07 | WP-FRONTEND-07: READY -> REVISE | раунд 1: объединение меток в RU расщепляет спикера (корень не отправляется), RU без тестов, «Спикер 0» в транскрипте — reports/wp-frontend-07-review-20261009.md |
 | 2026-10-09 10:57Z | WP-WORKER-08 | WP-WORKER-08: READY -> REVISE | раунд 1: язык в transcription.ts:251 без теста (мутация 'EN' зелёная), speakerCount в wire-тесте (TS2353) — reports/wp-worker-08-review-20261009.md |
 | 2026-10-09 10:56Z | WP-WEB-PROJECTS-02 | lock transcriber:graph acquired | orch.py lock |
 | 2026-10-09 10:55Z | WP-WEB-PROJECTS-02 | WP-WEB-PROJECTS-02: READY -> REVISE | раунд 1: тест projects.test.tsx падает (CI red), prefill без теста, чужой project id, граф не обновлён — reports/wp-web-projects-02-review-20261009.md |
