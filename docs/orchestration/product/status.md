@@ -60,7 +60,7 @@ CANCELLED (причина).
 | [WP-WEB-PROJECTS-02](work-packages/WP-WEB-PROJECTS-02-meetings-and-upload.md) | web-projects | «Проекты и поручения», встречи на карточке проекта, удаление поля «Количество спикеров» | DONE | product-web-projects | https://github.com/ITSalt/transcriber/pull/34 (accepted 48daf9b7f4) | 2026-10-09 |
 | [WP-WORKER-08](work-packages/WP-WORKER-08-protocol-wording.md) | worker | Протокол: «## Поручения», «Спикер N», отказ от speakerCount в ASR | DONE | product-worker | https://github.com/ITSalt/transcriber/pull/36 (accepted 62df97ade4) | 2026-10-09 |
 | [WP-WORKER-MEMORY-03](work-packages/WP-WORKER-MEMORY-03-speaker-label.md) | worker-memory | Метка спикера в цитатах памяти: «Спикер N» | DONE | product-worker-memory | https://github.com/ITSalt/transcriber/pull/33 (accepted fc15b7225b) | 2026-10-09 |
-| [WP-BACKEND-08](work-packages/WP-BACKEND-08-meeting-project-speaker-count.md) | backend | Проект в карточке встречи; удаление speaker_count из контрактов, сервисов и БД | REVISE | product-backend | https://github.com/ITSalt/transcriber/pull/39 | 2026-10-09 |
+| [WP-BACKEND-08](work-packages/WP-BACKEND-08-meeting-project-speaker-count.md) | backend | Проект в карточке встречи; удаление speaker_count из контрактов, сервисов и БД | READY | product-backend | https://github.com/ITSalt/transcriber/pull/39 | 2026-10-09 |
 | [WP-FRONTEND-08](work-packages/WP-FRONTEND-08-catalog-project.md) | frontend | Список встреч: название и проект, фильтр по проекту, заголовок карточки встречи | READY | product-frontend | — | 2026-10-09 |
 
 ## Ждёт владельца
@@ -132,7 +132,6 @@ R-n — действие: точная команда одной строкой 
 | transcriber:shared/src/api/uc200.ts:11 | transcriber | WP-BACKEND-08 | 2026-10-09 11:10Z | — | dispatch |
 | transcriber:api/prisma/** | transcriber | WP-BACKEND-08 | 2026-10-09 11:10Z | — | dispatch |
 | transcriber:migrations | transcriber | WP-BACKEND-08 | 2026-10-09 11:10Z | — | dispatch |
-| transcriber:graph | transcriber | WP-BACKEND-08 | 2026-10-09 12:29Z | — | — |
 
 ## Очередь слияний
 
@@ -193,6 +192,9 @@ R-n — действие: точная команда одной строкой 
 <!-- orch:journal -->
 | Дата | WP | Событие | Подтверждение |
 |------|----|---------|---------------|
+| 2026-10-09 12:30Z | WP-BACKEND-08 | WP-BACKEND-08: review round 2 started at 9bf0812c62 | reports/wp-backend-08-review-20261009-r2.md |
+| 2026-10-09 12:30Z | WP-BACKEND-08 | WP-BACKEND-08: REVISE -> READY | пересдача 1 от product-backend: PR #39, sha 9bf0812c62 (код без миграции) |
+| 2026-10-09 12:30Z | WP-BACKEND-08 | lock transcriber:graph released | orch.py lock |
 | 2026-10-09 12:29Z | WP-WORKER-MEMORY-03 | WP-WORKER-MEMORY-03: PROD -> DONE | PROD b482b0e79f; встреча acc43e74: 11 MENTIONED_IN.speakerLabel = «Спикер N», 0 «Speaker» — reports/verify-WP-WORKER-MEMORY-03-prod-20261009.md |
 | 2026-10-09 12:29Z | WP-BACKEND-08 | lock transcriber:graph acquired | orch.py lock |
 | 2026-10-09 12:24Z | WP-BACKEND-08 | WP-BACKEND-08: READY -> REVISE | раунд 1: деструктивная миграция в одном деплое с кодом (migrate deploy до pm2 start → окно 500/зависание заданий); граф не обновлён — expand/contract: код сейчас, DROP COLUMN отдельным PR — reports/wp-backend-08-review-20261009.md |
