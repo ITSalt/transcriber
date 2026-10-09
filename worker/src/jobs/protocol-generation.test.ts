@@ -137,7 +137,7 @@ const VALID_RU_MARKDOWN = `
 ## Решения
 - Утвержден бюджет Q2.
 
-## Задачи
+## Поручения
 - Алиса: Подготовить отчет (срок: не указан)
 `.trim()
 
@@ -230,7 +230,18 @@ describe('validateProtocolSections', () => {
     const result = validateProtocolSections(md, 'RU')
     expect(result).not.toBeNull()
     expect(result).toContain('## Решения')
-    expect(result).toContain('## Задачи')
+    expect(result).toContain('## Поручения')
+  })
+
+  it('accepts the legacy «## Задачи» heading for RU (old protocols, retry) and a new «## Поручения»', () => {
+    const legacy = VALID_RU_MARKDOWN.replace('## Поручения', '## Задачи')
+    expect(legacy).toContain('## Задачи')
+    expect(validateProtocolSections(legacy, 'RU')).toBeNull()
+    expect(validateProtocolSections(VALID_RU_MARKDOWN, 'RU')).toBeNull()
+  })
+
+  it('does not accept «## Задачи» as an EN section', () => {
+    expect(validateProtocolSections('## Participants\n## Discussion\n## Decisions\n## Задачи', 'EN')).not.toBeNull()
   })
 
   it('returns error when markdown is empty', () => {

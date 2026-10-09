@@ -216,11 +216,7 @@ export class DeepgramAsrProvider implements IAsrProvider {
 
     const languageParams = resolveLanguage(languageHint);
 
-    // input.speakerCount is deliberately NOT sent (Q-2 → D-21). This adapter used to
-    // pass it as min_speakers/max_speakers, but @deepgram/sdk 5.x transcribeFile
-    // builds the query from a fixed whitelist of keys and silently dropped both, so
-    // the count never reached Deepgram (nor are they in Deepgram's diarization docs).
-    // Per D-21 participant information reaches only the LLM (<participants> in UC-300).
+    // No speaker count is sent to Deepgram (D-21, D-43): participant info reaches only the LLM.
 
     // FR-004 / RQ-048: repeated `keyterm=` parameters (the SDK serializes an array as
     // key=a&key=b). The caller already capped the list; re-capping is idempotent and

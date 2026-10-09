@@ -47,6 +47,12 @@ describe('guardProtocolParticipants (WP-WORKER-07)', () => {
     expect(r.removed).toEqual([])
   })
 
+  it('never touches "Спикер N" lines', () => {
+    const r = guardProtocolParticipants(md('- Спикер 1\n- Спикер 3 — юрист\n- Павел'), '[00:00] Мария: привет', {})
+    expect(r.markdown).toContain('- Спикер 1')
+    expect(r.markdown).toContain('- Спикер 3 — юрист')
+  })
+
   it('never touches "Speaker N" lines', () => {
     // the transcript has no "Speaker" word at all, so only the label rule can keep these lines
     const r = guardProtocolParticipants(md('- Speaker 1\n- Speaker 3 — юрист\n- Павел'), '[00:00] Мария: привет', {})

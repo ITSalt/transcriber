@@ -33,7 +33,7 @@ import { buildAsrKeyterms, frozenContextSnapshot, isAsrKeytermsEnabled } from '.
 import { publishMeetingEvent } from '../lib/publisher.js'
 import { prisma } from '../lib/prisma.js'
 import { createStorage } from '../lib/storage.js'
-import { normalizeLanguageTag } from '../lib/language.js'
+import { normalizeLanguageTag, resolveProtocolLanguage } from '../lib/language.js'
 import { buildFullText } from '../lib/transcript-text.js'
 import { createQueues, QueueName } from '../queues.js'
 
@@ -146,10 +146,10 @@ export async function processTranscriptionJob(
   log: Logger,
   deps?: TranscriptionDeps,
 ): Promise<void> {
-  const { transcription_job_id, speaker_count } = job.data
+  const { transcription_job_id } = job.data
 
   log.info(
-    { jobId: job.id, transcription_job_id, speaker_count: speaker_count ?? null },
+    { jobId: job.id, transcription_job_id },
     'transcriptionJob starting',
   )
 
@@ -243,13 +243,12 @@ export async function processTranscriptionJob(
     const asrResult: AsrResult = await asr.transcribe({
       audio: audioBuffer,
       languageHint,
-      speakerCount: speaker_count ?? null,
       ...(keyterms.length > 0 ? { keyterms } : {}),
     })
 
     // ── Step 5+6: Resolve speaker names (RQ-017) ──────────────────────────
     const speakerMap = resolveSpeakers(asrResult.segments)
-    const fullText = buildFullText(asrResult.segments, speakerMap)
+    const fullText = buildFullText(asrResult.segments, speakerMap, resolveProtocolLanguage(meeting.language))
 
     const segmentsCount = asrResult.segments.length
     const speakersCount = asrResult.speakers.length

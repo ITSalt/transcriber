@@ -436,9 +436,10 @@ describe('T04 (RQ-017) — Speaker name resolution', () => {
       SPEAKER_0: 'Alice',
       SPEAKER_1: null,
     }
-    const text = buildFullText(segments, speakerMap)
+    const text = buildFullText(segments, speakerMap, 'EN')
     expect(text).toContain('[00:00] Alice: My name is Alice.')
     expect(text).toContain('[01:05] Speaker 2: Good to meet you.')
+    expect(buildFullText(segments, speakerMap, 'RU')).toContain('[01:05] Спикер 2: Good to meet you.')
   })
 
   it('unresolved labels render as Speaker N in full_text (BRQ-021)', () => {
@@ -450,9 +451,13 @@ describe('T04 (RQ-017) — Speaker name resolution', () => {
       SPEAKER_0: null,
       SPEAKER_1: null,
     }
-    const text = buildFullText(segments, speakerMap)
+    const text = buildFullText(segments, speakerMap, 'EN')
     expect(text).toContain('Speaker 1:')
     expect(text).toContain('Speaker 2:')
+    const ru = buildFullText(segments, speakerMap)
+    expect(ru).toContain('Спикер 1:')
+    expect(ru).toContain('Спикер 2:')
+    expect(ru).not.toContain('Speaker')
   })
 })
 
@@ -529,6 +534,25 @@ describe('T05 (RQ-018) — Language hint and detection', () => {
     expect(transcriptCreate).toHaveBeenCalledWith(
       expect.objectContaining({ data: expect.objectContaining({ language: expected }) }),
     )
+  })
+
+  // D-41: the unconfirmed-speaker label in raw_text follows the protocol language.
+  it.each([
+    ['AUTO', 'Спикер'],
+    ['RU', 'Спикер'],
+    ['EN', 'Speaker'],
+  ] as const)('meeting.language %s → raw_text labels unresolved speakers as «%s N»', async (language, label) => {
+    const { transcriptCreate } = setupSuccessfulMocks()
+    mockPrisma.transcriptionJob.findUnique.mockResolvedValue({
+      ...BASE_TX_JOB,
+      meeting: { ...BASE_TX_JOB.meeting, language },
+    } as any)
+
+    await processTranscriptionJob(makeJob('bullmq-label', JOB_ID) as any, makeLogger())
+
+    const { rawText } = (transcriptCreate.mock.calls[0]![0] as { data: { rawText: string } }).data
+    expect(rawText).toContain(`${label} 1: Hello everyone.`)
+    expect(rawText).toContain(`${label} 2: Good morning.`)
   })
 
   it.each(['de', 'multi', 'auto'])(

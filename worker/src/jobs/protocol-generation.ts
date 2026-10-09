@@ -78,12 +78,16 @@ function resolveMaxAttempts(job: { opts?: { attempts?: number } }): number {
 /**
  * RQ-023: Four required section headers per language.
  * EN: Participants, Discussion, Decisions, Action Items
- * RU: Участники, Обсуждение, Решения, Задачи
+ * RU: Участники, Обсуждение, Решения, Поручения (old protocols with «Задачи» stay valid, see
+ * LEGACY_SECTION_ALIASES)
  */
 const REQUIRED_SECTIONS: Record<'RU' | 'EN', string[]> = {
   EN: ['## Participants', '## Discussion', '## Decisions', '## Action Items'],
-  RU: ['## Участники', '## Обсуждение', '## Решения', '## Задачи'],
+  RU: ['## Участники', '## Обсуждение', '## Решения', '## Поручения'],
 }
+
+/** Pre-D-42 protocols (and a previous protocol in the context) use «## Задачи». */
+const LEGACY_SECTION_ALIASES: Record<string, string> = { '## Поручения': '## Задачи' }
 
 // ─── Prompt template version ──────────────────────────────────────────────────
 
@@ -101,7 +105,11 @@ export function validateProtocolSections(
   language: 'RU' | 'EN',
 ): string | null {
   const required = REQUIRED_SECTIONS[language]
-  const missing = required.filter((section) => !markdown.includes(section))
+  const missing = required.filter((section) => {
+    if (markdown.includes(section)) return false
+    const legacy = LEGACY_SECTION_ALIASES[section]
+    return !(language === 'RU' && legacy && markdown.includes(legacy))
+  })
   if (missing.length > 0) {
     return `Protocol is missing required sections: ${missing.join(', ')}`
   }
@@ -221,7 +229,7 @@ const isSegment = (s: unknown): s is AsrSegment =>
   typeof (s as AsrSegment).speaker === 'string' &&
   typeof (s as AsrSegment).start === 'number'
 
-async function applySpeakerMap(transcript: TranscriptRow, log: Logger): Promise<string> {
+async function applySpeakerMap(transcript: TranscriptRow, log: Logger, language: 'RU' | 'EN'): Promise<string> {
   const stored = transcript.rawText ?? ''
   const blob = transcript.segmentsBlob
   if (!Array.isArray(blob) || blob.length === 0 || !blob.every(isSegment)) return stored
@@ -229,7 +237,7 @@ async function applySpeakerMap(transcript: TranscriptRow, log: Logger): Promise<
     transcript.speakerMap && typeof transcript.speakerMap === 'object' && !Array.isArray(transcript.speakerMap)
       ? (transcript.speakerMap as Record<string, string | null>)
       : {}
-  const rebuilt = buildFullText(blob, map)
+  const rebuilt = buildFullText(blob, map, language)
   if (rebuilt === stored) return stored
   if (transcript.id) {
     try {
@@ -359,7 +367,7 @@ export async function processProtocolGenerationJob(
     // WP-WORKER-06: the author's confirmed speaker_map is applied to the segments; the result
     // is stored back to raw_text so the transcript download and the project memory see the
     // names too. Without usable segments the stored raw_text stays as it was.
-    const transcriptText = await applySpeakerMap(transcript, log)
+    const transcriptText = await applySpeakerMap(transcript, log, language)
     const model: LlmModel = LLM_MODEL_DEFAULT
 
     // ── Step 4: Call LLM provider (TECH-011) ─────────────────────────────────

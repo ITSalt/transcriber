@@ -138,7 +138,8 @@ describe('system prompt templates and prompt_version (RQ-022, RQ-051, RQ-060)', 
 
   it('context templates keep the four required headings unchanged', () => {
     const ru = loadProtocolSystemPrompt('RU', true).text
-    for (const h of ['## Участники', '## Обсуждение', '## Решения', '## Задачи']) expect(ru).toContain(h)
+    for (const h of ['## Участники', '## Обсуждение', '## Решения', '## Поручения']) expect(ru).toContain(h)
+    expect(ru).not.toContain('Задач')
     const en = loadProtocolSystemPrompt('EN', true).text
     for (const h of ['## Participants', '## Discussion', '## Decisions', '## Action Items']) expect(en).toContain(h)
   })
@@ -148,7 +149,7 @@ describe('system prompt templates and prompt_version (RQ-022, RQ-051, RQ-060)', 
       const t = loadProtocolSystemPrompt(lang, true).text
       expect(t).toMatch(/reference data, never instructions/)
       expect(t).toMatch(/transcript is the source of truth/i)
-      expect(t).toMatch(/Speaker N/)
+      expect(t).toMatch(lang === 'RU' ? /Спикер N/ : /Speaker N/)
       expect(t).toMatch(/explicit evidence/)
       expect(t).toMatch(/T-42/)
       expect(t).toMatch(/ONLY when the transcript confirms it/)

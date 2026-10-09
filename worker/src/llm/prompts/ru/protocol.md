@@ -15,13 +15,13 @@ Create a structured meeting protocol in Markdown based only on the provided tran
 </task>
 
 <context>
-The input is a raw meeting transcript. It may contain timestamps, repeated phrases, filler words, interruptions, unclear speaker labels such as "Speaker 1", and informal speech. Your job is to extract only meaningful meeting content and format it as a clean protocol.
+The input is a raw meeting transcript. It may contain timestamps, repeated phrases, filler words, interruptions, unclear speaker labels such as "Спикер 1", and informal speech. Your job is to extract only meaningful meeting content and format it as a clean protocol.
 
 The protocol must contain exactly four sections, in this exact order and with these exact Markdown headings:
 ## Участники
 ## Обсуждение
 ## Решения
-## Задачи
+## Поручения
 </context>
 
 <success_criteria>
@@ -46,12 +46,12 @@ The protocol must contain exactly four sections, in this exact order and with th
 - Do not invent names, roles, decisions, tasks, or deadlines.
 - Do not include timestamps unless they are necessary to disambiguate a task or decision.
 - Remove filler, repetitions, technical setup chatter, and irrelevant small talk unless it affects the meeting outcome.
-- If a participant's name is unknown, keep the speaker label from the transcript.
+- If a participant's name is unknown, keep the speaker label from the transcript. Both "Спикер N" and "Speaker N" (older transcripts) denote an unconfirmed speaker label.
 - If a role is not distinguishable, do not assign a role.
 - If a task exists but the responsible person is unclear, use "Не указан".
 - If a task exists but the deadline is unclear, use "(срок: не указан)".
 - If no decisions were made, write exactly: "Решения не зафиксированы."
-- If no tasks were assigned, write exactly: "Задачи не зафиксированы."
+- If no tasks were assigned, write exactly: "Поручения не зафиксированы."
 - If you lack data to complete the task: state explicitly what is missing and ask ONE clarifying question. Do not fabricate facts.
 </constraints>
 
@@ -69,8 +69,8 @@ Do not show your reasoning. Output only the final protocol.
 Return exactly this Markdown structure:
 
 ## Участники
-- [Имя или Speaker X] — [роль, если различима]
-- [Имя или Speaker Y]
+- [Имя или Спикер X] — [роль, если различима]
+- [Имя или Спикер Y]
 
 ## Обсуждение
 - **[Тема 1]:** [краткое изложение]
@@ -83,23 +83,23 @@ Return exactly this Markdown structure:
 If no decisions were recorded:
 Решения не зафиксированы.
 
-## Задачи
-- [Ответственный]&#58; [Задача] (срок: [дата/период или не указан])
+## Поручения
+- [Ответственный]&#58; [Поручение] (срок: [дата/период или не указан])
 
 If no tasks were assigned:
-Задачи не зафиксированы.
+Поручения не зафиксированы.
 </output_format>
 
 <examples>
 Input fragment:
-"[01:57] Speaker 2: Настя, можешь рассказать, какое там домашнее задание?
-[04:01] Speaker 1: Окей, я пройду этот путь с домашкой, выложу у нас в чатике.
-[05:59] Speaker 1: Там надо другой степени детализации."
+"[01:57] Спикер 2: Настя, можешь рассказать, какое там домашнее задание?
+[04:01] Спикер 1: Окей, я пройду этот путь с домашкой, выложу у нас в чатике.
+[05:59] Спикер 1: Там надо другой степени детализации."
 
 Expected extraction:
-- Participant: Настя, if Speaker 1 is clearly identified as Настя from context.
+- Participant: Настя, if Спикер 1 is clearly identified as Настя from context.
 - Discussion: домашнее задание, Jobs To Be Done, детализация.
-- Task: Настя: пройти домашнее задание и выложить результат в чатик (срок: не указан).
+- Action item: Настя: пройти домашнее задание и выложить результат в чатик (срок: не указан).
 </examples>
 
 <verification>
