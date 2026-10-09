@@ -2,7 +2,9 @@
 
 Раунд 3. Дифф: 6 files changed, 71 insertions(+), 4 deletions(-) (файлов: 6).
 
-**Решение: `<ACCEPTED | REVISE> WP-BACKEND-08`** — <одна строка: почему>.
+**Решение: `ACCEPTED WP-BACKEND-08`** (раунд «contract», PR #40 от main d6da675a03) — дифф 6 файлов (+71/−4): схема без `speakerCount`; `migration.sql` = `ALTER TABLE "transcription_jobs" DROP COLUMN IF EXISTS "speaker_count"`; `down.sql` — одна транзакция, идемпотентно (`ADD COLUMN IF NOT EXISTS` + удаление строки `_prisma_migrations`); `api/test/drop-speaker-count.down.db.test.ts` (apply → колонки нет, нет дрейфа; down → каталог = эталон, повтор down, re-apply без дрейфа) и правка `awaiting-speakers.down.db.test.ts` (эталон учитывает новую миграцию); `.tl/deploy-plan.md` §5 — строка отката для миграции (lost data: none) и правило: деструктивные миграции только отдельным деплоем после выхода кода. Содержимое миграции и теста идентично проверенному рецензентом в раунде 1 (DB-тесты на PG16 выполнены, мутации down.sql/migration.sql пойманы). Код, читавший колонку, на проде с d6da675a03 (PROD-OK). CI на 432933a0e7 — ждёт цепочка доставки; перед слиянием: бэкап БД (R-22, D-39) и проверка, что нет заданий распознавания в PENDING/PROCESSING и загрузок в UPLOADING (окно деплоя). Замки `api/prisma/**`, `migrations`, `.tl/{…deploy-plan.md}` взяты/выданы по сообщениям.
+
+graph: checked — в графе ent-003 без атрибута speaker_count (факт сессии в раунде 2), изменений спецификации в этом PR нет.
 
 ## Пункты REVISE
 
@@ -35,4 +37,4 @@
 
 ## Отчёт рецензента (дословно)
 
-<отчёт рецензента как есть; для пересдачи, которую оркестратор сверяет сам, — чтение диффа и CI>
+Сверено оркестратором по `gh pr diff 40` и CI; рецензент-агент в раунде 1 проверил те же файлы миграции и DB-теста на PG16 с мутациями (см. reports/wp-backend-08-review-20261009.md, раздел «Отчёт рецензента»).

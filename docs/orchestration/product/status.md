@@ -129,6 +129,7 @@ R-n — действие: точная команда одной строкой 
 | transcriber:migrations | transcriber | WP-BACKEND-08 | 2026-10-09 11:10Z | — | dispatch |
 | transcriber:web/src/i18n/** | transcriber | WP-FRONTEND-08 | 2026-10-09 12:35Z | — | dispatch |
 | transcriber:upload.fieldSpeakerCount* | transcriber | WP-FRONTEND-08 | 2026-10-09 12:35Z | — | dispatch |
+| transcriber:api/prisma/** | transcriber | WP-BACKEND-08 | 2026-10-09 12:40Z | — | — |
 
 ## Очередь слияний
 
@@ -190,6 +191,8 @@ R-n — действие: точная команда одной строкой 
 <!-- orch:journal -->
 | Дата | WP | Событие | Подтверждение |
 |------|----|---------|---------------|
+| 2026-10-09 12:40Z | WP-BACKEND-08 | lock transcriber:migrations acquired | orch.py lock |
+| 2026-10-09 12:40Z | WP-BACKEND-08 | lock transcriber:api/prisma/** acquired | orch.py lock |
 | 2026-10-09 12:40Z | WP-BACKEND-08 | WP-BACKEND-08: review round 3 started at 432933a0e7 | reports/wp-backend-08-review-20261009-r3.md |
 | 2026-10-09 12:40Z | WP-BACKEND-08 | WP-BACKEND-08: PROD -> READY | contract-PR от product-backend: PR #40, sha 432933a0e7 |
 | 2026-10-09 12:40Z | WP-BACKEND-08 | lock transcriber:.tl/{status.json,master-plan.md,changelog.md,release-status.json,deploy-plan.md} released | orch.py lock |
