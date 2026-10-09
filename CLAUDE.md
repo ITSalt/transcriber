@@ -14,7 +14,7 @@
   - **Upload:** direct S3 presigned multipart (ADR-012, supersedes ADR-005's TUS). `POST /api/uploads/init` → browser PUTs parts straight to object storage → `POST /api/uploads/complete`. Bytes never traverse the API host. **Not TUS** — `@tus/server` / `tus-js-client` are in no `package.json`. Contract: `.tl/external-contracts/s3-multipart-presigned.md`
   - **Audio:** ffmpeg via `fluent-ffmpeg`
   - **ASR:** Deepgram Nova-3 (RU+EN + diarization), behind `IAsrProvider`
-  - **LLM:** kie.ai — Claude Sonnet 4.6 (default) / GPT-5.4, behind `ILlmProvider`, user-switchable per meeting
+  - **LLM:** production runs OpenRouter (`LLM_PROVIDER=openrouter`), model `anthropic/claude-haiku-5.5`, reached through the outbound proxy `OUTBOUND_PROXY_URL` (D-33, D-34, D-35); kie.ai (Claude Sonnet 4.6 / GPT-5.4) stays as the fallback adapter. All behind `ILlmProvider`, user-switchable per meeting
   - **Realtime:** Server-Sent Events (Fastify native)
   - **Frontend:** Vite 5 + React 19 + TypeScript + shadcn/ui + Tailwind + TanStack Query v5 + React Router 7
   - **Markdown:** Milkdown (WYSIWYG edit) + react-markdown (render)
