@@ -55,7 +55,7 @@ CANCELLED (причина).
 | [WP-WORKER-MEMORY-02](work-packages/WP-WORKER-MEMORY-02-hygiene.md) | worker-memory | Гигиена памяти проекта: дедуп решений, валидация исполнителей, сводка по продуктам | DONE | product-worker-memory | https://github.com/ITSalt/transcriber/pull/28 (accepted adc8af0791) | 2026-10-08 |
 | [WP-SPEC-01](work-packages/WP-SPEC-01-glossary.md) | spec | Глоссарий графа: UTF-8, русские названия, термины программы, подписи форм | DONE | product-spec | https://github.com/ITSalt/transcriber/pull/32 (accepted 9ecfd6bb41) | 2026-10-09 |
 | [WP-FRONTEND-07](work-packages/WP-FRONTEND-07-wording.md) | frontend | Единая терминология в строках ядра: «Встречи», «обработка», «Спикер N», род статусов | DONE | product-frontend | https://github.com/ITSalt/transcriber/pull/35 (accepted 9cf5dc0df1) | 2026-10-09 |
-| [WP-WEB-MEMORY-02](work-packages/WP-WEB-MEMORY-02-assignments.md) | web-memory | «Поручения» вместо «задач» в памяти проекта | DISPATCHING | product-web-memory | — | 2026-10-09 |
+| [WP-WEB-MEMORY-02](work-packages/WP-WEB-MEMORY-02-assignments.md) | web-memory | «Поручения» вместо «задач» в памяти проекта | READY | product-web-memory | https://github.com/ITSalt/transcriber/pull/38 | 2026-10-09 |
 | [WP-WEB-FEEDBACK-02](work-packages/WP-WEB-FEEDBACK-02-assignment-category.md) | web-feedback | Категория отзыва «Неверное поручение» | READY | product-web-feedback | https://github.com/ITSalt/transcriber/pull/37 | 2026-10-09 |
 | [WP-WEB-PROJECTS-02](work-packages/WP-WEB-PROJECTS-02-meetings-and-upload.md) | web-projects | «Проекты и поручения», встречи на карточке проекта, удаление поля «Количество спикеров» | DONE | product-web-projects | https://github.com/ITSalt/transcriber/pull/34 (accepted 48daf9b7f4) | 2026-10-09 |
 | [WP-WORKER-08](work-packages/WP-WORKER-08-protocol-wording.md) | worker | Протокол: «## Поручения», «Спикер N», отказ от speakerCount в ASR | DONE | product-worker | https://github.com/ITSalt/transcriber/pull/36 (accepted 62df97ade4) | 2026-10-09 |
@@ -189,6 +189,8 @@ R-n — действие: точная команда одной строкой 
 <!-- orch:journal -->
 | Дата | WP | Событие | Подтверждение |
 |------|----|---------|---------------|
+| 2026-10-09 12:00Z | WP-WEB-MEMORY-02 | WP-WEB-MEMORY-02: review round 1 started at 15be00e861 | reports/wp-web-memory-02-review-20261009.md |
+| 2026-10-09 12:00Z | WP-WEB-MEMORY-02 | WP-WEB-MEMORY-02: DISPATCHING -> READY | READY от product-web-memory: PR #38, sha 15be00e861 |
 | 2026-10-09 11:59Z | WP-WEB-FEEDBACK-02 | WP-WEB-FEEDBACK-02: review round 1 started at 1eab9d6f45 | reports/wp-web-feedback-02-review-20261009.md |
 | 2026-10-09 11:59Z | WP-WEB-FEEDBACK-02 | WP-WEB-FEEDBACK-02: DISPATCHING -> READY | READY от product-web-feedback: PR #37, sha 1eab9d6f45 |
 | 2026-10-09 11:58Z | WP-WORKER-MEMORY-03 | WP-WORKER-MEMORY-03: review round 2 started at fc15b7225b | reports/wp-worker-memory-03-review-20261009-r2.md |
