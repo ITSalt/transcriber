@@ -37,7 +37,7 @@ const item = (id: string, over: Partial<ExtractedTask> = {}): VerifiedTaskItem =
     segment: 0,
     ...over,
   },
-  quote: { quote: `цитата ${id}`, startMs: 1000, endMs: 2000, speakerLabel: 'Speaker 1', segmentIndex: 0, match: 'exact', score: 1 },
+  quote: { quote: `цитата ${id}`, startMs: 1000, endMs: 2000, speakerLabel: 'Спикер 1', segmentIndex: 0, match: 'exact', score: 1 },
 })
 
 const res = (r: Record<string, unknown>) => TaskResolution.parse({ confidence: 0.9, reason: 'r', ...r })
@@ -67,7 +67,7 @@ describe('memory gate (D-14)', () => {
     })
     expect(plan.newTasks).toHaveLength(1)
     const t = plan.newTasks[0]!
-    expect(t).toMatchObject({ code: 'T-5', seq: 5, mention: { kind: 'CREATED', startMs: 1000, speakerLabel: 'Speaker 1' } })
+    expect(t).toMatchObject({ code: 'T-5', seq: 5, mention: { kind: 'CREATED', startMs: 1000, speakerLabel: 'Спикер 1' } })
     expect(t.events.map((e) => [e.field, e.newValue, e.reviewState])).toEqual([
       ['title', 'Отправить договор', 'AUTO'],
       ['status', 'OPEN', 'AUTO'],

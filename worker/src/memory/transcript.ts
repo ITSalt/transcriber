@@ -8,11 +8,12 @@
  * LLM. Unverified quotes are dropped by the caller.
  */
 import type { AsrSegment } from '@transcrib/shared'
+import type { SupportedLanguage } from '../lib/language.js'
 
 export interface MemorySegment {
   index: number
   speaker: string
-  /** label as shown in the transcript: resolved name or "Speaker N" */
+  /** label as shown in the transcript: resolved name or "Спикер N" (RU) / "Speaker N" (EN) */
   label: string
   startMs: number
   endMs: number
@@ -42,13 +43,15 @@ const MAX_WINDOW = 3
 /** a fuzzy quote may miss a word, but never one of these: "не отправил" ≠ "отправил" */
 export const NEGATIONS = new Set(['не', 'ни', 'нет', 'no', 'not', 'never', 'без'])
 
-function speakerDisplay(label: string): string {
+/** D-41: unconfirmed speaker is «Спикер N» for RU meetings, «Speaker N» for EN. */
+function speakerDisplay(label: string, language: SupportedLanguage): string {
   const m = /SPEAKER_(\d+)/i.exec(label)
-  return m?.[1] !== undefined ? `Speaker ${parseInt(m[1], 10) + 1}` : label
+  if (m?.[1] === undefined) return label
+  return `${language === 'EN' ? 'Speaker' : 'Спикер'} ${parseInt(m[1], 10) + 1}`
 }
 
 /** Parses Transcript.segmentsBlob (JSONB) defensively; malformed entries are skipped. */
-export function toMemorySegments(blob: unknown, speakerMap: unknown): MemorySegment[] {
+export function toMemorySegments(blob: unknown, speakerMap: unknown, language: SupportedLanguage = 'RU'): MemorySegment[] {
   const map = (speakerMap && typeof speakerMap === 'object' ? speakerMap : {}) as Record<string, unknown>
   if (!Array.isArray(blob)) return []
   const out: MemorySegment[] = []
@@ -59,7 +62,7 @@ export function toMemorySegments(blob: unknown, speakerMap: unknown): MemorySegm
     out.push({
       index: out.length,
       speaker,
-      label: typeof resolved === 'string' && resolved.trim() ? resolved : speakerDisplay(speaker),
+      label: typeof resolved === 'string' && resolved.trim() ? resolved : speakerDisplay(speaker, language),
       startMs: Math.round(raw.start * 1000),
       endMs: Math.round((typeof raw.end === 'number' ? raw.end : raw.start) * 1000),
       text: raw.text,
@@ -205,7 +208,7 @@ export function createQuoteVerifier(segments: readonly MemorySegment[]) {
   return (quote: string, hint?: number | null) => verifyQuote(quote, segments, hint, index)
 }
 
-/** Names the speaker_map gave to this meeting's speakers (unmapped speakers keep «Speaker N»). */
+/** Names the speaker_map gave to this meeting's speakers (unmapped speakers keep «Спикер N» / «Speaker N»). */
 export function mappedSpeakerNames(segments: readonly MemorySegment[]): string[] {
-  return [...new Set(segments.filter((s) => s.label !== speakerDisplay(s.speaker)).map((s) => s.label))]
+  return [...new Set(segments.filter((s) => s.label !== speakerDisplay(s.speaker, 'RU') && s.label !== speakerDisplay(s.speaker, 'EN')).map((s) => s.label))]
 }

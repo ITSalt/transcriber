@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { createQuoteVerifier, renderNumberedTranscript, toMemorySegments, verifyQuote } from './transcript.js'
+import { createQuoteVerifier, mappedSpeakerNames, renderNumberedTranscript, toMemorySegments, verifyQuote } from './transcript.js'
 
 const segments = toMemorySegments(
   [
@@ -17,13 +17,26 @@ describe('memory transcript', () => {
   it('parses segments, skips malformed ones, labels speakers like the transcript', () => {
     expect(segments).toHaveLength(5)
     expect(segments[0]).toMatchObject({ index: 0, label: 'Петров', startMs: 0, endMs: 3200 })
-    expect(segments[1]!.label).toBe('Speaker 2')
-    expect(renderNumberedTranscript(segments).split('\n')[1]).toBe('[#1] [00:03] Speaker 2: Договор отправил вчера вечером, ждём ответа.')
+    expect(segments[1]!.label).toBe('Спикер 2')
+    expect(renderNumberedTranscript(segments).split('\n')[1]).toBe('[#1] [00:03] Спикер 2: Договор отправил вчера вечером, ждём ответа.')
+  })
+
+  it('labels unconfirmed speakers «Speaker N» for EN meetings, confirmed names unchanged', () => {
+    const en = toMemorySegments(
+      [
+        { speaker: 'SPEAKER_0', start: 0, end: 1, text: 'Hello there.' },
+        { speaker: 'SPEAKER_1', start: 1, end: 2, text: 'Hi.' },
+      ],
+      { SPEAKER_0: 'Peter' },
+      'EN',
+    )
+    expect(en.map((x) => x.label)).toEqual(['Peter', 'Speaker 2'])
+    expect(mappedSpeakerNames(en)).toEqual(['Peter'])
   })
 
   it('accepts an exact quote regardless of case, punctuation and ё; timecode and speaker come from the segment', () => {
     const v = verifyQuote('договор ОТПРАВИЛ вчера вечером', segments, 1)
-    expect(v).toMatchObject({ startMs: 3500, endMs: 9100, speakerLabel: 'Speaker 2', segmentIndex: 1, match: 'exact' })
+    expect(v).toMatchObject({ startMs: 3500, endMs: 9100, speakerLabel: 'Спикер 2', segmentIndex: 1, match: 'exact' })
   })
 
   it('a quote spanning two segments gets the start of the first and the end of the last', () => {

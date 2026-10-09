@@ -137,7 +137,7 @@ describe.skipIf(!URI)('project memory pipeline on Neo4j', { timeout: 60_000 }, (
     expect(closing).toEqual([
       expect.objectContaining({ field: 'status', old_value: 'OPEN', new_value: 'DONE', review_state: 'PENDING', quote: 'договор отправил вчера вечером', source: 'LLM', confidence: 0.95 }),
     ])
-    expect(t1.mentions.find((m) => m.meeting_id === m2.meetingId)).toMatchObject({ kind: 'STATUS_UPDATE', start_ms: 0, end_ms: 4000, speaker_label: 'Speaker 2' })
+    expect(t1.mentions.find((m) => m.meeting_id === m2.meetingId)).toMatchObject({ kind: 'STATUS_UPDATE', start_ms: 0, end_ms: 4000, speaker_label: 'Спикер 2' })
 
     const t2 = (await getTaskDetail(graph, scope(), 'T-2'))!
     expect(t2.events.filter((e) => e.meeting_id === m2.meetingId)).toEqual([])
