@@ -68,6 +68,8 @@ const MOCK_FAILED_DETAIL = {
     status: "FAILED" as const,
     uploaded_at: "2026-05-18T10:00:00.000Z",
     updated_at: "2026-05-18T11:00:00.000Z",
+    project_id: null,
+    project_name: null,
   },
   recording: {
     filename: "weekly.mp4",

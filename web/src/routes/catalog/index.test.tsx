@@ -16,7 +16,9 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 
-function renderCatalog() {
+let routerRef: ReturnType<typeof createMemoryRouter>;
+
+function renderCatalog(entry = "/") {
   const client = new QueryClient({
     defaultOptions: { queries: { retry: false } },
   });
@@ -27,8 +29,9 @@ function renderCatalog() {
       { path: "/meetings/:id/protocol", element: <div data-testid="protocol-page" /> },
       { path: "/upload", element: <div data-testid="upload-page" /> },
     ],
-    { initialEntries: ["/"] },
+    { initialEntries: [entry] },
   );
+  routerRef = router;
   return render(
     <QueryClientProvider client={client}>
       <WithSession>
@@ -255,5 +258,59 @@ describe("CatalogPage (Meetings)", () => {
     expect(urls).toContain(
       `/api/meetings?workspace_id=${WS_PERSONAL}&project_id=${PROJECT_ID}`,
     );
+  });
+
+  const PROJECTS_BODY = () => ({
+    items: [
+      {
+        id: PROJECT_ID,
+        workspace_id: WS_PERSONAL,
+        name: "Alpha",
+        description: null,
+        meeting_count: 1,
+        created_at: "2026-05-18T10:00:00.000Z",
+        updated_at: "2026-05-18T10:00:00.000Z",
+      },
+    ],
+  });
+
+  function mockProjectsAndMeetings() {
+    return mockApi(
+      (url) => (url.pathname === "/api/projects" ? json(PROJECTS_BODY()) : undefined),
+      (url) => (url.pathname === "/api/meetings" ? json(MOCK_MEETINGS) : undefined),
+    );
+  }
+
+  it("round-trips ?project= : request and select follow the URL, clearing removes both", async () => {
+    const spy = mockProjectsAndMeetings();
+    renderCatalog(`/?project=${PROJECT_ID}`);
+    const select = await screen.findByTestId("catalog-project-filter");
+    await waitFor(() => expect(select).toHaveValue(PROJECT_ID));
+    const meetingUrls = () =>
+      spy.mock.calls.map((c) => String(c[0])).filter((u) => u.startsWith("/api/meetings"));
+    expect(meetingUrls()).toContain(
+      `/api/meetings?workspace_id=${WS_PERSONAL}&project_id=${PROJECT_ID}`,
+    );
+
+    await userEvent.selectOptions(select, "");
+    await waitFor(() => expect(routerRef.state.location.search).toBe(""));
+    expect(select).toHaveValue("");
+    await waitFor(() =>
+      expect(meetingUrls().at(-1)).toBe(`/api/meetings?workspace_id=${WS_PERSONAL}`),
+    );
+  });
+
+  it("drops a ?project= that is not in this workspace's projects", async () => {
+    const foreign = "f0f0f0f0-1111-4222-8333-f0f0f0f0f0f0";
+    const spy = mockProjectsAndMeetings();
+    renderCatalog(`/?project=${foreign}`);
+    await waitFor(() => expect(routerRef.state.location.search).toBe(""));
+    expect(await screen.findByText("weekly.mp4")).toBeInTheDocument();
+    expect(screen.getByTestId("catalog-project-filter")).toHaveValue("");
+    const last = spy.mock.calls
+      .map((c) => String(c[0]))
+      .filter((u) => u.startsWith("/api/meetings"))
+      .at(-1);
+    expect(last).toBe(`/api/meetings?workspace_id=${WS_PERSONAL}`);
   });
 });

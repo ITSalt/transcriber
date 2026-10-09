@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { Link, useSearchParams } from "react-router";
@@ -47,8 +48,21 @@ export default function CatalogPage() {
   const { t } = useTranslation();
   const workspaceId = useWorkspaceId();
   const [searchParams, setSearchParams] = useSearchParams();
-  const projectId = searchParams.get("project");
+  const requestedProject = searchParams.get("project");
   const projects = useProjects();
+  // A ?project= left over from another workspace is not in this workspace's
+  // project list: drop it from the URL so the list is not silently empty.
+  const staleProject =
+    requestedProject !== null &&
+    projects.data !== undefined &&
+    !projects.data.items.some((p) => p.id === requestedProject);
+  const projectId = staleProject ? null : requestedProject;
+  useEffect(() => {
+    if (!staleProject) return;
+    const next = new URLSearchParams(searchParams);
+    next.delete("project");
+    setSearchParams(next, { replace: true });
+  }, [staleProject, searchParams, setSearchParams]);
   const { data, isLoading, isError, refetch } = useMeetingList(
     workspaceId,
     projectId,
