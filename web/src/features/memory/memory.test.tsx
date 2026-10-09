@@ -14,6 +14,7 @@ import {
   type MemoryTask,
 } from "@transcrib/shared";
 import i18n from "@/i18n/config";
+import ru from "./i18n/ru.json";
 import { collectFeatures, featureRegistry } from "@/lib/features";
 import { ProjectMemoryTabs } from "./components/ProjectMemoryTabs";
 import { MeetingMemoryRefs } from "./components/MeetingMemoryRefs";
@@ -512,5 +513,15 @@ describe("protocol page references", () => {
     renderRefs();
     await waitFor(() => expect(calls).toHaveLength(1));
     expect(screen.queryByTestId("memory-refs")).not.toBeInTheDocument();
+  });
+});
+
+describe("terminology (D-42)", () => {
+  it("ru.json does not contain the banned stem — assignments, not tasks", () => {
+    // Stem built from code points so this file itself stays free of the word.
+    const banned = String.fromCharCode(0x437, 0x430, 0x434, 0x430, 0x447);
+    expect(JSON.stringify(ru).toLowerCase()).not.toContain(banned);
+    expect(ru.tabs.tasks).toBe("Поручения");
+    expect(ru.tasks.empty).toBe("Поручений пока нет.");
   });
 });

@@ -1,7 +1,7 @@
 {
   "tabs": {
     "label": "Project memory",
-    "tasks": "Tasks",
+    "tasks": "Assignments",
     "decisions": "Decisions",
     "summary": "Summary",
     "review": "To review"
@@ -9,7 +9,7 @@
   "unavailable": "Project memory is temporarily unavailable. The rest of the app works.",
   "loadError": "Could not load data",
   "tasks": {
-    "empty": "No tasks yet.",
+    "empty": "No assignments yet.",
     "filterStatus": "Status",
     "filterAssignee": "Assignee",
     "allStatuses": "All statuses",
@@ -54,7 +54,7 @@
     "merged_into": "Merged into"
   },
   "edit": {
-    "title": "Edit task",
+    "title": "Edit assignment",
     "status": "Status",
     "assignee": "Assignee",
     "dueDate": "Due date",
@@ -85,7 +85,7 @@
   },
   "refs": {
     "title": "From project memory",
-    "tasks": "Tasks",
+    "tasks": "Assignments",
     "decisions": "Decisions"
   }
 }

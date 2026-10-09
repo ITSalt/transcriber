@@ -1,7 +1,7 @@
 {
   "tabs": {
     "label": "Память проекта",
-    "tasks": "Задачи",
+    "tasks": "Поручения",
     "decisions": "Решения",
     "summary": "Сводка",
     "review": "На подтверждение"
@@ -9,27 +9,27 @@
   "unavailable": "Память проекта временно недоступна. Остальное приложение работает.",
   "loadError": "Не удалось загрузить данные",
   "tasks": {
-    "empty": "Задач пока нет.",
+    "empty": "Поручений пока нет.",
     "filterStatus": "Статус",
     "filterAssignee": "Исполнитель",
     "allStatuses": "Все статусы",
     "allAssignees": "Все исполнители",
     "unassigned": "Не назначен",
     "due": "Срок {{date}}",
-    "mergedInto": "объединена с {{code}}",
+    "mergedInto": "объединено с {{code}}",
     "pending": "ждут подтверждения: {{count}}"
   },
   "status": {
-    "OPEN": "Открыта",
+    "OPEN": "Открыто",
     "IN_PROGRESS": "В работе",
-    "DONE": "Выполнена",
-    "CANCELLED": "Отменена",
-    "POSTPONED": "Отложена"
+    "DONE": "Выполнено",
+    "CANCELLED": "Отменено",
+    "POSTPONED": "Отложено"
   },
   "detail": {
     "title": "История {{code}}",
     "close": "Закрыть",
-    "createdIn": "Создана во встрече",
+    "createdIn": "Создано во встрече",
     "unknownMeeting": "—",
     "mentions": "Упоминания",
     "noMentions": "Упоминаний пока нет.",
@@ -51,10 +51,10 @@
     "status": "Статус",
     "assignee": "Исполнитель",
     "due_date": "Срок",
-    "merged_into": "Объединена с"
+    "merged_into": "Объединено с"
   },
   "edit": {
-    "title": "Правка задачи",
+    "title": "Правка поручения",
     "status": "Статус",
     "assignee": "Исполнитель",
     "dueDate": "Срок",
@@ -65,7 +65,7 @@
   "decisions": {
     "empty": "Решений пока нет.",
     "supersededBy": "заменено решением {{code}}",
-    "leadsTo": "Привело к задачам"
+    "leadsTo": "Привело к поручениям"
   },
   "summary": {
     "empty": "Сводка проекта ещё не сформирована.",
@@ -85,7 +85,7 @@
   },
   "refs": {
     "title": "Из памяти проекта",
-    "tasks": "Задачи",
+    "tasks": "Поручения",
     "decisions": "Решения"
   }
 }
