@@ -131,6 +131,7 @@ R-n — действие: точная команда одной строкой 
 | transcriber:web/src/i18n/** | transcriber | WP-FRONTEND-07 | 2026-10-09 10:13Z | — | dispatch |
 | transcriber:shared/** | transcriber | WP-WORKER-08 | 2026-10-09 10:13Z | — | dispatch |
 | transcriber:shared/src/asr/IAsrProvider.ts:38 | transcriber | WP-WORKER-08 | 2026-10-09 10:13Z | — | dispatch |
+| transcriber:graph | transcriber | WP-SPEC-01 | 2026-10-09 10:26Z | — | — |
 
 ## Очередь слияний
 
@@ -184,6 +185,7 @@ R-n — действие: точная команда одной строкой 
 <!-- orch:journal -->
 | Дата | WP | Событие | Подтверждение |
 |------|----|---------|---------------|
+| 2026-10-09 10:26Z | WP-SPEC-01 | lock transcriber:graph acquired | orch.py lock |
 | 2026-10-09 10:13Z | WP-WORKER-08 | WP-WORKER-08: READY -> DISPATCHING | start command handed to the owner; model sonnet; locks transcriber:shared/**, transcriber:shared/src/asr/IAsrProvider.ts:38 |
 | 2026-10-09 10:13Z | WP-WEB-PROJECTS-02 | WP-WEB-PROJECTS-02: READY -> DISPATCHING | start command handed to the owner; model sonnet |
 | 2026-10-09 10:13Z | WP-WORKER-MEMORY-03 | WP-WORKER-MEMORY-03: READY -> DISPATCHING | start command handed to the owner; model sonnet |
