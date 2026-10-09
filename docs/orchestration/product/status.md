@@ -53,6 +53,15 @@ CANCELLED (причина).
 | [WP-FRONTEND-06](work-packages/WP-FRONTEND-06-speakers.md) | frontend | Экран подтверждения спикеров перед генерацией протокола | DONE | product-frontend | https://github.com/ITSalt/transcriber/pull/31 (accepted 53b3ca8906) | 2026-10-08 |
 | [WP-WORKER-07](work-packages/WP-WORKER-07-memory-leak-guard.md) | worker | Защита протокола от утечки памяти проекта и чужих участников | DONE | product-worker | https://github.com/ITSalt/transcriber/pull/27 (accepted ade44c9c31) | 2026-10-08 |
 | [WP-WORKER-MEMORY-02](work-packages/WP-WORKER-MEMORY-02-hygiene.md) | worker-memory | Гигиена памяти проекта: дедуп решений, валидация исполнителей, сводка по продуктам | DONE | product-worker-memory | https://github.com/ITSalt/transcriber/pull/28 (accepted adc8af0791) | 2026-10-08 |
+| [WP-SPEC-01](work-packages/WP-SPEC-01-glossary.md) | spec | Глоссарий графа: UTF-8, русские названия, термины программы, подписи форм | READY | product-spec | — | 2026-10-09 |
+| [WP-FRONTEND-07](work-packages/WP-FRONTEND-07-wording.md) | frontend | Единая терминология в строках ядра: «Встречи», «обработка», «Спикер N», род статусов | READY | product-frontend | — | 2026-10-09 |
+| [WP-WEB-MEMORY-02](work-packages/WP-WEB-MEMORY-02-assignments.md) | web-memory | «Поручения» вместо «задач» в памяти проекта | READY | product-web-memory | — | 2026-10-09 |
+| [WP-WEB-FEEDBACK-02](work-packages/WP-WEB-FEEDBACK-02-assignment-category.md) | web-feedback | Категория отзыва «Неверное поручение» | READY | product-web-feedback | — | 2026-10-09 |
+| [WP-WEB-PROJECTS-02](work-packages/WP-WEB-PROJECTS-02-meetings-and-upload.md) | web-projects | «Проекты и поручения», встречи на карточке проекта, удаление поля «Количество спикеров» | READY | product-web-projects | — | 2026-10-09 |
+| [WP-WORKER-08](work-packages/WP-WORKER-08-protocol-wording.md) | worker | Протокол: «## Поручения», «Спикер N», отказ от speakerCount в ASR | READY | product-worker | — | 2026-10-09 |
+| [WP-WORKER-MEMORY-03](work-packages/WP-WORKER-MEMORY-03-speaker-label.md) | worker-memory | Метка спикера в цитатах памяти: «Спикер N» | READY | product-worker-memory | — | 2026-10-09 |
+| [WP-BACKEND-08](work-packages/WP-BACKEND-08-meeting-project-speaker-count.md) | backend | Проект в карточке встречи; удаление speaker_count из контрактов, сервисов и БД | READY | product-backend | — | 2026-10-09 |
+| [WP-FRONTEND-08](work-packages/WP-FRONTEND-08-catalog-project.md) | frontend | Список встреч: название и проект, фильтр по проекту, заголовок карточки встречи | READY | product-frontend | — | 2026-10-09 |
 
 ## Ждёт владельца
 
@@ -103,7 +112,7 @@ R-n — действие: точная команда одной строкой 
 | R-20 | Условие завершения п. 4 — обратная связь трёх видов по протоколу живой встречи из R-19 (после неё): страница протокола → «Обратная связь» → (1) вкладка «Замечания»: текст + категория → «Отправить»; (2) «Правильный протокол»: вставить исправленный текст → «Отправить»; (3) «Word с комментариями»: загрузить .docx с 1–2 комментариями → «Отправить» ; expected: в «Отправленные отзывы» три записи, «История версий» по-прежнему показывает исходную сгенерированную версию ; then: оркестратор проверит SELECT'ом protocol_feedback (3 вида), разбор docx в JSON, файлы в S3 и неизменность исходной версии протокола | PLAN.md | 2026-10-08 |  |
 | ~~P-19~~ | ~~Маршрут к OpenRouter из прод-VM (RU-IP блокируется Cloudflare, 403). Варианты: (a) исходящий HTTPS-прокси вне РФ (свой VPS/арендованный прокси) + маленький пакет WP-WORKER-04: LLM_PROXY_URL → undici ProxyAgent только для вызовов OpenRouter (Node fetch не читает HTTPS_PROXY); (b) перенести прод-VM/воркер за пределы РФ (крупнее, затрагивает Deepgram/S3/latency); (c) остаться на kie.ai (RU-доступный шлюз), эскалировать 500 в их поддержку и ждать; (d) другой RU-доступный шлюз к Claude (нужен кандидат от вас). Рекомендую (a): быстро (пакет S), обратимо, kie.ai остаётся запасным по env; для (a) нужен от вас адрес прокси (хост, порт, логин и пароль) — в чат, не в файлы~~ | reports/verify-WP-WORKER-03-prod-20261008.md | 2026-10-08 | 2026-10-08: answered by D-34 |
 | ~~R-21~~ | ~~Бэкап БД прода перед merge WP-BACKEND-07 — блокирует доставку (D-4: пакет с миграцией: enum MeetingStatus += AWAITING_SPEAKERS, две колонки transcripts; откат — down.sql в PR): ssh deploy@transcriber.itsalt.ru 'docker exec learn-postgres pg_dump -U postgres -d transcrib -Fc > ~/backup/transcrib-before-backend07-$(date +%Y%m%d-%H%M).dump && ls -la ~/backup \| tail -2 && df -h / \| tail -1' ; expected: файл transcrib-before-backend07-<дата>.dump ненулевого размера, свободное место на диске ; then: оркестратор доставляет WP-BACKEND-07 (merge + деплой с миграцией) и даёт команды для WP-WORKER-06 и WP-FRONTEND-06~~ | work-packages/WP-BACKEND-07-speakers.md | 2026-10-08 | 2026-10-08: 2026-10-08 22:46 (+03) по D-39 оркестратор выполнил: docker exec learn-postgres pg_dump -U postgres -d transcrib -Fc → ~/backup/transcrib-before-backend07-20261008-2246.dump, 1 278 226 байт; свободно 8,2 ГБ (72 % занято) |
-| P-20 | Поле «Количество спикеров» на загрузке обещает улучшить разделение по голосам, но в Deepgram не передаётся (D-21): (а) убрать поле — рекомендация; (б) оставить с честной подсказкой «только подсказка протоколу». Подробности: reports/terminology-audit-20261009.md U1 | reports/terminology-audit-20261009.md | 2026-10-09 |  |
+| ~~P-20~~ | ~~Поле «Количество спикеров» на загрузке обещает улучшить разделение по голосам, но в Deepgram не передаётся (D-21): (а) убрать поле — рекомендация; (б) оставить с честной подсказкой «только подсказка протоколу». Подробности: reports/terminology-audit-20261009.md U1~~ | reports/terminology-audit-20261009.md | 2026-10-09 | 2026-10-09: answered by D-43 |
 | ~~P-21~~ | ~~Метка неподтверждённого спикера: транскрипт показывает «Спикер N», экран подтверждения и протокол — «Speaker N»: (а) «Speaker N» везде; (б) «Спикер N» в интерфейсе и протоколе, внутри данных остаётся Speaker N — рекомендация. Подробности: U6~~ | reports/terminology-audit-20261009.md | 2026-10-09 | 2026-10-09: answered by D-41 |
 | ~~P-22~~ | ~~После переименования меню «Задачи» → «Встречи» реестр поручений доступен только с карточки проекта. Нужен ли пункт меню «Задачи» со сводным реестром по всем проектам пространства? (а) да — новая страница и сводный маршрут; (б) нет, отложить до анализа обратной связи — рекомендация. Подробности: P-22 в отчёте~~ | reports/terminology-audit-20261009.md | 2026-10-09 | 2026-10-09: answered by D-42 |
 
@@ -169,6 +178,27 @@ R-n — действие: точная команда одной строкой 
 <!-- orch:journal -->
 | Дата | WP | Событие | Подтверждение |
 |------|----|---------|---------------|
+| 2026-10-09 10:12Z | WP-FRONTEND-08 | WP-FRONTEND-08: DRAFT -> READY | пакет заполнен по reports/terminology-audit-20261009.md, D-40..D-44 |
+| 2026-10-09 10:12Z | WP-BACKEND-08 | WP-BACKEND-08: DRAFT -> READY | пакет заполнен по reports/terminology-audit-20261009.md, D-40..D-44 |
+| 2026-10-09 10:12Z | WP-WORKER-MEMORY-03 | WP-WORKER-MEMORY-03: DRAFT -> READY | пакет заполнен по reports/terminology-audit-20261009.md, D-40..D-44 |
+| 2026-10-09 10:12Z | WP-WORKER-08 | WP-WORKER-08: DRAFT -> READY | пакет заполнен по reports/terminology-audit-20261009.md, D-40..D-44 |
+| 2026-10-09 10:12Z | WP-WEB-PROJECTS-02 | WP-WEB-PROJECTS-02: DRAFT -> READY | пакет заполнен по reports/terminology-audit-20261009.md, D-40..D-44 |
+| 2026-10-09 10:12Z | WP-WEB-FEEDBACK-02 | WP-WEB-FEEDBACK-02: DRAFT -> READY | пакет заполнен по reports/terminology-audit-20261009.md, D-40..D-44 |
+| 2026-10-09 10:12Z | WP-WEB-MEMORY-02 | WP-WEB-MEMORY-02: DRAFT -> READY | пакет заполнен по reports/terminology-audit-20261009.md, D-40..D-44 |
+| 2026-10-09 10:12Z | WP-FRONTEND-07 | WP-FRONTEND-07: DRAFT -> READY | пакет заполнен по reports/terminology-audit-20261009.md, D-40..D-44 |
+| 2026-10-09 10:12Z | WP-SPEC-01 | WP-SPEC-01: DRAFT -> READY | пакет заполнен по reports/terminology-audit-20261009.md, D-40..D-44 |
+| 2026-10-09 10:09Z | WP-FRONTEND-08 | WP-FRONTEND-08 created (DRAFT) | work-packages/WP-FRONTEND-08-catalog-project.md |
+| 2026-10-09 10:09Z | WP-BACKEND-08 | WP-BACKEND-08 created (DRAFT) | work-packages/WP-BACKEND-08-meeting-project-speaker-count.md |
+| 2026-10-09 10:09Z | WP-WORKER-MEMORY-03 | WP-WORKER-MEMORY-03 created (DRAFT) | work-packages/WP-WORKER-MEMORY-03-speaker-label.md |
+| 2026-10-09 10:09Z | WP-WORKER-08 | WP-WORKER-08 created (DRAFT) | work-packages/WP-WORKER-08-protocol-wording.md |
+| 2026-10-09 10:09Z | WP-WEB-PROJECTS-02 | WP-WEB-PROJECTS-02 created (DRAFT) | work-packages/WP-WEB-PROJECTS-02-meetings-and-upload.md |
+| 2026-10-09 10:09Z | WP-WEB-FEEDBACK-02 | WP-WEB-FEEDBACK-02 created (DRAFT) | work-packages/WP-WEB-FEEDBACK-02-assignment-category.md |
+| 2026-10-09 10:09Z | WP-WEB-MEMORY-02 | WP-WEB-MEMORY-02 created (DRAFT) | work-packages/WP-WEB-MEMORY-02-assignments.md |
+| 2026-10-09 10:09Z | WP-FRONTEND-07 | WP-FRONTEND-07 created (DRAFT) | work-packages/WP-FRONTEND-07-wording.md |
+| 2026-10-09 10:09Z | WP-SPEC-01 | WP-SPEC-01 created (DRAFT) | work-packages/WP-SPEC-01-glossary.md |
+| 2026-10-09 10:09Z | — | D-44 recorded | — |
+| 2026-10-09 10:09Z | — | P-20 closed | answered by D-43 |
+| 2026-10-09 10:09Z | — | D-43 recorded | answer to P-20 |
 | 2026-10-09 10:03Z | — | Ответы владельца: D-41 закрывает P-21, D-42 закрывает P-22; отчёт терминологии обновлён (словарь, 4.4, план: WP-WEB-MEMORY-02, WP-WORKER-08); P-20 — дан ответ на вопрос «почему не передаётся», выбор за владельцем | reports/terminology-audit-20261009.md; deepgram-adapter.ts:219; D-21 |
 | 2026-10-09 10:03Z | — | P-22 closed | answered by D-42 |
 | 2026-10-09 10:03Z | — | D-42 recorded | answer to P-22 |
