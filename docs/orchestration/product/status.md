@@ -129,6 +129,7 @@ R-n — действие: точная команда одной строкой 
 | transcriber:migrations | transcriber | WP-BACKEND-08 | 2026-10-09 11:10Z | — | dispatch |
 | transcriber:web/src/i18n/** | transcriber | WP-FRONTEND-08 | 2026-10-09 12:35Z | — | dispatch |
 | transcriber:upload.fieldSpeakerCount* | transcriber | WP-FRONTEND-08 | 2026-10-09 12:35Z | — | dispatch |
+| transcriber:.tl/{status.json,master-plan.md,changelog.md,release-status.json,deploy-plan.md} | transcriber | WP-BACKEND-08 | 2026-10-09 12:35Z | — | — |
 
 ## Очередь слияний
 
@@ -190,6 +191,7 @@ R-n — действие: точная команда одной строкой 
 <!-- orch:journal -->
 | Дата | WP | Событие | Подтверждение |
 |------|----|---------|---------------|
+| 2026-10-09 12:35Z | WP-BACKEND-08 | lock transcriber:.tl/{status.json,master-plan.md,changelog.md,release-status.json,deploy-plan.md} acquired | orch.py lock |
 | 2026-10-09 12:35Z | WP-FRONTEND-08 | WP-FRONTEND-08: READY -> DISPATCHING | start command handed to the owner; model sonnet; locks transcriber:web/src/i18n/**, transcriber:upload.fieldSpeakerCount* |
 | 2026-10-09 12:34Z | WP-BACKEND-08 | WP-BACKEND-08: MERGED -> VERIFIED_TEST | verify --env test d6da675a03: reports/verify-WP-BACKEND-08-test-20261009.md |
 | 2026-10-09 12:31Z | WP-BACKEND-08 | WP-BACKEND-08 merged in the merge queue; released transcriber:shared/**, transcriber:shared/src/api/uc002.ts, transcriber:shared/src/api/uc100.ts:94, transcriber:shared/src/api/uc200.ts:11, transcriber:api/prisma/** | orch.py deliver: d6da675a03 |
