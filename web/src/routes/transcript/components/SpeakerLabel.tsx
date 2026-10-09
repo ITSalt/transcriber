@@ -15,7 +15,9 @@ export function SpeakerLabel({ speakerId, speakerMap }: SpeakerLabelProps) {
 
   const resolved = speakerMap?.[speakerId];
   // Speaker IDs are typically "spk_0", "spk_1", etc. Extract the numeric part.
-  const n = speakerId.replace(/\D/g, "") || speakerId;
+  // Diarization indices are 0-based; people read «Speaker 1» for index 0 (D-41).
+  const digits = speakerId.replace(/\D/g, "");
+  const n = digits ? Number(digits) + 1 : speakerId;
   const label =
     resolved ?? t("transcript.speakerLabel", { n, defaultValue: `Speaker ${n}` });
 

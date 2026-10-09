@@ -229,8 +229,30 @@ describe("speakers confirmation (AWAITING_SPEAKERS)", () => {
 
     await waitFor(() => expect(puts(calls)).toHaveLength(1));
     expect(SpeakersPutRequest.parse(puts(calls)[0]!.body).mapping).toEqual([
+      { label: "SPEAKER_0", name: "Speaker 1" },
       { label: "SPEAKER_1", name: "Speaker 1" },
     ]);
+  });
+
+  it("RU: labels read «Спикер N» and the merge body carries the RU root name", async () => {
+    await i18n.changeLanguage("ru");
+    try {
+      const calls = mockApi("AWAITING_SPEAKERS");
+      renderSlot();
+      expect(await screen.findByTestId("speaker-SPEAKER_0")).toHaveTextContent("Спикер 1");
+      expect(screen.getByTestId("speaker-SPEAKER_1")).toHaveTextContent("Спикер 2");
+      const select = screen.getByTestId("speaker-select-SPEAKER_1");
+      expect(select).toHaveTextContent("Тот же, что Спикер 1");
+      await userEvent.selectOptions(select, "m:SPEAKER_0");
+      await userEvent.click(screen.getByTestId("speakers-confirm"));
+      await waitFor(() => expect(puts(calls)).toHaveLength(1));
+      expect(SpeakersPutRequest.parse(puts(calls)[0]!.body).mapping).toEqual([
+        { label: "SPEAKER_0", name: "Спикер 1" },
+        { label: "SPEAKER_1", name: "Спикер 1" },
+      ]);
+    } finally {
+      await i18n.changeLanguage("en");
+    }
   });
 
   it("stays disabled after a successful PUT: a second click sends nothing", async () => {
@@ -262,7 +284,7 @@ describe("speakers confirmation (AWAITING_SPEAKERS)", () => {
 });
 
 describe("buildMapping", () => {
-  it("leaves «keep» out and sends the root's display for a merge into a «keep» label", () => {
+  it("leaves «keep» out and sends the root's name for both root and merged label", () => {
     expect(
       buildMapping(
         {
@@ -272,7 +294,10 @@ describe("buildMapping", () => {
         },
         { SPEAKER_0: "Speaker 1", SPEAKER_1: "Speaker 2", SPEAKER_2: "Speaker 3" },
       ),
-    ).toEqual([{ label: "SPEAKER_1", name: "Speaker 1" }]);
+    ).toEqual([
+      { label: "SPEAKER_0", name: "Speaker 1" },
+      { label: "SPEAKER_1", name: "Speaker 1" },
+    ]);
   });
 
   it("follows a merge chain to the root", () => {

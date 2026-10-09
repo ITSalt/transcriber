@@ -78,7 +78,12 @@ export function buildMapping(
     } else {
       // merged into a «keep» label: the worker puts a null as «Speaker <own index>», which would
       // not merge — send the root's neutral name so both labels read as one speaker
-      entries.push({ label, name: displays[rootLabel] ?? null });
+      // — and the root itself must carry the same name, else the root stays null (a different speaker)
+      const name = displays[rootLabel] ?? null;
+      if (!entries.some((e) => e.label === rootLabel)) {
+        entries.push({ label: rootLabel, name });
+      }
+      entries.push({ label, name });
     }
   }
   return entries;
