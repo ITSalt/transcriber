@@ -54,10 +54,10 @@ CANCELLED (причина).
 | [WP-WORKER-07](work-packages/WP-WORKER-07-memory-leak-guard.md) | worker | Защита протокола от утечки памяти проекта и чужих участников | DONE | product-worker | https://github.com/ITSalt/transcriber/pull/27 (accepted ade44c9c31) | 2026-10-08 |
 | [WP-WORKER-MEMORY-02](work-packages/WP-WORKER-MEMORY-02-hygiene.md) | worker-memory | Гигиена памяти проекта: дедуп решений, валидация исполнителей, сводка по продуктам | DONE | product-worker-memory | https://github.com/ITSalt/transcriber/pull/28 (accepted adc8af0791) | 2026-10-08 |
 | [WP-SPEC-01](work-packages/WP-SPEC-01-glossary.md) | spec | Глоссарий графа: UTF-8, русские названия, термины программы, подписи форм | DONE | product-spec | https://github.com/ITSalt/transcriber/pull/32 (accepted 9ecfd6bb41) | 2026-10-09 |
-| [WP-FRONTEND-07](work-packages/WP-FRONTEND-07-wording.md) | frontend | Единая терминология в строках ядра: «Встречи», «обработка», «Спикер N», род статусов | REVISE | product-frontend | https://github.com/ITSalt/transcriber/pull/35 | 2026-10-09 |
+| [WP-FRONTEND-07](work-packages/WP-FRONTEND-07-wording.md) | frontend | Единая терминология в строках ядра: «Встречи», «обработка», «Спикер N», род статусов | READY | product-frontend | https://github.com/ITSalt/transcriber/pull/35 | 2026-10-09 |
 | [WP-WEB-MEMORY-02](work-packages/WP-WEB-MEMORY-02-assignments.md) | web-memory | «Поручения» вместо «задач» в памяти проекта | DISPATCHING | product-web-memory | — | 2026-10-09 |
 | [WP-WEB-FEEDBACK-02](work-packages/WP-WEB-FEEDBACK-02-assignment-category.md) | web-feedback | Категория отзыва «Неверное поручение» | DISPATCHING | product-web-feedback | — | 2026-10-09 |
-| [WP-WEB-PROJECTS-02](work-packages/WP-WEB-PROJECTS-02-meetings-and-upload.md) | web-projects | «Проекты и поручения», встречи на карточке проекта, удаление поля «Количество спикеров» | READY | product-web-projects | https://github.com/ITSalt/transcriber/pull/34 | 2026-10-09 |
+| [WP-WEB-PROJECTS-02](work-packages/WP-WEB-PROJECTS-02-meetings-and-upload.md) | web-projects | «Проекты и поручения», встречи на карточке проекта, удаление поля «Количество спикеров» | ACCEPTED | product-web-projects | https://github.com/ITSalt/transcriber/pull/34 (accepted 48daf9b7f4) | 2026-10-09 |
 | [WP-WORKER-08](work-packages/WP-WORKER-08-protocol-wording.md) | worker | Протокол: «## Поручения», «Спикер N», отказ от speakerCount в ASR | READY | product-worker | https://github.com/ITSalt/transcriber/pull/36 | 2026-10-09 |
 | [WP-WORKER-MEMORY-03](work-packages/WP-WORKER-MEMORY-03-speaker-label.md) | worker-memory | Метка спикера в цитатах памяти: «Спикер N» | DISPATCHING | product-worker-memory | — | 2026-10-09 |
 | [WP-BACKEND-08](work-packages/WP-BACKEND-08-meeting-project-speaker-count.md) | backend | Проект в карточке встречи; удаление speaker_count из контрактов, сервисов и БД | READY | product-backend | — | 2026-10-09 |
@@ -174,6 +174,7 @@ R-n — действие: точная команда одной строкой 
 | 35 | transcriber | WP-WORKER-06 | https://github.com/ITSalt/transcriber/pull/30 | — | merged |
 | 36 | transcriber | WP-FRONTEND-06 | https://github.com/ITSalt/transcriber/pull/31 | — | merged |
 | 37 | transcriber | WP-SPEC-01 | — | — | merged |
+| 38 | transcriber | WP-WEB-PROJECTS-02 | — | — | queued |
 
 ## Журнал
 
@@ -182,6 +183,11 @@ R-n — действие: точная команда одной строкой 
 <!-- orch:journal -->
 | Дата | WP | Событие | Подтверждение |
 |------|----|---------|---------------|
+| 2026-10-09 11:00Z | WP-WEB-PROJECTS-02 | WP-WEB-PROJECTS-02 queued for merge (sequential) | — |
+| 2026-10-09 11:00Z | WP-WEB-PROJECTS-02 | WP-WEB-PROJECTS-02: accepted at 48daf9b7f4225cc13ea1de9e73a8b37b61bcd447 | report reports/wp-web-projects-02-review-20261009-r2.md |
+| 2026-10-09 11:00Z | WP-WEB-PROJECTS-02 | WP-WEB-PROJECTS-02: READY -> ACCEPTED | раунд 2: пункты 1,2,3,5 закрыты по диффу, п.4 — отклонение принято; CI зелёный на 48daf9b7f4 — reports/wp-web-projects-02-review-20261009-r2.md |
+| 2026-10-09 11:00Z | WP-FRONTEND-07 | WP-FRONTEND-07: review round 2 started at 9cf5dc0df1 | reports/wp-frontend-07-review-20261009-r2.md |
+| 2026-10-09 11:00Z | WP-FRONTEND-07 | WP-FRONTEND-07: REVISE -> READY | пересдача 1 от product-frontend: PR #35, sha 9cf5dc0df1 |
 | 2026-10-09 10:59Z | WP-WORKER-08 | WP-WORKER-08: review round 2 started at 62df97ade4 | reports/wp-worker-08-review-20261009-r2.md |
 | 2026-10-09 10:59Z | WP-WORKER-08 | WP-WORKER-08: REVISE -> READY | пересдача 1 от product-worker: PR #36, sha 62df97ade4 |
 | 2026-10-09 10:58Z | WP-WEB-PROJECTS-02 | WP-WEB-PROJECTS-02: review round 2 started at 48daf9b7f4 | reports/wp-web-projects-02-review-20261009-r2.md |
