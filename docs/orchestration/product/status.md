@@ -63,6 +63,7 @@ CANCELLED (причина).
 | [WP-BACKEND-08](work-packages/WP-BACKEND-08-meeting-project-speaker-count.md) | backend | Проект в карточке встречи; удаление speaker_count из контрактов, сервисов и БД | DONE | product-backend | https://github.com/ITSalt/transcriber/pull/40 (accepted 432933a0e7) | 2026-10-09 |
 | [WP-FRONTEND-08](work-packages/WP-FRONTEND-08-catalog-project.md) | frontend | Список встреч: название и проект, фильтр по проекту, заголовок карточки встречи | DONE | product-frontend | https://github.com/ITSalt/transcriber/pull/41 (accepted 6e4b93ff90) | 2026-10-09 |
 | [WP-BACKEND-09](work-packages/WP-BACKEND-09-contract-speaker-count.md) | backend | Удаление колонки transcription_jobs.speaker_count (contract-шаг D-43 после WP-BACKEND-08) | DONE | product-backend | https://github.com/ITSalt/transcriber/pull/40 (accepted 432933a0e7) | 2026-10-09 |
+| [WP-FRONTEND-09](work-packages/WP-FRONTEND-09-meeting-detail-contract.md) | frontend | Контракт карточки встречи: project_id/project_name без default(null), фикстуры web | DISPATCHING | product-frontend | — | 2026-10-09 |
 
 ## Ждёт владельца
 
@@ -128,6 +129,8 @@ R-n — действие: точная команда одной строкой 
 <!-- orch:locks -->
 | Замок | Репозиторий | Держатель | С | Ждут | Примечание |
 |-------|-------------|-----------|---|------|------------|
+| transcriber:shared/** | transcriber | WP-FRONTEND-09 | 2026-10-09 19:42Z | — | dispatch |
+| transcriber:shared/src/api/uc002.ts | transcriber | WP-FRONTEND-09 | 2026-10-09 19:42Z | — | dispatch |
 
 ## Очередь слияний
 
@@ -192,6 +195,9 @@ R-n — действие: точная команда одной строкой 
 <!-- orch:journal -->
 | Дата | WP | Событие | Подтверждение |
 |------|----|---------|---------------|
+| 2026-10-09 19:42Z | WP-FRONTEND-09 | WP-FRONTEND-09: READY -> DISPATCHING | start command handed to the owner; model sonnet; locks transcriber:shared/**, transcriber:shared/src/api/uc002.ts |
+| 2026-10-09 19:42Z | WP-FRONTEND-09 | WP-FRONTEND-09: DRAFT -> READY | пакет заполнен по фактам ревью WP-BACKEND-08/WP-FRONTEND-08; владелец 2026-10-09: «не понял, но поправь» |
+| 2026-10-09 19:41Z | WP-FRONTEND-09 | WP-FRONTEND-09 created (DRAFT) | work-packages/WP-FRONTEND-09-meeting-detail-contract.md |
 | 2026-10-09 19:41Z | — | по указанию владельца 2026-10-09 три зависшие записи protocol_generation_jobs в PROCESSING (8e5965a6… 2026-06-02, 98d75524… 2026-06-03, 8962b370… 2026-08-11; встречи в TRANSCRIBED, версий протокола 0) переведены UPDATE по id в FAILED с error_msg и finished_at; после: DONE 33, FAILED 4, PROCESSING 0 | psql UPDATE … RETURNING на VM 2026-10-09 19:40Z; SELECT count by status |
 | 2026-10-09 19:39Z | — | R-23 opened for owner | bugs/PLUGIN-BUG-5.md |
 | 2026-10-09 19:39Z | — | PLUGIN-BUG-5 sent to ITSalt/PepperSkills: new Issue | https://github.com/ITSalt/PepperSkills/issues/36 |
