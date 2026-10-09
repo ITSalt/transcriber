@@ -53,7 +53,7 @@ CANCELLED (причина).
 | [WP-FRONTEND-06](work-packages/WP-FRONTEND-06-speakers.md) | frontend | Экран подтверждения спикеров перед генерацией протокола | DONE | product-frontend | https://github.com/ITSalt/transcriber/pull/31 (accepted 53b3ca8906) | 2026-10-08 |
 | [WP-WORKER-07](work-packages/WP-WORKER-07-memory-leak-guard.md) | worker | Защита протокола от утечки памяти проекта и чужих участников | DONE | product-worker | https://github.com/ITSalt/transcriber/pull/27 (accepted ade44c9c31) | 2026-10-08 |
 | [WP-WORKER-MEMORY-02](work-packages/WP-WORKER-MEMORY-02-hygiene.md) | worker-memory | Гигиена памяти проекта: дедуп решений, валидация исполнителей, сводка по продуктам | DONE | product-worker-memory | https://github.com/ITSalt/transcriber/pull/28 (accepted adc8af0791) | 2026-10-08 |
-| [WP-SPEC-01](work-packages/WP-SPEC-01-glossary.md) | spec | Глоссарий графа: UTF-8, русские названия, термины программы, подписи форм | DISPATCHING | product-spec | — | 2026-10-09 |
+| [WP-SPEC-01](work-packages/WP-SPEC-01-glossary.md) | spec | Глоссарий графа: UTF-8, русские названия, термины программы, подписи форм | READY | product-spec | https://github.com/ITSalt/transcriber/pull/32 | 2026-10-09 |
 | [WP-FRONTEND-07](work-packages/WP-FRONTEND-07-wording.md) | frontend | Единая терминология в строках ядра: «Встречи», «обработка», «Спикер N», род статусов | DISPATCHING | product-frontend | — | 2026-10-09 |
 | [WP-WEB-MEMORY-02](work-packages/WP-WEB-MEMORY-02-assignments.md) | web-memory | «Поручения» вместо «задач» в памяти проекта | DISPATCHING | product-web-memory | — | 2026-10-09 |
 | [WP-WEB-FEEDBACK-02](work-packages/WP-WEB-FEEDBACK-02-assignment-category.md) | web-feedback | Категория отзыва «Неверное поручение» | DISPATCHING | product-web-feedback | — | 2026-10-09 |
@@ -131,7 +131,6 @@ R-n — действие: точная команда одной строкой 
 | transcriber:web/src/i18n/** | transcriber | WP-FRONTEND-07 | 2026-10-09 10:13Z | — | dispatch |
 | transcriber:shared/** | transcriber | WP-WORKER-08 | 2026-10-09 10:13Z | — | dispatch |
 | transcriber:shared/src/asr/IAsrProvider.ts:38 | transcriber | WP-WORKER-08 | 2026-10-09 10:13Z | — | dispatch |
-| transcriber:graph | transcriber | WP-SPEC-01 | 2026-10-09 10:26Z | — | — |
 
 ## Очередь слияний
 
@@ -185,6 +184,9 @@ R-n — действие: точная команда одной строкой 
 <!-- orch:journal -->
 | Дата | WP | Событие | Подтверждение |
 |------|----|---------|---------------|
+| 2026-10-09 10:40Z | WP-SPEC-01 | WP-SPEC-01: review round 1 started at d79338a0b0 | reports/wp-spec-01-review-20261009.md |
+| 2026-10-09 10:40Z | WP-SPEC-01 | WP-SPEC-01: DISPATCHING -> READY | READY от product-spec: PR #32, sha d79338a0b0 |
+| 2026-10-09 10:40Z | WP-SPEC-01 | lock transcriber:graph released | orch.py lock |
 | 2026-10-09 10:26Z | WP-SPEC-01 | lock transcriber:graph acquired | orch.py lock |
 | 2026-10-09 10:13Z | WP-WORKER-08 | WP-WORKER-08: READY -> DISPATCHING | start command handed to the owner; model sonnet; locks transcriber:shared/**, transcriber:shared/src/asr/IAsrProvider.ts:38 |
 | 2026-10-09 10:13Z | WP-WEB-PROJECTS-02 | WP-WEB-PROJECTS-02: READY -> DISPATCHING | start command handed to the owner; model sonnet |
