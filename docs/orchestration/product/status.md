@@ -61,7 +61,7 @@ CANCELLED (причина).
 | [WP-WORKER-08](work-packages/WP-WORKER-08-protocol-wording.md) | worker | Протокол: «## Поручения», «Спикер N», отказ от speakerCount в ASR | DONE | product-worker | https://github.com/ITSalt/transcriber/pull/36 (accepted 62df97ade4) | 2026-10-09 |
 | [WP-WORKER-MEMORY-03](work-packages/WP-WORKER-MEMORY-03-speaker-label.md) | worker-memory | Метка спикера в цитатах памяти: «Спикер N» | DONE | product-worker-memory | https://github.com/ITSalt/transcriber/pull/33 (accepted fc15b7225b) | 2026-10-09 |
 | [WP-BACKEND-08](work-packages/WP-BACKEND-08-meeting-project-speaker-count.md) | backend | Проект в карточке встречи; удаление speaker_count из контрактов, сервисов и БД | DONE | product-backend | https://github.com/ITSalt/transcriber/pull/40 (accepted 432933a0e7) | 2026-10-09 |
-| [WP-FRONTEND-08](work-packages/WP-FRONTEND-08-catalog-project.md) | frontend | Список встреч: название и проект, фильтр по проекту, заголовок карточки встречи | READY | product-frontend | https://github.com/ITSalt/transcriber/pull/41 | 2026-10-09 |
+| [WP-FRONTEND-08](work-packages/WP-FRONTEND-08-catalog-project.md) | frontend | Список встреч: название и проект, фильтр по проекту, заголовок карточки встречи | ACCEPTED | product-frontend | https://github.com/ITSalt/transcriber/pull/41 (accepted 6e4b93ff90) | 2026-10-09 |
 | [WP-BACKEND-09](work-packages/WP-BACKEND-09-contract-speaker-count.md) | backend | Удаление колонки transcription_jobs.speaker_count (contract-шаг D-43 после WP-BACKEND-08) | DONE | product-backend | https://github.com/ITSalt/transcriber/pull/40 (accepted 432933a0e7) | 2026-10-09 |
 
 ## Ждёт владельца
@@ -184,6 +184,7 @@ R-n — действие: точная команда одной строкой 
 | 44 | transcriber | WP-BACKEND-08 | — | — | merged |
 | 45 | transcriber | WP-BACKEND-08 | — | — | dropped |
 | 46 | transcriber | WP-BACKEND-09 | — | — | merged |
+| 47 | transcriber | WP-FRONTEND-08 | — | — | queued |
 
 ## Журнал
 
@@ -192,6 +193,9 @@ R-n — действие: точная команда одной строкой 
 <!-- orch:journal -->
 | Дата | WP | Событие | Подтверждение |
 |------|----|---------|---------------|
+| 2026-10-09 14:24Z | WP-FRONTEND-08 | WP-FRONTEND-08 queued for merge (sequential) | — |
+| 2026-10-09 14:24Z | WP-FRONTEND-08 | WP-FRONTEND-08: accepted at 6e4b93ff90ae42c6b7fad42805ae26b332c4cf96 | report reports/wp-frontend-08-review-20261009-r2.md |
+| 2026-10-09 14:24Z | WP-FRONTEND-08 | WP-FRONTEND-08: READY -> ACCEPTED | раунд 2: три пункта закрыты по диффу; CI зелёный на 6e4b93ff90 — reports/wp-frontend-08-review-20261009-r2.md |
 | 2026-10-09 14:21Z | WP-FRONTEND-08 | WP-FRONTEND-08: review round 2 started at 6e4b93ff90 | reports/wp-frontend-08-review-20261009-r2.md |
 | 2026-10-09 14:21Z | WP-FRONTEND-08 | WP-FRONTEND-08: REVISE -> READY | пересдача 1 от product-frontend: PR #41, sha 6e4b93ff90 |
 | 2026-10-09 14:19Z | WP-FRONTEND-08 | WP-FRONTEND-08: READY -> REVISE | раунд 1: чужой ?project= после смены пространства не сбрасывается; тест round-trip; фикстуры routes/meeting с полями проекта — reports/wp-frontend-08-review-20261009.md |
