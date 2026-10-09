@@ -1,6 +1,14 @@
 # PLUGIN-BUG-5 — deliver G5 blocks a second merge of the same package (expand/contract)
 
-Plugin: pepper-orchestrator 0.11.0. Date: 2026-10-09. Program: anonymized.
+| Поле | Значение |
+|------|----------|
+| Найден | 2026-10-09, deliver --check второго PR того же пакета (шаг contract после expand) |
+| Окружение | pepper-orchestrator 0.11.0, Claude Code 2.1.292, Ubuntu 24.04, bash |
+| Модуль | плагин: scripts/orch.py deliver, gate G5 (merge queue) |
+| Серьёзность | medium (двухшаговая доставка одного пакета невозможна без обхода) |
+| Статус | открыт, обход найден |
+| Fingerprint | `G5 RED the previous merge is ACCEPTED, not VERIFIED_TEST` |
+| Issue | https://github.com/ITSalt/PepperSkills/issues/36 |
 
 ## What happened
 
@@ -35,4 +43,4 @@ delivered it.
 2. `set <WP> status READY`, `review-start <WP> --pr <second PR> --ref <sha> --round N`, `accept`, `merge add`.
 3. `deliver --check <WP>` → G5 RED.
 
-Issue in ITSalt/PepperSkills: not filed (needs the owner's yes).
+Issue in ITSalt/PepperSkills: see the Issue row above.
