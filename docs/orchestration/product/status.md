@@ -53,13 +53,13 @@ CANCELLED (причина).
 | [WP-FRONTEND-06](work-packages/WP-FRONTEND-06-speakers.md) | frontend | Экран подтверждения спикеров перед генерацией протокола | DONE | product-frontend | https://github.com/ITSalt/transcriber/pull/31 (accepted 53b3ca8906) | 2026-10-08 |
 | [WP-WORKER-07](work-packages/WP-WORKER-07-memory-leak-guard.md) | worker | Защита протокола от утечки памяти проекта и чужих участников | DONE | product-worker | https://github.com/ITSalt/transcriber/pull/27 (accepted ade44c9c31) | 2026-10-08 |
 | [WP-WORKER-MEMORY-02](work-packages/WP-WORKER-MEMORY-02-hygiene.md) | worker-memory | Гигиена памяти проекта: дедуп решений, валидация исполнителей, сводка по продуктам | DONE | product-worker-memory | https://github.com/ITSalt/transcriber/pull/28 (accepted adc8af0791) | 2026-10-08 |
-| [WP-SPEC-01](work-packages/WP-SPEC-01-glossary.md) | spec | Глоссарий графа: UTF-8, русские названия, термины программы, подписи форм | READY | product-spec | — | 2026-10-09 |
-| [WP-FRONTEND-07](work-packages/WP-FRONTEND-07-wording.md) | frontend | Единая терминология в строках ядра: «Встречи», «обработка», «Спикер N», род статусов | READY | product-frontend | — | 2026-10-09 |
-| [WP-WEB-MEMORY-02](work-packages/WP-WEB-MEMORY-02-assignments.md) | web-memory | «Поручения» вместо «задач» в памяти проекта | READY | product-web-memory | — | 2026-10-09 |
-| [WP-WEB-FEEDBACK-02](work-packages/WP-WEB-FEEDBACK-02-assignment-category.md) | web-feedback | Категория отзыва «Неверное поручение» | READY | product-web-feedback | — | 2026-10-09 |
+| [WP-SPEC-01](work-packages/WP-SPEC-01-glossary.md) | spec | Глоссарий графа: UTF-8, русские названия, термины программы, подписи форм | DISPATCHING | product-spec | — | 2026-10-09 |
+| [WP-FRONTEND-07](work-packages/WP-FRONTEND-07-wording.md) | frontend | Единая терминология в строках ядра: «Встречи», «обработка», «Спикер N», род статусов | DISPATCHING | product-frontend | — | 2026-10-09 |
+| [WP-WEB-MEMORY-02](work-packages/WP-WEB-MEMORY-02-assignments.md) | web-memory | «Поручения» вместо «задач» в памяти проекта | DISPATCHING | product-web-memory | — | 2026-10-09 |
+| [WP-WEB-FEEDBACK-02](work-packages/WP-WEB-FEEDBACK-02-assignment-category.md) | web-feedback | Категория отзыва «Неверное поручение» | DISPATCHING | product-web-feedback | — | 2026-10-09 |
 | [WP-WEB-PROJECTS-02](work-packages/WP-WEB-PROJECTS-02-meetings-and-upload.md) | web-projects | «Проекты и поручения», встречи на карточке проекта, удаление поля «Количество спикеров» | READY | product-web-projects | — | 2026-10-09 |
 | [WP-WORKER-08](work-packages/WP-WORKER-08-protocol-wording.md) | worker | Протокол: «## Поручения», «Спикер N», отказ от speakerCount в ASR | READY | product-worker | — | 2026-10-09 |
-| [WP-WORKER-MEMORY-03](work-packages/WP-WORKER-MEMORY-03-speaker-label.md) | worker-memory | Метка спикера в цитатах памяти: «Спикер N» | READY | product-worker-memory | — | 2026-10-09 |
+| [WP-WORKER-MEMORY-03](work-packages/WP-WORKER-MEMORY-03-speaker-label.md) | worker-memory | Метка спикера в цитатах памяти: «Спикер N» | DISPATCHING | product-worker-memory | — | 2026-10-09 |
 | [WP-BACKEND-08](work-packages/WP-BACKEND-08-meeting-project-speaker-count.md) | backend | Проект в карточке встречи; удаление speaker_count из контрактов, сервисов и БД | READY | product-backend | — | 2026-10-09 |
 | [WP-FRONTEND-08](work-packages/WP-FRONTEND-08-catalog-project.md) | frontend | Список встреч: название и проект, фильтр по проекту, заголовок карточки встречи | READY | product-frontend | — | 2026-10-09 |
 
@@ -125,6 +125,10 @@ R-n — действие: точная команда одной строкой 
 <!-- orch:locks -->
 | Замок | Репозиторий | Держатель | С | Ждут | Примечание |
 |-------|-------------|-----------|---|------|------------|
+| transcriber:graph-infra/** | transcriber | WP-SPEC-01 | 2026-10-09 10:13Z | — | dispatch |
+| transcriber:.tl/external-contracts/** | transcriber | WP-SPEC-01 | 2026-10-09 10:13Z | — | dispatch |
+| transcriber:CLAUDE.md | transcriber | WP-SPEC-01 | 2026-10-09 10:13Z | — | dispatch |
+| transcriber:web/src/i18n/** | transcriber | WP-FRONTEND-07 | 2026-10-09 10:13Z | — | dispatch |
 
 ## Очередь слияний
 
@@ -178,6 +182,13 @@ R-n — действие: точная команда одной строкой 
 <!-- orch:journal -->
 | Дата | WP | Событие | Подтверждение |
 |------|----|---------|---------------|
+| 2026-10-09 10:13Z | WP-WORKER-MEMORY-03 | WP-WORKER-MEMORY-03: READY -> DISPATCHING | start command handed to the owner; model sonnet |
+| 2026-10-09 10:13Z | WP-WORKER-08 | dispatch of WP-WORKER-08 refused: depends on WP-BACKEND-08 (READY), not merged yet | orch.py dispatch |
+| 2026-10-09 10:13Z | WP-WEB-PROJECTS-02 | dispatch of WP-WEB-PROJECTS-02 refused: depends on WP-BACKEND-08 (READY), not merged yet | orch.py dispatch |
+| 2026-10-09 10:13Z | WP-WEB-FEEDBACK-02 | WP-WEB-FEEDBACK-02: READY -> DISPATCHING | start command handed to the owner; model sonnet |
+| 2026-10-09 10:13Z | WP-WEB-MEMORY-02 | WP-WEB-MEMORY-02: READY -> DISPATCHING | start command handed to the owner; model sonnet |
+| 2026-10-09 10:13Z | WP-FRONTEND-07 | WP-FRONTEND-07: READY -> DISPATCHING | start command handed to the owner; model sonnet; locks transcriber:web/src/i18n/** |
+| 2026-10-09 10:13Z | WP-SPEC-01 | WP-SPEC-01: READY -> DISPATCHING | start command handed to the owner; model sonnet; locks transcriber:graph-infra/**, transcriber:.tl/external-contracts/**, transcriber:CLAUDE.md |
 | 2026-10-09 10:12Z | WP-FRONTEND-08 | WP-FRONTEND-08: DRAFT -> READY | пакет заполнен по reports/terminology-audit-20261009.md, D-40..D-44 |
 | 2026-10-09 10:12Z | WP-BACKEND-08 | WP-BACKEND-08: DRAFT -> READY | пакет заполнен по reports/terminology-audit-20261009.md, D-40..D-44 |
 | 2026-10-09 10:12Z | WP-WORKER-MEMORY-03 | WP-WORKER-MEMORY-03: DRAFT -> READY | пакет заполнен по reports/terminology-audit-20261009.md, D-40..D-44 |
