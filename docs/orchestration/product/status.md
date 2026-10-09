@@ -55,11 +55,11 @@ CANCELLED (причина).
 | [WP-WORKER-MEMORY-02](work-packages/WP-WORKER-MEMORY-02-hygiene.md) | worker-memory | Гигиена памяти проекта: дедуп решений, валидация исполнителей, сводка по продуктам | DONE | product-worker-memory | https://github.com/ITSalt/transcriber/pull/28 (accepted adc8af0791) | 2026-10-08 |
 | [WP-SPEC-01](work-packages/WP-SPEC-01-glossary.md) | spec | Глоссарий графа: UTF-8, русские названия, термины программы, подписи форм | DONE | product-spec | https://github.com/ITSalt/transcriber/pull/32 (accepted 9ecfd6bb41) | 2026-10-09 |
 | [WP-FRONTEND-07](work-packages/WP-FRONTEND-07-wording.md) | frontend | Единая терминология в строках ядра: «Встречи», «обработка», «Спикер N», род статусов | DONE | product-frontend | https://github.com/ITSalt/transcriber/pull/35 (accepted 9cf5dc0df1) | 2026-10-09 |
-| [WP-WEB-MEMORY-02](work-packages/WP-WEB-MEMORY-02-assignments.md) | web-memory | «Поручения» вместо «задач» в памяти проекта | VERIFIED_TEST | product-web-memory | https://github.com/ITSalt/transcriber/pull/38 (accepted 15be00e861) | 2026-10-09 |
-| [WP-WEB-FEEDBACK-02](work-packages/WP-WEB-FEEDBACK-02-assignment-category.md) | web-feedback | Категория отзыва «Неверное поручение» | VERIFIED_TEST | product-web-feedback | https://github.com/ITSalt/transcriber/pull/37 (accepted 1eab9d6f45) | 2026-10-09 |
+| [WP-WEB-MEMORY-02](work-packages/WP-WEB-MEMORY-02-assignments.md) | web-memory | «Поручения» вместо «задач» в памяти проекта | PROD | product-web-memory | https://github.com/ITSalt/transcriber/pull/38 (accepted 15be00e861) | 2026-10-09 |
+| [WP-WEB-FEEDBACK-02](work-packages/WP-WEB-FEEDBACK-02-assignment-category.md) | web-feedback | Категория отзыва «Неверное поручение» | PROD | product-web-feedback | https://github.com/ITSalt/transcriber/pull/37 (accepted 1eab9d6f45) | 2026-10-09 |
 | [WP-WEB-PROJECTS-02](work-packages/WP-WEB-PROJECTS-02-meetings-and-upload.md) | web-projects | «Проекты и поручения», встречи на карточке проекта, удаление поля «Количество спикеров» | DONE | product-web-projects | https://github.com/ITSalt/transcriber/pull/34 (accepted 48daf9b7f4) | 2026-10-09 |
 | [WP-WORKER-08](work-packages/WP-WORKER-08-protocol-wording.md) | worker | Протокол: «## Поручения», «Спикер N», отказ от speakerCount в ASR | DONE | product-worker | https://github.com/ITSalt/transcriber/pull/36 (accepted 62df97ade4) | 2026-10-09 |
-| [WP-WORKER-MEMORY-03](work-packages/WP-WORKER-MEMORY-03-speaker-label.md) | worker-memory | Метка спикера в цитатах памяти: «Спикер N» | VERIFIED_TEST | product-worker-memory | https://github.com/ITSalt/transcriber/pull/33 (accepted fc15b7225b) | 2026-10-09 |
+| [WP-WORKER-MEMORY-03](work-packages/WP-WORKER-MEMORY-03-speaker-label.md) | worker-memory | Метка спикера в цитатах памяти: «Спикер N» | PROD | product-worker-memory | https://github.com/ITSalt/transcriber/pull/33 (accepted fc15b7225b) | 2026-10-09 |
 | [WP-BACKEND-08](work-packages/WP-BACKEND-08-meeting-project-speaker-count.md) | backend | Проект в карточке встречи; удаление speaker_count из контрактов, сервисов и БД | READY | product-backend | https://github.com/ITSalt/transcriber/pull/39 | 2026-10-09 |
 | [WP-FRONTEND-08](work-packages/WP-FRONTEND-08-catalog-project.md) | frontend | Список встреч: название и проект, фильтр по проекту, заголовок карточки встречи | READY | product-frontend | — | 2026-10-09 |
 
@@ -192,6 +192,9 @@ R-n — действие: точная команда одной строкой 
 <!-- orch:journal -->
 | Дата | WP | Событие | Подтверждение |
 |------|----|---------|---------------|
+| 2026-10-09 12:15Z | WP-WEB-MEMORY-02 | WP-WEB-MEMORY-02: VERIFIED_TEST -> PROD | verify --env prod 180137dc92: reports/verify-WP-WEB-MEMORY-02-prod-20261009.md |
+| 2026-10-09 12:15Z | WP-WEB-FEEDBACK-02 | WP-WEB-FEEDBACK-02: VERIFIED_TEST -> PROD | verify --env prod 75676ba117: reports/verify-WP-WEB-FEEDBACK-02-prod-20261009.md |
+| 2026-10-09 12:15Z | WP-WORKER-MEMORY-03 | WP-WORKER-MEMORY-03: VERIFIED_TEST -> PROD | verify --env prod b482b0e79f: reports/verify-WP-WORKER-MEMORY-03-prod-20261009.md |
 | 2026-10-09 12:14Z | WP-WEB-MEMORY-02 | WP-WEB-MEMORY-02: MERGED -> VERIFIED_TEST | verify --env test 180137dc92: reports/verify-WP-WEB-MEMORY-02-test-20261009.md |
 | 2026-10-09 12:11Z | WP-WEB-MEMORY-02 | WP-WEB-MEMORY-02 merged in the merge queue | orch.py deliver: 180137dc92 |
 | 2026-10-09 12:11Z | WP-WEB-MEMORY-02 | WP-WEB-MEMORY-02: ACCEPTED -> MERGED | gh pr merge --squash: 180137dc92 (https://github.com/ITSalt/transcriber/pull/38) |
