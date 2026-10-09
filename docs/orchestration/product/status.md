@@ -58,7 +58,7 @@ CANCELLED (причина).
 | [WP-WEB-MEMORY-02](work-packages/WP-WEB-MEMORY-02-assignments.md) | web-memory | «Поручения» вместо «задач» в памяти проекта | DISPATCHING | product-web-memory | — | 2026-10-09 |
 | [WP-WEB-FEEDBACK-02](work-packages/WP-WEB-FEEDBACK-02-assignment-category.md) | web-feedback | Категория отзыва «Неверное поручение» | DISPATCHING | product-web-feedback | — | 2026-10-09 |
 | [WP-WEB-PROJECTS-02](work-packages/WP-WEB-PROJECTS-02-meetings-and-upload.md) | web-projects | «Проекты и поручения», встречи на карточке проекта, удаление поля «Количество спикеров» | READY | product-web-projects | https://github.com/ITSalt/transcriber/pull/34 | 2026-10-09 |
-| [WP-WORKER-08](work-packages/WP-WORKER-08-protocol-wording.md) | worker | Протокол: «## Поручения», «Спикер N», отказ от speakerCount в ASR | REVISE | product-worker | https://github.com/ITSalt/transcriber/pull/36 | 2026-10-09 |
+| [WP-WORKER-08](work-packages/WP-WORKER-08-protocol-wording.md) | worker | Протокол: «## Поручения», «Спикер N», отказ от speakerCount в ASR | READY | product-worker | https://github.com/ITSalt/transcriber/pull/36 | 2026-10-09 |
 | [WP-WORKER-MEMORY-03](work-packages/WP-WORKER-MEMORY-03-speaker-label.md) | worker-memory | Метка спикера в цитатах памяти: «Спикер N» | DISPATCHING | product-worker-memory | — | 2026-10-09 |
 | [WP-BACKEND-08](work-packages/WP-BACKEND-08-meeting-project-speaker-count.md) | backend | Проект в карточке встречи; удаление speaker_count из контрактов, сервисов и БД | READY | product-backend | — | 2026-10-09 |
 | [WP-FRONTEND-08](work-packages/WP-FRONTEND-08-catalog-project.md) | frontend | Список встреч: название и проект, фильтр по проекту, заголовок карточки встречи | READY | product-frontend | — | 2026-10-09 |
@@ -182,6 +182,8 @@ R-n — действие: точная команда одной строкой 
 <!-- orch:journal -->
 | Дата | WP | Событие | Подтверждение |
 |------|----|---------|---------------|
+| 2026-10-09 10:59Z | WP-WORKER-08 | WP-WORKER-08: review round 2 started at 62df97ade4 | reports/wp-worker-08-review-20261009-r2.md |
+| 2026-10-09 10:59Z | WP-WORKER-08 | WP-WORKER-08: REVISE -> READY | пересдача 1 от product-worker: PR #36, sha 62df97ade4 |
 | 2026-10-09 10:58Z | WP-WEB-PROJECTS-02 | WP-WEB-PROJECTS-02: review round 2 started at 48daf9b7f4 | reports/wp-web-projects-02-review-20261009-r2.md |
 | 2026-10-09 10:58Z | WP-WEB-PROJECTS-02 | WP-WEB-PROJECTS-02: REVISE -> READY | пересдача 1 от product-web-projects: PR #34, sha 48daf9b7f4 |
 | 2026-10-09 10:58Z | WP-WEB-PROJECTS-02 | WP-WEB-PROJECTS-02: п. 4 ревью частично снят — FORM-MeetingUpload в графе без поля числа спикеров (факт сессии, read-only); формы карточки проекта в графе нет (UC-500/502 без USES_FORM) — создание формы через /nacl-sa-uc UC-500 вне разрешённых команд модуля; принято как отклонение, форма карточки проекта (с блоком «Встречи») — задача модуля spec (backlog, следующий пакет spec) | сообщение product-web-projects 2026-10-09; замок graph снят |
