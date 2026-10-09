@@ -32,6 +32,12 @@ export function initialChoices(
   return result;
 }
 
+/** «SPEAKER_0» → 1 (n+1); a label without a trailing number reads as 1. */
+export function speakerNumber(label: string): number {
+  const m = /(\d+)$/.exec(label);
+  return m ? Number(m[1]) + 1 : 1;
+}
+
 /** Follows merges to the label that carries the actual choice. */
 export function resolveRoot(choices: Choices, label: string): string {
   let current = label;
@@ -72,7 +78,12 @@ export function buildMapping(
     } else {
       // merged into a «keep» label: the worker puts a null as «Speaker <own index>», which would
       // not merge — send the root's neutral name so both labels read as one speaker
-      entries.push({ label, name: displays[rootLabel] ?? null });
+      // — and the root itself must carry the same name, else the root stays null (a different speaker)
+      const name = displays[rootLabel] ?? null;
+      if (!entries.some((e) => e.label === rootLabel)) {
+        entries.push({ label: rootLabel, name });
+      }
+      entries.push({ label, name });
     }
   }
   return entries;

@@ -79,6 +79,18 @@ export default function MeetingDetailPage() {
             />
           )}
 
+          <header className="space-y-1">
+            <h1 data-testid="meeting-heading" className="text-2xl font-semibold">
+              {data.meeting.title ?? data.recording.filename}
+            </h1>
+            <p
+              data-testid="meeting-heading-date"
+              className="text-sm text-muted-foreground"
+            >
+              {new Date(data.meeting.uploaded_at).toLocaleString()}
+            </p>
+          </header>
+
           <MetadataCard
             meeting={data.meeting}
             recording={data.recording}

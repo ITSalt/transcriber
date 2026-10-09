@@ -78,12 +78,12 @@ const MOCK_MEETINGS = {
   ],
 };
 
-describe("CatalogPage (Tasks)", () => {
-  it("renders the page container titled Tasks", () => {
+describe("CatalogPage (Meetings)", () => {
+  it("renders the page container titled Meetings", () => {
     mockList({ items: [] });
     renderCatalog();
     expect(screen.getByTestId("catalog-page")).toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: "Tasks" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Meetings" })).toBeInTheDocument();
   });
 
   it("shows loading state while fetching", () => {
@@ -101,7 +101,7 @@ describe("CatalogPage (Tasks)", () => {
     );
   });
 
-  it("shows empty state when there are no tasks", async () => {
+  it("shows empty state when there are no meetings", async () => {
     mockList({ items: [] });
     renderCatalog();
     await waitFor(() => {
@@ -127,7 +127,7 @@ describe("CatalogPage (Tasks)", () => {
     }
   });
 
-  it("renders a row per task showing the file name", async () => {
+  it("renders a row per meeting showing the file name", async () => {
     mockList(MOCK_MEETINGS);
     renderCatalog();
     expect(await screen.findByText("weekly.mp4")).toBeInTheDocument();
@@ -146,7 +146,7 @@ describe("CatalogPage (Tasks)", () => {
     ).not.toBeInTheDocument();
   });
 
-  it("renders status badges for each task", async () => {
+  it("renders status badges for each meeting", async () => {
     mockList(MOCK_MEETINGS);
     renderCatalog();
     expect(await screen.findByTestId("status-badge-PROTOCOL_READY")).toBeInTheDocument();
@@ -157,7 +157,7 @@ describe("CatalogPage (Tasks)", () => {
     mockList(MOCK_MEETINGS);
     renderCatalog();
     expect(
-      await screen.findByRole("table", { name: /task list/i }),
+      await screen.findByRole("table", { name: /meeting list/i }),
     ).toBeInTheDocument();
   });
 

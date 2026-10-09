@@ -46,7 +46,7 @@ const speakersBody = SpeakersResponse.parse({
   labels: [
     {
       label: "SPEAKER_0",
-      display: "Speaker 1",
+      display: "ignored-1",
       duration_sec: 65,
       segment_count: 5,
       samples: [
@@ -59,7 +59,7 @@ const speakersBody = SpeakersResponse.parse({
     },
     {
       label: "SPEAKER_1",
-      display: "Speaker 2",
+      display: "ignored-2",
       duration_sec: 30,
       segment_count: 2,
       samples: [{ start_ms: 5000, text: "Согласен" }],
@@ -68,7 +68,7 @@ const speakersBody = SpeakersResponse.parse({
     },
     {
       label: "SPEAKER_2",
-      display: "Speaker 3",
+      display: "ignored-3",
       duration_sec: 12,
       segment_count: 1,
       samples: [{ start_ms: 7000, text: "Я тоже" }],
@@ -221,7 +221,7 @@ describe("speakers confirmation (AWAITING_SPEAKERS)", () => {
     expect(puts(calls)[0]!.body).toEqual({ action: "skip", mapping: [] });
   });
 
-  it("merge into a «keep» label sends the root's «Speaker N» as name (PUT body)", async () => {
+  it("merge into a «keep» label sends the root's «Speaker N» (built from the label, not the API display) as name (PUT body)", async () => {
     const calls = mockApi("AWAITING_SPEAKERS");
     renderSlot();
     await userEvent.selectOptions(await screen.findByTestId("speaker-select-SPEAKER_1"), "m:SPEAKER_0");
@@ -229,8 +229,30 @@ describe("speakers confirmation (AWAITING_SPEAKERS)", () => {
 
     await waitFor(() => expect(puts(calls)).toHaveLength(1));
     expect(SpeakersPutRequest.parse(puts(calls)[0]!.body).mapping).toEqual([
+      { label: "SPEAKER_0", name: "Speaker 1" },
       { label: "SPEAKER_1", name: "Speaker 1" },
     ]);
+  });
+
+  it("RU: labels read «Спикер N» and the merge body carries the RU root name", async () => {
+    await i18n.changeLanguage("ru");
+    try {
+      const calls = mockApi("AWAITING_SPEAKERS");
+      renderSlot();
+      expect(await screen.findByTestId("speaker-SPEAKER_0")).toHaveTextContent("Спикер 1");
+      expect(screen.getByTestId("speaker-SPEAKER_1")).toHaveTextContent("Спикер 2");
+      const select = screen.getByTestId("speaker-select-SPEAKER_1");
+      expect(select).toHaveTextContent("Тот же, что Спикер 1");
+      await userEvent.selectOptions(select, "m:SPEAKER_0");
+      await userEvent.click(screen.getByTestId("speakers-confirm"));
+      await waitFor(() => expect(puts(calls)).toHaveLength(1));
+      expect(SpeakersPutRequest.parse(puts(calls)[0]!.body).mapping).toEqual([
+        { label: "SPEAKER_0", name: "Спикер 1" },
+        { label: "SPEAKER_1", name: "Спикер 1" },
+      ]);
+    } finally {
+      await i18n.changeLanguage("en");
+    }
   });
 
   it("stays disabled after a successful PUT: a second click sends nothing", async () => {
@@ -262,7 +284,7 @@ describe("speakers confirmation (AWAITING_SPEAKERS)", () => {
 });
 
 describe("buildMapping", () => {
-  it("leaves «keep» out and sends the root's display for a merge into a «keep» label", () => {
+  it("leaves «keep» out and sends the root's name for both root and merged label", () => {
     expect(
       buildMapping(
         {
@@ -272,7 +294,10 @@ describe("buildMapping", () => {
         },
         { SPEAKER_0: "Speaker 1", SPEAKER_1: "Speaker 2", SPEAKER_2: "Speaker 3" },
       ),
-    ).toEqual([{ label: "SPEAKER_1", name: "Speaker 1" }]);
+    ).toEqual([
+      { label: "SPEAKER_0", name: "Speaker 1" },
+      { label: "SPEAKER_1", name: "Speaker 1" },
+    ]);
   });
 
   it("follows a merge chain to the root", () => {

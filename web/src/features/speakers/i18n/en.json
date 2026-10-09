@@ -24,5 +24,6 @@
     "conflict": "Speakers are already confirmed or the meeting status changed. The card was refreshed.",
     "notFound": "The participant was not found in the meeting's project. Reload the page and choose again.",
     "generic": "Could not submit. Please try again."
-  }
+  },
+  "speakerLabel": "Speaker {{n}}"
 }

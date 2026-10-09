@@ -128,7 +128,7 @@ describe("UploadPage", () => {
   it("CT01: renders file field with correct label", () => {
     renderUpload();
     expect(
-      screen.getByText("Video file (MP4 / MKV / MOV / WEBM, max 2.5 GB, max 4 h)"),
+      screen.getByText("Recording file (video or audio; MP4 / MKV / MOV / WEBM, max 2.5 GB, max 4 h)"),
     ).toBeInTheDocument();
     expect(screen.getByTestId("upload-input-file")).toBeInTheDocument();
   });
@@ -317,7 +317,7 @@ describe("UploadPage", () => {
     });
     renderUpload();
     expect(
-      screen.getByText("Видеофайл (MP4 / MKV / MOV / WEBM, макс. 2,5 ГБ, макс. 4 ч)"),
+      screen.getByText("Файл записи (видео или аудио; MP4 / MKV / MOV / WEBM, макс. 2,5 ГБ, макс. 4 ч)"),
     ).toBeInTheDocument();
     expect(
       screen.getByText(
