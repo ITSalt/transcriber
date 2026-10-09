@@ -128,7 +128,6 @@ R-n — действие: точная команда одной строкой 
 | transcriber:web/src/i18n/** | transcriber | WP-FRONTEND-07 | 2026-10-09 10:13Z | — | dispatch |
 | transcriber:shared/** | transcriber | WP-WORKER-08 | 2026-10-09 10:13Z | — | dispatch |
 | transcriber:shared/src/asr/IAsrProvider.ts:38 | transcriber | WP-WORKER-08 | 2026-10-09 10:13Z | — | dispatch |
-| transcriber:graph | transcriber | WP-WEB-PROJECTS-02 | 2026-10-09 10:56Z | — | — |
 
 ## Очередь слияний
 
@@ -183,6 +182,8 @@ R-n — действие: точная команда одной строкой 
 <!-- orch:journal -->
 | Дата | WP | Событие | Подтверждение |
 |------|----|---------|---------------|
+| 2026-10-09 10:58Z | WP-WEB-PROJECTS-02 | WP-WEB-PROJECTS-02: п. 4 ревью частично снят — FORM-MeetingUpload в графе без поля числа спикеров (факт сессии, read-only); формы карточки проекта в графе нет (UC-500/502 без USES_FORM) — создание формы через /nacl-sa-uc UC-500 вне разрешённых команд модуля; принято как отклонение, форма карточки проекта (с блоком «Встречи») — задача модуля spec (backlog, следующий пакет spec) | сообщение product-web-projects 2026-10-09; замок graph снят |
+| 2026-10-09 10:58Z | WP-WEB-PROJECTS-02 | lock transcriber:graph released | orch.py lock |
 | 2026-10-09 10:58Z | WP-FRONTEND-07 | WP-FRONTEND-07: READY -> REVISE | раунд 1: объединение меток в RU расщепляет спикера (корень не отправляется), RU без тестов, «Спикер 0» в транскрипте — reports/wp-frontend-07-review-20261009.md |
 | 2026-10-09 10:57Z | WP-WORKER-08 | WP-WORKER-08: READY -> REVISE | раунд 1: язык в transcription.ts:251 без теста (мутация 'EN' зелёная), speakerCount в wire-тесте (TS2353) — reports/wp-worker-08-review-20261009.md |
 | 2026-10-09 10:56Z | WP-WEB-PROJECTS-02 | lock transcriber:graph acquired | orch.py lock |
