@@ -59,7 +59,7 @@ CANCELLED (причина).
 | [WP-WEB-FEEDBACK-02](work-packages/WP-WEB-FEEDBACK-02-assignment-category.md) | web-feedback | Категория отзыва «Неверное поручение» | DISPATCHING | product-web-feedback | — | 2026-10-09 |
 | [WP-WEB-PROJECTS-02](work-packages/WP-WEB-PROJECTS-02-meetings-and-upload.md) | web-projects | «Проекты и поручения», встречи на карточке проекта, удаление поля «Количество спикеров» | DONE | product-web-projects | https://github.com/ITSalt/transcriber/pull/34 (accepted 48daf9b7f4) | 2026-10-09 |
 | [WP-WORKER-08](work-packages/WP-WORKER-08-protocol-wording.md) | worker | Протокол: «## Поручения», «Спикер N», отказ от speakerCount в ASR | DONE | product-worker | https://github.com/ITSalt/transcriber/pull/36 (accepted 62df97ade4) | 2026-10-09 |
-| [WP-WORKER-MEMORY-03](work-packages/WP-WORKER-MEMORY-03-speaker-label.md) | worker-memory | Метка спикера в цитатах памяти: «Спикер N» | REVISE | product-worker-memory | https://github.com/ITSalt/transcriber/pull/33 | 2026-10-09 |
+| [WP-WORKER-MEMORY-03](work-packages/WP-WORKER-MEMORY-03-speaker-label.md) | worker-memory | Метка спикера в цитатах памяти: «Спикер N» | READY | product-worker-memory | https://github.com/ITSalt/transcriber/pull/33 | 2026-10-09 |
 | [WP-BACKEND-08](work-packages/WP-BACKEND-08-meeting-project-speaker-count.md) | backend | Проект в карточке встречи; удаление speaker_count из контрактов, сервисов и БД | DISPATCHING | product-backend | — | 2026-10-09 |
 | [WP-FRONTEND-08](work-packages/WP-FRONTEND-08-catalog-project.md) | frontend | Список встреч: название и проект, фильтр по проекту, заголовок карточки встречи | READY | product-frontend | — | 2026-10-09 |
 
@@ -189,6 +189,8 @@ R-n — действие: точная команда одной строкой 
 <!-- orch:journal -->
 | Дата | WP | Событие | Подтверждение |
 |------|----|---------|---------------|
+| 2026-10-09 11:58Z | WP-WORKER-MEMORY-03 | WP-WORKER-MEMORY-03: review round 2 started at fc15b7225b | reports/wp-worker-memory-03-review-20261009-r2.md |
+| 2026-10-09 11:58Z | WP-WORKER-MEMORY-03 | WP-WORKER-MEMORY-03: REVISE -> READY | пересдача 1 от product-worker-memory: PR #33, sha fc15b7225b |
 | 2026-10-09 11:55Z | WP-WORKER-MEMORY-03 | WP-WORKER-MEMORY-03: READY -> REVISE | раунд 1: язык в postgres.ts:35 и EN-ветка mappedSpeakerNames без тестов (мутации C/D зелёные) — reports/wp-worker-memory-03-review-20261009.md |
 | 2026-10-09 11:51Z | WP-BACKEND-08 | WP-BACKEND-08: ACK на точечную правку вне области модуля backend — api/src/features/context/service.ts и api/src/features/context/context.db.test.ts (только удаление speakerCount из select и передачи в enqueue), предусмотрено пакетом (раздел 1); модуль api-projects без активной сессии и пакета (все DONE), пересечений нет | QUESTION product-backend 2026-10-09; ListAgents: product-api-projects не запущена |
 | 2026-10-09 11:46Z | — | Сессии product-web-memory и product-web-feedback завершились без READY: в worktrees незакоммиченные правки i18n/тестов, веток на origin нет — владельцу выданы команды перезапуска (тот же worktree) | git status в .claude/worktrees/wp-web-memory-02-assignments и wp-web-feedback-02-assignment-category; ListAgents 2026-10-09 |
