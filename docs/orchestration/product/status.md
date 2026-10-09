@@ -129,6 +129,7 @@ R-n — действие: точная команда одной строкой 
 |-------|-------------|-----------|---|------|------------|
 | transcriber:web/src/i18n/** | transcriber | WP-FRONTEND-08 | 2026-10-09 12:35Z | — | dispatch |
 | transcriber:upload.fieldSpeakerCount* | transcriber | WP-FRONTEND-08 | 2026-10-09 12:35Z | — | dispatch |
+| transcriber:graph | transcriber | WP-FRONTEND-08 | 2026-10-09 14:12Z | — | — |
 
 ## Очередь слияний
 
@@ -192,6 +193,7 @@ R-n — действие: точная команда одной строкой 
 <!-- orch:journal -->
 | Дата | WP | Событие | Подтверждение |
 |------|----|---------|---------------|
+| 2026-10-09 14:12Z | WP-FRONTEND-08 | lock transcriber:graph acquired | orch.py lock |
 | 2026-10-09 14:11Z | WP-FRONTEND-08 | WP-FRONTEND-08: review round 1 started at 81fba93636 | reports/wp-frontend-08-review-20261009.md |
 | 2026-10-09 14:11Z | WP-FRONTEND-08 | WP-FRONTEND-08: DISPATCHING -> READY | READY от product-frontend: PR #41, sha 81fba93636 |
 | 2026-10-09 12:51Z | WP-BACKEND-09 | lock transcriber:migrations released | orch.py lock |
