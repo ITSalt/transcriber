@@ -60,7 +60,7 @@ CANCELLED (причина).
 | [WP-WEB-PROJECTS-02](work-packages/WP-WEB-PROJECTS-02-meetings-and-upload.md) | web-projects | «Проекты и поручения», встречи на карточке проекта, удаление поля «Количество спикеров» | DONE | product-web-projects | https://github.com/ITSalt/transcriber/pull/34 (accepted 48daf9b7f4) | 2026-10-09 |
 | [WP-WORKER-08](work-packages/WP-WORKER-08-protocol-wording.md) | worker | Протокол: «## Поручения», «Спикер N», отказ от speakerCount в ASR | DONE | product-worker | https://github.com/ITSalt/transcriber/pull/36 (accepted 62df97ade4) | 2026-10-09 |
 | [WP-WORKER-MEMORY-03](work-packages/WP-WORKER-MEMORY-03-speaker-label.md) | worker-memory | Метка спикера в цитатах памяти: «Спикер N» | DONE | product-worker-memory | https://github.com/ITSalt/transcriber/pull/33 (accepted fc15b7225b) | 2026-10-09 |
-| [WP-BACKEND-08](work-packages/WP-BACKEND-08-meeting-project-speaker-count.md) | backend | Проект в карточке встречи; удаление speaker_count из контрактов, сервисов и БД | PROD | product-backend | https://github.com/ITSalt/transcriber/pull/39 (accepted 9bf0812c62) | 2026-10-09 |
+| [WP-BACKEND-08](work-packages/WP-BACKEND-08-meeting-project-speaker-count.md) | backend | Проект в карточке встречи; удаление speaker_count из контрактов, сервисов и БД | READY | product-backend | https://github.com/ITSalt/transcriber/pull/40 | 2026-10-09 |
 | [WP-FRONTEND-08](work-packages/WP-FRONTEND-08-catalog-project.md) | frontend | Список встреч: название и проект, фильтр по проекту, заголовок карточки встречи | DISPATCHING | product-frontend | — | 2026-10-09 |
 
 ## Ждёт владельца
@@ -129,7 +129,6 @@ R-n — действие: точная команда одной строкой 
 | transcriber:migrations | transcriber | WP-BACKEND-08 | 2026-10-09 11:10Z | — | dispatch |
 | transcriber:web/src/i18n/** | transcriber | WP-FRONTEND-08 | 2026-10-09 12:35Z | — | dispatch |
 | transcriber:upload.fieldSpeakerCount* | transcriber | WP-FRONTEND-08 | 2026-10-09 12:35Z | — | dispatch |
-| transcriber:.tl/{status.json,master-plan.md,changelog.md,release-status.json,deploy-plan.md} | transcriber | WP-BACKEND-08 | 2026-10-09 12:35Z | — | — |
 
 ## Очередь слияний
 
@@ -191,6 +190,9 @@ R-n — действие: точная команда одной строкой 
 <!-- orch:journal -->
 | Дата | WP | Событие | Подтверждение |
 |------|----|---------|---------------|
+| 2026-10-09 12:40Z | WP-BACKEND-08 | WP-BACKEND-08: review round 3 started at 432933a0e7 | reports/wp-backend-08-review-20261009-r3.md |
+| 2026-10-09 12:40Z | WP-BACKEND-08 | WP-BACKEND-08: PROD -> READY | contract-PR от product-backend: PR #40, sha 432933a0e7 |
+| 2026-10-09 12:40Z | WP-BACKEND-08 | lock transcriber:.tl/{status.json,master-plan.md,changelog.md,release-status.json,deploy-plan.md} released | orch.py lock |
 | 2026-10-09 12:35Z | WP-BACKEND-08 | WP-BACKEND-08: VERIFIED_TEST -> PROD | verify --env prod d6da675a03: reports/verify-WP-BACKEND-08-prod-20261009.md |
 | 2026-10-09 12:35Z | WP-BACKEND-08 | lock transcriber:.tl/{status.json,master-plan.md,changelog.md,release-status.json,deploy-plan.md} acquired | orch.py lock |
 | 2026-10-09 12:35Z | WP-FRONTEND-08 | WP-FRONTEND-08: READY -> DISPATCHING | start command handed to the owner; model sonnet; locks transcriber:web/src/i18n/**, transcriber:upload.fieldSpeakerCount* |
