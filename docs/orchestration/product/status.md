@@ -54,13 +54,13 @@ CANCELLED (причина).
 | [WP-WORKER-07](work-packages/WP-WORKER-07-memory-leak-guard.md) | worker | Защита протокола от утечки памяти проекта и чужих участников | DONE | product-worker | https://github.com/ITSalt/transcriber/pull/27 (accepted ade44c9c31) | 2026-10-08 |
 | [WP-WORKER-MEMORY-02](work-packages/WP-WORKER-MEMORY-02-hygiene.md) | worker-memory | Гигиена памяти проекта: дедуп решений, валидация исполнителей, сводка по продуктам | DONE | product-worker-memory | https://github.com/ITSalt/transcriber/pull/28 (accepted adc8af0791) | 2026-10-08 |
 | [WP-SPEC-01](work-packages/WP-SPEC-01-glossary.md) | spec | Глоссарий графа: UTF-8, русские названия, термины программы, подписи форм | DONE | product-spec | https://github.com/ITSalt/transcriber/pull/32 (accepted 9ecfd6bb41) | 2026-10-09 |
-| [WP-FRONTEND-07](work-packages/WP-FRONTEND-07-wording.md) | frontend | Единая терминология в строках ядра: «Встречи», «обработка», «Спикер N», род статусов | ACCEPTED | product-frontend | https://github.com/ITSalt/transcriber/pull/35 (accepted 9cf5dc0df1) | 2026-10-09 |
+| [WP-FRONTEND-07](work-packages/WP-FRONTEND-07-wording.md) | frontend | Единая терминология в строках ядра: «Встречи», «обработка», «Спикер N», род статусов | MERGED | product-frontend | https://github.com/ITSalt/transcriber/pull/35 (accepted 9cf5dc0df1) | 2026-10-09 |
 | [WP-WEB-MEMORY-02](work-packages/WP-WEB-MEMORY-02-assignments.md) | web-memory | «Поручения» вместо «задач» в памяти проекта | DISPATCHING | product-web-memory | — | 2026-10-09 |
 | [WP-WEB-FEEDBACK-02](work-packages/WP-WEB-FEEDBACK-02-assignment-category.md) | web-feedback | Категория отзыва «Неверное поручение» | DISPATCHING | product-web-feedback | — | 2026-10-09 |
 | [WP-WEB-PROJECTS-02](work-packages/WP-WEB-PROJECTS-02-meetings-and-upload.md) | web-projects | «Проекты и поручения», встречи на карточке проекта, удаление поля «Количество спикеров» | VERIFIED_TEST | product-web-projects | https://github.com/ITSalt/transcriber/pull/34 (accepted 48daf9b7f4) | 2026-10-09 |
 | [WP-WORKER-08](work-packages/WP-WORKER-08-protocol-wording.md) | worker | Протокол: «## Поручения», «Спикер N», отказ от speakerCount в ASR | VERIFIED_TEST | product-worker | https://github.com/ITSalt/transcriber/pull/36 (accepted 62df97ade4) | 2026-10-09 |
 | [WP-WORKER-MEMORY-03](work-packages/WP-WORKER-MEMORY-03-speaker-label.md) | worker-memory | Метка спикера в цитатах памяти: «Спикер N» | DISPATCHING | product-worker-memory | — | 2026-10-09 |
-| [WP-BACKEND-08](work-packages/WP-BACKEND-08-meeting-project-speaker-count.md) | backend | Проект в карточке встречи; удаление speaker_count из контрактов, сервисов и БД | READY | product-backend | — | 2026-10-09 |
+| [WP-BACKEND-08](work-packages/WP-BACKEND-08-meeting-project-speaker-count.md) | backend | Проект в карточке встречи; удаление speaker_count из контрактов, сервисов и БД | DISPATCHING | product-backend | — | 2026-10-09 |
 | [WP-FRONTEND-08](work-packages/WP-FRONTEND-08-catalog-project.md) | frontend | Список встреч: название и проект, фильтр по проекту, заголовок карточки встречи | READY | product-frontend | — | 2026-10-09 |
 
 ## Ждёт владельца
@@ -115,6 +115,7 @@ R-n — действие: точная команда одной строкой 
 | ~~P-20~~ | ~~Поле «Количество спикеров» на загрузке обещает улучшить разделение по голосам, но в Deepgram не передаётся (D-21): (а) убрать поле — рекомендация; (б) оставить с честной подсказкой «только подсказка протоколу». Подробности: reports/terminology-audit-20261009.md U1~~ | reports/terminology-audit-20261009.md | 2026-10-09 | 2026-10-09: answered by D-43 |
 | ~~P-21~~ | ~~Метка неподтверждённого спикера: транскрипт показывает «Спикер N», экран подтверждения и протокол — «Speaker N»: (а) «Speaker N» везде; (б) «Спикер N» в интерфейсе и протоколе, внутри данных остаётся Speaker N — рекомендация. Подробности: U6~~ | reports/terminology-audit-20261009.md | 2026-10-09 | 2026-10-09: answered by D-41 |
 | ~~P-22~~ | ~~После переименования меню «Задачи» → «Встречи» реестр поручений доступен только с карточки проекта. Нужен ли пункт меню «Задачи» со сводным реестром по всем проектам пространства? (а) да — новая страница и сводный маршрут; (б) нет, отложить до анализа обратной связи — рекомендация. Подробности: P-22 в отчёте~~ | reports/terminology-audit-20261009.md | 2026-10-09 | 2026-10-09: answered by D-42 |
+| R-22 | Бэкап БД прода перед миграцией WP-BACKEND-08 (DROP COLUMN transcription_jobs.speaker_count) — выполняет оркестратор по D-39 на шаге deliver, как R-21: ssh deploy@transcriber.itsalt.ru 'docker exec learn-postgres pg_dump -U <user> -Fc transcrib > /opt/transcrib/backups/transcrib-<date>.dump' ; expected: файл с размером > 0 и pg_restore --list без ошибок | work-packages/WP-BACKEND-08-meeting-project-speaker-count.md | 2026-10-09 |  |
 
 ## Замки
 
@@ -125,7 +126,12 @@ R-n — действие: точная команда одной строкой 
 <!-- orch:locks -->
 | Замок | Репозиторий | Держатель | С | Ждут | Примечание |
 |-------|-------------|-----------|---|------|------------|
-| transcriber:web/src/i18n/** | transcriber | WP-FRONTEND-07 | 2026-10-09 10:13Z | — | dispatch |
+| transcriber:shared/** | transcriber | WP-BACKEND-08 | 2026-10-09 11:10Z | — | dispatch |
+| transcriber:shared/src/api/uc002.ts | transcriber | WP-BACKEND-08 | 2026-10-09 11:10Z | — | dispatch |
+| transcriber:shared/src/api/uc100.ts:94 | transcriber | WP-BACKEND-08 | 2026-10-09 11:10Z | — | dispatch |
+| transcriber:shared/src/api/uc200.ts:11 | transcriber | WP-BACKEND-08 | 2026-10-09 11:10Z | — | dispatch |
+| transcriber:api/prisma/** | transcriber | WP-BACKEND-08 | 2026-10-09 11:10Z | — | dispatch |
+| transcriber:migrations | transcriber | WP-BACKEND-08 | 2026-10-09 11:10Z | — | dispatch |
 
 ## Очередь слияний
 
@@ -174,7 +180,7 @@ R-n — действие: точная команда одной строкой 
 | 37 | transcriber | WP-SPEC-01 | — | — | merged |
 | 38 | transcriber | WP-WEB-PROJECTS-02 | — | — | merged |
 | 39 | transcriber | WP-WORKER-08 | — | — | merged |
-| 40 | transcriber | WP-FRONTEND-07 | — | — | queued |
+| 40 | transcriber | WP-FRONTEND-07 | — | — | merged |
 
 ## Журнал
 
@@ -183,6 +189,10 @@ R-n — действие: точная команда одной строкой 
 <!-- orch:journal -->
 | Дата | WP | Событие | Подтверждение |
 |------|----|---------|---------------|
+| 2026-10-09 11:10Z | — | R-22 opened for owner | work-packages/WP-BACKEND-08-meeting-project-speaker-count.md |
+| 2026-10-09 11:10Z | WP-BACKEND-08 | WP-BACKEND-08: READY -> DISPATCHING | start command handed to the owner; model sonnet; locks transcriber:shared/**, transcriber:shared/src/api/uc002.ts, transcriber:shared/src/api/uc100.ts:94, transcriber:shared/src/api/uc200.ts:11, transcriber:api/prisma/**, transcriber:migrations |
+| 2026-10-09 11:10Z | WP-FRONTEND-07 | WP-FRONTEND-07 merged in the merge queue; released transcriber:web/src/i18n/** | orch.py deliver: 655830416e |
+| 2026-10-09 11:10Z | WP-FRONTEND-07 | WP-FRONTEND-07: ACCEPTED -> MERGED | gh pr merge --squash: 655830416e (https://github.com/ITSalt/transcriber/pull/35) |
 | 2026-10-09 11:09Z | WP-FRONTEND-07 | WP-FRONTEND-07 queued for merge (sequential) | — |
 | 2026-10-09 11:09Z | WP-FRONTEND-07 | WP-FRONTEND-07: accepted at 9cf5dc0df176cf4f40f5d2901a9ec973d0d4d6ee | report reports/wp-frontend-07-review-20261009-r2.md |
 | 2026-10-09 11:09Z | WP-FRONTEND-07 | WP-FRONTEND-07: READY -> ACCEPTED | раунд 2: три пункта закрыты по диффу; CI зелёный на 9cf5dc0df1 — reports/wp-frontend-07-review-20261009-r2.md |
