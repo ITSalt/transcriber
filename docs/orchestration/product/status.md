@@ -57,8 +57,8 @@ CANCELLED (причина).
 | [WP-FRONTEND-07](work-packages/WP-FRONTEND-07-wording.md) | frontend | Единая терминология в строках ядра: «Встречи», «обработка», «Спикер N», род статусов | DISPATCHING | product-frontend | — | 2026-10-09 |
 | [WP-WEB-MEMORY-02](work-packages/WP-WEB-MEMORY-02-assignments.md) | web-memory | «Поручения» вместо «задач» в памяти проекта | DISPATCHING | product-web-memory | — | 2026-10-09 |
 | [WP-WEB-FEEDBACK-02](work-packages/WP-WEB-FEEDBACK-02-assignment-category.md) | web-feedback | Категория отзыва «Неверное поручение» | DISPATCHING | product-web-feedback | — | 2026-10-09 |
-| [WP-WEB-PROJECTS-02](work-packages/WP-WEB-PROJECTS-02-meetings-and-upload.md) | web-projects | «Проекты и поручения», встречи на карточке проекта, удаление поля «Количество спикеров» | READY | product-web-projects | — | 2026-10-09 |
-| [WP-WORKER-08](work-packages/WP-WORKER-08-protocol-wording.md) | worker | Протокол: «## Поручения», «Спикер N», отказ от speakerCount в ASR | READY | product-worker | — | 2026-10-09 |
+| [WP-WEB-PROJECTS-02](work-packages/WP-WEB-PROJECTS-02-meetings-and-upload.md) | web-projects | «Проекты и поручения», встречи на карточке проекта, удаление поля «Количество спикеров» | DISPATCHING | product-web-projects | — | 2026-10-09 |
+| [WP-WORKER-08](work-packages/WP-WORKER-08-protocol-wording.md) | worker | Протокол: «## Поручения», «Спикер N», отказ от speakerCount в ASR | DISPATCHING | product-worker | — | 2026-10-09 |
 | [WP-WORKER-MEMORY-03](work-packages/WP-WORKER-MEMORY-03-speaker-label.md) | worker-memory | Метка спикера в цитатах памяти: «Спикер N» | DISPATCHING | product-worker-memory | — | 2026-10-09 |
 | [WP-BACKEND-08](work-packages/WP-BACKEND-08-meeting-project-speaker-count.md) | backend | Проект в карточке встречи; удаление speaker_count из контрактов, сервисов и БД | READY | product-backend | — | 2026-10-09 |
 | [WP-FRONTEND-08](work-packages/WP-FRONTEND-08-catalog-project.md) | frontend | Список встреч: название и проект, фильтр по проекту, заголовок карточки встречи | READY | product-frontend | — | 2026-10-09 |
@@ -129,6 +129,8 @@ R-n — действие: точная команда одной строкой 
 | transcriber:.tl/external-contracts/** | transcriber | WP-SPEC-01 | 2026-10-09 10:13Z | — | dispatch |
 | transcriber:CLAUDE.md | transcriber | WP-SPEC-01 | 2026-10-09 10:13Z | — | dispatch |
 | transcriber:web/src/i18n/** | transcriber | WP-FRONTEND-07 | 2026-10-09 10:13Z | — | dispatch |
+| transcriber:shared/** | transcriber | WP-WORKER-08 | 2026-10-09 10:13Z | — | dispatch |
+| transcriber:shared/src/asr/IAsrProvider.ts:38 | transcriber | WP-WORKER-08 | 2026-10-09 10:13Z | — | dispatch |
 
 ## Очередь слияний
 
@@ -182,6 +184,8 @@ R-n — действие: точная команда одной строкой 
 <!-- orch:journal -->
 | Дата | WP | Событие | Подтверждение |
 |------|----|---------|---------------|
+| 2026-10-09 10:13Z | WP-WORKER-08 | WP-WORKER-08: READY -> DISPATCHING | start command handed to the owner; model sonnet; locks transcriber:shared/**, transcriber:shared/src/asr/IAsrProvider.ts:38 |
+| 2026-10-09 10:13Z | WP-WEB-PROJECTS-02 | WP-WEB-PROJECTS-02: READY -> DISPATCHING | start command handed to the owner; model sonnet |
 | 2026-10-09 10:13Z | WP-WORKER-MEMORY-03 | WP-WORKER-MEMORY-03: READY -> DISPATCHING | start command handed to the owner; model sonnet |
 | 2026-10-09 10:13Z | WP-WORKER-08 | dispatch of WP-WORKER-08 refused: depends on WP-BACKEND-08 (READY), not merged yet | orch.py dispatch |
 | 2026-10-09 10:13Z | WP-WEB-PROJECTS-02 | dispatch of WP-WEB-PROJECTS-02 refused: depends on WP-BACKEND-08 (READY), not merged yet | orch.py dispatch |
