@@ -14,7 +14,7 @@
 
 ## Живой сценарий
 
-<Заполняет режим verify после PASS проверок выше: критерии приёмки пакета, пройденные на этом
-окружении. По каждому критерию: шаги, ожидалось, получено, доказательство (вывод команды, путь к
-скриншоту). Сбой инструмента проверки (браузер, MCP) помечается как сбой инструмента с
-использованным запасным путём, а не как дефект продукта.>
+Contract-шаг D-43, served f68514de34, деплой 2026-10-09 12:50Z, тихое окно подтверждено перед слиянием (0 заданий/встреч в работе за последний час), бэкап R-22 снят до слияния.
+1. Критерий 2: SELECT на VM — `information_schema.columns` для `transcription_jobs.speaker_count` → 0 строк; `_prisma_migrations` содержит `20261009130000_drop_speaker_count` с `finished_at` (1 строка); `transcrib-api`/`transcrib-worker` online; `GET /api/health` → 200; `GET /api/meetings/ff3ad632-…` → PROTOCOL_READY с `project_name`; `POST /api/uploads/init` → s3_key (затем abort).
+2. Критерий 1 — CI PR #40 зелёный; DB-тест на PG16 — клон рецензента (раунд 1 WP-BACKEND-08).
+3. Критерий 3 — gate цепочки доставки: in-flight = 0 (12:46Z); бэкап `/opt/transcrib/backups/transcrib-20261009-pre-drop-speaker-count.dump` (R-22).

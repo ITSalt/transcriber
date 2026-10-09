@@ -17,5 +17,5 @@
 Раунд «expand» (код без миграции), served d6da675a03, 2026-10-09 12:35Z, api/worker online после деплоя:
 1. Критерий 3 (проект в карточке): `GET /api/meetings/ff3ad632-…` → `project_id = a03eb007-f74f-4e44-aae0-c10010c8bf13`, `project_name = «Госключ-ПК и TCB (РТЛабс / ИИТ)»`.
 2. Критерий 3 (загрузка работает, устаревшее поле): `POST /api/uploads/init` с `speaker_count: 3` от «кэшированного SPA» → 200 (s3_key выдан, затем abort).
-3. Критерий 3 (колонка удалена) и 4 (бэкап) — раунд «contract»: ожидают второй PR; до него `information_schema` ещё содержит `speaker_count` (намеренно, expand/contract).
+3. Критерий 3 (колонка удалена) и 4 (бэкап) — выполнены contract-шагом WP-BACKEND-09 (PR #40, served f68514de34, 12:50Z): `information_schema` → 0 строк, бэкап R-22 до слияния (см. reports/verify-WP-BACKEND-09-prod-20261009.md).
 4. Критерии 1–2 — ревью r1 (DB-тесты на PG16, мутации) и CI PR #39.
