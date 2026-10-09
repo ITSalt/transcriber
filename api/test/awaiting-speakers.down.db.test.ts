@@ -30,7 +30,7 @@ describe.skipIf(!DATABASE_URL)('20261009120000_awaiting_speakers + down.sql', ()
   beforeAll(async () => {
     await createDatabases(workDb, refDb)
     // Reference = the schema before this migration
-    await replayMigrations(refDb, (m) => m < NAME)
+    await replayMigrations(refDb, (m) => m < NAME || m === '20261009130000_drop_speaker_count')
   }, 120_000)
 
   afterAll(async () => {
