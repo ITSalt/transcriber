@@ -17,7 +17,7 @@
 | Команды методологии: разрешены | nacl: `nacl-tl-dev-be`, `nacl-tl-dev`, `nacl-tl-fix`, `nacl-tl-review`, `nacl-tl-regression-test`, `nacl-tl-verify-code`, `nacl-tl-sync`, `nacl-tl-docs`, `nacl-tl-stubs`, `nacl-sa-uc`, `nacl-sa-domain`, `nacl-sa-feature`, `nacl-sa-validate`, `nacl-tl-plan`, `nacl-tl-status` |
 | Команды методологии: запрещены | `nacl-tl-release`, `nacl-tl-deploy`, `nacl-tl-deliver`, `nacl-tl-hotfix`, `nacl-tl-ship`, `nacl-tl-conductor`, `nacl-tl-full`, `nacl-goal`, `nacl-publish` |
 | Разрешённые пути | `worker/{tsconfig.json,vitest.config.ts}`, `worker/test/**`, `worker/src/{asr,jobs,lib,llm}/**`, `worker/src/{config.ts,config.test.ts,logger.ts,shutdown.ts,shutdown.test.ts,job-processor.test.ts,queues.test.ts,queues.regression.test.ts}` |
-| Общие пути, которые трогает пакет | `shared/**` (`shared/src/asr/IAsrProvider.ts:38` — удалить `speakerCount`; LOCK до правки) |
+| Общие пути, которые трогает пакет | `shared/**` (файл shared/src/asr/IAsrProvider.ts, строка 38 — удалить speakerCount; замок взят при dispatch) |
 | Миграции | нет |
 | Ресурсы (замки) | нет |
 | Тестовая БД и порты | нет; нет |
