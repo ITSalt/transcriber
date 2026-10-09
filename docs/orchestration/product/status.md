@@ -58,7 +58,7 @@ CANCELLED (причина).
 | [WP-WEB-MEMORY-02](work-packages/WP-WEB-MEMORY-02-assignments.md) | web-memory | «Поручения» вместо «задач» в памяти проекта | DISPATCHING | product-web-memory | — | 2026-10-09 |
 | [WP-WEB-FEEDBACK-02](work-packages/WP-WEB-FEEDBACK-02-assignment-category.md) | web-feedback | Категория отзыва «Неверное поручение» | DISPATCHING | product-web-feedback | — | 2026-10-09 |
 | [WP-WEB-PROJECTS-02](work-packages/WP-WEB-PROJECTS-02-meetings-and-upload.md) | web-projects | «Проекты и поручения», встречи на карточке проекта, удаление поля «Количество спикеров» | READY | product-web-projects | https://github.com/ITSalt/transcriber/pull/34 | 2026-10-09 |
-| [WP-WORKER-08](work-packages/WP-WORKER-08-protocol-wording.md) | worker | Протокол: «## Поручения», «Спикер N», отказ от speakerCount в ASR | DISPATCHING | product-worker | — | 2026-10-09 |
+| [WP-WORKER-08](work-packages/WP-WORKER-08-protocol-wording.md) | worker | Протокол: «## Поручения», «Спикер N», отказ от speakerCount в ASR | READY | product-worker | https://github.com/ITSalt/transcriber/pull/36 | 2026-10-09 |
 | [WP-WORKER-MEMORY-03](work-packages/WP-WORKER-MEMORY-03-speaker-label.md) | worker-memory | Метка спикера в цитатах памяти: «Спикер N» | DISPATCHING | product-worker-memory | — | 2026-10-09 |
 | [WP-BACKEND-08](work-packages/WP-BACKEND-08-meeting-project-speaker-count.md) | backend | Проект в карточке встречи; удаление speaker_count из контрактов, сервисов и БД | READY | product-backend | — | 2026-10-09 |
 | [WP-FRONTEND-08](work-packages/WP-FRONTEND-08-catalog-project.md) | frontend | Список встреч: название и проект, фильтр по проекту, заголовок карточки встречи | READY | product-frontend | — | 2026-10-09 |
@@ -131,6 +131,7 @@ R-n — действие: точная команда одной строкой 
 | transcriber:web/src/i18n/** | transcriber | WP-FRONTEND-07 | 2026-10-09 10:13Z | — | dispatch |
 | transcriber:shared/** | transcriber | WP-WORKER-08 | 2026-10-09 10:13Z | — | dispatch |
 | transcriber:shared/src/asr/IAsrProvider.ts:38 | transcriber | WP-WORKER-08 | 2026-10-09 10:13Z | — | dispatch |
+| transcriber:graph | transcriber | WP-SPEC-01 | 2026-10-09 10:43Z | — | — |
 
 ## Очередь слияний
 
@@ -184,6 +185,9 @@ R-n — действие: точная команда одной строкой 
 <!-- orch:journal -->
 | Дата | WP | Событие | Подтверждение |
 |------|----|---------|---------------|
+| 2026-10-09 10:43Z | WP-WORKER-08 | WP-WORKER-08: review round 1 started at 41687f703a | reports/wp-worker-08-review-20261009.md |
+| 2026-10-09 10:43Z | WP-WORKER-08 | WP-WORKER-08: DISPATCHING -> READY | READY от product-worker: PR #36, sha 41687f703a |
+| 2026-10-09 10:43Z | WP-SPEC-01 | lock transcriber:graph acquired | orch.py lock |
 | 2026-10-09 10:43Z | WP-FRONTEND-07 | WP-FRONTEND-07: review round 1 started at f367c1b14f | reports/wp-frontend-07-review-20261009.md |
 | 2026-10-09 10:43Z | WP-FRONTEND-07 | WP-FRONTEND-07: DISPATCHING -> READY | READY от product-frontend: PR #35, sha f367c1b14f |
 | 2026-10-09 10:43Z | WP-SPEC-01 | WP-SPEC-01: READY -> REVISE | раунд 1: критерий 4 (/nacl-ba-validate) не выполнен; user_story UC-504/600/601/602/603 с «задач»; GLO-008 ссылается на «## Задачи» — reports/wp-spec-01-review-20261009.md |
