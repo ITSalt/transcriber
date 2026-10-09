@@ -57,7 +57,7 @@ CANCELLED (причина).
 | [WP-FRONTEND-07](work-packages/WP-FRONTEND-07-wording.md) | frontend | Единая терминология в строках ядра: «Встречи», «обработка», «Спикер N», род статусов | PROD | product-frontend | https://github.com/ITSalt/transcriber/pull/35 (accepted 9cf5dc0df1) | 2026-10-09 |
 | [WP-WEB-MEMORY-02](work-packages/WP-WEB-MEMORY-02-assignments.md) | web-memory | «Поручения» вместо «задач» в памяти проекта | DISPATCHING | product-web-memory | — | 2026-10-09 |
 | [WP-WEB-FEEDBACK-02](work-packages/WP-WEB-FEEDBACK-02-assignment-category.md) | web-feedback | Категория отзыва «Неверное поручение» | DISPATCHING | product-web-feedback | — | 2026-10-09 |
-| [WP-WEB-PROJECTS-02](work-packages/WP-WEB-PROJECTS-02-meetings-and-upload.md) | web-projects | «Проекты и поручения», встречи на карточке проекта, удаление поля «Количество спикеров» | PROD | product-web-projects | https://github.com/ITSalt/transcriber/pull/34 (accepted 48daf9b7f4) | 2026-10-09 |
+| [WP-WEB-PROJECTS-02](work-packages/WP-WEB-PROJECTS-02-meetings-and-upload.md) | web-projects | «Проекты и поручения», встречи на карточке проекта, удаление поля «Количество спикеров» | DONE | product-web-projects | https://github.com/ITSalt/transcriber/pull/34 (accepted 48daf9b7f4) | 2026-10-09 |
 | [WP-WORKER-08](work-packages/WP-WORKER-08-protocol-wording.md) | worker | Протокол: «## Поручения», «Спикер N», отказ от speakerCount в ASR | PROD | product-worker | https://github.com/ITSalt/transcriber/pull/36 (accepted 62df97ade4) | 2026-10-09 |
 | [WP-WORKER-MEMORY-03](work-packages/WP-WORKER-MEMORY-03-speaker-label.md) | worker-memory | Метка спикера в цитатах памяти: «Спикер N» | DISPATCHING | product-worker-memory | — | 2026-10-09 |
 | [WP-BACKEND-08](work-packages/WP-BACKEND-08-meeting-project-speaker-count.md) | backend | Проект в карточке встречи; удаление speaker_count из контрактов, сервисов и БД | DISPATCHING | product-backend | — | 2026-10-09 |
@@ -189,6 +189,7 @@ R-n — действие: точная команда одной строкой 
 <!-- orch:journal -->
 | Дата | WP | Событие | Подтверждение |
 |------|----|---------|---------------|
+| 2026-10-09 11:16Z | WP-WEB-PROJECTS-02 | WP-WEB-PROJECTS-02: PROD -> DONE | PROD 39bdde1e97; браузер: меню «Проекты и поручения», блок «Встречи» на карточке проекта (7 встреч, ссылки), /upload?project= без поля спикеров и с предвыбранным проектом — reports/verify-WP-WEB-PROJECTS-02-prod-20261009.md |
 | 2026-10-09 11:14Z | WP-FRONTEND-07 | WP-FRONTEND-07: VERIFIED_TEST -> PROD | verify --env prod 655830416e: reports/verify-WP-FRONTEND-07-prod-20261009.md |
 | 2026-10-09 11:14Z | WP-WORKER-08 | WP-WORKER-08: VERIFIED_TEST -> PROD | verify --env prod 3d6673d9f5: reports/verify-WP-WORKER-08-prod-20261009.md |
 | 2026-10-09 11:14Z | WP-WEB-PROJECTS-02 | WP-WEB-PROJECTS-02: VERIFIED_TEST -> PROD | verify --env prod 39bdde1e97: reports/verify-WP-WEB-PROJECTS-02-prod-20261009.md |
