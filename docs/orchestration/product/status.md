@@ -1,5 +1,7 @@
 # Модернизация Transcrib до продукта — статус
 
+> **Закрыта 2026-10-10.** Итог: [reports/closeout-20261010.md](reports/closeout-20261010.md). Новая цель — новая программа.
+
 Единственный источник состояния программы `product`. Пишет только оркестратор —
 через `orch.py` и точечные правки, после каждого изменения состояния.
 
@@ -118,7 +120,7 @@ R-n — действие: точная команда одной строкой 
 | ~~P-21~~ | ~~Метка неподтверждённого спикера: транскрипт показывает «Спикер N», экран подтверждения и протокол — «Speaker N»: (а) «Speaker N» везде; (б) «Спикер N» в интерфейсе и протоколе, внутри данных остаётся Speaker N — рекомендация. Подробности: U6~~ | reports/terminology-audit-20261009.md | 2026-10-09 | 2026-10-09: answered by D-41 |
 | ~~P-22~~ | ~~После переименования меню «Задачи» → «Встречи» реестр поручений доступен только с карточки проекта. Нужен ли пункт меню «Задачи» со сводным реестром по всем проектам пространства? (а) да — новая страница и сводный маршрут; (б) нет, отложить до анализа обратной связи — рекомендация. Подробности: P-22 в отчёте~~ | reports/terminology-audit-20261009.md | 2026-10-09 | 2026-10-09: answered by D-42 |
 | ~~R-22~~ | ~~Бэкап БД прода перед миграцией WP-BACKEND-08 (DROP COLUMN transcription_jobs.speaker_count) — выполняет оркестратор по D-39 на шаге deliver, как R-21: ssh deploy@transcriber.itsalt.ru 'docker exec learn-postgres pg_dump -U <user> -Fc transcrib > /opt/transcrib/backups/transcrib-<date>.dump' ; expected: файл с размером > 0 и pg_restore --list без ошибок~~ | work-packages/WP-BACKEND-08-meeting-project-speaker-count.md | 2026-10-09 | 2026-10-09: pg_dump -Fc на VM: /opt/transcrib/backups/transcrib-20261009-pre-drop-speaker-count.dump, размер 1316047 байт, pg_restore --list: 20 TABLE DATA; снят перед слиянием contract-PR #40 |
-| R-23 | FYI, no action needed: plugin defect PLUGIN-BUG-5 reported (new Issue): https://github.com/ITSalt/PepperSkills/issues/36 ; close this item when read | bugs/PLUGIN-BUG-5.md | 2026-10-09 |  |
+| ~~R-23~~ | ~~FYI, no action needed: plugin defect PLUGIN-BUG-5 reported (new Issue): https://github.com/ITSalt/PepperSkills/issues/36 ; close this item when read~~ | bugs/PLUGIN-BUG-5.md | 2026-10-09 | 2026-10-10: FYI: Issue https://github.com/ITSalt/PepperSkills/issues/36 заведён по явному «заводи, разрешаю» владельца 2026-10-09, ссылка сообщена владельцу в чате |
 
 ## Замки
 
@@ -194,6 +196,8 @@ R-n — действие: точная команда одной строкой 
 <!-- orch:journal -->
 | Дата | WP | Событие | Подтверждение |
 |------|----|---------|---------------|
+| 2026-10-10 13:31Z | — | program closed | reports/closeout-20261010.md |
+| 2026-10-10 13:29Z | — | R-23 closed | FYI: Issue https://github.com/ITSalt/PepperSkills/issues/36 заведён по явному «заводи, разрешаю» владельца 2026-10-09, ссылка сообщена владельцу в чате |
 | 2026-10-10 13:28Z | WP-FRONTEND-09 | WP-FRONTEND-09: PROD -> DONE | PROD 2ce6ebe391: default(null) снят, карточки встреч под «Тест» отдают project_id/project_name — reports/verify-WP-FRONTEND-09-prod-20261010.md |
 | 2026-10-10 13:27Z | WP-FRONTEND-09 | WP-FRONTEND-09: VERIFIED_TEST -> PROD | verify --env prod 2ce6ebe391: reports/verify-WP-FRONTEND-09-prod-20261010.md |
 | 2026-10-10 13:27Z | WP-FRONTEND-09 | WP-FRONTEND-09: MERGED -> VERIFIED_TEST | verify --env test 2ce6ebe391: reports/verify-WP-FRONTEND-09-test-20261010.md |

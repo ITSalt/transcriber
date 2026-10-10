@@ -4,7 +4,7 @@
 # Prefix of session names and messages.
 program: product
 # active | closed: `close --apply` closes the program (one program, one goal), `reopen` reopens it.
-state: active
+state: closed
 # Session kind of module sessions, the owner's explicit choice at init: local (recommended) | cloud.
 # Repositories and modules inherit it; a module may set its own `sessions` after an owner decision.
 sessions: local
