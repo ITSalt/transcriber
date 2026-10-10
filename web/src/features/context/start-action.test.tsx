@@ -20,6 +20,8 @@ function detail(status: string) {
       title: "t",
       status,
       language: null,
+      project_id: null,
+      project_name: null,
       uploaded_at: NOW,
       updated_at: NOW,
     },

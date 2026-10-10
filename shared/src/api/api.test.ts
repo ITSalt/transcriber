@@ -99,6 +99,19 @@ describe('MeetingDetailResponse', () => {
       }),
     ).toMatchObject({ latest_transcription_job: null, latest_protocol_job: null });
   });
+
+  it('requires project_id and project_name (no default); null is valid', () => {
+    const { project_id: _id, ...noId } = valid.meeting;
+    expect(MeetingDetailResponse.safeParse({ ...valid, meeting: noId }).success).toBe(false);
+    const { project_name: _n, ...noName } = valid.meeting;
+    expect(MeetingDetailResponse.safeParse({ ...valid, meeting: noName }).success).toBe(false);
+    expect(
+      MeetingDetailResponse.safeParse({
+        ...valid,
+        meeting: { ...valid.meeting, project_id: null, project_name: null },
+      }).success,
+    ).toBe(true);
+  });
 });
 
 describe('MeetingStatusEvent', () => {
