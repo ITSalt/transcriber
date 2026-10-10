@@ -63,7 +63,7 @@ CANCELLED (причина).
 | [WP-BACKEND-08](work-packages/WP-BACKEND-08-meeting-project-speaker-count.md) | backend | Проект в карточке встречи; удаление speaker_count из контрактов, сервисов и БД | DONE | product-backend | https://github.com/ITSalt/transcriber/pull/40 (accepted 432933a0e7) | 2026-10-09 |
 | [WP-FRONTEND-08](work-packages/WP-FRONTEND-08-catalog-project.md) | frontend | Список встреч: название и проект, фильтр по проекту, заголовок карточки встречи | DONE | product-frontend | https://github.com/ITSalt/transcriber/pull/41 (accepted 6e4b93ff90) | 2026-10-09 |
 | [WP-BACKEND-09](work-packages/WP-BACKEND-09-contract-speaker-count.md) | backend | Удаление колонки transcription_jobs.speaker_count (contract-шаг D-43 после WP-BACKEND-08) | DONE | product-backend | https://github.com/ITSalt/transcriber/pull/40 (accepted 432933a0e7) | 2026-10-09 |
-| [WP-FRONTEND-09](work-packages/WP-FRONTEND-09-meeting-detail-contract.md) | frontend | Контракт карточки встречи: project_id/project_name без default(null), фикстуры web | ACCEPTED | product-frontend | https://github.com/ITSalt/transcriber/pull/42 (accepted ad04147344) | 2026-10-10 |
+| [WP-FRONTEND-09](work-packages/WP-FRONTEND-09-meeting-detail-contract.md) | frontend | Контракт карточки встречи: project_id/project_name без default(null), фикстуры web | VERIFIED_TEST | product-frontend | https://github.com/ITSalt/transcriber/pull/42 (accepted ad04147344) | 2026-10-10 |
 
 ## Ждёт владельца
 
@@ -129,8 +129,6 @@ R-n — действие: точная команда одной строкой 
 <!-- orch:locks -->
 | Замок | Репозиторий | Держатель | С | Ждут | Примечание |
 |-------|-------------|-----------|---|------|------------|
-| transcriber:shared/** | transcriber | WP-FRONTEND-09 | 2026-10-09 19:42Z | — | dispatch |
-| transcriber:shared/src/api/uc002.ts | transcriber | WP-FRONTEND-09 | 2026-10-09 19:42Z | — | dispatch |
 
 ## Очередь слияний
 
@@ -187,7 +185,7 @@ R-n — действие: точная команда одной строкой 
 | 45 | transcriber | WP-BACKEND-08 | — | — | dropped |
 | 46 | transcriber | WP-BACKEND-09 | — | — | merged |
 | 47 | transcriber | WP-FRONTEND-08 | — | — | merged |
-| 48 | transcriber | WP-FRONTEND-09 | — | — | queued |
+| 48 | transcriber | WP-FRONTEND-09 | — | — | merged |
 
 ## Журнал
 
@@ -196,6 +194,9 @@ R-n — действие: точная команда одной строкой 
 <!-- orch:journal -->
 | Дата | WP | Событие | Подтверждение |
 |------|----|---------|---------------|
+| 2026-10-10 13:27Z | WP-FRONTEND-09 | WP-FRONTEND-09: MERGED -> VERIFIED_TEST | verify --env test 2ce6ebe391: reports/verify-WP-FRONTEND-09-test-20261010.md |
+| 2026-10-10 13:23Z | WP-FRONTEND-09 | WP-FRONTEND-09 merged in the merge queue; released transcriber:shared/**, transcriber:shared/src/api/uc002.ts | orch.py deliver: 2ce6ebe391 |
+| 2026-10-10 13:23Z | WP-FRONTEND-09 | WP-FRONTEND-09: ACCEPTED -> MERGED | gh pr merge --squash: 2ce6ebe391 (https://github.com/ITSalt/transcriber/pull/42) |
 | 2026-10-10 13:22Z | WP-FRONTEND-09 | WP-FRONTEND-09 queued for merge (sequential) | — |
 | 2026-10-10 13:22Z | WP-FRONTEND-09 | WP-FRONTEND-09: accepted at ad0414734480e84caaaa13a36ccb5bf06efb89f5 | report reports/wp-frontend-09-review-20261010.md |
 | 2026-10-10 13:22Z | WP-FRONTEND-09 | WP-FRONTEND-09: REVIEW -> ACCEPTED | ad04147344; reports/wp-frontend-09-review-20261010.md |
